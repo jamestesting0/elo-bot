@@ -1439,8 +1439,9 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         embed = ipy.Embed(
             title=f"**{player1} vs. {player2}**",
             description=(
-                f"- Ping <@&{STAFF_ROLE}> to start the match, and keep an eye on the chat for the next 10 minutes.\n"
-                f"- Submit bases (</match base submit:1288780187042971700>) 10 minutes prior to the match."
+                f"- Ping <@&{STAFF_ROLE}> to start the match, and keep an eye on the chat for the next 10 minutes."
+                + ("\n- Submit bases (</match base submit:1288780187042971700>) 10 minutes prior to the match."
+                   if match.base_submission else "")
             ),
             fields=[
                 ipy.EmbedField(

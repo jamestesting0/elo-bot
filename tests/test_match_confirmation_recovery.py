@@ -109,6 +109,20 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
     def unavailable() -> ipy.errors.DiscordError:
         return ipy.errors.DiscordError(response=SimpleNamespace(status=503, reason="Service Unavailable"))
 
+    async def test_confirmation_only_offers_base_submission_when_enabled(self) -> None:
+        for enabled in (False, True):
+            with self.subTest(base_submission=enabled):
+                self.persisted.base_submission = enabled
+                self.persisted.thread = None
+                self.persisted.thread_message_id = None
+                self.persisted._save_state()
+                self.messages.clear()
+
+                await match_commands.confirm_match(self.bot, "TOKEN")
+
+                description = self.messages[0].embeds[0].description
+                self.assertEqual("</match base submit:1288780187042971700>" in description, enabled)
+
     async def test_confirmation_resumes_existing_thread_after_failed_send(self) -> None:
         # Given: Discord fails the announcement after the thread identity is saved.
         self.thread.send.side_effect = self.unavailable()

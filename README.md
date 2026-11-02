@@ -26,7 +26,7 @@ The bot uses `interactions.py` for Discord interactions and `coc.py` for Clash o
 | `tests/` | Automated regression tests |
 | `watchdog.py` | Optional supervisor for the production process |
 
-The base finder uses PyTorch, Ultralytics, SAHI, and OpenCV. Its model weights are not included in this repository. The model manifest records that upstream redistribution permission is unresolved; review it before distributing the weights.
+The base finder uses PyTorch, Ultralytics, SAHI, and OpenCV. Its model weights are included under `models/`. The model manifest records that upstream redistribution permission is unresolved; review it before distributing the weights.
 
 ## Running locally
 

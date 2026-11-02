@@ -29,10 +29,14 @@ htmlcov/
 .codex/
 .omo/
 
-# Runtime data, models, and generated artifacts
+# Runtime data and generated artifacts
 /data/
 /temp/
-/models/
+/models/**/logs/
+/models/**/*.lock
+/models/**/*.partial
+/models/**/matplotlib/
+/models/**/ultralytics/
 /experiments/
 /assets/clan_capital_buildings/
 /tests/_artifacts/

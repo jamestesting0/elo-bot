@@ -31,6 +31,8 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
         self.bot.ext = {}
         self.cog = commands.BaseCommands(self.bot)
         self.ctx = SimpleNamespace(author=SimpleNamespace(id=123, has_any_role=lambda _: True),
+                                   guild=SimpleNamespace(fetch_member=AsyncMock(
+                                       return_value=SimpleNamespace(id=123, display_name="Builder"))),
                                    channel_id=BASE_SUBMISSION_CHANNEL,
                                    message=SimpleNamespace(id=9001, edit=AsyncMock()), defer=AsyncMock(),
                                    send=AsyncMock(return_value=SimpleNamespace(id=777)))
@@ -55,6 +57,7 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
         self.assertIn("100.0%", embed.fields[0].value)
         self.assertIn("30/30", embed.fields[0].value)
         self.assertEqual(embed.description, "base\n")
+        self.assertEqual(embed.fields[2].value, "**[Builder](<https://discordapp.com/users/123>)**")
         self.assertIn("hall_absent", embed.fields[-1].value)
         self.assertTrue(self.worker.await_args.args[0]["fuzzy"])
         self.assertIsNone(self.submission.resolution)

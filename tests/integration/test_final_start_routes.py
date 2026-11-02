@@ -38,6 +38,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
         ctx.channel.id = 777
         ctx.channel_id = 777
         ctx.author.id = 9
+        ctx.guild.fetch_member = AsyncMock(return_value=MagicMock(mention="<@1>"))
         ctx.channel.fetch_pinned_messages = AsyncMock(return_value=[MagicMock(embeds=[ipy.Embed(title="Match")])])
         return bot, ctx
 

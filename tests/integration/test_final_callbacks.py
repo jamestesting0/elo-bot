@@ -39,6 +39,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         client.cache.get_member.return_value = member
         client.cache.get_user.return_value = member
         client.cache.place_user_data.return_value = member
+        client.cache.get_guild.return_value.fetch_member = AsyncMock(return_value=None)
         message = MagicMock(id=9001, flags=ipy.MessageFlags.IS_COMPONENTS_V2 | ipy.MessageFlags.EPHEMERAL)
         client.cache.place_message_data.return_value = message
         client.cache.get_message.return_value = message
@@ -81,10 +82,11 @@ class TestFinalCallbacks(FinalScenarioCase):
     async def test_betting_review_confirm_stale_and_owner_controls_match_persisted_state(self):
         market = await open_market(self.final, "QF1")
         ctx = self.context()
+        ctx.guild.fetch_member.return_value = MagicMock(id=1, display_name="Player 1")
         ctx.custom_id = f"betamount|{market.id}|9|1|0"
         await self.cog.bet_amount.callback.func(self.cog, ctx, "1000")
         embed = ctx.send.await_args.kwargs["embed"]
-        self.assertEqual(embed.description, f"<@1> · 1,000 {TOKEN_EMOJI}")
+        self.assertEqual(embed.description, f"**[Player 1](<https://discordapp.com/users/1>)** · 1,000 {TOKEN_EMOJI}")
         self.assertEqual([(field.name, field.value) for field in embed.fields],
                          [("**Estimated Profit**", f"0 {TOKEN_EMOJI}")])
         button = ctx.send.await_args.kwargs["components"][0]

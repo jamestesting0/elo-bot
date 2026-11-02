@@ -1,0 +1,45 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+/config.json
+
+# Python environments and generated files
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local tools and operating system files
+.DS_Store
+.idea/
+.vscode/
+.agent/
+.claude/
+.codex/
+.omo/
+
+# Runtime data, models, and generated artifacts
+/data/
+/temp/
+/models/
+/experiments/
+/assets/clan_capital_buildings/
+/tests/_artifacts/
+/filled_elo_final.png
+/test.py
+*.log
+
+# Local documentation and deployment notes
+/docs/
+/oracle_scripts.md

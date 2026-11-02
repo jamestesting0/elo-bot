@@ -1,0 +1,23 @@
+[
+    "Want to play a match against a specific player? Simply run `/challenge send`!",
+    "Tired of submitting bases again and again? Run `/preset base add` to automatically set them by default!",
+    "Run `/player hitrates` to get a detailed idea of how good your opponent is.",
+    "Tired of manually selecting districts and confirming matches? Run `/preset district add` to automate the process!",
+    "Unable to challenge a player due to high Elo difference? Simply ask the Elo admins for a override code.",
+    "Are you finding the Elo bases hard? Besides hosting matches, our 1v1 helpers are also here to teach you meta strategies!",
+    "Do not forget to enter for giveaways in <#1214445497109057556>, there are always 2 gold pass giveaways each season!",
+    "Run `/match base remove` if you would like to remove a base you accidentally submitted.",
+    "Wondering who the best/||worst|| players here are? Check out `/leaderboard` command!",
+    "Use `/base submit` to submit your bases for review and inclusion in the Helper bank. You'll be notified once accepted!",
+    "Once you have reached 1200 Elo, you can claim certified attacker role to increase your rizz in the server!",
+    "If there is a bug with the Elo bot or you got suggestions for it, feel free to DM [@James](<https://discordapp.com/users/653894110884921366>).",
+    "Run `/preset base remove` and `/preset district remove` to remove your presets!",
+    "A war style Elo match duration is about 15 minutes, and you can attack at any time!",
+    "You can start your match at any time, simply ping @1v1 helpers in your match thread when ready!",
+    "Did you know that you can check leaderboards in the past Elo seasons? Check out `/season leaderboard` command!",
+    "For base builder wondering who build the best bases, check out `/base leaderboard` and `/season base leaderboard`",
+    "Wondering who is the better of the two? Check out `/player h2h` command!",
+    "Clicking on the \"Submit Bases\" button under the match confirmation embed to prevent your opponent from attacking without waiting for you to submit bases.",
+    "Use `/private base add` to store your own bases permenantly, and `/private base list` to view them or use them as presets.",
+    "Use `/match autoqueue` to automatically queue after match end."
+]

@@ -1,0 +1,23 @@
+{
+  "pipeline_id": "capital-v1-4d63ddd9",
+  "upstream_commit": "23053818290d725eecfd6af0e95d533fc0ee7755",
+  "artifact_path": "runs/train/coc_capital_v9_final/weights/best.pt",
+  "url": "https://raw.githubusercontent.com/Preet-Kotak/clan-capital-base-finder/23053818290d725eecfd6af0e95d533fc0ee7755/runs/train/coc_capital_v9_final/weights/best.pt",
+  "bytes": 40544741,
+  "sha256": "4d63ddd9a95351c6cc9da0fe964e1e715357f268b9efa01ee3874d43d332a271",
+  "extractor_revision": "elo-1",
+  "coordinate_system": "hall-relative-image-xy-v1",
+  "classes": ["air_bomb", "air_defence", "blast_bow", "bomb_tower", "cannon", "capital_peak", "crusher", "district_hall", "gaint_cannon", "hive", "inferno_tower", "motor", "multi_cannon", "post_cannon", "post_dragon", "post_gaint", "post_goblin", "rapid_rocket", "reflector", "rocket_artilery", "spear", "tesla", "wizard_tower"],
+  "expected_counts": [[50, 48], [58, 54], [49, 47], [56, 54], [58, 53], [47], [58, 57], [59, 54], [55, 52]],
+  "confidence": 0.25,
+  "confidence_step": 0.05,
+  "confidence_min": 0.1,
+  "confidence_max": 0.5,
+  "max_runs": 3,
+  "iou": 0.5,
+  "imgsz": 640,
+  "max_det": 300,
+  "distance_cutoff": 0.05,
+  "preprocessing": "Pillow RGB; YOLO letterbox rect=False; float32; no augmentation",
+  "permission": "No upstream license found; redistribution permission remains a release blocker."
+}

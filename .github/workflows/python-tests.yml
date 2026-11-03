@@ -27,6 +27,9 @@ jobs:
       - name: Check main.py and beta.py are identical
         run: cmp main.py beta.py
 
+      - name: Install CJK font for bracket rendering
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk
+
       - uses: ./.github/actions/setup-python-deps
 
       - name: Run unit tests
@@ -46,9 +49,10 @@ jobs:
 
       # Started before the dependency install so MongoDB boots in parallel.
       # Tests need transactions (replica set) and failpoints (test commands), which service containers can't configure.
+      # MongoDB 8.0+ refuses to start on the runner's 6.19+ kernel (SERVER-121912), so this stays on 7.0.
       - name: Start MongoDB replica set
         run: >-
-          docker run --detach --name mongo --publish 27017:27017 mongo:8.0
+          docker run --detach --name mongo --publish 27017:27017 mongo:7.0
           --replSet rs0 --bind_ip_all --setParameter enableTestCommands=1
 
       - uses: ./.github/actions/setup-python-deps

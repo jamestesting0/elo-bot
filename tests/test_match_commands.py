@@ -2018,6 +2018,32 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
         mock_sync_slots.assert_awaited_once_with(bot=self.bot)
 
+    @patch("cogs.match_commands.ServerState.current", new_callable=AsyncMock)
+    @patch("cogs.match_commands.sync_base_store_slots", new_callable=AsyncMock)
+    async def test_on_start_runs_inactive_thread_cleanup_only_on_main_bot(self, _mock_sync_slots, mock_state):
+        mock_state.return_value = MagicMock(last_matching=None)
+        task_names = (
+            "inactive_threads_delete", "auto_match_confirm", "auto_match_cancel", "match_confirmation_remind",
+            "base_notify", "host_notify", "match_data_clean_up", "repair_match_publications",
+            "raid_weekend_start_notify", "raid_weekend_auto_store", "update_clan_availability_embed",
+            "update_hosting_queue_embed", "create_matches",
+        )
+        for bot_id, cleanup_runs in ((BOT_ID, True), (BOT_ID + 1, False)):
+            with self.subTest(bot_id=bot_id):
+                self.bot.user.id = bot_id
+                tasks = {name: AsyncMock() for name in task_names}
+                for task in tasks.values():
+                    task.start = MagicMock()
+                with patch.multiple(self.cog, **tasks):
+                    await self.cog.on_start.callback(self.cog)
+
+                cleanup = tasks["inactive_threads_delete"]
+                self.assertEqual(cleanup.await_count, int(cleanup_runs))
+                self.assertEqual(cleanup.start.call_count, int(cleanup_runs))
+                tasks["auto_match_confirm"].assert_awaited_once()
+                tasks["auto_match_confirm"].start.assert_called_once()
+                tasks["create_matches"].start.assert_called_once()
+
     @patch("cogs.match_commands.clear_participant_base_store", new_callable=AsyncMock)
     @patch("cogs.match_commands.Match")
     async def test_undo_base_storage_button_releases_stored_slot(self, mock_match, mock_clear_base_store):

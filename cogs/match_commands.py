@@ -7186,7 +7186,9 @@ class MatchCommands(ipy.Extension):
         await sync_base_store_slots(bot=self.bot)
         print("➤ Match commands loaded")
 
-        await self.inactive_threads_delete()
+        is_main_bot = int(self.bot.user.id) == BOT_ID
+        if is_main_bot:
+            await self.inactive_threads_delete()
         await self.auto_match_confirm()
         await self.auto_match_cancel()
         await self.match_confirmation_remind()
@@ -7197,7 +7199,8 @@ class MatchCommands(ipy.Extension):
         await self.update_clan_availability_embed()
         await self.update_hosting_queue_embed()
 
-        self.inactive_threads_delete.start()
+        if is_main_bot:
+            self.inactive_threads_delete.start()
         self.auto_match_confirm.start()
         self.auto_match_cancel.start()
         self.match_confirmation_remind.start()

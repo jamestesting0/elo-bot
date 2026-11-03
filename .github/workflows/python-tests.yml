@@ -1,0 +1,72 @@
+name: Python tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Superseded PR runs are cancelled; every push to main still gets a full run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check main.py and beta.py are identical
+        run: cmp main.py beta.py
+
+      - name: Install CJK font for bracket rendering
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends fonts-noto-cjk
+
+      - uses: ./.github/actions/setup-python-deps
+
+      - name: Run unit tests
+        run: python -m unittest discover tests
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      FINAL_TEST_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+      INTEGRATION_MONGO_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Started before the dependency install so MongoDB boots in parallel.
+      # Tests need transactions (replica set) and failpoints (test commands), which service containers can't configure.
+      # MongoDB 8.0+ refuses to start on the runner's 6.19+ kernel (SERVER-121912), so this stays on 7.0.
+      - name: Start MongoDB replica set
+        run: >-
+          docker run --detach --name mongo --publish 27017:27017 mongo:7.0
+          --replSet rs0 --bind_ip_all --setParameter enableTestCommands=1
+
+      - uses: ./.github/actions/setup-python-deps
+
+      - name: Initiate replica set
+        run: |
+          timeout 60 bash -c 'until docker exec mongo mongosh --quiet --eval "db.adminCommand({ping: 1})" >/dev/null 2>&1; do sleep 1; done'
+          timeout 60 docker exec mongo mongosh --quiet --eval '
+            rs.initiate({_id: "rs0", members: [{_id: 0, host: "127.0.0.1:27017"}]});
+            while (!db.hello().isWritablePrimary) sleep(500);'
+
+      - name: Run integration tests
+        run: python -m unittest discover -s tests/integration
+
+      - name: Show MongoDB logs
+        if: failure()
+        run: docker logs --tail 200 mongo

@@ -4,11 +4,16 @@ description: Install Python 3.12 and requirements.txt with uv, using CPU-only Py
 runs:
   using: composite
   steps:
-    - name: Install uv and Python
-      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+    # uv's standalone CPython lacks os.pidfd_open, which the worker lifecycle tests need on Linux.
+    - name: Install Python
+      id: python
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: "3.12.10"
-        activate-environment: true
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      with:
         enable-cache: true
         cache-dependency-glob: requirements.txt
 
@@ -17,8 +22,9 @@ runs:
       env:
         # requirements.txt adds PyTorch indexes; let uv pick the best match across all indexes like pip does.
         UV_INDEX_STRATEGY: unsafe-best-match
+        UV_PYTHON: ${{ steps.python.outputs.python-path }}
       run: |
         # Runners have no GPU: swap the multi-GB CUDA wheels selected for x86_64 Linux for CPU builds.
         overrides="$RUNNER_TEMP/ci-overrides.txt"
         printf '%s\n' 'torch==2.7.1+cpu' 'torchvision==0.22.1+cpu' > "$overrides"
-        uv pip install -r requirements.txt --overrides "$overrides"
+        uv pip install --system -r requirements.txt --overrides "$overrides"

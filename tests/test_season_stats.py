@@ -27,7 +27,7 @@ class TestSeasonStatsRendering(unittest.TestCase):
         self.assertIn(f"{DISTRICT_EMOJI} Capital Peak `2`", embed["fields"][-1]["value"])
         self.assertIn("Goblin Mines `0`", embed["fields"][-1]["value"])
         self.assertEqual([field["name"] for field in embed["fields"]],
-                         ["**Activity**", "**Confirmation Wait**", "**Districts**"])
+                         ["**Activity**", "**Districts**"])
         activity = embed["fields"][0]["value"]
         self.assertEqual(re.findall(r"`(\d+)`", activity), ["2", "1", "1", "2", "2", "2"])
         self.assertEqual(
@@ -95,8 +95,23 @@ class TestSeasonStatsRendering(unittest.TestCase):
 
     def test_confirmation_wait_display_has_no_invented_empty_averages(self):
         window = SeasonWindow("1", 10, 30)
+        for legacy_record in (False, True):
+            with self.subTest(legacy_record=legacy_record):
+                accumulator = StatsAccumulator()
+                if legacy_record:
+                    accumulator.add(row("1", 15), window)
+                payload = process_message_payload(embeds=stats_embed(window, accumulator.finish(window)))
+                names = [field["name"] for field in payload["embeds"][0]["fields"]]
+                self.assertNotIn("**Confirmation Wait**", names)
+
+    def test_confirmation_wait_display_keeps_recorded_zero(self):
+        window = SeasonWindow("current", 10, 30)
         accumulator = StatsAccumulator()
-        accumulator.add(row("1", 15), window)
-        value = stats_embed(window, accumulator.finish(window)).fields[1].value
-        self.assertEqual(value.count("`N/A`"), 2)
-        self.assertIn("0 of 2 participants", value)
+        accumulator.add(row("1", 15, matched_time=100, players={
+            "100": {"confirmed_at": 100, "confirmation_method": "ready"},
+            "200": {},
+        }), window)
+        payload = process_message_payload(embeds=stats_embed(window, accumulator.finish(window)))
+        fields = {field["name"]: field["value"] for field in payload["embeds"][0]["fields"]}
+        self.assertIn("`0.0s`", fields["**Confirmation Wait**"])
+        self.assertEqual(len(fields["**Confirmation Wait**"].splitlines()), 1)

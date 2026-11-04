@@ -398,6 +398,29 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(data["participants"][0].districts, expected_presets)
                 mock_choice.assert_not_called()
 
+    async def test_ready_participant_is_recorded_at_match_creation(self):
+        users = [MagicMock(id=111, send=AsyncMock()), MagicMock(id=222, send=AsyncMock())]
+        bot = MagicMock(fetch_user=AsyncMock(side_effect=users))
+        players = [
+            MagicMock(user_id="111", elo=1200, capital_peak_enabled=True,
+                      district_presets=["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]),
+            MagicMock(user_id="222", elo=1200, capital_peak_enabled=True,
+                      district_presets=[None, None, None]),
+        ]
+        match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
+        with patch("cogs.match_commands.Match", return_value=match) as match_type, \
+                patch("cogs.match_commands.get_base_quality", return_value=("Good", "Good")), \
+                patch("cogs.match_commands.datetime") as clock:
+            clock.now.return_value.timestamp.return_value = 1000.0
+            await initiate_match(bot, *players)
+
+        created = match_type.call_args.kwargs
+        ready, waiting = created["participants"]
+        self.assertEqual(created["matched_time"], 1000.0)
+        self.assertTrue(created["confirmation_tracking"])
+        self.assertEqual((ready.confirmed_at, ready.confirmation_method), (1000.0, "ready"))
+        self.assertEqual((waiting.confirmed_at, waiting.confirmation_method), (None, None))
+
     async def test_initiate_match_randomizes_unavailable_conditional_presets_for_both_players(self):
         # Given: both players stored unavailable conditional presets in their canonical slots
         users = [MagicMock(id=111), MagicMock(id=222)]
@@ -4440,6 +4463,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         )
         opponent = MagicMock(user_id="222", confirmed=False)
         match = MagicMock(spec=Match, participants=[participant, opponent])
+        match.is_challenge = False
+        match.confirmation_tracking = False
         match.wizard_valley_available = False
         match.capital_peak_available = False
         match.save_changes = AsyncMock()

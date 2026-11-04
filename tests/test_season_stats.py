@@ -27,7 +27,7 @@ class TestSeasonStatsRendering(unittest.TestCase):
         self.assertIn(f"{DISTRICT_EMOJI} Capital Peak `2`", embed["fields"][-1]["value"])
         self.assertIn("Goblin Mines `0`", embed["fields"][-1]["value"])
         self.assertEqual([field["name"] for field in embed["fields"]],
-                         ["**Activity**", "**Districts**"])
+                         ["**Activity**", "**Confirmation Wait**", "**Districts**"])
         activity = embed["fields"][0]["value"]
         self.assertEqual(re.findall(r"`(\d+)`", activity), ["2", "1", "1", "2", "2", "2"])
         self.assertEqual(
@@ -78,3 +78,25 @@ class TestSeasonStatsRendering(unittest.TestCase):
         embed = stats_embed(window, accumulator.finish(window))
         # Then: counts never imply complete district coverage.
         self.assertEqual(re.findall(r"`(\d+)`", embed.fields[-1].value), ["0"] * 9 + ["1"])
+
+    def test_confirmation_wait_display_reports_averages_and_coverage(self):
+        window = SeasonWindow("1", 10, 30)
+        accumulator = StatsAccumulator()
+        accumulator.add(row("1", 15, matched_time=100, players={
+            "100": {"confirmed_at": 110, "confirmation_method": "ready"},
+            "200": {"confirmed_at": 130, "confirmation_method": "automatic"},
+        }), window)
+        accumulator.add(row("2", 16), window)
+        value = stats_embed(window, accumulator.finish(window)).fields[1].value
+        self.assertIn("`15.0s`", value)
+        self.assertIn("2 of 4 participants", value)
+        self.assertIn("`30.0s`", value)
+        self.assertIn("samples: 1", value)
+
+    def test_confirmation_wait_display_has_no_invented_empty_averages(self):
+        window = SeasonWindow("1", 10, 30)
+        accumulator = StatsAccumulator()
+        accumulator.add(row("1", 15), window)
+        value = stats_embed(window, accumulator.finish(window)).fields[1].value
+        self.assertEqual(value.count("`N/A`"), 2)
+        self.assertIn("0 of 2 participants", value)

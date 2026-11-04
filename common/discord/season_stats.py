@@ -49,6 +49,12 @@ def stats_embed(window: SeasonWindow, stats: SeasonStats) -> ipy.Embed:
         f"Busiest Day: {_period_text(stats.day)}\n"
         f"Players: `{stats.active_players:,}`"
     ), inline=False)
+    overall = "N/A" if stats.confirmation_average is None else f"{stats.confirmation_average:.1f}s"
+    non_instant = "N/A" if stats.non_instant_average is None else f"{stats.non_instant_average:.1f}s"
+    embed.add_field(name="**Confirmation Wait**", value=(
+        f"Overall: `{overall}` ({stats.confirmation_samples:,} of {stats.matches * 2:,} participants)\n"
+        f"Non-instant: `{non_instant}` (samples: {stats.non_instant_samples:,}; ready excluded)"
+    ), inline=False)
     districts = "\n".join(f"{DISTRICT_EMOJI} {name} `{count:,}`" for name, count in stats.districts)
     if stats.missing_districts:
         districts += f"\n\nDistrict details were not recorded for `{stats.missing_districts:,}` matches."

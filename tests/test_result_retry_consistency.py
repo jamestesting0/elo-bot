@@ -8,6 +8,7 @@ from pymongo.errors import OperationFailure
 from cogs import match_commands
 from cogs.base_store import storage
 from common.results.operations import ResultOperationConflict, begin_result_operation
+from common.matches.season_stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
 from database_models import Match
 from database_models.result_models import MatchResultOperation
 from tests import _result_retry_store as record_fixture
@@ -18,6 +19,46 @@ from tests._result_retry_store import ResultRetryStateMixin
 from tests._result_retry_store import RESULTS
 
 class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncioTestCase):
+    async def test_challenge_confirmation_times_reach_completed_season_statistics(self) -> None:
+        self.match["is_challenge"] = True
+        self.match["confirmation_tracking"] = True
+        self.match["participants"][0].update(confirmed_at=100.0, confirmation_method="ready")
+        self.match["participants"][1].update(confirmed_at=460.0, confirmation_method="manual")
+
+        await self.cog._finalize_match_results_locked("TOKEN", RESULTS)
+
+        recorded = self.state.records["11"]
+        self.assertTrue(recorded.is_challenge)
+        window = SeasonWindow("current", None, 32536799999)
+        accumulator = StatsAccumulator()
+        accumulator.add(RecordedStatsRow.model_validate(recorded.model_dump(by_alias=True)), window)
+        stats = accumulator.finish(window)
+        self.assertEqual((stats.confirmation_average, stats.confirmation_samples), (180, 2))
+        self.assertEqual((stats.non_instant_average, stats.non_instant_samples), (360, 1))
+
+    async def test_confirmation_times_survive_result_checkpoint_retry(self) -> None:
+        self.match["confirmation_tracking"] = True
+        self.match["participants"][0].update(confirmed_at=100.0, confirmation_method="ready")
+        self.match["participants"][1].update(confirmed_at=460.0, confirmation_method="manual")
+
+        def fail_checkpoint(updates):
+            if updates.get("$set", {}).get("result_operation.completed"):
+                self.before_match_update = lambda _updates: None
+                raise OperationFailure("injected completion checkpoint failure")
+
+        self.before_match_update = fail_checkpoint
+        with self.assertRaises(OperationFailure):
+            await self.cog._finalize_match_results_locked("TOKEN", RESULTS)
+        self.state.player_collection.update_one.reset_mock()
+        await self.cog._finalize_match_results_locked("TOKEN", RESULTS)
+
+        recorded = self.state.records["11"]
+        self.assertEqual(recorded.matched_time, 100.0)
+        self.assertEqual((recorded.players["111"].confirmed_at, recorded.players["111"].confirmation_method),
+                         (100.0, "ready"))
+        self.assertEqual((recorded.players["222"].confirmed_at, recorded.players["222"].confirmation_method),
+                         (460.0, "manual"))
+
     async def test_new_completion_invites_only_after_its_checkpoint_is_stored(self) -> None:
         async def invite(_bot, _user_ids, *, pending_only=False):
             self.assertFalse(pending_only)

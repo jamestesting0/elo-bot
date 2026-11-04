@@ -7,6 +7,7 @@ from .player_models import MatchPlayerStats
 class ResultRecordSnapshot(BaseModel):
     id: str
     time: int
+    matched_time: float | None = None
     is_challenge: bool = False
     players: dict[str, MatchPlayerStats]
     operation_key: str | None = None

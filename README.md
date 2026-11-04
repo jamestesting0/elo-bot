@@ -4,7 +4,7 @@ Elo Bot is a Discord bot for running competitive Clash of Clans Clan Capital mat
 
 The project combines asynchronous Discord workflows with MongoDB persistence and integrations with the Clash of Clans and Helper APIs. It also includes image-based base search and tools for managing raid weekends and tournament finals.
 
-**Over 7,200 matches played by 377 players across 15 seasons.**
+**Over 7,200 matches played by 377 players across 15 seasons.** *(Last updated: November 4, 2026.)*
 
 <p align="center">
   <img src=".github/images/hall-of-fame.png" alt="Clan Capital Elo System welcome message with the Hall of Fame" width="520">

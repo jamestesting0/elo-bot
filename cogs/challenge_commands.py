@@ -324,24 +324,14 @@ class ChallengeCommands(ipy.Extension):
         challenger = Participant(
             user_id=str(ctx.author.id),
             districts=[district1, district2, district3],
-            confirmed=True
+            confirmed=True,
+            confirmation_method="ready",
         )
         opponent_participant = Participant(
             user_id=str(opponent.id),
             confirmed=False
         )
 
-        match = Match(
-            token=token,
-            matched_time=datetime.now().timestamp(),
-            is_war=True,
-            is_challenge=True,
-            challenge_activity_override=has_override,
-            base_submission=base_submission,
-            wizard_valley_available=wizard_valley_available,
-            capital_peak_available=capital_peak_available,
-            participants=[challenger, opponent_participant],
-        )
         async with QUEUE_OPERATION_LOCK:
             occupied = await Match.find_one({
                 "format": "elo_final_seven", "participants.user_id": {"$in": [challenger.user_id, opponent_participant.user_id]},
@@ -351,6 +341,20 @@ class ChallengeCommands(ipy.Extension):
                 await ctx.send(f"{ERROR_EMOJI} An entrant has an unfinished Final match. Finish it before challenging.",
                                ephemeral=True)
                 return
+            matched_time = datetime.now().timestamp()
+            challenger.confirmed_at = matched_time
+            match = Match(
+                token=token,
+                matched_time=matched_time,
+                confirmation_tracking=True,
+                is_war=True,
+                is_challenge=True,
+                challenge_activity_override=has_override,
+                base_submission=base_submission,
+                wizard_valley_available=wizard_valley_available,
+                capital_peak_available=capital_peak_available,
+                participants=[challenger, opponent_participant],
+            )
             await match.insert()
 
         district_selects = [
@@ -488,6 +492,9 @@ class ChallengeCommands(ipy.Extension):
                         return
 
             participant.confirmed = True
+            if match.confirmation_tracking:
+                participant.confirmed_at = datetime.now().timestamp()
+                participant.confirmation_method = "manual"
             await match.save_changes()
 
             # update challenger last_challenged
@@ -576,7 +583,9 @@ class ChallengeCommands(ipy.Extension):
         # handle confirm / cancel
         if res.custom_id == "confirm":
             await res.defer(ephemeral=True)
-            if not await delete_unreserved_match(match, pre_thread=True):
+            async with CHALLENGE_ACCEPT_LOCK:
+                deleted = await delete_unreserved_match(match, pre_thread=True)
+            if not deleted:
                 await res.send(
                     f"{ERROR_EMOJI} The challenge changed while rejection was being confirmed. It was not rejected.",
                     ephemeral=True,
@@ -655,7 +664,9 @@ class ChallengeCommands(ipy.Extension):
 
         if res.custom_id == "confirm":
             await res.defer(ephemeral=True)
-            if not await delete_unreserved_match(match, pre_thread=True):
+            async with CHALLENGE_ACCEPT_LOCK:
+                deleted = await delete_unreserved_match(match, pre_thread=True)
+            if not deleted:
                 await res.send(
                     f"{ERROR_EMOJI} The challenge changed while cancellation was being confirmed. It was not canceled.",
                     ephemeral=True,
@@ -788,7 +799,9 @@ class ChallengeCommands(ipy.Extension):
             now = datetime.now().timestamp()
             if int(now - match.matched_time) < 86400:  # 24h
                 continue
-            if not await delete_unreserved_match(match, pre_thread=True):
+            async with CHALLENGE_ACCEPT_LOCK:
+                deleted = await delete_unreserved_match(match, pre_thread=True)
+            if not deleted:
                 continue
 
             # Notify challenger

@@ -41,7 +41,7 @@ def _parent_id(record: RecordedStatsRow) -> PydanticObjectId | None:
 async def load_season_stats(window: SeasonWindow) -> SeasonStats:
     query = {"time": {"$gt": window.start if window.start is not None else -1, "$lt": window.end}}
     projection = {
-        "_id": 1, "time": 1, "players": 1, "is_challenge": 1, "operation_key": 1,
+        "_id": 1, "time": 1, "matched_time": 1, "players": 1, "is_challenge": 1, "operation_key": 1,
         "manual_submission_key": 1, "manual_submission_completed": 1,
     }
     accumulator = StatsAccumulator()

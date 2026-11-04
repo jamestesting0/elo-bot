@@ -136,3 +136,44 @@ class TestSeasonStatsCalculations(unittest.TestCase):
         accumulator = StatsAccumulator()
         accumulator.add(row("1", self.start + 4000), window)
         self.assertEqual(accumulator.finish(window).daily_average, 1)
+
+    def test_confirmation_wait_counts_ready_manual_and_automatic_participants(self):
+        stats = self.calculate(
+            row("1", self.start + 1, matched_time=100, players={
+                "100": {"confirmed_at": 105, "confirmation_method": "ready"},
+                "200": {"confirmed_at": 120, "confirmation_method": "manual"},
+            }),
+            row("2", self.start + 2, matched_time=200, players={
+                "100": {"confirmed_at": 240, "confirmation_method": "automatic"},
+                "200": {},
+            }),
+            row("3", self.start + 3),
+        )
+        self.assertEqual((stats.confirmation_average, stats.confirmation_samples), (20, 3))
+        self.assertEqual((stats.non_instant_average, stats.non_instant_samples), (30, 2))
+
+    def test_confirmation_wait_excludes_incomplete_and_invalid_samples(self):
+        stats = self.calculate(
+            row("1", self.start + 1, players={
+                "100": {"confirmed_at": 120, "confirmation_method": "manual"},
+                "200": {"confirmed_at": 130, "confirmation_method": "ready"},
+            }),
+            row("2", self.start + 2, matched_time=100, players={
+                "100": {"confirmed_at": 99, "confirmation_method": "automatic"},
+                "200": {"confirmed_at": 110},
+            }),
+            row("3", self.start + 3, matched_time=100, players={
+                "100": {"confirmation_method": "ready"},
+                "200": {},
+            }),
+        )
+        self.assertEqual((stats.confirmation_average, stats.confirmation_samples), (None, 0))
+        self.assertEqual((stats.non_instant_average, stats.non_instant_samples), (None, 0))
+
+    def test_ready_only_yields_zero_overall_and_no_non_instant_average(self):
+        stats = self.calculate(row("1", self.start + 1, matched_time=100, players={
+            "100": {"confirmed_at": 100, "confirmation_method": "ready"},
+            "200": {},
+        }))
+        self.assertEqual((stats.confirmation_average, stats.confirmation_samples), (0, 1))
+        self.assertEqual((stats.non_instant_average, stats.non_instant_samples), (None, 0))

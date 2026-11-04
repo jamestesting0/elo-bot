@@ -979,10 +979,17 @@ async def initiate_match(
 
     primary_base_quality, secondary_base_quality = get_base_quality(player1, player2)
 
+    matched_time = datetime.now().timestamp()
+    for participant in (p1, p2):
+        if participant.confirmed:
+            participant.confirmed_at = matched_time
+            participant.confirmation_method = "ready"
+
     # create and insert a match document
     match = Match(
         token=token,
-        matched_time=datetime.now().timestamp(),
+        matched_time=matched_time,
+        confirmation_tracking=True,
         base_submission=player1.elo >= BASE_SUBMISSION_THRESHOLD and player2.elo >= BASE_SUBMISSION_THRESHOLD,
         primary_base_quality=primary_base_quality,
         secondary_base_quality=secondary_base_quality,
@@ -1063,7 +1070,7 @@ async def initiate_match(
 
         if participant.confirmed:
             embed.description = (
-                "The bot will automatically confirm for your opponent if they do not confirm or cancel within 16 hours."
+                "The bot will automatically confirm for your opponent if they do not confirm or cancel within 12 hours."
             )
             embed.fields = [
                 ipy.EmbedField(
@@ -1079,7 +1086,7 @@ async def initiate_match(
         else:
             components[3] = ipy.ActionRow(cancel_button, confirm_button)
             embed.description = (
-                "The bot will automatically confirm for you if you do not confirm or cancel within 16 hours."
+                "The bot will automatically confirm for you if you do not confirm or cancel within 12 hours."
             )
             embed.fields = [
                 ipy.EmbedField(
@@ -1201,9 +1208,17 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
         }
     )
 
+    if match and match.confirmation_tracking:
+        for participant in match.participants:
+            stats = {player1_id: p1_stats, player2_id: p2_stats}.get(participant.user_id)
+            if stats is not None:
+                stats.confirmed_at = participant.confirmed_at
+                stats.confirmation_method = participant.confirmation_method
+
     recorded_match = RecordedMatch(
         id=match_id,
         time=ts,
+        matched_time=match.matched_time if match and match.confirmation_tracking else None,
         is_challenge=is_challenge,
         players={
             player1_id: p1_stats,
@@ -1321,14 +1336,14 @@ async def cancel_match(bot: ipy.Client, token):
 
     try:
         await player1.send(f"{IMPORTANT_EMOJI} Your match against {player2.mention} has been canceled. This is "
-                           f"either due to both of you not confirming for more than 16 hours or the match failed to "
+                           f"either due to both of you not confirming for more than 12 hours or the match failed to "
                            f"initiate due to some unknown bug.")
     except ipy.errors.Forbidden:
         pass
 
     try:
         await player2.send(f"{IMPORTANT_EMOJI} Your match against {player1.mention} has been canceled. This is "
-                           f"either due to both of you not confirming for more than 16 hours or the match failed to "
+                           f"either due to both of you not confirming for more than 12 hours or the match failed to "
                            f"initiate due to some unknown bug.")
     except ipy.errors.Forbidden:
         pass
@@ -2350,6 +2365,9 @@ class MatchCommands(ipy.Extension):
 
         # confirm this participant and persist
         participant.confirmed = True
+        if match.confirmation_tracking:
+            participant.confirmed_at = datetime.now().timestamp()
+            participant.confirmation_method = "manual"
         await match.save_changes()
 
         if update_message:
@@ -6880,29 +6898,26 @@ class MatchCommands(ipy.Extension):
             p0, p1 = match.participants[0], match.participants[1]
 
             if not (p0.confirmed and p1.confirmed):
-                if match.thread or not p0.confirmed and not p1.confirmed:
-                    continue
+                async with QUEUE_OPERATION_LOCK:
+                    match = await Match.find_one(Match.token == match.token)
+                    if not match or match.thread or match.is_challenge or is_final_match(match):
+                        continue
+                    p0, p1 = match.participants[0], match.participants[1]
+                    if p0.confirmed == p1.confirmed:
+                        continue
+                    now = datetime.now().timestamp()
+                    if now - match.matched_time < 43200:
+                        continue
 
-                # enforce 16-hour window since matched_time (57600 seconds)
-                now = datetime.now().timestamp()
-                if int(now - match.matched_time) < 57600:
-                    continue
-
-                # find confirmed participant and the other one
-                if p0.confirmed:
-                    confirmed, other, other_idx = p0, p1, 1
-                else:
-                    confirmed, other, other_idx = p1, p0, 0
-
-                # confirm the other participant and fill missing districts
-                other.confirmed = True
-                for i in range(3):
-                    if not other.districts[i]:
-                        other.districts[i] = confirmed.districts[i]
-
-                # persist changes
-                match.participants[other_idx] = other
-                await match.save_changes()
+                    confirmed, other = (p0, p1) if p0.confirmed else (p1, p0)
+                    other.confirmed = True
+                    if match.confirmation_tracking:
+                        other.confirmed_at = now
+                        other.confirmation_method = "automatic"
+                    for i in range(3):
+                        if not other.districts[i]:
+                            other.districts[i] = confirmed.districts[i]
+                    await match.save_changes()
 
             try:
                 async with match_message_lock(match.thread or match.token):
@@ -6924,7 +6939,7 @@ class MatchCommands(ipy.Extension):
                 continue
 
             now = datetime.now().timestamp()
-            if int(now - match.matched_time) < 57600:
+            if now - match.matched_time < 43200:
                 continue
 
             await cancel_match(self.bot, match.token)
@@ -6941,8 +6956,8 @@ class MatchCommands(ipy.Extension):
             if bool(p0.confirmed) == bool(p1.confirmed):
                 continue
 
-            # remind after 12 hours (43200 seconds) since matched_time
-            if int(now - match.matched_time) < 43200:
+            # Keep the reminder at three quarters of the confirmation window.
+            if now - match.matched_time < 32400:
                 continue
 
             # find the unconfirmed participant and remind once

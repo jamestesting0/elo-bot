@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from beanie import Document, Link
 from pydantic import BaseModel, Field, conlist
@@ -50,6 +50,8 @@ class MatchPlayerStats(BaseModel):
     elo_change: int
     won: bool
     districts: Dict[str, MatchDistrictStats] = Field(default_factory=dict)
+    confirmed_at: float | None = None
+    confirmation_method: Literal["ready", "manual", "automatic"] | None = None
 
 
 class RecordedMatch(Document):
@@ -58,6 +60,7 @@ class RecordedMatch(Document):
     manual_submission_key: str | None = None
     manual_submission_completed: bool = False
     time: int
+    matched_time: float | None = None
     is_challenge: bool = Field(default=False)
     players: Dict[str, MatchPlayerStats]
 

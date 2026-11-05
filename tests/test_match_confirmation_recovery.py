@@ -240,6 +240,43 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(query["$or"][1]["times"], [None, None])
         self.assertNotIn("is_challenge", query["$or"][1])
 
+    async def test_missing_cached_thread_preserves_reservation_and_recovers_next_match(self) -> None:
+        first = self.persisted.model_copy(deep=True)
+        first.token, first.thread = "FIRST", "123"
+        first.participants[0].base_store = BaseStore(clan_tag="#CLAN", slot="Slot 1", reservation_id="keep")
+        second = self.persisted.model_copy(deep=True)
+        second.token, second.thread = "SECOND", "456"
+        second._save_state()
+        self.persisted = second
+        self.model.find.return_value.to_list = AsyncMock(return_value=[first, second])
+        self.model.find_one.side_effect = [first.model_copy(deep=True), second.model_copy(deep=True)]
+        self.bot.fetch_channel.side_effect = [None, self.thread]
+        cog = match_commands.MatchCommands(self.bot)
+
+        with self.assertLogs(level="ERROR"):
+            await cog.auto_match_confirm.callback.func(cog)
+
+        self.assertEqual(first.participants[0].base_store.reservation_id, "keep")
+        self.assertEqual(first.thread, "123")
+        self.assertEqual(self.persisted.thread_message_id, 456)
+        self.assertEqual(len(self.messages), 1)
+        self.assertTrue(self.messages[0].pinned)
+        self.channel.create_private_thread.assert_not_awaited()
+
+    async def test_failed_confirmation_save_does_not_stop_next_match(self) -> None:
+        first = self.persisted.model_copy(deep=True)
+        first.token, first.thread, first.matched_time = "FIRST", None, 1
+        first.participants[1].confirmed = False
+        second = self.persisted.model_copy(deep=True)
+        second.token, second.thread = "SECOND", "456"
+        self.model.find.return_value.to_list = AsyncMock(return_value=[first, second])
+        cog = match_commands.MatchCommands(self.bot)
+        with patch.object(Match, "save_changes", new_callable=AsyncMock, side_effect=PyMongoError("write failed")):
+            with patch.object(match_commands, "confirm_match", new_callable=AsyncMock) as confirm:
+                with self.assertLogs(level="ERROR"):
+                    await cog.auto_match_confirm.callback.func(cog)
+        self.assertEqual([call.args[1] for call in confirm.await_args_list], ["SECOND"])
+
     async def test_failed_message_id_write_is_recovered_without_resending(self) -> None:
         self.collection.update_one.side_effect = PyMongoError("write failed")
         with self.assertRaises(PyMongoError):

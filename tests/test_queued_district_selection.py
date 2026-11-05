@@ -901,6 +901,18 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.matches[match.token].participants[0].queue_districts_locked)
         self.assertIn("thread publication is incomplete and will be retried", ctx.send.await_args.args[0])
 
+    async def test_missing_channel_reports_incomplete_publication_after_confirmation(self):
+        selection = self.seed(districts=DISTRICTS)
+        self.seed("222", districts=DISTRICTS, confirmed=True)
+        match = await self.pair()
+        self.confirm_thread.side_effect = commands.MatchChannelUnavailable("unavailable")
+        ctx = self.action(selection)
+        with self.assertLogs(level="ERROR"):
+            await self.invoke("queued_district_action", ctx)
+        self.assertTrue(self.matches[match.token].participants[0].confirmed)
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+        self.assertIn("thread publication is incomplete and will be retried", ctx.send.await_args.args[0])
+
     async def test_lingering_queue_after_match_insert_routes_controls_to_match(self):
         selection = self.seed(districts=DISTRICTS)
         self.seed("222")

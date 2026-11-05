@@ -1946,11 +1946,13 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
 async def choose_tip():
     tips: list = await read_json("tips.json", "assets/")
     facts: list = await read_json("facts.json", "assets/")
-    index = await ServerState.advance_tip_index(2 * math.lcm(len(tips), len(facts)))
+    count = len(tips) + len(facts)
+    index = await ServerState.advance_tip_index(count)
+    facts_before = index * len(facts) // count
 
-    if index % 2:
-        return f"💡 **ELO FACT:** \"{facts[(index // 2) % len(facts)]}\""
-    return f"💡 **TIP:** \"{tips[(index // 2) % len(tips)]}\""
+    if (index + 1) * len(facts) // count > facts_before:
+        return f"💡 **ELO FACT:** \"{facts[facts_before]}\""
+    return f"💡 **TIP:** \"{tips[index - facts_before]}\""
 
 
 async def _mark_result_publication_incomplete(message: ipy.Message) -> None:

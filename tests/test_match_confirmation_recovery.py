@@ -270,12 +270,101 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         second = self.persisted.model_copy(deep=True)
         second.token, second.thread = "SECOND", "456"
         self.model.find.return_value.to_list = AsyncMock(return_value=[first, second])
+        self.model.find_one.side_effect = None
+        self.model.find_one.return_value = first.model_copy(deep=True)
         cog = match_commands.MatchCommands(self.bot)
         with patch.object(Match, "save_changes", new_callable=AsyncMock, side_effect=PyMongoError("write failed")):
             with patch.object(match_commands, "confirm_match", new_callable=AsyncMock) as confirm:
                 with self.assertLogs(level="ERROR"):
                     await cog.auto_match_confirm.callback.func(cog)
         self.assertEqual([call.args[1] for call in confirm.await_args_list], ["SECOND"])
+
+    async def test_manual_confirmation_persists_first_timestamp(self) -> None:
+        self.persisted.confirmation_tracking = True
+        self.persisted.participants[0].confirmed = False
+        self.persisted.participants[1].confirmed = False
+        self.persisted._save_state()
+        cog = match_commands.MatchCommands(self.bot)
+        ctx = SimpleNamespace(send=AsyncMock())
+        match = self.persisted.model_copy(deep=True)
+        with patch.object(match_commands, "datetime") as clock:
+            clock.now.return_value.timestamp.return_value = 1500.0
+            await cog._confirm_match_participant(ctx, match, match.participants[0], match.participants[1], "TOKEN")
+            clock.now.return_value.timestamp.return_value = 1600.0
+            await cog._confirm_match_participant(ctx, match, match.participants[0], match.participants[1], "TOKEN")
+
+        participant = self.persisted.participants[0]
+        self.assertEqual((participant.confirmed, participant.confirmed_at, participant.confirmation_method),
+                         (True, 1500.0, "manual"))
+
+    async def test_preexisting_match_does_not_gain_confirmation_tracking(self) -> None:
+        self.persisted.participants[0].confirmed = False
+        self.persisted.participants[1].confirmed = False
+        self.persisted._save_state()
+        match = self.persisted.model_copy(deep=True)
+        cog = match_commands.MatchCommands(self.bot)
+        await cog._confirm_match_participant(
+            SimpleNamespace(send=AsyncMock()), match, match.participants[0], match.participants[1], "TOKEN",
+        )
+        participant = self.persisted.participants[0]
+        self.assertTrue(participant.confirmed)
+        self.assertEqual((participant.confirmed_at, participant.confirmation_method), (None, None))
+
+    async def test_auto_confirmation_waits_twelve_hours_and_records_elapsed_time(self) -> None:
+        self.persisted.matched_time = 1000.0
+        self.persisted.confirmation_tracking = True
+        self.persisted.participants[1].confirmed = False
+        self.persisted.participants[1].districts = [None, None, None]
+        self.persisted._save_state()
+        self.model.find.return_value.to_list = AsyncMock(
+            side_effect=lambda: [self.persisted.model_copy(deep=True)],
+        )
+        cog = match_commands.MatchCommands(self.bot)
+        with patch.object(match_commands, "datetime") as clock, \
+                patch.object(match_commands, "confirm_match", new_callable=AsyncMock):
+            clock.now.return_value.timestamp.return_value = 44199.0
+            await cog.auto_match_confirm.callback.func(cog)
+            self.assertFalse(self.persisted.participants[1].confirmed)
+            clock.now.return_value.timestamp.return_value = 44200.0
+            await cog.auto_match_confirm.callback.func(cog)
+
+        participant = self.persisted.participants[1]
+        self.assertEqual((participant.confirmed, participant.confirmed_at, participant.confirmation_method),
+                         (True, 44200.0, "automatic"))
+        self.assertEqual(participant.districts, self.persisted.participants[0].districts)
+
+    async def test_auto_confirmation_does_not_replace_a_newer_manual_confirmation(self) -> None:
+        self.persisted.matched_time = 1000.0
+        self.persisted.participants[1].confirmed = False
+        self.persisted._save_state()
+        stale = self.persisted.model_copy(deep=True)
+        self.model.find.return_value.to_list = AsyncMock(return_value=[stale])
+        self.persisted.participants[1].confirmed = True
+        self.persisted.participants[1].confirmed_at = 44000.0
+        self.persisted.participants[1].confirmation_method = "manual"
+        self.persisted._save_state()
+        cog = match_commands.MatchCommands(self.bot)
+        with patch.object(match_commands, "datetime") as clock:
+            clock.now.return_value.timestamp.return_value = 44200.0
+            await cog.auto_match_confirm.callback.func(cog)
+
+        participant = self.persisted.participants[1]
+        self.assertEqual((participant.confirmed_at, participant.confirmation_method), (44000.0, "manual"))
+
+    async def test_automatic_cancellation_waits_twelve_hours(self) -> None:
+        self.persisted.matched_time = 1000.0
+        for participant in self.persisted.participants:
+            participant.confirmed = False
+        self.model.find.return_value.to_list = AsyncMock(return_value=[self.persisted])
+        cog = match_commands.MatchCommands(self.bot)
+        with patch.object(match_commands, "datetime") as clock, \
+                patch.object(match_commands, "cancel_match", new_callable=AsyncMock) as cancel:
+            clock.now.return_value.timestamp.return_value = 44199.0
+            await cog.auto_match_cancel.callback.func(cog)
+            cancel.assert_not_awaited()
+            clock.now.return_value.timestamp.return_value = 44200.0
+            await cog.auto_match_cancel.callback.func(cog)
+            cancel.assert_awaited_once_with(self.bot, "TOKEN")
 
     async def test_failed_message_id_write_is_recovered_without_resending(self) -> None:
         self.collection.update_one.side_effect = PyMongoError("write failed")

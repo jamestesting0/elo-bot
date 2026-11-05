@@ -1,4 +1,5 @@
 import unittest
+import asyncio
 from asyncio import Event, gather, wait_for
 from datetime import datetime, timezone
 from typing import Final
@@ -11,7 +12,9 @@ from pymongo.errors import OperationFailure
 from cogs.challenge_commands import ChallengeCommands, available_challenges
 from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
 from common.matches.challenges import weekly_challenge_balance
+from common.matches.season_stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
 from database_models import Match, MatchPlayerStats, OverrideCode, Participant, Player, RecordedMatch, ServerState
+from tests._result_retry_store import RESULTS, ResultRetryState
 
 
 NOW: Final = datetime(2026, 10, 10, 12, tzinfo=timezone.utc)
@@ -21,6 +24,7 @@ DISTRICTS: Final = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]
 
 class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
+        self.enterContext(patch("cogs.challenge_commands.CHALLENGE_ACCEPT_LOCK", new=asyncio.Lock()))
         for model in (Match, Player):
             self.enterContext(patch.object(model, "_document_settings", DocumentSettings(name=model.__name__)))
         self.enterContext(patch.object(Player, "user_id", ExpressionField("user_id"), create=True))
@@ -114,6 +118,80 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         # Then: the committed invitation succeeds without consuming either acceptance allowance.
         self.assert_sent()
         self.assertEqual((self.sender.last_challenged, self.recipient.last_challenged), (["", ""], ["", ""]))
+
+    async def test_new_challenge_tracks_challenger_at_matching_time(self) -> None:
+        await self.send()
+        match = self.persisted[0]
+        self.assertTrue(match.confirmation_tracking)
+        self.assertEqual(match.matched_time, NOW.timestamp())
+        self.assertEqual(match.participants[0].confirmed_at, match.matched_time)
+        self.assertEqual(match.participants[0].confirmation_method, "ready")
+        self.assertIsNone(match.participants[1].confirmed_at)
+        self.assertIsNone(match.participants[1].confirmation_method)
+
+    async def test_created_challenge_retains_timing_through_acceptance(self) -> None:
+        await self.send()
+        match = self.persisted[0]
+        matched_time = match.matched_time
+        match.participants[1].districts = DISTRICTS
+        self.ctx.author = self.opponent
+        self.ctx.channel = None
+        self.ctx.custom_id = f"challenge_accept|{match.token}"
+        self.ctx.message.edit = AsyncMock()
+        self.matches.return_value = match
+        self.players.side_effect = lambda query, **_kwargs: (
+            self.sender if query == {"user_id": "111"} else self.recipient
+        )
+        accepted_at = NOW.timestamp() + 120
+        self.enterContext(patch("cogs.challenge_commands.datetime")).now.side_effect = [
+            NOW, datetime.fromtimestamp(accepted_at, tz=timezone.utc),
+        ]
+        saved = []
+
+        async def save_match(value):
+            saved.append(value.model_copy(deep=True))
+            return value
+
+        with (patch.object(Match, "save_changes", new=save_match),
+              patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
+              patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42"))):
+            await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
+
+        self.assertEqual(len(saved), 1)
+        committed = saved[0]
+        self.assertTrue(committed.confirmation_tracking)
+        self.assertEqual(committed.matched_time, matched_time)
+        self.assertEqual((committed.participants[0].confirmed_at, committed.participants[0].confirmation_method),
+                         (matched_time, "ready"))
+        self.assertEqual((committed.participants[1].confirmed_at, committed.participants[1].confirmation_method),
+                         (accepted_at, "manual"))
+
+        fixture = ResultRetryState(self)
+        fixture.setUp()
+        result_match = fixture.match.copy()
+        captured = committed.model_dump(by_alias=True)
+        for field in ("_id", "thread", "final_districts", "hosts", "times", "msg"):
+            captured[field] = result_match[field]
+        for participant, result_participant in zip(captured["participants"], result_match["participants"]):
+            participant["result"] = result_participant["result"]
+            participant["bases"] = result_participant["bases"]
+        fixture.match.clear()
+        fixture.match.update(captured)
+
+        self.assertTrue(await fixture.cog._finalize_match_results_locked(match.token, RESULTS))
+        recorded = fixture.state.records["11"]
+        self.assertTrue(recorded.is_challenge)
+        self.assertEqual(recorded.matched_time, matched_time)
+        self.assertEqual((recorded.players["111"].confirmed_at, recorded.players["111"].confirmation_method),
+                         (matched_time, "ready"))
+        self.assertEqual((recorded.players["222"].confirmed_at, recorded.players["222"].confirmation_method),
+                         (accepted_at, "manual"))
+        window = SeasonWindow("current", None, 32536799999)
+        accumulator = StatsAccumulator()
+        accumulator.add(RecordedStatsRow.model_validate(recorded.model_dump(by_alias=True)), window)
+        stats = accumulator.finish(window)
+        self.assertEqual((stats.confirmation_average, stats.confirmation_samples), (60, 2))
+        self.assertEqual((stats.non_instant_average, stats.non_instant_samples), (120, 1))
 
     async def test_cutoff_challenges_do_not_create_debt_against_new_normals(self) -> None:
         # Given: mm | cc mm cc m, stored out of order, for both participants.
@@ -418,6 +496,147 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         save.assert_not_awaited()
         save_player.assert_not_awaited()
         confirm.assert_not_awaited()
+
+    async def test_acceptance_tracks_only_new_challenges_and_preserves_first_time(self) -> None:
+        for tracking in (False, True):
+            with self.subTest(tracking=tracking):
+                match = self.pending_acceptance()
+                match.confirmation_tracking = tracking
+                self.sender.last_challenged = ["", ""]
+                stored = []
+
+                async def save_match(value):
+                    stored.append(value.model_copy(deep=True))
+                    return value
+
+                with (patch.object(Match, "save_changes", new=save_match),
+                      patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
+                      patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+                    await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
+                    await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
+                self.assertEqual(len(stored), 1)
+                self.assertTrue(stored[0].participants[1].confirmed)
+                self.assertEqual(stored[0].participants[1].confirmed_at, NOW.timestamp() if tracking else None)
+                self.assertEqual(stored[0].participants[1].confirmation_method, "manual" if tracking else None)
+                self.assertEqual(match.participants[1].confirmed_at, NOW.timestamp() if tracking else None)
+                confirm.assert_awaited_once()
+
+    async def test_concurrent_duplicate_acceptance_keeps_first_timestamp(self) -> None:
+        match = self.pending_acceptance(override=True)
+        match.confirmation_tracking = True
+        second_read = Event()
+        saved = []
+        reads = 0
+
+        async def find_match(_query):
+            nonlocal reads
+            reads += 1
+            if reads == 3:
+                second_read.set()
+            return match
+
+        async def save_match(value):
+            await wait_for(second_read.wait(), timeout=2)
+            saved.append(value.model_copy(deep=True))
+            return value
+
+        second_ctx = MagicMock(author=self.opponent, channel=None, custom_id="challenge_accept|TOKEN",
+                               defer=AsyncMock(), send=AsyncMock(), message=MagicMock(edit=AsyncMock()))
+        with (patch.object(Match, "find_one", new=AsyncMock(side_effect=find_match)),
+              patch.object(Match, "save_changes", new=save_match),
+              patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
+              patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+            await wait_for(gather(
+                self.cog.challenge_accept_button.callback.func(self.cog, self.ctx),
+                self.cog.challenge_accept_button.callback.func(self.cog, second_ctx),
+            ), timeout=3)
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0].participants[1].confirmed_at, NOW.timestamp())
+        self.assertEqual(saved[0].participants[1].confirmation_method, "manual")
+        confirm.assert_awaited_once()
+
+    async def test_acceptance_serializes_with_cancellation_and_rejection(self) -> None:
+        for action in ("cancel", "reject"):
+            for accept_first in (True, False):
+                with self.subTest(action=action, accept_first=accept_first):
+                    match = self.pending_acceptance(override=True)
+                    match.confirmation_tracking = True
+                    self.sender.last_challenged = ["", ""]
+                    snapshot = match.model_copy(deep=True)
+                    stored = [match]
+                    entered = Event()
+                    release = Event()
+                    other_ready = Event()
+                    terminal = MagicMock(author=self.opponent, channel=None,
+                                         custom_id=f"challenge_{action}|TOKEN",
+                                         defer=AsyncMock(), send=AsyncMock(return_value=MagicMock(id=12)),
+                                         message=MagicMock(edit=AsyncMock(), components=[]),
+                                         edit_origin=AsyncMock())
+                    response = MagicMock(custom_id="confirm", defer=AsyncMock(), send=AsyncMock())
+                    self.cog.bot.wait_for_component = AsyncMock(return_value=MagicMock(ctx=response))
+                    self.cog.bot.fetch_user = AsyncMock(return_value=MagicMock(id=111, send=AsyncMock()))
+
+                    async def find_match(_query):
+                        return stored[0]
+
+                    async def save_match(value):
+                        if accept_first:
+                            entered.set()
+                            await wait_for(release.wait(), timeout=2)
+                        return value
+
+                    async def delete_match(_match, *, pre_thread):
+                        if not accept_first:
+                            entered.set()
+                            await wait_for(release.wait(), timeout=2)
+                        if stored[0] is None or stored[0].participants[1].confirmed:
+                            return False
+                        stored[0] = None
+                        return True
+
+                    async def wait_component(**_kwargs):
+                        other_ready.set()
+                        return MagicMock(ctx=response)
+
+                    if accept_first:
+                        self.cog.bot.wait_for_component.side_effect = wait_component
+                    else:
+                        async def signal_find(query):
+                            other_ready.set()
+                            return await find_match(query)
+                    with (patch.object(Match, "find_one", new=AsyncMock(side_effect=find_match)),
+                          patch.object(Match, "save_changes", new=save_match),
+                          patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
+                          patch("cogs.challenge_commands.delete_unreserved_match", new=delete_match),
+                          patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+                        accept = lambda: self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
+                        terminal_callback = getattr(self.cog, f"challenge_{action}_button").callback.func
+                        if accept_first:
+                            first = asyncio.create_task(accept())
+                            await wait_for(entered.wait(), timeout=2)
+                            # Terminal callback holds a stale pre-acceptance snapshot.
+                            with patch.object(Match, "find_one", new=AsyncMock(return_value=snapshot)):
+                                second = asyncio.create_task(terminal_callback(self.cog, terminal))
+                                await wait_for(other_ready.wait(), timeout=2)
+                                release.set()
+                                await wait_for(gather(first, second), timeout=2)
+                        else:
+                            first = asyncio.create_task(terminal_callback(self.cog, terminal))
+                            await wait_for(entered.wait(), timeout=2)
+                            with patch.object(Match, "find_one", new=AsyncMock(side_effect=signal_find)):
+                                second = asyncio.create_task(accept())
+                                await wait_for(other_ready.wait(), timeout=2)
+                                release.set()
+                                await wait_for(gather(first, second), timeout=2)
+                    if accept_first:
+                        self.assertIsNotNone(stored[0])
+                        self.assertEqual(stored[0].participants[1].confirmed_at, NOW.timestamp())
+                        confirm.assert_awaited_once()
+                        response.send.assert_awaited_once()
+                    else:
+                        self.assertIsNone(stored[0])
+                        confirm.assert_not_awaited()
+                        self.assertFalse(match.participants[1].confirmed)
 
     async def test_failed_challenge_persistence_does_not_publish_success(self) -> None:
         # Given: both players qualify but inserting the invitation fails.

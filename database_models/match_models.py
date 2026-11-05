@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field, JsonValue, conlist, field_validator, model_validator
@@ -42,6 +42,8 @@ class Participant(BaseModel):
         default_factory=lambda: [None, None, None]
     )
     confirmed: bool = False
+    confirmed_at: float | None = None
+    confirmation_method: Literal["ready", "manual", "automatic"] | None = None
     queue_attempt_id: str | None = None
     queue_districts_locked: bool = False
     submit_bases: Optional[bool] = False
@@ -85,6 +87,7 @@ class Match(Document):
     result_operation: MatchResultOperation | None = None
     recorded_match_id: str | None = None
     matched_time: float
+    confirmation_tracking: bool = False
     is_war: bool = True
     is_challenge: bool = False
     challenge_activity_override: bool = False

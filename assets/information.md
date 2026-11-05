@@ -1,14 +1,14 @@
 **Elo** is a point-based ranking system, which provides a fun and competitive alternative to raids. Make sure to check out the **giveaways** in <#1214445497109057556> every season!
 
 **Hall of Fame**
-<:coctrophy:890210394524770306> S1 Elo King: <@863762436654104597>
-<:coctrophy:890210394524770306> S2 Elo King: <@1131862892841533460>
-<:legendtrophy:837969340627550259> S3 & S6 & S10 Elo King: <@284509170412027905>
-<:coctrophy:890210394524770306> S4 Elo King: <@1269103501439668287>
-<:coctrophy:890210394524770306> S5 Elo King: <@996083715862184048>
-<:coctrophy:890210394524770306> S8 Elo King: <@216943488359596032>
-<:legendtrophy:837969340627550259> S9, 13 Elo King: <@418247253807857664>
-<:coctrophy:890210394524770306> S11 Elo King: <@1377966923501011005>
-<:coctrophy:890210394524770306> S12 Elo King: <@1217801028989354036>
-<:coctrophy:890210394524770306> S14 Elo King: <@920112329344036924>
-<:elitebb:1333357024725045279> Elite Base Builders: <@1279092301825704038>, <@418247253807857664>, <@753721152668434515>
+<:coctrophy:890210394524770306> S1 Elo King: **[Dhan](<https://discordapp.com/users/863762436654104597>)**
+<:coctrophy:890210394524770306> S2 Elo King: **[Anshu](<https://discordapp.com/users/1131862892841533460>)**
+<:legendtrophy:837969340627550259> S3 & S6 & S10 Elo King: **[Star](<https://discordapp.com/users/284509170412027905>)**
+<:coctrophy:890210394524770306> S4 Elo King: **[Centaurus](<https://discordapp.com/users/1269103501439668287>)**
+<:coctrophy:890210394524770306> S5 Elo King: **[Rascal](<https://discordapp.com/users/996083715862184048>)**
+<:coctrophy:890210394524770306> S8 Elo King: **[Fa2](<https://discordapp.com/users/216943488359596032>)**
+<:legendtrophy:837969340627550259> S9, 13 Elo King: **[???](<https://discordapp.com/users/418247253807857664>)**
+<:coctrophy:890210394524770306> S11 Elo King: **[noa](<https://discordapp.com/users/1377966923501011005>)**
+<:coctrophy:890210394524770306> S12 Elo King: **[Pl](<https://discordapp.com/users/1217801028989354036>)**
+<:coctrophy:890210394524770306> S14 Elo King: **[Sen](<https://discordapp.com/users/920112329344036924>)**
+<:elitebb:1333357024725045279> Elite Base Builders: **[JPK](<https://discordapp.com/users/1279092301825704038>)**, **[???](<https://discordapp.com/users/418247253807857664>)**, **[Infinity](<https://discordapp.com/users/753721152668434515>)**

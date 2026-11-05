@@ -64,6 +64,8 @@ Graph/LSP indexing was unavailable during generation; references below come from
 - `main.py` and `beta.py` are byte-identical. Apply bootstrap changes to both and verify they remain synchronized.
 - Discord handlers and persistence are async-first. Beanie calls and interaction responses must be awaited.
 - Wrap embed titles and field names in bold Markdown (`**...**`), following the existing bot styling.
+- Omit optional statistics with no recorded samples and avoid repeated empty-state text; preserve meaningful zeroes,
+  coverage context, and failure or recovery information.
 - Match existing pagination: primary `◀️️` / `▶️` buttons, disabled at page boundaries, and the shared secondary page-number button for views with page jumps. Use Back / Next for form steps.
 - Keep Final correction/refund notes in audit storage and private staff confirmation. Player match pages show current official results without staff notes or duplicate correction entries.
 - Pylint permits the existing large extension classes and uses a 120-character line limit.

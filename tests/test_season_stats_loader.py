@@ -62,6 +62,19 @@ class TestSeasonStatsLoader(unittest.IsolatedAsyncioTestCase):
         self.matches.find.assert_not_called()
         self.assertTrue(cursor.closed)
 
+    async def test_confirmation_timestamps_are_loaded_with_match_history(self):
+        stored = document("1", matched_time=100, players={
+            "100": {"confirmed_at": 110, "confirmation_method": "manual"},
+            "200": {},
+        })
+
+        def projected_find(_query, projection):
+            return Cursor([{key: value for key, value in stored.items() if projection.get(key)}])
+
+        self.records.find.side_effect = projected_find
+        stats = await load_season_stats(self.window)
+        self.assertEqual((stats.confirmation_average, stats.confirmation_samples), (10, 1))
+
     async def test_manual_completion_marker_excludes_pending_record(self):
         # Given: one pending and one finished manual submission.
         self.records.find.return_value = Cursor([

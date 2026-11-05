@@ -18,9 +18,7 @@ from common.matches.season_stats import (
 )
 
 
-def _period_text(peak: ActivityPeak | None) -> str:
-    if peak is None:
-        return "No matches recorded."
+def _period_text(peak: ActivityPeak) -> str:
     start = ipy.Timestamp.fromdatetime(datetime.combine(peak.start, time.min, tzinfo=UTC))
     text = f"`{peak.count:,}` {start.format(style=ipy.TimestampStyles.LongDate)}"
     if peak.ties > 1:
@@ -41,14 +39,24 @@ def stats_embed(window: SeasonWindow, stats: SeasonStats) -> ipy.Embed:
         footer=ipy.EmbedFooter(text=FOOTER_TEXT,
         icon_url=FOOTER_IMAGE)
     )
-    embed.add_field(name="**Activity**", value=(
+    activity = (
         f"Total Matches: `{stats.matches:,}`\n"
         f"Challenges: `{stats.challenges:,}`\n"
         f"Matchmaking: `{stats.matches - stats.challenges:,}`\n"
-        f"Busiest Week: {_period_text(stats.week)}\n"
-        f"Busiest Day: {_period_text(stats.day)}\n"
-        f"Players: `{stats.active_players:,}`"
-    ), inline=False)
+    )
+    if stats.week:
+        activity += f"Busiest Week: {_period_text(stats.week)}\n"
+    if stats.day:
+        activity += f"Busiest Day: {_period_text(stats.day)}\n"
+    activity += f"Players: `{stats.active_players:,}`"
+    embed.add_field(name="**Activity**", value=activity, inline=False)
+    if stats.confirmation_samples:
+        overall = "N/A" if stats.confirmation_average is None else f"{stats.confirmation_average:.1f}s"
+        wait = f"Overall: `{overall}` ({stats.confirmation_samples:,} of {stats.matches * 2:,} participants)"
+        if stats.non_instant_samples:
+            non_instant = f"{stats.non_instant_average:.1f}s"
+            wait += f"\nNon-instant: `{non_instant}` (samples: {stats.non_instant_samples:,}; ready excluded)"
+        embed.add_field(name="**Confirmation Wait**", value=wait, inline=False)
     districts = "\n".join(f"{DISTRICT_EMOJI} {name} `{count:,}`" for name, count in stats.districts)
     if stats.missing_districts:
         districts += f"\n\nDistrict details were not recorded for `{stats.missing_districts:,}` matches."

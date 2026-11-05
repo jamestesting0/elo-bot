@@ -3,6 +3,7 @@ import asyncio  # noqa: ANYIO_OK - interactions.py runtime and the requested reg
 import anyio
 import copy
 import logging
+import math
 import random
 import secrets
 import sys
@@ -1944,9 +1945,12 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
 
 async def choose_tip():
     tips: list = await read_json("tips.json", "assets/")
-    chosen_tip_index = await ServerState.advance_tip_index(len(tips))
+    facts: list = await read_json("facts.json", "assets/")
+    index = await ServerState.advance_tip_index(2 * math.lcm(len(tips), len(facts)))
 
-    return f"💡 **TIP:** \"{tips[chosen_tip_index]}\""
+    if index % 2:
+        return f"💡 **ELO FACT:** \"{facts[(index // 2) % len(facts)]}\""
+    return f"💡 **TIP:** \"{tips[(index // 2) % len(tips)]}\""
 
 
 async def _mark_result_publication_incomplete(message: ipy.Message) -> None:

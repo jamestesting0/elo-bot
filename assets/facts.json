@@ -3,6 +3,5 @@
     "A normal match win earns 10 to 45 Elo, and a loss costs 5 to 40 Elo.",
     "A challenge match win earns 0 to 35 Elo, and a loss costs 0 to 30 Elo.",
     "Your Elo change depends on both players' stars and destruction.",
-    "Your opponent's Elo is also factored into your Elo change.",
     "If an Elo King qualifier opts out, the next highest-ranked player may be invited."
 ]

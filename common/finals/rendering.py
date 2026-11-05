@@ -21,7 +21,7 @@ FINAL_CENTERS = ((974, 612), (974, 784))
 CHAMPION_CENTER = (1258, 664)
 
 
-def bracket_labels(final: EloFinal) -> list[str]:
+def bracket_labels(final: EloFinal, picks: dict[str, str] | None = None) -> list[str]:
     if not final.nodes:
         raise FinalError("Create the bracket first.")
 
@@ -34,11 +34,13 @@ def bracket_labels(final: EloFinal) -> list[str]:
         labels.extend(name(user, "BYE" if node.bye else "TBD") for user in node.contestants)
     for node_id in NODE_IDS[:4]:
         node = final.nodes[node_id]
-        labels.append(name(node.winner, "Awaiting decision" if node.state == "TIED" else "TBD"))
+        winner = node.winner if picks is None else picks.get(node_id)
+        labels.append(name(winner, "Awaiting decision" if picks is None and node.state == "TIED" else "TBD"))
     for node_id in NODE_IDS[4:6]:
         node = final.nodes[node_id]
-        labels.append(name(node.winner, "Needs manager" if node.state == "NEEDS_MANAGER" else "TBD"))
-    labels.append(name(final.champion))
+        winner = node.winner if picks is None else picks.get(node_id)
+        labels.append(name(winner, "Needs manager" if picks is None and node.state == "NEEDS_MANAGER" else "TBD"))
+    labels.append(name(final.champion if picks is None else picks.get("F1")))
     return labels
 
 
@@ -79,7 +81,7 @@ def fitted_label(text: str, width: int = 168) -> tuple[str, ImageFont.FreeTypeFo
     return text + "…", font
 
 
-def render_bracket(final: EloFinal) -> bytes:
+def render_bracket(final: EloFinal, picks: dict[str, str] | None = None) -> bytes:
     try:
         with Image.open(TEMPLATE) as source:
             image = source.convert("RGB")
@@ -89,7 +91,7 @@ def render_bracket(final: EloFinal) -> bytes:
         raise FinalError("The bracket template dimensions changed. The text bracket is still available.")
     draw = ImageDraw.Draw(image)
     centers = (*ENTRANT_CENTERS, *SEMIFINAL_CENTERS, *FINAL_CENTERS, CHAMPION_CENTER)
-    for label, center in zip(bracket_labels(final), centers, strict=True):
+    for label, center in zip(bracket_labels(final, picks), centers, strict=True):
         text, font = fitted_label(label, width=188 if center == CHAMPION_CENTER else 168)
         left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
         position = (center[0] - (left + right) / 2, center[1] - (top + bottom) / 2)

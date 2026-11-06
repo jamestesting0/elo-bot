@@ -10,7 +10,7 @@ from cogs.base_store.models import BaseStoreRuntime, SelfBaseStoreRequest
 from cogs.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 from cogs.base_store.raid_policy import raid_storage_skip_reason
 from cogs.base_store.self_service import store_self_bases
-from common.constants import ERROR_EMOJI, HOST_CLAN_CHOICES, RAID_AUTOSTORE_LOGS_CHANNEL
+from common.constants import COLOR, ERROR_EMOJI, HOST_CLAN_CHOICES, RAID_AUTOSTORE_LOGS_CHANNEL
 from database_models import Match
 
 
@@ -98,6 +98,6 @@ async def _send_run_log(bot: ipy.Client, lines: list[str]) -> None:
     try:
         channel = await bot.fetch_channel(RAID_AUTOSTORE_LOGS_CHANNEL)
         for chunk in chunks:
-            await channel.send(embed=ipy.Embed(title="**Raid Weekend Auto Store**", description=chunk))
+            await channel.send(embed=ipy.Embed(title="**Raid Weekend Auto Store**", description=chunk, color=COLOR))
     except ipy.errors.HTTPException:
         logging.exception("Unable to send raid auto-store log")

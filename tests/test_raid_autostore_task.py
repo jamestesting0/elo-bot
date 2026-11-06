@@ -7,7 +7,7 @@ from pymongo.errors import PyMongoError
 
 from cogs.base_store import raid_task
 from cogs.match_commands import MatchCommands
-from common.constants import BASE_STORE_SLOTS, HOST_CLAN_CHOICES, RAID_AUTOSTORE_LOGS_CHANNEL
+from common.constants import BASE_STORE_SLOTS, COLOR, HOST_CLAN_CHOICES, RAID_AUTOSTORE_LOGS_CHANNEL
 from tests._raid_autostore_fixture import make_match
 
 
@@ -99,6 +99,7 @@ class TestRaidAutostoreTask(unittest.IsolatedAsyncioTestCase):
             "Skipped <#100> side 1: already stored.\n"
             "Skipped <#100> side 2: opponent bases incomplete.\n"
         ))
+        self.assertEqual(self.log.send.await_args.kwargs["embed"].color, COLOR)
 
     async def test_log_failure_is_logged_without_affecting_storage(self) -> None:
         self.matches = [make_match()]

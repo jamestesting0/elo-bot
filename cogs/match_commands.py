@@ -1354,6 +1354,10 @@ async def cancel_match(bot: ipy.Client, token):
 _confirm_match_locks: dict[str, asyncio.Lock] = {}
 
 
+class MatchChannelUnavailable(RuntimeError):
+    """A channel lookup returned no channel without confirming its deletion."""
+
+
 async def confirm_match(bot: ipy.Client, token: str) -> str:
     async with _confirm_match_locks.setdefault(token, asyncio.Lock()):
         match = await Match.find_one(Match.token == token)
@@ -1365,6 +1369,8 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
                     or any(any(participant.result) for participant in match.participants)):
                 return str(match.thread)
             thread = await bot.fetch_channel(match.thread)
+            if thread is None:
+                raise MatchChannelUnavailable(f"Match {token} thread {match.thread} is unavailable")
             msg = await find_match_thread_announcement(thread, match, bot.user.id)
             if msg is not None:
                 if match.thread_message_id != int(msg.id) and not await attach_thread_message(match, int(msg.id)):
@@ -1384,6 +1390,8 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         else:
             channel = await bot.fetch_channel(match.routing_channel_id if is_final_match(match)
                                              else MATCH_CHANNEL)
+            if channel is None:
+                raise MatchChannelUnavailable(f"Match {token} parent channel is unavailable")
 
         # fetch players from participants
         p1, p2 = match.participants
@@ -2402,7 +2410,7 @@ class MatchCommands(ipy.Extension):
         # both confirmed → create thread
         try:
             thread_id = await confirm_match(self.bot, token)
-        except (ipy.errors.HTTPException, PyMongoError, ThreadMessageBindingError):
+        except (ipy.errors.HTTPException, PyMongoError, ThreadMessageBindingError, MatchChannelUnavailable):
             logging.exception("Match %s confirmed but its thread publication is incomplete", token)
             await ctx.send(
                 f"{IMPORTANT_EMOJI} The match is confirmed. Its thread publication is incomplete and will be retried.",
@@ -6921,12 +6929,17 @@ class MatchCommands(ipy.Extension):
                     for i in range(3):
                         if not other.districts[i]:
                             other.districts[i] = confirmed.districts[i]
-                    await match.save_changes()
+                    try:
+                        await match.save_changes()
+                    except PyMongoError:
+                        logging.exception("Unable to save match confirmation for %s; retrying on the next sweep",
+                                          match.token)
+                        continue
 
             try:
                 async with match_message_lock(match.thread or match.token):
                     await confirm_match(self.bot, match.token)
-            except (ipy.errors.HTTPException, PyMongoError, ThreadMessageBindingError):
+            except (ipy.errors.HTTPException, PyMongoError, ThreadMessageBindingError, MatchChannelUnavailable):
                 logging.exception("Unable to finish match confirmation for %s; retrying on the next sweep", match.token)
 
     @ipy.Task.create(ipy.IntervalTrigger(minutes=10))

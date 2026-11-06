@@ -6,11 +6,13 @@ import interactions as ipy
 from beanie import PydanticObjectId
 
 from common.finals.publication import publish_bracket
+from common.finals.bracket import automatic_pairs, build_bracket
 from common.finals.recovery import publish_result
+from common.finals.rendering import render_bracket
 from cogs.final_commands import FinalCommands
 from common.finals.types import FinalError
 from database_models import EloFinal, EloFinalMatch
-from database_models.final_models import FinalMatchResult, FinalResultSnapshot
+from database_models.final_models import FinalMatchResult, FinalPrediction, FinalResultSnapshot
 from database_models.season_models import FinalResultProgress
 
 
@@ -66,6 +68,66 @@ class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):
                          "**[❌Invalid Player](<https://discordapp.com/users/2>)**"
                          " → **[Player A](<https://discordapp.com/users/1>)**")
         self.assertEqual(embed.fields[0].value, "Image unavailable.")
+
+
+class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
+    async def test_submitted_prediction_is_sent_privately_with_real_graphic(self):
+        final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13,
+                                         entrant_ids=[str(i) for i in range(8)],
+                                         player_nicknames={str(i): f"Player {i}" for i in range(8)})
+        final.nodes = build_bracket(final, automatic_pairs(final))
+        picks = {"QF1": "0", "QF2": "3", "QF3": "1", "QF4": "2",
+                 "SF1": "3", "SF2": "2", "F1": "2"}
+        prediction = FinalPrediction.model_construct(submitted=picks, points=2, eligible=3)
+        cog = FinalCommands(MagicMock(ext={}))
+        cog._edition = AsyncMock(return_value=final)
+        response = {}
+
+        async def send(**payload):
+            response.update(payload)
+            response["image_bytes"] = payload["file"].file.read()
+
+        async def find_prediction(query):
+            if query == {"final_id": str(final.id), "user_id": "99"}:
+                return prediction
+            return None
+
+        ctx = MagicMock(defer=AsyncMock(), send=AsyncMock(side_effect=send))
+        ctx.author.id = 99
+        ctx.guild.fetch_member = AsyncMock(return_value=None)
+        with patch.object(FinalPrediction, "find_one", new=AsyncMock(side_effect=find_prediction)):
+            await cog.final_prediction_view.callback.func(cog, ctx, 13)
+        ctx.defer.assert_awaited_once_with(ephemeral=True)
+        self.assertTrue(response["ephemeral"])
+        self.assertEqual(response["image_bytes"], render_bracket(final, picks))
+        self.assertNotEqual(response["image_bytes"], render_bracket(final))
+        self.assertEqual(response["embed"].fields[0].value, "2/3 → 66.67%")
+
+    async def test_missing_prediction_remains_private_error(self):
+        cog = FinalCommands(MagicMock(ext={}))
+        cog._edition = AsyncMock(return_value=EloFinal.model_construct(id=PydanticObjectId()))
+        ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
+        with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=None)):
+            await cog.final_prediction_view.callback.func(cog, ctx, 13)
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+        self.assertIn("/final predict", ctx.send.await_args.args[0])
+
+    async def test_unavailable_graphic_preserves_private_prediction_and_score(self):
+        final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13, nodes={
+            "QF1": EloFinalMatch(id="QF1", contestants=["1", "2"], winner="1"),
+        })
+        prediction = FinalPrediction.model_construct(submitted={"QF1": "1"}, points=1, eligible=1)
+        cog = FinalCommands(MagicMock(ext={}))
+        cog._edition = AsyncMock(return_value=final)
+        ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
+        ctx.guild.fetch_member = AsyncMock(return_value=None)
+        with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
+                patch("common.finals.rendering.render_bracket", side_effect=FinalError("Image unavailable.")):
+            await cog.final_prediction_view.callback.func(cog, ctx, 13)
+        payload = ctx.send.await_args.kwargs
+        self.assertTrue(payload["ephemeral"])
+        self.assertEqual(payload["embed"].fields[0].value, "1/1 → 100.00%")
+        self.assertEqual(payload["embed"].fields[-1].value, "Image unavailable.")
 
 
 class TestFinalPublicationNames(unittest.IsolatedAsyncioTestCase):

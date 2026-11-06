@@ -74,6 +74,21 @@ class TestFinalRendering(unittest.TestCase):
         self.assertEqual(bracket_labels(final), [f"Player {i}" for i in range(8)]
                          + ["Player 0", "Player 2", "Player 4", "Player 6", "Player 0", "Player 4", "Player 0"])
 
+    def test_prediction_labels_use_submitted_picks_without_changing_official_bracket(self):
+        final = self.edition(5)
+        final.nodes["QF2"].winner = "4"
+        final.champion = "4"
+        before = final.model_dump()
+        picks = {"QF1": "0", "QF2": "3", "QF3": "1", "QF4": "2",
+                 "SF1": "3", "SF2": "2", "F1": "2"}
+        labels = bracket_labels(final, picks)
+        self.assertEqual(labels[:8].count("BYE"), 3)
+        self.assertEqual(labels[8:], ["Player 0", "Player 3", "Player 1", "Player 2",
+                                      "Player 3", "Player 2", "Player 2"])
+        with Image.open(BytesIO(render_bracket(final, picks))) as rendered:
+            self.assertEqual(rendered.size, (1672, 941))
+        self.assertEqual(final.model_dump(), before)
+
     def test_measured_long_name_is_shortened_to_box_width(self):
         label, font = fitted_label("Long contestant " * 3)
         bounds = font.getbbox(label, stroke_width=1)

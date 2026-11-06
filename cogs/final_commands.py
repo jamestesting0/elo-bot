@@ -961,7 +961,9 @@ class FinalCommands(Extension):
     @prediction_group.subcommand(sub_cmd_name="view", sub_cmd_description="View your submitted picks and accuracy")
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_prediction_view(self, ctx: SlashContext, season: int = None):
+        from common.finals.rendering import render_bracket
         from database_models.final_models import FinalPrediction
+        await ctx.defer(ephemeral=True)
         try:
             edition = await self._edition(ctx, season, registered=True)
             prediction = await FinalPrediction.find_one({"final_id": str(edition.id), "user_id": str(ctx.author.id)})
@@ -988,7 +990,15 @@ class FinalCommands(Extension):
             if prediction.scoring_revision != edition.result_revision:
                 embed.add_field(name="**Status**", value="Scoring is updating.")
             embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
-            await ctx.send(embed=embed, ephemeral=True)
+            try:
+                rendered = await asyncio.to_thread(render_bracket, edition, prediction.submitted)
+            except FinalError as error:
+                embed.add_field(name="**Image**", value=str(error))
+                await ctx.send(embed=embed, ephemeral=True)
+                return
+            embed.set_image(url="attachment://prediction.png")
+            with BytesIO(rendered) as image:
+                await ctx.send(embed=embed, file=ipy.File(image, file_name="prediction.png"), ephemeral=True)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 

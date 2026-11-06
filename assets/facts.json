@@ -1,5 +1,7 @@
 [
     "Each Elo season lasts two months. The top eight players compete for Elo King, and you must reach the top eight by the 20th of the second month to sign up.",
     "A normal match win earns 10 to 45 Elo, and a loss costs 5 to 40 Elo.",
-    "A challenge match win earns 0 to 35 Elo, and a loss costs 0 to 30 Elo."
+    "A challenge match win earns 0 to 35 Elo, and a loss costs 0 to 30 Elo.",
+    "Your Elo change depends on both players' stars and destruction.",
+    "If an Elo King qualifier opts out, the next highest-ranked player may be invited."
 ]

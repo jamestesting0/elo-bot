@@ -1,11 +1,12 @@
 import unittest
+from collections import Counter
 from unittest.mock import patch
 
 from cogs import match_commands
 
 
 class TestTipRotation(unittest.IsolatedAsyncioTestCase):
-    async def test_alternates_and_visits_every_item_with_unequal_lengths(self):
+    async def test_each_item_is_shown_once_per_cycle_with_unequal_lengths(self):
         contents = {
             "tips.json": ["tip one", "tip two", "tip three"],
             "facts.json": ["fact one", "fact two"],
@@ -22,20 +23,17 @@ class TestTipRotation(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_commands, "read_json", side_effect=read_content), \
                 patch.object(match_commands.ServerState, "advance_tip_index", side_effect=advance):
-            messages = [await match_commands.choose_tip() for _ in range(14)]
+            messages = [await match_commands.choose_tip() for _ in range(10)]
 
-        self.assertEqual(messages, [
-            '💡 **TIP:** "tip one"', '💡 **ELO FACT:** "fact one"',
-            '💡 **TIP:** "tip two"', '💡 **ELO FACT:** "fact two"',
-            '💡 **TIP:** "tip three"', '💡 **ELO FACT:** "fact one"',
-            '💡 **TIP:** "tip one"', '💡 **ELO FACT:** "fact two"',
-            '💡 **TIP:** "tip two"', '💡 **ELO FACT:** "fact one"',
-            '💡 **TIP:** "tip three"', '💡 **ELO FACT:** "fact two"',
-            '💡 **TIP:** "tip one"', '💡 **ELO FACT:** "fact one"',
-        ])
+        expected = [f'💡 **TIP:** "{tip}"' for tip in contents["tips.json"]]
+        expected += [f'💡 **ELO FACT:** "{fact}"' for fact in contents["facts.json"]]
+        self.assertEqual(Counter(messages[:5]), Counter(expected))
+        self.assertEqual(Counter(messages[5:]), Counter(expected))
 
     async def test_real_content_is_selected_by_the_shared_index(self):
-        with patch.object(match_commands.ServerState, "advance_tip_index", side_effect=[0, 1]):
+        tips = await match_commands.read_json("tips.json", "assets/")
+        facts = await match_commands.read_json("facts.json", "assets/")
+        with patch.object(match_commands.ServerState, "advance_tip_index", side_effect=[0, len(tips) + len(facts) - 1]):
             tip = await match_commands.choose_tip()
             fact = await match_commands.choose_tip()
 

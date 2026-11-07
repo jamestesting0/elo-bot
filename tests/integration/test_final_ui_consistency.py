@@ -10,7 +10,7 @@ from cogs.match_commands import MatchCommands
 from cogs.token_commands import TokenCommands
 from common.constants import FINAL_CHANNEL, DISTRICT_CODES, LVL1_ROLES, LVL2_ROLES, ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import prepare_match
+from common.finals.matches import bind_thread, prepare_match, schedule_final_match
 from common.finals.profile_ui import profile_view
 from common.finals.pairing_ui import pairing_view
 from common.finals.results import FinalResultSubmission, submit_result
@@ -26,6 +26,11 @@ class TestFinalUIConsistency(FinalScenarioCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
         self.final = await confirm_bracket(await self.roster(8), "manager")
+        source = await prepare_match(self.final, "QF1")
+        source = await schedule_final_match(source, 2000000000)
+        await source.set({"thread": "777"})
+        await bind_thread(self.final, source, "777")
+        self.final = await resolve_final()
         self.bot = MagicMock(ext={}, user=SimpleNamespace(id=42))
         self.cog = FinalCommands(self.bot)
         self.match_cog = MatchCommands(self.bot)

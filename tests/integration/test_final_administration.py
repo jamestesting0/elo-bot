@@ -77,9 +77,12 @@ class TestFinalAdministration(FinalScenarioCase):
 
     async def test_final_result_delete_points_to_correction_and_retains_history(self):
         final = await confirm_bracket(await self.roster(8), "manager")
+        await self.scheduled_pairing(final, "QF1")
+        from common.finals.lifecycle import resolve_final
+        final = await resolve_final()
         node = final.nodes["QF1"]
         result = await submit_result(FinalResultSubmission(final_id=final.id, node_id=node.id, actor_id="manager",
-            operation_key="official", expected_version=0, contestant_revision=node.contestant_revision, attempt=0,
+            operation_key="official", expected_version=0, contestant_revision=node.contestant_revision, attempt=node.attempt,
             scores={node.contestants[0]: ["3.100"] * 7, node.contestants[1]: ["2.80"] * 7}))
         with self.assertRaisesRegex(FinalError, "/final match result"):
             await guard_result_deletion(result.id)

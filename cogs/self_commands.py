@@ -37,6 +37,7 @@ from common.constants import (
 )
 from common.base_store.start import held_store
 from common.discord.checks import has_any
+from common.matches.timing import hosting_started
 from common.utils import is_raid_weekend
 from database_models import Clan, Match, Player
 
@@ -133,7 +134,7 @@ class SelfCommands(ipy.Extension):
             await ctx.send(f"{ERROR_EMOJI} This match is not available for self hosting.", ephemeral=True)
             return
 
-        if match.times[index] or match.hosts[index]:
+        if hosting_started(match, index):
             await ctx.send(f"{ERROR_EMOJI} The match has already started.", ephemeral=True)
             return
 

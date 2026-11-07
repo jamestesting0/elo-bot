@@ -14,6 +14,8 @@ class FinalResultSnapshot(BaseModel):
     scores: dict[str, list[str]]
     winner: str | None = None
     outcome: Outcome = "Played"
+    scheduled_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
+    actual_started_at: int | None = None
 
     @model_validator(mode="after")
     def validate_scores(self):

@@ -8,6 +8,7 @@ from pymongo import AsyncMongoClient
 
 from common.constants import DATA_BASES, FINAL_CHANNEL, MAIN_GUILD
 from common.finals.lifecycle import add_entrant, confirm_bracket, resolve_final, start_final
+from common.finals.matches import prepare_match, schedule_final_match
 from common.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes
 from common.finals.recovery import recover_final
 from common.finals.results import FinalResultSubmission, submit_result
@@ -45,11 +46,14 @@ async def run():
             for user, side in ((9, 0), (8, 1)):
                 await apply_bet(BetAction(market_id=market.id, user_id=str(user), contestant=market.contestants[side],
                     amount=5000, expected_version=0, action_key=f"stake:{user}"))
+            source = await prepare_match(final, node_id)
+            await schedule_final_match(source, 1700000000)
+            final = await resolve_final()
             node = final.nodes[node_id]
             for revision, reverse in ((0, False), (1, True)):
                 await submit_result(FinalResultSubmission(final_id=final.id, node_id=node_id, actor_id="manager",
                     operation_key=f"result:{revision}", expected_version=revision, contestant_revision=node.contestant_revision,
-                    attempt=0, scores={user: ["3.100" if (side == 0) != reverse else "2.80"] * 7
+                    attempt=node.attempt, scores={user: ["3.100" if (side == 0) != reverse else "2.80"] * 7
                                       for side,user in enumerate(node.contestants)},
                     reason="Winner corrected" if revision else None))
                 await recover_final(final)

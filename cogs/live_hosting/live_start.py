@@ -27,6 +27,7 @@ from common.finals.hosting import accept_final_start
 from common.finals.types import FinalError
 from common.constants import ERROR_EMOJI
 from database_models.match_models import ExpectedLiveStartState
+from common.matches.timing import hosting_started
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,8 +149,7 @@ async def start_live_match(
         if (
                 fresh_match is None
                 or match_commands.is_match_finished(fresh_match)
-                or any(fresh_match.times or [])
-                or any(fresh_match.hosts or [])
+                or hosting_started(fresh_match)
         ):
             return LiveStartBusy()
         expected_control = start.stored_start
@@ -166,9 +166,11 @@ async def start_live_match(
         start.match.hosts = list(fresh_match.hosts)
         start.match.host_clans = list(fresh_match.host_clans)
         start.match.old_msgs = list(fresh_match.old_msgs)
+        if expected_control is None and is_final_match(fresh_match):
+            expected_control = MatchMessageState.capture(fresh_match, 0)
         timestamp = int(datetime.now().timestamp())
         try:
-            await accept_final_start(fresh_match, str(ctx.author.id), clan_tag=start.clan.tag,
+            await accept_final_start(fresh_match, str(ctx.author.id), clan_tag=start.clan.tag, player=None,
                 expected_source=dict(expected_control.binding_filter() if expected_control is not None
                                      else MatchMessageState.capture(fresh_match, 0).binding_filter()) if is_final_match(fresh_match) else None)
         except FinalError as error:

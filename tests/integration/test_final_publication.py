@@ -4,6 +4,7 @@ import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
 from common.finals.lifecycle import confirm_bracket, resolve_final
+from common.finals.matches import bind_thread
 from common.finals.publication import publish_bracket
 from common.finals.types import FinalError
 from database_models import EloFinal
@@ -29,6 +30,10 @@ class TestFinalPublication(FinalScenarioCase):
         self.message.author.id = 42
 
     async def save_result(self):
+        source = await self.scheduled_pairing(self.final, "QF1")
+        await source.set({"thread": "777"})
+        await bind_thread(self.final, source, "777")
+        self.final = await resolve_final()
         node = self.final.nodes["QF1"]
         return await submit_result(FinalResultSubmission(
             final_id=self.final.id, node_id=node.id, actor_id="manager", operation_key="publication-result",

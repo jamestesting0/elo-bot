@@ -81,7 +81,8 @@ def fitted_label(text: str, width: int = 168) -> tuple[str, ImageFont.FreeTypeFo
     return text + "…", font
 
 
-def render_bracket(final: EloFinal, picks: dict[str, str] | None = None) -> bytes:
+def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
+                   statuses: dict[str, str] | None = None) -> bytes:
     try:
         with Image.open(TEMPLATE) as source:
             image = source.convert("RGB")
@@ -96,6 +97,21 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None) -> byte
         left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
         position = (center[0] - (left + right) / 2, center[1] - (top + bottom) / 2)
         draw.text(position, text, font=font, fill="white", stroke_width=1, stroke_fill="#1b1940")
+    if picks is not None and statuses:
+        for node_id, center in zip(NODE_IDS, (*SEMIFINAL_CENTERS, *FINAL_CENTERS, CHAMPION_CENTER), strict=True):
+            status = statuses.get(node_id)
+            if node_id not in picks or status not in ("correct", "incorrect", "excluded"):
+                continue
+            x, y = center[0] + (115 if node_id == "F1" else 102), center[1]
+            color = {"correct": "#147a38", "incorrect": "#a32727", "excluded": "#4b5260"}[status]
+            draw.ellipse((x - 14, y - 14, x + 14, y + 14), fill=color, outline="white", width=2)
+            if status == "correct":
+                draw.line(((x - 7, y), (x - 2, y + 5), (x + 8, y - 6)), fill="white", width=3)
+            elif status == "incorrect":
+                draw.line(((x - 6, y - 6), (x + 6, y + 6)), fill="white", width=3)
+                draw.line(((x - 6, y + 6), (x + 6, y - 6)), fill="white", width=3)
+            else:
+                draw.line(((x - 7, y), (x + 7, y)), fill="white", width=3)
     with BytesIO() as output:
         image.save(output, format="PNG")
         image.close()

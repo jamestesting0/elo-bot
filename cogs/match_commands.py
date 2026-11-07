@@ -1,4 +1,6 @@
 from common.finals.types import FinalError, is_final_match
+from common.finals.matches import schedule_final_match
+from common.matches.timing import hosting_started
 import asyncio  # noqa: ANYIO_OK - interactions.py runtime and the requested registry use asyncio locks
 import anyio
 import copy
@@ -420,6 +422,10 @@ async def claim_resource_clan(
         if "persistent_host_clans" not in fresh_match.model_fields_set:
             await fresh_match.ensure_persistent_host_clans()
         match_updates = dict(updates or {})
+        if is_final_match(fresh_match) and f"times.{player1_index}" in match_updates:
+            await fresh_match.ensure_final_hosting_times()
+            for side in (player1_index,) if player2_index is None else (player1_index, player2_index):
+                match_updates[f"final_hosting_times.{side}"] = match_updates[f"times.{player1_index}"]
         match_updates[f"host_clans.{player1_index}"] = reservation.clan_tag
         match_updates[f"persistent_host_clans.{player1_index}"] = reservation.clan_tag
         previous_values = {}
@@ -5042,7 +5048,7 @@ class MatchCommands(ipy.Extension):
             await ctx.send(f"{ERROR_EMOJI} A live match is already initiated.", ephemeral=True)
             return
 
-        if automatic and (match.times[player] or match.hosts[player]):
+        if automatic and hosting_started(match, player):
             await ctx.send(f"{ERROR_EMOJI} The match has already started.", ephemeral=True)
             return
 
@@ -5446,11 +5452,18 @@ class MatchCommands(ipy.Extension):
             emoji=ipy.PartialEmoji(name="🛑")
         )
 
-        await match.set({
-            "is_war": True,
-            f"hosts.{player}": None,
-            f"times.{player}": int(ts),
-        })
+        if is_final_match(match):
+            try:
+                match = await schedule_final_match(match, int(ts), player=player)
+            except FinalError as error:
+                await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                return
+        else:
+            await match.set({
+                "is_war": True,
+                f"hosts.{player}": None,
+                f"times.{player}": int(ts),
+            })
         match.is_war = True
         match.hosts[player] = None
         match.times[player] = int(ts)
@@ -6369,7 +6382,7 @@ class MatchCommands(ipy.Extension):
                            ephemeral=True)
             return
 
-        if any(match.times or []) or any(match.hosts or []):
+        if hosting_started(match):
             await ctx.send(
                 f"{ERROR_EMOJI} This match is already being started.\n\n"
                 f"{await available_resource_clans_text()}",
@@ -6570,11 +6583,18 @@ class MatchCommands(ipy.Extension):
         prev_time = next((t for t in (match.times or []) if t), None)
         title = "**Match Scheduled**" if (prev_time is None or prev_time == ts) else "**Match Rescheduled**"
 
-        await match.set({
-            "is_war": False,
-            "times.0": int(ts),
-            "times.1": int(ts),
-        })
+        if is_final_match(match):
+            try:
+                match = await schedule_final_match(match, int(ts))
+            except FinalError as error:
+                await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                return
+        else:
+            await match.set({
+                "is_war": False,
+                "times.0": int(ts),
+                "times.1": int(ts),
+            })
         match.is_war = False
         match.times = [int(ts), int(ts)]
 

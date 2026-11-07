@@ -77,7 +77,7 @@ class TestFinalTokens(FinalScenarioCase):
         await self.assert_conserved()
 
     async def test_accepted_start_serializes_with_last_bet(self):
-        match = await prepare_match(self.final, "QF1")
+        match = await self.scheduled_pairing(self.final, "QF1")
         async with asyncio.timeout(5):
             results = await asyncio.gather(self.bet(9, 1000), accept_final_start(match, "manager"), return_exceptions=True)
         self.assertFalse(isinstance(results[1], Exception), results)
@@ -91,7 +91,7 @@ class TestFinalTokens(FinalScenarioCase):
     async def test_edit_cancel_and_accepted_start_race_has_one_valid_balance_and_pool(self):
         from database_models.token_models import FinalBet
         await self.bet(9, 1000)
-        source = await prepare_match(self.final, "QF1")
+        source = await self.scheduled_pairing(self.final, "QF1")
         barrier = asyncio.Event()
         async def race(operation):
             async with asyncio.timeout(5):

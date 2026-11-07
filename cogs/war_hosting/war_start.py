@@ -100,7 +100,7 @@ async def start_war(
     if not reservation:
         return None
     try:
-        await accept_final_start(match_doc, str(ctx.author.id), clan_tag=clan_tag,
+        await accept_final_start(match_doc, str(ctx.author.id), clan_tag=clan_tag, player=player,
             expected_source=dict(expected_control.binding_filter()) if is_final_match(match_doc) else None)
     except FinalError as error:
         reservation.release()

@@ -961,44 +961,55 @@ class FinalCommands(Extension):
     @prediction_group.subcommand(sub_cmd_name="view", sub_cmd_description="View your submitted picks and accuracy")
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_prediction_view(self, ctx: SlashContext, season: int = None):
+        from common.finals.prediction_display import finished_results, prediction_alt_text, prediction_statuses
         from common.finals.rendering import render_bracket
-        from database_models.final_models import FinalPrediction
+        from database_models.final_models import FinalMatchResult, FinalPrediction
         await ctx.defer(ephemeral=True)
         try:
             edition = await self._edition(ctx, season, registered=True)
             prediction = await FinalPrediction.find_one({"final_id": str(edition.id), "user_id": str(ctx.author.id)})
             if prediction is None or not prediction.submitted:
                 raise FinalError("No prediction submitted for this Final. Use `/final predict` while predictions are open.")
-            accuracy = 100 * prediction.points / prediction.eligible if prediction.eligible else 0
-            def pick_status(node):
-                logical = edition.nodes[node]
-                if logical.bye:
-                    return "BYE · excluded"
-                if logical.outcome == "Forfeit":
-                    return "Forfeit · excluded"
-                if node in prediction.correct:
-                    return "Correct" if prediction.correct[node] else "Incorrect"
-                return "Awaiting result"
-            user_ids = set(prediction.submitted.values())
+            statuses = prediction_statuses(edition, prediction)
+            points, eligible = prediction.points, prediction.eligible
+            if prediction.scoring_revision != edition.result_revision:
+                points = sum(status == "correct" for status in statuses.values())
+                eligible = sum(not node.bye and node.outcome == "Played" and node.winner is not None
+                               and node.result_id is not None for node in edition.nodes.values())
+            accuracy = 100 * points / eligible if eligible else 0
+            result_ids = [node.result_id for node in edition.nodes.values() if node.result_id]
+            results = await FinalMatchResult.find({"_id": {"$in": result_ids}}).to_list() if result_ids else []
+            starts = {}
+            for result in results:
+                if result.snapshot.outcome != "Played":
+                    continue
+                started_at = getattr(result.snapshot, "actual_started_at", None)
+                if started_at is not None:
+                    starts[result.id] = started_at
+            user_ids = {user for result in results for user in result.snapshot.contestants}
             guild = await member_guild(ctx)
             members = await asyncio.gather(*(guild.fetch_member(user_id) for user_id in user_ids))
             names = {user_id: mention_user(member, user_id) for user_id, member in zip(user_ids, members)}
             embed = ipy.Embed(title=f"**Season {edition.season_number} Final · Prediction**", color=COLOR,
-                              description="\n".join(f"{node}: {names[user]} · {pick_status(node)}"
-                                                    for node, user in prediction.submitted.items()))
-            embed.add_field(name="**Predictions**", value=f"{prediction.points}/{prediction.eligible} → {accuracy:.2f}%")
-            if prediction.scoring_revision != edition.result_revision:
-                embed.add_field(name="**Status**", value="Scoring is updating.")
+                              description="✓ Correct  ✕ Incorrect  − Excluded")
+            embed.add_field(name="**Predictions**", value=f"{points}/{eligible} → {accuracy:.2f}%")
+            result_text = finished_results(edition, results, names, starts)
+            if result_text:
+                embed.description += f"\n\n**Results**\n{result_text}"
             embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
             try:
-                rendered = await asyncio.to_thread(render_bracket, edition, prediction.submitted)
+                rendered = await asyncio.to_thread(render_bracket, edition, prediction.submitted, statuses)
             except FinalError as error:
                 embed.add_field(name="**Image**", value=str(error))
+                embed.add_field(name="**Picks**", value="\n".join(
+                    f"{node}: {edition.player_nicknames.get(user, user)} · {statuses.get(node, 'pending')}"
+                    for node, user in prediction.submitted.items()))
                 await ctx.send(embed=embed, ephemeral=True)
                 return
             embed.set_image(url="attachment://prediction.png")
             with BytesIO(rendered) as image:
-                await ctx.send(embed=embed, file=ipy.File(image, file_name="prediction.png"), ephemeral=True)
+                await ctx.send(embed=embed, file=ipy.File(image, file_name="prediction.png",
+                    description=prediction_alt_text(edition, prediction, statuses)), ephemeral=True)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 

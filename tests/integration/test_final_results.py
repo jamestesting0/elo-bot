@@ -12,7 +12,7 @@ from dataclasses import replace
 class TestFinalResults(FinalScenarioCase):
     async def pairing(self):
         final = await confirm_bracket(await self.roster(8), "manager")
-        source = await prepare_match(final, "QF1")
+        source = await self.scheduled_pairing(final, "QF1")
         return await resolve_final(), source
 
     def request(self, final, source, *, scores=None, winner=None, outcome="Played", reason=None):

@@ -16,7 +16,7 @@ import cogs.match_commands as match_commands
 class TestFinalHosting(FinalScenarioCase):
     async def pairing(self):
         final = await confirm_bracket(await self.roster(8), "manager")
-        source = await prepare_match(final, "QF1")
+        source = await self.scheduled_pairing(final, "QF1")
         market = await FinalBettingMarket(id="market", final_id=str(final.id), node_id="QF1",
                                          contestant_revision=source.final_contestant_revision,
                                          contestants=[participant.user_id for participant in source.participants]).insert()

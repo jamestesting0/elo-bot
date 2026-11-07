@@ -7,7 +7,8 @@ from cogs.final_commands import FinalCommands
 from cogs.leaderboard_commands import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
 from cogs.token_commands import TokenCommands
 from common.constants import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES, LB_ENTRIES_PER_PAGE, ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from common.finals.lifecycle import confirm_bracket
+from common.finals.lifecycle import confirm_bracket, resolve_final
+from common.finals.matches import bind_thread, prepare_match, schedule_final_match
 from common.finals.predictions import change_prediction_state
 from common.tokens.bets import open_market
 from database_models.final_models import FinalPrediction
@@ -211,10 +212,15 @@ class TestFinalCallbacks(FinalScenarioCase):
         self.assertIn("cannot interfere", ctx.send.await_args.args[0])
 
     async def test_official_result_callback_reports_saved_state_when_discord_publication_fails(self):
+        source = await prepare_match(self.final, "QF1")
+        source = await schedule_final_match(source, 2000000000)
+        await source.set({"thread": "777"})
+        await bind_thread(self.final, source, "777")
+        self.final = await resolve_final()
         ctx = self.context(manager=True)
         ctx.author.has_role.side_effect = lambda role: role in LVL1_ROLES or role in LVL2_ROLES
         node = self.final.nodes["QF1"]
-        ctx.custom_id = f"finalres|7|QF1|9|0|{node.contestant_revision}|0|-|0"
+        ctx.custom_id = f"finalres|7|QF1|9|0|{node.contestant_revision}|{node.attempt}|-|0"
         self.bot.fetch_channel = AsyncMock(side_effect=ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden")))
         before = [player.model_dump() for player in await Player.find_all().to_list()]
         confirmations = []

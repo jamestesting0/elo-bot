@@ -10,6 +10,7 @@ from cogs.war_hosting.helper_base_store_availability import confirm_remove_bases
 from cogs.war_hosting.stored_bases import HelperStoredBaseTerminalJob
 from common.base_store.live import live_pair_ready, live_stores
 from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
+from common.matches.timing import hosting_started
 from common.results.validation import is_match_finished
 from database_models import Match
 
@@ -50,7 +51,7 @@ async def request_stored_live_match(coordinator: LiveRequestCoordinator, ctx: ip
     if resolved is None:
         return
     match, reservation_id = resolved
-    if any(match.times) or any(match.hosts) or any(is_match_finished(match, player=i) for i in (0, 1)):
+    if hosting_started(match) or any(is_match_finished(match, player=i) for i in (0, 1)):
         await ctx.send(f"{ERROR_EMOJI} This match has already started or finished.", ephemeral=True)
         return
     if not live_pair_ready(match, reservation_id):

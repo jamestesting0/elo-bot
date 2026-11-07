@@ -25,9 +25,12 @@ class TestFinalCommitRecovery(FinalScenarioCase):
 
     async def test_ambiguous_official_result_commit_does_not_append_twice(self):
         final = await confirm_bracket(await self.roster(8), "manager")
+        await self.scheduled_pairing(final, "QF1")
+        from common.finals.lifecycle import resolve_final
+        final = await resolve_final()
         node = final.nodes["QF1"]
         request = FinalResultSubmission(final_id=final.id, node_id=node.id, actor_id="manager", operation_key="official",
-            expected_version=0, contestant_revision=node.contestant_revision, attempt=0,
+            expected_version=0, contestant_revision=node.contestant_revision, attempt=node.attempt,
             scores={node.contestants[0]: ["3.100"] * 7, node.contestants[1]: ["2.80"] * 7})
         await self.ambiguous_commit_once()
         result = await submit_result(request)

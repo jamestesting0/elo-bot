@@ -82,6 +82,10 @@ class Match(Document):
     final_superseded: bool = False
     final_start_claim: str | None = None
     final_started_at: int | None = None
+    final_started_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
+    final_hosting_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
+    final_legacy_hosting_evidence: list[bool] = Field(default_factory=lambda: [False, False], min_length=2, max_length=2)
+    scheduled_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
     final_thread_creation_claimed: bool = False
     final_base_page_revision: int = 0
     result_operation: MatchResultOperation | None = None
@@ -220,6 +224,42 @@ class Match(Document):
         self.persistent_host_clans = list(persistent_host_clans)
         self.model_fields_set.add("persistent_host_clans")
 
+    async def ensure_final_hosting_times(self) -> None:
+        """Atomically retain ambiguous legacy hosting evidence without creating a start commitment."""
+        if self.format == "elo_final_seven" and "final_hosting_times" not in self.model_fields_set:
+            evidence = [
+                self.times[side] is not None and self.scheduled_times[side] is not None
+                and bool(self.hosts[side] or self.host_clans[side])
+                for side in (0, 1)
+            ]
+            def element(field: str) -> dict:
+                return {"$arrayElemAt": [{"$ifNull": [f"${field}", [None, None]]}, "$$side"]}
+
+            result = await self.get_pymongo_collection().update_one(
+                {"_id": self.id, "final_hosting_times": {"$exists": False}},
+                [{"$set": {
+                    "final_hosting_times": [None, None],
+                    "final_legacy_hosting_evidence": {"$map": {
+                        "input": [0, 1], "as": "side", "in": {"$and": [
+                            {"$ne": [element("times"), None]},
+                            {"$ne": [element("scheduled_times"), None]},
+                            {"$or": [{"$not": [{"$in": [element("hosts"), [None, ""]]}]},
+                                     {"$not": [{"$in": [element("host_clans"), [None, ""]]}]}]},
+                        ]},
+                    }},
+                }}],
+            )
+            if result.matched_count:
+                self.final_legacy_hosting_evidence = evidence
+                self.model_fields_set.add("final_legacy_hosting_evidence")
+            else:
+                row = await self.get_pymongo_collection().find_one(
+                    {"_id": self.id}, {"final_legacy_hosting_evidence": 1},
+                )
+                if row is not None and "final_legacy_hosting_evidence" in row:
+                    self.final_legacy_hosting_evidence = list(row["final_legacy_hosting_evidence"])
+                    self.model_fields_set.add("final_legacy_hosting_evidence")
+
     async def abort_started_war_side(
             self,
             player: int,
@@ -229,6 +269,7 @@ class Match(Document):
             expected_old_message: int,
     ) -> bool:
         await self.ensure_persistent_host_clans()
+        await self.ensure_final_hosting_times()
         query: dict[str, JsonValue | PydanticObjectId] = {
             "_id": self.id,
             "is_war": True,
@@ -242,17 +283,27 @@ class Match(Document):
             f"hosts.{player}": None,
             f"host_clans.{player}": None,
         }
+        if self.format == "elo_final_seven":
+            query[f"final_hosting_times.{player}"] = self.final_hosting_times[player]
+            updates[f"final_hosting_times.{player}"] = None
+            if "final_legacy_hosting_evidence" in self.model_fields_set:
+                query[f"final_legacy_hosting_evidence.{player}"] = self.final_legacy_hosting_evidence[player]
+                updates[f"final_legacy_hosting_evidence.{player}"] = False
         result = await self.get_pymongo_collection().update_one(query, {"$set": updates})
         if result.matched_count == 0:
             return False
         self.times[player] = None
         self.hosts[player] = None
         self.host_clans[player] = None
+        if self.format == "elo_final_seven":
+            self.final_hosting_times[player] = None
+            self.final_legacy_hosting_evidence[player] = False
         self._save_state()
         return True
 
     async def abort_started_live_match(self, expected: ExpectedLiveStartState) -> bool:
         await self.ensure_persistent_host_clans()
+        await self.ensure_final_hosting_times()
         query: dict[str, JsonValue | PydanticObjectId] = {
             "_id": self.id,
             "is_war": False,
@@ -266,12 +317,21 @@ class Match(Document):
             "hosts": [None, None],
             "host_clans": [None, None],
         }
+        if self.format == "elo_final_seven":
+            query["final_hosting_times"] = list(self.final_hosting_times)
+            updates["final_hosting_times"] = [None, None]
+            if "final_legacy_hosting_evidence" in self.model_fields_set:
+                query["final_legacy_hosting_evidence"] = list(self.final_legacy_hosting_evidence)
+                updates["final_legacy_hosting_evidence"] = [False, False]
         result = await self.get_pymongo_collection().update_one(query, {"$set": updates})
         if result.matched_count == 0:
             return False
         self.times = [None, None]
         self.hosts = [None, None]
         self.host_clans = [None, None]
+        if self.format == "elo_final_seven":
+            self.final_hosting_times = [None, None]
+            self.final_legacy_hosting_evidence = [False, False]
         self._save_state()
         return True
 

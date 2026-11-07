@@ -50,3 +50,11 @@ class FinalScenarioCase(FinalMongoCase):
         for user in range(1, count + 1):
             final = await add_entrant(final, str(user), f"Player {user}")
         return final
+
+    async def scheduled_pairing(self, final, node_id, *, is_war=True):
+        from common.finals.matches import prepare_match, schedule_final_match
+        source = await prepare_match(final, node_id)
+        if is_war:
+            source = await schedule_final_match(source, 1700000000, player=0)
+            return await schedule_final_match(source, 1700003600, player=1)
+        return await schedule_final_match(source, 1700000000)

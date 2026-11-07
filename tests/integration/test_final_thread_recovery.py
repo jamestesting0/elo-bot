@@ -17,7 +17,7 @@ from database_models.token_models import FinalBettingMarket
 class TestFinalThreadRecovery(FinalScenarioCase):
     async def pairing(self):
         final = await confirm_bracket(await self.roster(8), "manager")
-        source = await prepare_match(final, "QF1")
+        source = await self.scheduled_pairing(final, "QF1", is_war=False)
         await source.set({"thread": "777", "is_war": False, "hosts": ["host", None], "times": [123, None],
                           "participants.0.base_store": BaseStore(clan_tag="#TEST", slot="Slot 1",
                                                                reservation_id="owned").model_dump(),
@@ -52,7 +52,7 @@ class TestFinalThreadRecovery(FinalScenarioCase):
     async def test_deleted_unplayed_attempt_releases_exact_owner_and_requires_new_manager_attempt(self):
         final, source = await self.pairing()
         market = await open_market(final, "QF1")
-        await accept_final_start(source, "host")
+        await accept_final_start(source, "host", player=None)
         bot, _ = self.deleted_bot()
         pending = await recover_final(final, bot=bot, release_deleted=self.release_deleted)
         current = await resolve_final()

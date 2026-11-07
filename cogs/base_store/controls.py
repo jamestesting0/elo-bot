@@ -36,6 +36,7 @@ from common.results.validation import is_match_finished
 from common.utils import get_participant_base_store
 from database_models import Match, Player
 from common.finals.hosting import accept_final_start
+from common.matches.timing import hosting_started
 from common.finals.types import FinalError
 
 
@@ -109,7 +110,7 @@ async def start_stored_bases(
         if is_match_finished(state.match, player=request.player):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
-        if state.match.times[request.player] or state.match.hosts[request.player]:
+        if hosting_started(state.match, request.player):
             await ctx.send(f"{ERROR_EMOJI} The match has already started.", ephemeral=True)
             return
         store = state.match.participants[request.player].base_store
@@ -135,7 +136,7 @@ async def start_stored_bases(
                 await ctx.send(f"{ERROR_EMOJI} The stored-base clan is currently occupied.", ephemeral=True)
                 return
             try:
-                await accept_final_start(state.match, str(ctx.author.id), clan_tag=state.clan_tag,
+                await accept_final_start(state.match, str(ctx.author.id), clan_tag=state.clan_tag, player=request.player,
                     expected_source={**MatchMessageState.capture(state.match, request.player).binding_filter(),
                                      **state.match.base_store_filter(request.player)} if is_final_match(state.match) else None)
             except FinalError as error:
@@ -189,9 +190,7 @@ async def start_stored_bases(
                 return
             except Exception:  # noqa: BROAD_EXCEPT_OK - preserve storage after failures before the durable start commit
                 refreshed_match = await Match.find_one({"token": request.token})
-                if refreshed_match and (
-                        refreshed_match.times[request.player] or refreshed_match.hosts[request.player]
-                ):
+                if refreshed_match and hosting_started(refreshed_match, request.player):
                     raise
                 await report_incomplete_stored_start(ctx, presentation)
                 return

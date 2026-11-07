@@ -6,6 +6,7 @@ from beanie import PydanticObjectId
 
 from common.finals.bracket import advance_nodes, require_round_ready
 from common.finals.persistence import transaction
+from common.finals.matches import require_current_match
 from common.finals.profiles import rebuild_profiles
 from common.finals.predictions import rescore_predictions
 from common.finals.types import FinalError, Outcome, ROUND_NODES
@@ -78,6 +79,7 @@ async def submit_result(request: FinalResultSubmission) -> FinalMatchResult:
         if existing:
             result = FinalMatchResult.model_validate(existing)
             if (result.final_id != str(final.id) or result.node_id != node.id or result.snapshot.scores != request.scores
+                    or result.contestant_revision != request.contestant_revision or result.attempt != request.attempt
                     or result.actor_id != request.actor_id or result.snapshot.outcome != request.outcome
                     or result.reason != request.reason or node.result_id != result.id
                     or request.winner is not None and request.winner != result.snapshot.winner):
@@ -87,11 +89,25 @@ async def submit_result(request: FinalResultSubmission) -> FinalMatchResult:
         contestants, winner = snapshot.contestants, snapshot.winner
         previous = await FinalMatchResult.get_pymongo_collection().find_one({"_id": node.result_id}, session=session) \
             if node.result_id else None
+        prior = FinalMatchResult.model_validate(previous) if previous else None
+        if prior and (prior.final_id != str(final.id) or prior.node_id != node.id
+                      or prior.contestant_revision != node.contestant_revision or prior.attempt != node.attempt
+                      or prior.snapshot.contestants != snapshot.contestants):
+            raise FinalError("The earlier official result belongs to another pairing or attempt.")
         source_row = await Match.get_pymongo_collection().find_one({"_id": node.match_id}, session=session) \
             if node.match_id else None
-        if source_row and (source_row.get("final_superseded") or source_row["final_contestant_revision"] != node.contestant_revision):
-            raise FinalError("This physical match belongs to an earlier pairing.")
         source = Match.model_validate(source_row) if source_row else None
+        if source:
+            require_current_match(final, source)
+        if snapshot.outcome == "Played":
+            if prior and prior.snapshot.outcome == "Played":
+                snapshot.scheduled_times = list(prior.snapshot.scheduled_times)
+                snapshot.actual_started_at = prior.snapshot.actual_started_at
+            else:
+                if not all(node.scheduled_times) or node.match_id is None:
+                    raise FinalError("Schedule both sides of this Final match before recording a played result.")
+                snapshot.scheduled_times = list(node.scheduled_times)
+                snapshot.actual_started_at = source.final_started_at if source else node.actual_started_at
         version = node.result_version + 1
         result = FinalMatchResult(
             id=f"{final.id}:{node.id}:{version}", final_id=str(final.id), season_number=final.season_number,

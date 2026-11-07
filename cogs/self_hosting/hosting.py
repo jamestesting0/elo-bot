@@ -13,6 +13,7 @@ from cogs.match_commands import (
 )
 from common.base_store.live import live_stores, ready_live_reservation_id
 from common.constants import ERROR_EMOJI
+from common.matches.timing import hosting_started
 from database_models import Clan, Match, Player
 
 
@@ -68,7 +69,7 @@ async def request_live_match(
     if any(is_match_finished(match, player=index) for index in range(2)):
         await ctx.send(f"{ERROR_EMOJI} This match has already finished.", ephemeral=True)
         return
-    if any(match.times or []) or any(match.hosts or []):
+    if hosting_started(match):
         await ctx.send(f"{ERROR_EMOJI} This match is already being started.", ephemeral=True)
         return
     requester_index = next(

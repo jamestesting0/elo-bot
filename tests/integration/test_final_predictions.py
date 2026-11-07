@@ -101,6 +101,7 @@ class TestFinalPredictions(FinalScenarioCase):
         original = dict(prediction.submitted)
         await change_prediction_state(final, False)
         node_id = next(node.id for node in final.nodes.values() if not node.bye and not node.feeders)
+        await self.scheduled_pairing(await resolve_final(), node_id)
         for version, reverse, forfeit in ((0, False, False), (1, True, False), (2, True, True)):
             current = await resolve_final()
             node = current.nodes[node_id]

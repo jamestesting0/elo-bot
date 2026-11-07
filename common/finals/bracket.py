@@ -84,6 +84,9 @@ def advance_nodes(nodes: dict[str, EloFinalMatch]) -> list[str]:
             node.provisioning = False
             node.first_actual_started_at = None
             node.start_claim = None
+            node.scheduled_times = [None, None]
+            node.scheduled_is_war = None
+            node.actual_started_at = None
             node.state = "NEEDS_MANAGER" if had_play else ("READY" if all(contestants) else "WAITING")
             changed.append(node_id)
         elif not node.winner and not node.result_id and node.state != "NEEDS_MANAGER":

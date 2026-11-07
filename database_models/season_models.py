@@ -51,6 +51,9 @@ class EloFinalMatch(BaseModel):
     outcome: Outcome | None = None
     first_actual_started_at: int | None = None
     start_claim: str | None = None
+    scheduled_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
+    scheduled_is_war: bool | None = None
+    actual_started_at: int | None = None
     provisioning: bool = False
     provisioning_error: str | None = None
 

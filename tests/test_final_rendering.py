@@ -9,8 +9,10 @@ from PIL import Image, ImageChops
 
 from common.finals.bracket import advance_nodes, automatic_pairs, build_bracket
 from common.finals.rendering import bracket_labels, fitted_label, render_bracket
+from common.finals.prediction_display import prediction_statuses
 from common.finals.types import FinalError
 from database_models import EloFinal
+from database_models.final_models import FinalPrediction
 
 
 # Blue interiors measured from the supplied image, independently of renderer centers.
@@ -88,6 +90,25 @@ class TestFinalRendering(unittest.TestCase):
         with Image.open(BytesIO(render_bracket(final, picks))) as rendered:
             self.assertEqual(rendered.size, (1672, 941))
         self.assertEqual(final.model_dump(), before)
+
+    def test_prediction_markers_follow_submitted_picks_without_changing_official_image(self):
+        final = self.edition(8)
+        picks = {"QF1": "0", "QF2": "1", "QF3": "2", "QF4": "3"}
+        for node_id, winner, outcome in (("QF1", "0", "Played"), ("QF2", "4", "Played"),
+                                         ("QF3", "2", "Forfeit")):
+            node = final.nodes[node_id]
+            node.winner, node.outcome, node.result_id = winner, outcome, node_id
+        prediction = FinalPrediction.model_construct(submitted=picks)
+        statuses = prediction_statuses(final, prediction)
+        self.assertEqual(statuses, {"QF1": "correct", "QF2": "incorrect", "QF3": "excluded"})
+        official = render_bracket(final)
+        with Image.open(BytesIO(render_bracket(final, picks))) as plain, \
+                Image.open(BytesIO(render_bracket(final, picks, statuses))) as marked:
+            diff = ImageChops.difference(plain, marked)
+            for x, y in ((793, 554), (793, 651), (793, 743)):
+                self.assertIsNotNone(diff.crop((x - 15, y - 15, x + 16, y + 16)).getbbox())
+            self.assertIsNone(diff.crop((778, 823, 809, 854)).getbbox())
+        self.assertEqual(official, render_bracket(final))
 
     def test_measured_long_name_is_shortened_to_box_width(self):
         label, font = fitted_label("Long contestant " * 3)

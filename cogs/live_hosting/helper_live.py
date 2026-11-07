@@ -158,7 +158,7 @@ async def host_live_automatically(
         if match_commands.is_match_finished(match_doc):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
-        if any(match_doc.times or []) or any(match_doc.hosts or []):
+        if live_start.hosting_started(match_doc):
             await ctx.send(
                 f"{ERROR_EMOJI} This match is already being started.\n\n"
                 f"{await match_commands.available_resource_clans_text()}",

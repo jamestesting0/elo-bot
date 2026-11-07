@@ -13,6 +13,9 @@ from database_models.token_models import FinalBettingMarket, TokenLedgerEntry, T
 class TestFinalRecovery(FinalScenarioCase):
     async def result(self, final, node_id, *, reverse=False, outcome="Played", reason=None):
         final = await resolve_final(final.season_number)
+        if outcome == "Played" and final.nodes[node_id].result_id is None:
+            await self.scheduled_pairing(final, node_id)
+            final = await resolve_final(final.season_number)
         node = final.nodes[node_id]
         scores = {user: (["0.00"] * 7 if outcome == "Forfeit" else ["3.100" if (side == 0) != reverse else "2.80"] * 7)
                   for side, user in enumerate(node.contestants)}

@@ -18,11 +18,11 @@ from database_models.token_models import FinalBettingMarket
 
 
 class TestFinalStartRoutes(FinalScenarioCase):
-    async def pairing(self):
+    async def pairing(self, *, live=False):
         final = await confirm_bracket(await self.roster(8), "manager")
-        source = await prepare_match(final, "QF1")
+        source = await self.scheduled_pairing(final, "QF1", is_war=not live)
         store = BaseStore(clan_tag="#TEST", slot="Slot 1", reservation_id="owned", message_id=555, ready=True)
-        await source.set({"thread": "777", "participants.0.base_store": store.model_dump(),
+        await source.set({"thread": "777", "times": [None, None], "participants.0.base_store": store.model_dump(),
                           "participants.0.opponent_bases_stored": True})
         await Clan(tag="#TEST", name="Test", availability_str="Available").insert()
         source = await Match.get(source.id)
@@ -58,7 +58,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
         self.assertIsNotNone((await resolve_final()).first_actual_started_at)
 
     async def test_manual_live_start_closes_before_failed_discord_delivery_and_retains_slot(self):
-        final, source, market = await self.pairing()
+        final, source, market = await self.pairing(live=True)
         bot, ctx = self.transport(ipy.SlashContext)
         async def fail(*args, **kwargs):
             self.assertEqual((await FinalBettingMarket.get(market.id)).state, "CLOSED")

@@ -11,6 +11,7 @@ import interactions as ipy
 from common.base_store.live import live_pair_ready
 from common.constants import COLOR, CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from common.results.validation import is_match_finished
+from common.matches.timing import hosting_started
 from database_models import Match
 
 
@@ -268,7 +269,7 @@ class LiveRequestCoordinator:
             return "Only the requester's opponent can accept or reject this request."
         if is_match_finished(match, player=0) or is_match_finished(match, player=1):
             return "This match has already finished."
-        if any(match.times or []) or any(match.hosts or []):
+        if hosting_started(match):
             return "This match is already being started."
         if identity.stored_reservation_id and not live_pair_ready(match, identity.stored_reservation_id):
             return "The stored bases changed or are no longer ready. Use the current storage message."

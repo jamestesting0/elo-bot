@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from database_models import Match
+from common.matches.timing import hosting_started
 
 
 class MatchSideReservation(Protocol):
@@ -77,8 +78,7 @@ async def reserve_live_start(
         if (
                 fresh_match is None
                 or operations.is_match_finished(fresh_match)
-                or any(fresh_match.times or [])
-                or any(fresh_match.hosts or [])
+                or hosting_started(fresh_match)
         ):
             return LiveReservationsBusy()
         keep_reservations = True

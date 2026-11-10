@@ -12,6 +12,7 @@ from common.players import self_hosting
 from database_models import Match, Player, RecordedMatch
 from database_models.final_models import FinalEditionStats, FinalPlayerProfile
 from database_models.match_models import Participant
+from database_models.result_models import MatchResultOperation
 
 
 class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
@@ -130,6 +131,29 @@ class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
                     await self.invite()
                 self.assertEqual(self.delivered, [])
                 self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_deleted_record_does_not_count_leftover_stored_scores(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1")]
+        match = Match.model_construct(
+            id="deleted-match",
+            result_operation=MatchResultOperation(key="deleted", response={}, created_at=1, cancelled=True),
+            participants=[Participant(user_id="123", result=["3.100", "2.90", "1.80"])],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(self.delivered, [])
+        self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_missing_legacy_record_does_not_count_leftover_stored_scores(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1")]
+        match = Match.model_construct(
+            id="old-deleted-match", recorded_match_id="deleted-record",
+            participants=[Participant(user_id="123", result=["3.100", "2.90", "1.80"])],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(self.delivered, [])
+        self.assertIsNone(self.player.self_host_invitation_message_id)
 
     async def test_seven_complete_final_results_count_as_one_side(self):
         self.player.matches = [RecordedMatch.model_construct(id="1")]

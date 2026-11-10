@@ -21,17 +21,14 @@ INVITATION_LOCKS: dict[str, anyio.Lock] = {}
 async def has_two_completed_matches(player: Player) -> bool:
     """Count historical records and complete stored sides once per match."""
     recorded_match_ids = set()
-    recorded_ids = set()
     recorded_identities = set()
     for record in player.matches:
         match record:
             case RecordedMatch(operation_key=str() as key) if not key.startswith("manual:") and ":" in key:
                 match_id = key.split(":", 1)[0]
                 recorded_match_ids.add(match_id)
-                recorded_ids.add(str(record.id))
                 recorded_identities.add(f"match:{match_id}")
             case RecordedMatch():
-                recorded_ids.add(str(record.id))
                 recorded_identities.add(f"record:{record.id}")
             case Link():
                 continue
@@ -49,7 +46,9 @@ async def has_two_completed_matches(player: Player) -> bool:
     counted_ids = recorded_match_ids
     for match in matches:
         match_id = str(match.id)
-        if match_id in counted_ids or match.recorded_match_id in recorded_ids:
+        if match.result_operation and match.result_operation.cancelled:
+            continue
+        if match_id in counted_ids or match.recorded_match_id:
             continue
         if match.final_result_id:
             continue

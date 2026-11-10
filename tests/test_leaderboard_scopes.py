@@ -131,7 +131,11 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
             for season in ("Current Season", "9"):
                 with self.subTest(lb_type=lb_type, season=season):
                     ctx = await self.invoke(lb_type, season=season)
-                    self.assertNotIn("embed", ctx.send.await_args.kwargs)
+                    if "Hitrate" in lb_type:
+                        self.assertEqual(ctx.send.await_args.kwargs["embed"].fields[0].value,
+                                         "Current Season" if season == "Current Season" else "Season 9")
+                    else:
+                        self.assertNotIn("embed", ctx.send.await_args.kwargs)
                     ctx.send.assert_awaited_once()
 
     async def test_addiction_zero_current_activity_triggers_default_fallback(self):

@@ -233,6 +233,7 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
                 patch.object(Match, "get_pymongo_collection", return_value=MagicMock(update_one=write)),
                 patch.object(result_store, "Match") as match_model,
                 patch.object(result_store.helper_store, "store_helper_score", new=AsyncMock(return_value=outcome)),
+                patch.object(Player, "find_one", new=AsyncMock(return_value=None)),
                 patch.object(result_store_ui, "notify_stored_result", new_callable=AsyncMock),
                 patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
                 patch.object(match_commands, "free_clan", new_callable=AsyncMock),

@@ -3853,7 +3853,6 @@ class MatchCommands(ipy.Extension):
 
                 await autoqueue_completed_match_participants(self.bot, match_token, (player1_id, player2_id))
                 await mark_autowin(match, completed=True)
-                await invite_eligible_players(self.bot, (player1_id, player2_id))
                 await ctx.send(
                     f"{SUCCESS_EMOJI} An auto-win has been given to {winning_user.mention}, "
                     f"and {losing_user.mention} is penalized.{reservation_notice}",
@@ -5738,6 +5737,7 @@ class MatchCommands(ipy.Extension):
         match.participants[index].result = updated_results
         if all(updated_results):
             match.submitters[index] = str(ctx.author.id)
+            await invite_eligible_players(self.bot, (player_id,))
 
         # reuse in-memory for checks/DM composition
         player_results = match.participants[index].result

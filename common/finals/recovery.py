@@ -152,7 +152,7 @@ async def recover_final(final: EloFinal, *, bot=None,
                 continue
             await collection.update_one({"_id": final.id}, {"$set": {f"{path}.helper_completed": True,
                                                                      f"{path}.completed": True}})
-        if bot is not None:
+        if bot is not None and result.snapshot.outcome == "Played":
             await invite_eligible_players(bot, result.snapshot.contestants, pending_only=not completed_now)
         source = await Match.get(PydanticObjectId(result.source_match_id)) if result.source_match_id else None
         if source and source.final_result_id == result.id:

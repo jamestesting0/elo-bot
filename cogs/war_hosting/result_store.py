@@ -14,6 +14,7 @@ from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
 from common.results.validation import is_match_finished, is_valid_complete_match_result
 from common.results.operations import result_input_error
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
+from common.players.self_hosting import invite_eligible_players
 from database_models import Match
 
 
@@ -209,7 +210,7 @@ async def store_match_result_automatically(
                     )
                     return
                 merged_results, applied_trusted = merge_outcome
-                if not applied_trusted or merged_results == stored_results:
+                if not applied_trusted:
                     return
 
                 result_is_complete = (
@@ -217,6 +218,12 @@ async def store_match_result_automatically(
                     and all(isinstance(result, str) and result for result in merged_results)
                     and is_valid_complete_match_result("\n".join(merged_results), len(fresh_match.final_districts))
                 )
+                if merged_results == stored_results:
+                    if result_is_complete:
+                        await invite_eligible_players(
+                            runtime.bot, (fresh_match.participants[player].user_id,), pending_only=True,
+                        )
+                    return
                 if not result_is_complete:
                     expected_count = "seven" if len(fresh_match.final_districts) == 7 else "three"
                     await ctx.send(
@@ -258,6 +265,7 @@ async def store_match_result_automatically(
                 fresh_match.submitters = submitters
                 fresh_match._save_state()
 
+                await invite_eligible_players(runtime.bot, (fresh_match.participants[player].user_id,))
                 try:
                     await runtime._finish_stored_result_side(fresh_match, player)
                 finally:

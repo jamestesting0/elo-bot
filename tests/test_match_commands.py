@@ -159,6 +159,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         layout = MagicMock()
         layout.link = link
         layout.image_url = f"https://example.test/{link}.png"
+        layout.quality = "Good"
         layout.records = list(records or [])
         return layout
 
@@ -333,6 +334,14 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     if isinstance(expression, tuple) and expression[0] == "quality"
                 ]
                 self.assertEqual(quality_filters, [expected_quality])
+
+    async def test_choose_bases_saves_actual_adjusted_layout_quality(self):
+        layout = self.make_layout("wizard")
+        layout.quality = "Great"
+        _, participant, _ = await self.run_choose_bases_with_layouts(
+            [layout], ("Wizard Valley", ("Good", "Good"))
+        )
+        self.assertEqual(participant.bases[0].base_quality, "Great")
 
     def test_district_options_follow_announced_groups_and_snapshotted_availability(self):
         # Given: every combination of snapshotted conditional-district availability

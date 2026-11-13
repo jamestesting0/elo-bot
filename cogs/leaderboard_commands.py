@@ -18,6 +18,47 @@ def _selected_options(options, selected):
     return result
 
 
+_HITRATE_TIERS = ("Overall", "Average", "Good", "Great", "Excellent")
+
+
+def _is_hitrate(lb_type: str) -> bool:
+    return lb_type == "Hitrate" or lb_type.endswith(" Hitrate")
+
+
+def _view_tier(message) -> str:
+    custom_id = message.components[0].components[0].custom_id
+    if isinstance(custom_id, str) and "|" in custom_id:
+        tier = custom_id.split("|", 1)[1]
+        if tier in _HITRATE_TIERS:
+            return tier
+    return "Overall"
+
+
+def _tier_menu(tier: str) -> ipy.ActionRow:
+    return ipy.ActionRow(ipy.StringSelectMenu(
+        *(ipy.StringSelectOption(label=value, value=value, default=value == tier) for value in _HITRATE_TIERS),
+        placeholder="Select base quality",
+        custom_id="lb_tier_select",
+    ))
+
+
+def _ranking_type(lb_type: str, tier: str) -> str:
+    return f"{lb_type}|{tier}" if _is_hitrate(lb_type) and tier != "Overall" else lb_type
+
+
+async def _board_text(guild, players, lb_type, season_start, season_end, starting_index=0, *, paged=False,
+                      tier="Overall"):
+    if not players:
+        return "No eligible players in this leaderboard."
+    if _is_hitrate(lb_type) and tier != "Overall":
+        return await construct_leaderboard_string(
+            guild, players, lb_type, season_start, season_end, starting_index, paged=paged, tier=tier
+        )
+    return await construct_leaderboard_string(
+        guild, players, lb_type, season_start, season_end, starting_index, paged=paged
+    )
+
+
 def _normalize_season(lb_type: str, season: str | None) -> str:
     if lb_type in {"Highest Elo", "Tokens"} or season == "Lifetime":
         return "Current Season"
@@ -178,6 +219,11 @@ def _rank_match_board(players: list[Player], lb_type: str,
 
 async def sort_players(players: list[Player], lb_type: str,
                        season_start: int | float, season_end: int | float) -> list:
+    if "|" in lb_type:
+        return _order_players(
+            players, lb_type,
+            lambda player: _player_scope_stats(player, [("selected", season_start, season_end)])["selected"],
+        )
     if lb_type == "Highest Elo":
         return sorted(players, key=lambda player: player.highest_elo, reverse=True)
     if lb_type == "Elo Reversed":
@@ -194,7 +240,8 @@ async def sort_players(players: list[Player], lb_type: str,
 
 async def construct_leaderboard_string(guild: ipy.Guild, players_sorted: list[Player], lb_type: str,
                                        season_start: int | float, season_end: int | float,
-                                       starting_index: int = 0, *, paged: bool = False) -> str:
+                                       starting_index: int = 0, *, paged: bool = False,
+                                       tier: str = "Overall") -> str:
     if paged:
         page = players_sorted
     else:
@@ -215,7 +262,13 @@ async def construct_leaderboard_string(guild: ipy.Guild, players_sorted: list[Pl
         else:
             emoji = RANK_REVERSED_EMOJIS[rank_index] if lb_type == "Elo Reversed" else RANK_EMOJIS[rank_index]
 
-        if lb_type == "Highest Elo":
+        if _is_hitrate(lb_type) and tier != "Overall":
+            stats = _player_scope_stats(player, [("selected", season_start, season_end)])["selected"]
+            district = "" if lb_type == "Hitrate" else lb_type.removesuffix(" Hitrate")
+            count, stars, destruction = stats.qualities[(tier, district)]
+            leaderboard += (f"{emoji} {user_mention} `{count}` → "
+                            f"`{stars / count:.2f}⭐ {destruction / count:.2f}%`\n")
+        elif lb_type == "Highest Elo":
             leaderboard += f"{emoji} {user_mention} `{player.highest_elo}`\n"
         elif lb_type == "Elo Reversed":
             leaderboard += f"{emoji} {user_mention} `{player.elo}`\n"
@@ -273,7 +326,7 @@ _RANK_SCAN_CHUNK = 25
 
 
 class _SeasonStats:
-    __slots__ = ("match_count", "wins", "stars", "destruction", "districts")
+    __slots__ = ("match_count", "wins", "stars", "destruction", "districts", "qualities")
 
     def __init__(self) -> None:
         self.match_count = 0
@@ -281,6 +334,7 @@ class _SeasonStats:
         self.stars = 0
         self.destruction = 0
         self.districts: dict[str, list] = {}
+        self.qualities: dict[tuple[str, str], list[int]] = {}
 
 
 _ZERO_STATS = _SeasonStats()
@@ -317,6 +371,13 @@ def _player_scope_stats(player: Player, scopes: list[tuple[str, int | float, int
                 totals[0] += 1
                 totals[1] += district_stats.stars
                 totals[2] += district_stats.destruction
+                quality = getattr(district_stats, "base_quality", None)
+                if quality in _HITRATE_TIERS[1:]:
+                    for quality_district in ("", district):
+                        quality_totals = stats.qualities.setdefault((quality, quality_district), [0, 0, 0])
+                        quality_totals[0] += 1
+                        quality_totals[1] += district_stats.stars
+                        quality_totals[2] += district_stats.destruction
     return grouped
 
 
@@ -347,6 +408,14 @@ def _district_hitrate(stats: _SeasonStats, district: str) -> float:
 
 
 def _order_players(players: list[Player], lb_type: str, stats_of) -> list:
+    if "|" in lb_type:
+        board, tier = lb_type.split("|", 1)
+        district = "" if board == "Hitrate" else board.removesuffix(" Hitrate")
+        def totals(player):
+            return stats_of(player).qualities.get((tier, district), [0, 0, 0])
+        eligible = [player for player in players if totals(player)[0] >= 5]
+        return sorted(eligible, key=lambda player: (totals(player)[1] * 1000 + totals(player)[2])
+                      / totals(player)[0], reverse=True)
     if lb_type == "Addiction":
         return sorted(players, key=lambda player: stats_of(player).match_count, reverse=True)
     if lb_type == "Winrate":
@@ -554,6 +623,12 @@ class LeaderboardCommands(ipy.Extension):
                     lb_type,
                     lambda player, key=season_key: self._stats_for(player, key),
                 )
+                if _is_hitrate(lb_type):
+                    for tier in _HITRATE_TIERS[1:]:
+                        tier_type = _ranking_type(lb_type, tier)
+                        ranked[(tier_type, season_key, season_start)] = _order_players(
+                            players, tier_type, lambda player, key=season_key: self._stats_for(player, key)
+                        )
             await asyncio.sleep(0)
             if not self._stats_current(generation, players):
                 return False
@@ -566,7 +641,7 @@ class LeaderboardCommands(ipy.Extension):
 
     async def _board_rows(self, lb_type: str, season: str, season_start: int | float,
                           season_end: int | float, starting_index: int,
-                          seasons: list[Season]) -> tuple[list, int, bool]:
+                          seasons: list[Season], tier: str = "Overall") -> tuple[list, int, bool]:
         if lb_type in {"Tokens", "Predictions"}:
             from common.finals.leaderboards import final_board_rows
             rows = await final_board_rows(lb_type, season)
@@ -587,23 +662,24 @@ class LeaderboardCommands(ipy.Extension):
         else:
             players = await self.get_players()
 
-        ranked = await self._ranked_players(players, lb_type, season, season_start, season_end)
+        ranked = await self._ranked_players(players, _ranking_type(lb_type, tier), season, season_start, season_end)
         return ranked, len(ranked), False
 
-    async def _initial_board(self, lb_type: str, season: str | None, seasons: list[Season]) -> tuple:
+    async def _initial_board(self, lb_type: str, season: str | None, seasons: list[Season],
+                             tier: str = "Overall") -> tuple:
         use_default = season is None
         season = _normalize_season(lb_type, season)
         if lb_type in _MATCH_LEADERBOARD_TYPES and not self._player_cache:
             await self.get_players(force_refresh=True)
         scope, season_start, season_end = _scope_window(lb_type, season, seasons)
-        rows, total, paged = await self._board_rows(lb_type, season, season_start, season_end, 0, seasons)
+        rows, total, paged = await self._board_rows(lb_type, season, season_start, season_end, 0, seasons, tier)
         has_entries = bool(total)
         if lb_type == "Addiction":
             has_entries = any(get_season_matches(player.matches, season_start, season_end) for player in rows)
         if use_default and not has_entries and lb_type in (*_MATCH_LEADERBOARD_TYPES, "Predictions"):
             season = "All Seasons"
             scope, season_start, season_end = _scope_window(lb_type, season, seasons)
-            rows, total, paged = await self._board_rows(lb_type, season, season_start, season_end, 0, seasons)
+            rows, total, paged = await self._board_rows(lb_type, season, season_start, season_end, 0, seasons, tier)
         if lb_type in {"Tokens", "Predictions"} and rows:
             scope = rows[0].scope
             if lb_type == "Predictions":
@@ -670,13 +746,14 @@ class LeaderboardCommands(ipy.Extension):
         )
         embed.add_field(name="**Scope**", value=scope)
 
-        if board_size <= 0 or not players_sorted:
+        if (board_size <= 0 or not players_sorted) and not _is_hitrate(lb_type):
             await ctx.send(f"{ERROR_EMOJI} There are no players in this leaderboard.", ephemeral=True)
 
             return
 
-        leaderboard = await construct_leaderboard_string(
-            ctx.guild, players_sorted, lb_type, season_start, season_end, paged=paged
+        leaderboard = (
+            await construct_leaderboard_string(ctx.guild, players_sorted, lb_type, season_start, season_end, paged=paged)
+            if players_sorted else "No eligible players in this leaderboard."
         )
 
         if live:
@@ -686,6 +763,8 @@ class LeaderboardCommands(ipy.Extension):
                 custom_id="lb_refresh",
                 emoji=ipy.PartialEmoji(name="🔄")
             )
+            if _is_hitrate(lb_type):
+                components = [ipy.ActionRow(components), _tier_menu("Overall")]
 
             hidden = False
             timestamp = ipy.Timestamp.fromdatetime(datetime.now()).format(style=ipy.TimestampStyles.RelativeTime)
@@ -709,6 +788,9 @@ class LeaderboardCommands(ipy.Extension):
 
                 components.append(ipy.ActionRow(lb_season_select))
 
+            if _is_hitrate(lb_type):
+                components.append(_tier_menu("Overall"))
+
             left_button = ipy.Button(
                 style=ipy.ButtonStyle.PRIMARY,
                 label="◀️️",
@@ -716,7 +798,7 @@ class LeaderboardCommands(ipy.Extension):
                 disabled=True,
             )
 
-            total_pages = math.ceil(board_size / LB_ENTRIES_PER_PAGE)
+            total_pages = max(1, math.ceil(board_size / LB_ENTRIES_PER_PAGE))
             current_page = int(0 / LB_ENTRIES_PER_PAGE) + 1
             page_number_button = build_page_button(current_page, total_pages, "lb_page")
 
@@ -742,6 +824,7 @@ class LeaderboardCommands(ipy.Extension):
             return
 
         lb_type = ctx.message.embeds[0].title.replace("**", "").replace(" Leaderboard", "")
+        tier = _view_tier(ctx.message)
         season_value = ctx.message.embeds[0].fields[0].value
         if season_value in ["All Seasons", "Current Season", "Lifetime"]:
             season = season_value
@@ -756,7 +839,7 @@ class LeaderboardCommands(ipy.Extension):
         scope, season_start, season_end = _scope_window(lb_type, season, seasons)
 
         players_sorted, board_size, paged = await self._board_rows(
-            lb_type, season, season_start, season_end, starting_index, seasons
+            lb_type, season, season_start, season_end, starting_index, seasons, tier
         )
         if board_size <= 0:
             await ctx.send(f"{ERROR_EMOJI} There are no players in this leaderboard.", ephemeral=True)
@@ -767,8 +850,8 @@ class LeaderboardCommands(ipy.Extension):
 
         if lb_type in {"Tokens", "Predictions"}:
             scope = players_sorted[0].scope
-        leaderboard = await construct_leaderboard_string(
-            ctx.guild, players_sorted, lb_type, season_start, season_end, starting_index, paged=paged
+        leaderboard = await _board_text(
+            ctx.guild, players_sorted, lb_type, season_start, season_end, starting_index, paged=paged, tier=tier
         )
 
         ctx.message.embeds[0].description = leaderboard
@@ -795,8 +878,7 @@ class LeaderboardCommands(ipy.Extension):
             disabled=(starting_index + LB_ENTRIES_PER_PAGE) >= board_size
         )
 
-        component_index = 1 if lb_type in {"Highest Elo", "Tokens"} else 2
-        ctx.message.components[component_index] = ipy.ActionRow(left_button, page_number_button, right_button)
+        ctx.message.components[-1] = ipy.ActionRow(left_button, page_number_button, right_button)
 
         await ctx.edit_origin(embeds=ctx.message.embeds, components=ctx.message.components)
 
@@ -822,6 +904,7 @@ class LeaderboardCommands(ipy.Extension):
             return
 
         lb_type = message.embeds[0].title.replace("**", "").replace(" Leaderboard", "")
+        tier = _view_tier(message)
         season_value = message.embeds[0].fields[0].value
         if season_value in ["All Seasons", "Current Season", "Lifetime"]:
             season = season_value
@@ -850,7 +933,7 @@ class LeaderboardCommands(ipy.Extension):
                 return
         else:
             players_sorted, board_size, paged = await self._board_rows(
-                lb_type, season, season_start, season_end, 0, seasons
+                lb_type, season, season_start, season_end, 0, seasons, tier
             )
             if not players_sorted:
                 await ctx.send(f"{ERROR_EMOJI} There are no players in this leaderboard.", ephemeral=True)
@@ -865,8 +948,8 @@ class LeaderboardCommands(ipy.Extension):
 
         if lb_type in {"Tokens", "Predictions"}:
             scope = players_sorted[0].scope
-        leaderboard = await construct_leaderboard_string(
-            ctx.guild, players_sorted, lb_type, season_start, season_end, starting_index, paged=paged
+        leaderboard = await _board_text(
+            ctx.guild, players_sorted, lb_type, season_start, season_end, starting_index, paged=paged, tier=tier
         )
         message.embeds[0].description = leaderboard
         message.embeds[0].fields[0].value = scope
@@ -888,11 +971,10 @@ class LeaderboardCommands(ipy.Extension):
             disabled=(starting_index + LB_ENTRIES_PER_PAGE) >= board_size,
         )
 
-        component_index = 1 if lb_type in {"Highest Elo", "Tokens"} else 2
-        message.components[component_index] = ipy.ActionRow(left_button, page_number_button, right_button)
+        message.components[-1] = ipy.ActionRow(left_button, page_number_button, right_button)
         await ctx.edit(message, embeds=message.embeds, components=message.components)
 
-    @ipy.component_callback("lb_type_select")
+    @ipy.component_callback(re.compile(r"lb_type_select(?:\|.*)?"))
     async def lb_type_select(self, ctx: ipy.ComponentContext):
         await ctx.defer(ephemeral=True)
 
@@ -903,17 +985,18 @@ class LeaderboardCommands(ipy.Extension):
             return
 
         lb_type = ctx.values[0]
+        tier = _view_tier(ctx.message)
         seasons = await self._seasons()
         season, scope, season_start, season_end, players_sorted, board_size, paged = await self._initial_board(
-            lb_type, None, seasons
+            lb_type, None, seasons, tier
         )
-        if board_size <= 0 or not players_sorted:
+        if (board_size <= 0 or not players_sorted) and not _is_hitrate(lb_type):
             await ctx.send(f"{ERROR_EMOJI} There are no players in this leaderboard.", ephemeral=True)
 
             return
 
-        leaderboard = await construct_leaderboard_string(
-            ctx.guild, players_sorted, lb_type, season_start, season_end, paged=paged
+        leaderboard = await _board_text(
+            ctx.guild, players_sorted, lb_type, season_start, season_end, paged=paged, tier=tier
         )
 
         ctx.message.embeds[0].title = f"**{lb_type} Leaderboard**"
@@ -924,7 +1007,7 @@ class LeaderboardCommands(ipy.Extension):
         lb_type_select = ipy.StringSelectMenu(
             *_selected_options(LB_TYPE_OPTIONS, lb_type),
             placeholder="📊 Select the leaderboard type",
-            custom_id="lb_type_select"
+            custom_id=f"lb_type_select|{tier}" if tier != "Overall" else "lb_type_select"
         )
 
         components = [ipy.ActionRow(lb_type_select)]
@@ -939,6 +1022,9 @@ class LeaderboardCommands(ipy.Extension):
 
             components.append(ipy.ActionRow(lb_season_select))
 
+        if _is_hitrate(lb_type):
+            components.append(_tier_menu(tier))
+
         left_button = ipy.Button(
             style=ipy.ButtonStyle.PRIMARY,
             label="◀️️",
@@ -946,7 +1032,7 @@ class LeaderboardCommands(ipy.Extension):
             disabled=True,
         )
 
-        total_pages = math.ceil(board_size / LB_ENTRIES_PER_PAGE)
+        total_pages = max(1, math.ceil(board_size / LB_ENTRIES_PER_PAGE))
         current_page = int(0 / LB_ENTRIES_PER_PAGE) + 1
         page_number_button = build_page_button(current_page, total_pages, "lb_page")
 
@@ -974,24 +1060,25 @@ class LeaderboardCommands(ipy.Extension):
             return
 
         lb_type = ctx.message.embeds[0].title.replace("**", "").replace(" Leaderboard", "")
+        tier = _view_tier(ctx.message)
         season = _normalize_season(lb_type, ctx.values[0])
         seasons = await self._seasons()
         scope, season_start, season_end = _scope_window(lb_type, season, seasons)
 
         players_sorted, board_size, paged = await self._board_rows(
-            lb_type, season, season_start, season_end, 0, seasons
+            lb_type, season, season_start, season_end, 0, seasons, tier
         )
         if lb_type in {"Tokens", "Predictions"} and players_sorted:
             scope = players_sorted[0].scope
             if lb_type == "Predictions":
                 season = scope.removeprefix("Season ").removesuffix(" Final")
-        if board_size <= 0 or not players_sorted:
+        if (board_size <= 0 or not players_sorted) and not _is_hitrate(lb_type):
             await ctx.send(f"{ERROR_EMOJI} There are no players in this leaderboard.", ephemeral=True)
 
             return
 
-        leaderboard = await construct_leaderboard_string(
-            ctx.guild, players_sorted, lb_type, season_start, season_end, paged=paged
+        leaderboard = await _board_text(
+            ctx.guild, players_sorted, lb_type, season_start, season_end, paged=paged, tier=tier
         )
 
         ctx.message.embeds[0].description = leaderboard
@@ -1008,7 +1095,7 @@ class LeaderboardCommands(ipy.Extension):
             disabled=True,
         )
 
-        total_pages = math.ceil(board_size / LB_ENTRIES_PER_PAGE)
+        total_pages = max(1, math.ceil(board_size / LB_ENTRIES_PER_PAGE))
         current_page = int(0 / LB_ENTRIES_PER_PAGE) + 1
         page_number_button = build_page_button(current_page, total_pages, "lb_page")
 
@@ -1019,19 +1106,55 @@ class LeaderboardCommands(ipy.Extension):
             disabled=(0 + LB_ENTRIES_PER_PAGE) >= board_size
         )
 
-        component_index = 1 if lb_type in {"Highest Elo", "Tokens"} else 2
-        ctx.message.components[component_index] = ipy.ActionRow(left_button, page_number_button, right_button)
+        ctx.message.components[-1] = ipy.ActionRow(left_button, page_number_button, right_button)
 
         await ctx.edit(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
 
         await ctx.send(f"{SUCCESS_EMOJI} The scope is changed to `{scope}`.", ephemeral=True)
 
-    @ipy.component_callback("lb_refresh")
+    @ipy.component_callback("lb_tier_select")
+    async def lb_tier_select(self, ctx: ipy.ComponentContext):
+        await ctx.defer(ephemeral=True)
+        if str(ctx.message.interaction.user.id) != str(ctx.author.id):
+            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.", ephemeral=True)
+            return
+
+        tier = ctx.values[0]
+        lb_type = ctx.message.embeds[0].title.replace("**", "").replace(" Leaderboard", "")
+        scope = ctx.message.embeds[0].fields[0].value
+        season = scope.removeprefix("Season ").removesuffix(" Final")
+        seasons = await self._seasons()
+        scope, season_start, season_end = _scope_window(lb_type, season, seasons)
+        players, size, paged = await self._board_rows(lb_type, season, season_start, season_end, 0, seasons, tier)
+        ctx.message.embeds[0].description = await _board_text(
+            ctx.guild, players, lb_type, season_start, season_end, paged=paged, tier=tier
+        )
+        is_live = ctx.message.components[0].components[0].custom_id.startswith("lb_refresh")
+        ctx.message.components[0].components[0].custom_id = (
+            f"{'lb_refresh' if is_live else 'lb_type_select'}|{tier}" if tier != "Overall"
+            else ("lb_refresh" if is_live else "lb_type_select")
+        )
+        if is_live:
+            ctx.message.components[-1] = _tier_menu(tier)
+            await ctx.edit(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
+            return
+        ctx.message.components[-2] = _tier_menu(tier)
+        ctx.message.components[-1] = ipy.ActionRow(
+            ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️", custom_id=f"lb_left|{-LB_ENTRIES_PER_PAGE}",
+                       disabled=True),
+            build_page_button(1, max(1, math.ceil(size / LB_ENTRIES_PER_PAGE)), "lb_page"),
+            ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="▶️", custom_id=f"lb_right|{LB_ENTRIES_PER_PAGE}",
+                       disabled=size <= LB_ENTRIES_PER_PAGE),
+        )
+        await ctx.edit(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
+
+    @ipy.component_callback(re.compile(r"lb_refresh(?:\|.*)?"))
     async def lb_refresh(self, ctx: ipy.ComponentContext):
         await ctx.defer(ephemeral=True)
 
         selected_scope = ctx.message.embeds[0].fields[0].value
         lb_type = ctx.message.embeds[0].title.replace("**", "").replace(" Leaderboard", "")
+        tier = _view_tier(ctx.message)
         season = _normalize_season(lb_type, selected_scope.removeprefix("Season ").removesuffix(" Final"))
         if lb_type in ["Elo", "Elo Reversed"] and season.isdigit():
             self._seasons_cache = None
@@ -1045,18 +1168,19 @@ class LeaderboardCommands(ipy.Extension):
                 return
             starting_index = int(ctx.message.components[-1].components[-1].custom_id.split("|")[1]) - LB_ENTRIES_PER_PAGE
         players_sorted, board_size, paged = await self._board_rows(
-            lb_type, season, season_start, season_end, 0, seasons
+            lb_type, season, season_start, season_end, 0, seasons, tier
         )
         if lb_type in {"Tokens", "Predictions"} and players_sorted:
             scope = players_sorted[0].scope
-        if not players_sorted:
+        if not players_sorted and not _is_hitrate(lb_type):
             await ctx.send(f"{ERROR_EMOJI} There are no players in this leaderboard.", ephemeral=True)
 
             return
 
-        leaderboard = await construct_leaderboard_string(
+        leaderboard = await _board_text(
             ctx.guild, players_sorted, lb_type, season_start, season_end,
-            min(starting_index, (board_size - 1) // LB_ENTRIES_PER_PAGE * LB_ENTRIES_PER_PAGE), paged=paged
+            max(0, min(starting_index, (board_size - 1) // LB_ENTRIES_PER_PAGE * LB_ENTRIES_PER_PAGE)),
+            paged=paged, tier=tier
         )
 
         timestamp = ipy.Timestamp.fromdatetime(datetime.now()).format(style=ipy.TimestampStyles.RelativeTime)

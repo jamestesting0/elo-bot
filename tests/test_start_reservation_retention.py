@@ -179,6 +179,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
         for data in (self.case.message_data, self.messages[80]):
             self.assertEqual(data["embeds"][0]["title"], "**Match Aborted**")
             self.assertEqual(data["components"], [])
+        self.assertEqual(self.messages[80]["embeds"][0]["color"], 0xBE0000)
         self.assertEqual(self.case.match.old_msgs, [43, None])
         self.case.bot.http.delete_message.assert_not_awaited()
 
@@ -206,6 +207,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.case.persisted["old_msgs"], [43, None])
         self.assertEqual(self.case.match.msg, "80")
         self.assertEqual(self.messages[80]["embeds"][0]["title"], "**Match Aborted**")
+        self.assertEqual(self.messages[80]["embeds"][0]["color"], 0xBE0000)
         self.assertEqual(self.messages[80]["components"], [])
         for player, store in enumerate(stores):
             self.assert_store_retained(player, store, "helper_stored_undo", ready=True)
@@ -248,13 +250,15 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
 
     async def test_live_restart_replaces_aborted_public_status(self) -> None:
         await self.complete_live()
-        self.messages[80]["embeds"][0].update({"title": "**Match Aborted**", "description": "Aborted"})
+        self.messages[80]["embeds"][0].update({"title": "**Match Aborted**", "description": "Aborted",
+                                               "color": 0xBE0000})
         self.messages[80]["components"] = []
         request = self.case.live_request()
         with patch.object(live_start.match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             await live_start.complete_live_start(self.case.bot, self.case.ctx, request)
         self.assertEqual(self.messages[80]["embeds"][0]["title"], "**Match Started**")
+        self.assertEqual(self.messages[80]["embeds"][0]["color"], 0x9EDE73)
         self.assertIn("Spectate", self.messages[80]["embeds"][0]["description"])
         self.assertEqual(self.messages[80]["components"][0]["components"][0]["custom_id"],
                          "live_spectate|TOKEN|1000")

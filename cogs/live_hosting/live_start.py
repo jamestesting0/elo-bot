@@ -19,7 +19,7 @@ from cogs.base_store.publication import BaseStoreMessageConflict, mark_store_res
 from common.base_store.live import live_pair_ready, live_stores
 from common.base_store.start import StoredStartState
 from common.discord.channel_edits import schedule_channel_name_edit
-from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, MATCH_CHANNEL, SUCCESS_EMOJI
+from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, MATCH_CHANNEL, RED_COLOR, SUCCESS_EMOJI
 from common.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
 from common.matches.message_lock import coordinated_match_message, match_message_lock
 from database_models import Match
@@ -351,10 +351,10 @@ async def _abort_live_start_locked(
     if not await match_doc.abort_started_live_match(expected):
         return False
     publication_error: ipy.errors.HTTPException | None = None
-    for channel_id, message_id, supplied in (
-            (int(match_doc.thread), old_message, abort.message),
+    for channel_id, message_id, supplied, is_public in (
+            (int(match_doc.thread), old_message, abort.message, False),
             (match_doc.routing_channel_id if is_final_match(match_doc) else MATCH_CHANNEL,
-             int(match_doc.msg) if match_doc.msg else None, None),
+             int(match_doc.msg) if match_doc.msg else None, None, True),
     ):
         if message_id is None:
             continue
@@ -366,6 +366,8 @@ async def _abort_live_start_locked(
             embeds = deepcopy(message.embeds) or [ipy.Embed()]
             embeds[0].title = "**Match Aborted**"
             embeds[0].description = None
+            if is_public:
+                embeds[0].color = RED_COLOR
             await message.edit(embeds=match_message_embeds(embeds), components=[])
         except ipy.errors.NotFound:
             continue

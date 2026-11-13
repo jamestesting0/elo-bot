@@ -26,6 +26,13 @@ def _period_text(peak: ActivityPeak) -> str:
     return text
 
 
+def _duration_text(seconds: float) -> str:
+    minutes, seconds = divmod(int(seconds + 0.5), 60)
+    hours, minutes = divmod(minutes, 60)
+    return " ".join(f"{value}{unit}" for value, unit in ((hours, "h"), (minutes, "m"), (seconds, "s"))
+                    if value) or "0s"
+
+
 def stats_embed(window: SeasonWindow, stats: SeasonStats) -> ipy.Embed:
     start = "Not recorded" if window.start is None else ipy.Timestamp.fromtimestamp(window.start).format(
         style=ipy.TimestampStyles.LongDateTime,
@@ -51,10 +58,10 @@ def stats_embed(window: SeasonWindow, stats: SeasonStats) -> ipy.Embed:
     activity += f"Players: `{stats.active_players:,}`"
     embed.add_field(name="**Activity**", value=activity, inline=False)
     if stats.confirmation_samples:
-        overall = "N/A" if stats.confirmation_average is None else f"{stats.confirmation_average:.1f}s"
+        overall = "N/A" if stats.confirmation_average is None else _duration_text(stats.confirmation_average)
         wait = f"Overall: `{overall}` ({stats.confirmation_samples:,} of {stats.matches * 2:,} participants)"
         if stats.non_instant_samples:
-            non_instant = f"{stats.non_instant_average:.1f}s"
+            non_instant = _duration_text(stats.non_instant_average)
             wait += f"\nNon-instant: `{non_instant}` (samples: {stats.non_instant_samples:,}; ready excluded)"
         embed.add_field(name="**Confirmation Wait**", value=wait, inline=False)
     districts = "\n".join(f"{DISTRICT_EMOJI} {name} `{count:,}`" for name, count in stats.districts)

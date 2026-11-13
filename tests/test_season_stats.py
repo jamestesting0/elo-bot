@@ -88,10 +88,35 @@ class TestSeasonStatsRendering(unittest.TestCase):
         }), window)
         accumulator.add(row("2", 16), window)
         value = stats_embed(window, accumulator.finish(window)).fields[1].value
-        self.assertIn("`15.0s`", value)
+        self.assertIn("`15s`", value)
         self.assertIn("2 of 4 participants", value)
-        self.assertIn("`30.0s`", value)
+        self.assertIn("`30s`", value)
         self.assertIn("samples: 1", value)
+
+    def test_confirmation_wait_displays_human_readable_averages(self):
+        window = SeasonWindow("1", 10, 30)
+        accumulator = StatsAccumulator()
+        accumulator.add(row("1", 15, matched_time=100, players={
+            "100": {"confirmed_at": 220, "confirmation_method": "ready"},
+            "200": {"confirmed_at": 4920, "confirmation_method": "automatic"},
+        }), window)
+        payload = process_message_payload(embeds=stats_embed(window, accumulator.finish(window)))
+        fields = {field["name"]: field["value"] for field in payload["embeds"][0]["fields"]}
+        value = fields["**Confirmation Wait**"]
+        self.assertIn("`40m 10s`", value)
+        self.assertIn("`1h 20m 20s`", value)
+        self.assertIn("2 of 2 participants", value)
+        self.assertIn("samples: 1; ready excluded", value)
+
+    def test_confirmation_wait_rounds_across_minute_boundary(self):
+        window = SeasonWindow("1", 10, 30)
+        accumulator = StatsAccumulator()
+        accumulator.add(row("1", 15, matched_time=100, players={
+            "100": {"confirmed_at": 159.6, "confirmation_method": "manual"},
+            "200": {},
+        }), window)
+        value = stats_embed(window, accumulator.finish(window)).fields[1].value
+        self.assertEqual(value.count("`1m`"), 2)
 
     def test_confirmation_wait_display_has_no_invented_empty_averages(self):
         window = SeasonWindow("1", 10, 30)
@@ -113,5 +138,5 @@ class TestSeasonStatsRendering(unittest.TestCase):
         }), window)
         payload = process_message_payload(embeds=stats_embed(window, accumulator.finish(window)))
         fields = {field["name"]: field["value"] for field in payload["embeds"][0]["fields"]}
-        self.assertIn("`0.0s`", fields["**Confirmation Wait**"])
+        self.assertIn("`0s`", fields["**Confirmation Wait**"])
         self.assertEqual(len(fields["**Confirmation Wait**"].splitlines()), 1)

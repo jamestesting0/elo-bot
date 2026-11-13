@@ -10,7 +10,7 @@ from pymongo.errors import OperationFailure
 
 from cogs.war_hosting import helper_store, result_store
 from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
-from database_models import Match, Participant
+from database_models import Match, Participant, Player
 from tests import _helper_score_fixture as http_fixture
 
 
@@ -131,6 +131,7 @@ class TestScoreStateConsistency(unittest.IsolatedAsyncioTestCase):
             patch.object(result_store, "Match") as repository,
             patch.object(helper_store, "Player") as players,
             patch.object(Match, "set", new=legacy_set),
+            patch.object(Player, "find_one", new=AsyncMock(return_value=None)),
             patch.object(Match, "get_pymongo_collection", return_value=collection),
             patch.object(Match, "_document_settings", DocumentSettings(name="matches", use_state_management=True)),
             patch.object(helper_store, "time", new=MagicMock(time=MagicMock(return_value=200.0))),

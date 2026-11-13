@@ -9,8 +9,10 @@ from pymongo.results import UpdateResult
 
 from common.constants import LVL2_ROLES
 from common.players import self_hosting
-from database_models import Player, RecordedMatch
+from database_models import Match, Player, RecordedMatch
 from database_models.final_models import FinalEditionStats, FinalPlayerProfile
+from database_models.match_models import Participant
+from database_models.result_models import MatchResultOperation
 
 
 class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
@@ -41,6 +43,9 @@ class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(Player, "get_pymongo_collection", return_value=self.collection))
         self.profile = self.enterContext(patch.object(
             FinalPlayerProfile, "find_one", new=AsyncMock(return_value=None),
+        ))
+        self.enterContext(patch.object(
+            Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[])),
         ))
 
     async def send(self, content, **kwargs):
@@ -79,6 +84,88 @@ class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
         await self.invite()
         self.bot.fetch_channel.assert_not_awaited()
         self.collection.update_one.assert_not_awaited()
+
+    async def test_two_stored_sides_invite_without_opponent_results(self):
+        self.player.matches = []
+        matches = [
+            Match.model_construct(
+                id=match_id,
+                participants=[
+                    Participant(user_id="123", result=["3.100", "2.90", "1.80"]),
+                    Participant(user_id="456"),
+                ],
+            )
+            for match_id in ("match-one", "match-two")
+        ]
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=matches))):
+            await self.invite()
+        self.assertEqual(len(self.delivered), 1)
+        self.assertEqual(self.player.self_host_invitation_message_id, 900)
+
+    async def test_stored_side_and_record_for_same_match_count_once(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1", operation_key="match-one:revision")]
+        match = Match.model_construct(
+            id="match-one",
+            participants=[Participant(user_id="123", result=["3.100", "2.90", "1.80"])],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(self.delivered, [])
+        self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_multiple_record_revisions_for_one_match_count_once(self):
+        self.player.matches = [
+            RecordedMatch.model_construct(id="1", operation_key="same-match:first"),
+            RecordedMatch.model_construct(id="2", operation_key="same-match:corrected"),
+        ]
+        await self.invite()
+        self.assertEqual(self.delivered, [])
+        self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_cleared_or_incomplete_side_does_not_count(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1")]
+        for result in ([None, None, None], ["3.100", "2.90", None], ["3.100", "2.90", "9.999"]):
+            with self.subTest(result=result):
+                match = Match.model_construct(id="match-two", participants=[Participant(user_id="123", result=result)])
+                with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+                    await self.invite()
+                self.assertEqual(self.delivered, [])
+                self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_deleted_record_does_not_count_leftover_stored_scores(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1")]
+        match = Match.model_construct(
+            id="deleted-match",
+            result_operation=MatchResultOperation(key="deleted", response={}, created_at=1, cancelled=True),
+            participants=[Participant(user_id="123", result=["3.100", "2.90", "1.80"])],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(self.delivered, [])
+        self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_missing_legacy_record_does_not_count_leftover_stored_scores(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1")]
+        match = Match.model_construct(
+            id="old-deleted-match", recorded_match_id="deleted-record",
+            participants=[Participant(user_id="123", result=["3.100", "2.90", "1.80"])],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(self.delivered, [])
+        self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_seven_complete_final_results_count_as_one_side(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1")]
+        participant = Participant(
+            user_id="123", format="elo_final_seven",
+            districts=[None] * 7, bases=[None] * 7, result=["3.100"] * 7,
+        )
+        match = Match.model_construct(id="final-match", format="elo_final_seven", participants=[participant])
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(len(self.delivered), 1)
+        self.assertEqual(self.player.self_host_invitation_message_id, 900)
 
     async def test_existing_thread_member_is_not_invited(self):
         self.bot.http.request.side_effect = None
@@ -129,11 +216,23 @@ class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
         await self_hosting.invite_eligible_players(self.bot, ("123",), pending_only=True)
         self.thread.send.assert_awaited_once()
 
-    async def test_autowin_and_ranked_records_both_count(self):
+    async def test_autowin_without_stored_results_does_not_count(self):
         self.player.matches = self.player.matches[:1]
         self.player.autowin_receipts = {"autowin-match": 1005}
         await self.invite()
-        self.thread.send.assert_awaited_once()
+        self.thread.send.assert_not_awaited()
+
+    async def test_autowin_with_stored_results_counts_the_stored_side(self):
+        self.player.matches = self.player.matches[:1]
+        self.player.autowin_receipts = {"autowin-match": 1005}
+        match = Match.model_construct(
+            id="autowin-match", autowin_completed=True,
+            participants=[Participant(user_id="123", result=["3.100", "2.90", "1.80"])],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(len(self.delivered), 1)
+        self.assertEqual(self.player.self_host_invitation_message_id, 900)
 
     async def test_autowin_converted_to_ranked_does_not_count_twice(self):
         self.player.matches = [RecordedMatch.model_construct(id="1", operation_key="same-match:operation")]
@@ -149,15 +248,31 @@ class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
         await self.invite()
         self.thread.send.assert_awaited_once()
 
-    async def test_final_byes_do_not_count_but_forfeits_do(self):
+    async def test_official_final_and_its_stored_side_count_once(self):
         self.player.matches = []
-        stats = FinalEditionStats(season_number=1, byes=2)
+        self.profile.return_value = FinalPlayerProfile.model_construct(
+            editions={"final": FinalEditionStats(season_number=1, played=1)},
+        )
+        match = Match.model_construct(
+            id="final-match", final_id="final", final_result_id="official",
+            participants=[Participant(user_id="123", result=["3.100", "2.90", "1.80"])],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[match]))):
+            await self.invite()
+        self.assertEqual(self.delivered, [])
+        self.assertIsNone(self.player.self_host_invitation_message_id)
+
+    async def test_final_byes_and_unplayed_forfeits_do_not_count(self):
+        self.player.matches = [RecordedMatch.model_construct(id="1")]
+        stats = FinalEditionStats(season_number=1, byes=2, forfeits=2)
         self.profile.return_value = FinalPlayerProfile.model_construct(editions={"final": stats})
-        await self.invite()
+        forfeit = Match.model_construct(
+            id="forfeit", final_id="final", final_result_id="official-forfeit",
+            participants=[Participant(user_id="123", result=["0.00"] * 3)],
+        )
+        with patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[forfeit]))):
+            await self.invite()
         self.thread.send.assert_not_awaited()
-        stats.forfeits = 2
-        await self.invite()
-        self.thread.send.assert_awaited_once()
 
     async def test_concurrent_completion_checks_send_only_once(self):
         started, release = anyio.Event(), anyio.Event()

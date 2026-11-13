@@ -120,7 +120,7 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
             "requested_by": REQUESTER_ID,
             "payload": {"base_link": BASE_LINK},
         })
-        self.assertEqual(base.expiration_date, 2_000_000_000.25 + 28 * 86400)
+        self.assertEqual(base.expiration_date, 2_000_000_000.25 + 15 * 86400)
         base.save_changes.assert_awaited_once_with()
         self.bot.fetch_channel.assert_awaited_once_with(BASE_RENEWAL_LOGS_CHANNEL)
         self.renewal_logs_channel.send.assert_awaited_once()
@@ -197,7 +197,7 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
 
         # Then
         self.assertEqual(self.status_api_keys, ["test-key"])
-        self.assertEqual(base.expiration_date, 2_000_000_000.25 + 28 * 86400)
+        self.assertEqual(base.expiration_date, 2_000_000_000.25 + 15 * 86400)
         base.save_changes.assert_awaited_once_with()
         self.assertEqual(ctx.send.await_count, 2)
         queued_message = ctx.send.await_args_list[0].args[0]

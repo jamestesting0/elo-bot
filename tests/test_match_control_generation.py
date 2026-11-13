@@ -7,7 +7,7 @@ from pymongo.results import UpdateResult
 import cogs.match_commands as commands
 import tests._stored_base_controls_fixture as fixtures
 from common.constants import STAFF_ROLE, SUCCESS_EMOJI
-from database_models import Match
+from database_models import Match, Player
 
 
 class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
@@ -89,7 +89,8 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
         self.ctx.message.embeds[0].title = "**Match Ended**"
         self.ctx.custom_id = "store_modal|TOKEN|0"
         collection = MagicMock(update_one=AsyncMock(return_value=UpdateResult({"n": 1}, True)))
-        with patch.object(Match, "get_pymongo_collection", return_value=collection):
+        with (patch.object(Match, "get_pymongo_collection", return_value=collection),
+              patch.object(Player, "find_one", new=AsyncMock(return_value=None))):
             await self.cog.result_store_modal.callback.func(
                 self.cog, self.ctx, result1="3.100", result2="2.90", result3="1.80",
             )

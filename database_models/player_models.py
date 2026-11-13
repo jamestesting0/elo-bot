@@ -39,6 +39,7 @@ class BaseLayout(Document):
 class MatchDistrictStats(BaseModel):
     stars: int
     destruction: int
+    base_quality: str | None = None
 
 
 class MatchPlayerStats(BaseModel):

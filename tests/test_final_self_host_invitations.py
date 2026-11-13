@@ -11,6 +11,31 @@ from database_models.season_models import FinalResultProgress
 
 
 class TestFinalSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
+    async def test_unplayed_forfeit_does_not_trigger_invitation(self):
+        result = FinalMatchResult.model_construct(
+            id="forfeit", node_id="QF1", source_match_id=None, helper_credits=[],
+            snapshot=FinalResultSnapshot(
+                contestants=["123", "456"], scores={"123": ["0.00"] * 7, "456": ["0.00"] * 7},
+                outcome="Forfeit", winner="123",
+            ),
+        )
+        final = EloFinal.model_construct(
+            id=PydanticObjectId(), season_number=7, nodes={"QF1": EloFinalMatch(
+                id="QF1", contestants=["123", "456"], result_id=result.id,
+            )}, result_progress={result.id: FinalResultProgress()}, repair_pending=True,
+        )
+        with patch.object(recovery, "select_financial_work", new=AsyncMock(return_value=(final, []))), \
+                patch.object(recovery, "resolve_final", new=AsyncMock(return_value=final)), \
+                patch.object(EloFinal, "get_pymongo_collection", return_value=MagicMock(update_one=AsyncMock())), \
+                patch.object(recovery.FinalBettingMarket, "find", return_value=SimpleNamespace(
+                    to_list=AsyncMock(return_value=[]))), \
+                patch.object(FinalMatchResult, "find", return_value=SimpleNamespace(
+                    to_list=AsyncMock(return_value=[result]))), \
+                patch.object(recovery, "invite_eligible_players", new=AsyncMock()) as invitations, \
+                patch.object(recovery, "publish_result", new=AsyncMock()):
+            await recovery.recover_final(final, bot=MagicMock())
+        invitations.assert_not_awaited()
+
     async def test_old_final_result_only_recovers_existing_pending_invitations(self):
         # Given: an already completed Final result being revisited by startup recovery.
         result = FinalMatchResult.model_construct(

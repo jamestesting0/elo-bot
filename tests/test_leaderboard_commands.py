@@ -281,6 +281,11 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
                     (lb_type, season_key)
                     for lb_type in match_types
                     for season_key in ("All Seasons", "Current Season", "3")
+                } | {
+                    (f"{lb_type}|{tier}", season_key)
+                    for lb_type in match_types if lb_type == "Hitrate" or lb_type.endswith(" Hitrate")
+                    for tier in ("Average", "Good", "Great", "Excellent")
+                    for season_key in ("All Seasons", "Current Season", "3")
                 },
             )
             self.assertEqual(cog._rankings[("Addiction", "All Seasons", -1)], [player])

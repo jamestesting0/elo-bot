@@ -110,6 +110,23 @@ class TestResultOperationBoundaries(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.runtime.match["participants"][0]["result"], ["2.90", "3.100", "3.100"])
         self.assertTrue(ctx.send.await_args.args[0].startswith(str(SUCCESS_EMOJI)))
 
+    async def test_stored_modal_checks_only_player_after_persisting_their_results(self) -> None:
+        ctx = self.store_context()
+        self.runtime.match["participants"][0]["result"] = [None, None, None]
+        self.runtime.match["participants"][1]["result"] = [None, None, None]
+        observed_results = []
+
+        async def check_after_write(_bot, user_ids):
+            observed_results.append((user_ids, list(self.runtime.match["participants"][0]["result"])))
+
+        self.runtime.state.invite.side_effect = check_after_write
+        await self.runtime.cog.result_store_modal.callback.func(
+            self.runtime.cog, ctx, result1="2.90", result2="3.100", result3="3.100",
+        )
+        self.assertEqual(observed_results, [(("111",), ["2.90", "3.100", "3.100"])])
+        self.assertEqual(self.runtime.match["participants"][1]["result"], [None, None, None])
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(SUCCESS_EMOJI)))
+
     async def test_result_button_explains_pending_recorded_and_deleted_operations_before_opening(self) -> None:
         # Given: the same current result button can outlive the operation's state transitions.
         match = await Match.find_one({"token": "TOKEN"})

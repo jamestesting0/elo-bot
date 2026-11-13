@@ -1192,9 +1192,8 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
                 player1_total_stars == player2_total_stars and
                 player1_total_destruction > player2_total_destruction),
         districts={
-            final_districts[0]: MatchDistrictStats(stars=get_stars(player1_results[0]), destruction=get_destruction(player1_results[0])),
-            final_districts[1]: MatchDistrictStats(stars=get_stars(player1_results[1]), destruction=get_destruction(player1_results[1])),
-            final_districts[2]: MatchDistrictStats(stars=get_stars(player1_results[2]), destruction=get_destruction(player1_results[2])),
+            district: MatchDistrictStats(stars=get_stars(result), destruction=get_destruction(result))
+            for district, result in zip(final_districts[:3], player1_results[:3], strict=True)
         }
     )
 
@@ -1209,11 +1208,23 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
                 player2_total_stars == player1_total_stars and
                 player2_total_destruction > player1_total_destruction),
         districts={
-            final_districts[0]: MatchDistrictStats(stars=get_stars(player2_results[0]), destruction=get_destruction(player2_results[0])),
-            final_districts[1]: MatchDistrictStats(stars=get_stars(player2_results[1]), destruction=get_destruction(player2_results[1])),
-            final_districts[2]: MatchDistrictStats(stars=get_stars(player2_results[2]), destruction=get_destruction(player2_results[2])),
+            district: MatchDistrictStats(stars=get_stars(result), destruction=get_destruction(result))
+            for district, result in zip(final_districts[:3], player2_results[:3], strict=True)
         }
     )
+
+    if match:
+        previous = match.result_operation.previous_record if match.result_operation else None
+        for attacker_id, stats in ((player1_id, p1_stats), (player2_id, p2_stats)):
+            if previous:
+                for district, district_stats in stats.districts.items():
+                    old_stats = previous.players[attacker_id].districts.get(district)
+                    district_stats.base_quality = old_stats.base_quality if old_stats else None
+            else:
+                defender = next(p for p in match.participants if p.user_id != attacker_id)
+                for index, district in enumerate(final_districts):
+                    base = defender.bases[index]
+                    stats.districts[district].base_quality = base.base_quality if base else None
 
     if match and match.confirmation_tracking:
         for participant in match.participants:
@@ -1629,7 +1640,7 @@ async def record_base_stats(player_results: dict, match: Match):
                     {"link": base.link, "operation_receipts": {"$ne": receipt}},
                     {
                         "$push": {"records": new_record},
-                        "$max": {"expiration_date": now + 28 * 86400},
+                        "$max": {"expiration_date": now + 15 * 86400},
                         "$addToSet": {"operation_receipts": receipt},
                     },
                 )
@@ -1639,7 +1650,7 @@ async def record_base_stats(player_results: dict, match: Match):
             ).update(
                 {
                     "$push": {"records": new_record},
-                    "$max": {"expiration_date": now + 28 * 86400}
+                    "$max": {"expiration_date": now + 15 * 86400}
                 }
             )
 
@@ -1942,7 +1953,8 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
             embed.set_image(chosen_base.image_url)
             opponent_participant.bases[index] = BaseLink(
                 link=chosen_base.link,
-                image=chosen_base.image_url
+                image=chosen_base.image_url,
+                base_quality=chosen_base.quality,
             )
         else:
             embed.set_image(base.image)
@@ -3853,7 +3865,6 @@ class MatchCommands(ipy.Extension):
 
                 await autoqueue_completed_match_participants(self.bot, match_token, (player1_id, player2_id))
                 await mark_autowin(match, completed=True)
-                await invite_eligible_players(self.bot, (player1_id, player2_id))
                 await ctx.send(
                     f"{SUCCESS_EMOJI} An auto-win has been given to {winning_user.mention}, "
                     f"and {losing_user.mention} is penalized.{reservation_notice}",
@@ -5738,6 +5749,7 @@ class MatchCommands(ipy.Extension):
         match.participants[index].result = updated_results
         if all(updated_results):
             match.submitters[index] = str(ctx.author.id)
+            await invite_eligible_players(self.bot, (player_id,))
 
         # reuse in-memory for checks/DM composition
         player_results = match.participants[index].result

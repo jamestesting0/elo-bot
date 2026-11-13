@@ -196,7 +196,7 @@ class PresetCommands(ipy.Extension):
 
         base_image_url = file_msg.attachments[0].url if file_msg else UNAVAILABLE_IMAGE
 
-        expiration_ts = datetime.now().timestamp() + 28 * 86400
+        expiration_ts = datetime.now().timestamp() + 15 * 86400
         district = DISTRICT_CODES_REVERSED[base_link.split('%')[2]]
         existing_base = await BaseLayout.find_one(
             BaseLayout.link == base_link,

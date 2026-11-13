@@ -139,11 +139,15 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.cog.send_base_renewal_log = AsyncMock()
 
         # Execute
-        await BASE_SET_LINK_CALLBACK(self.cog, ctx, old_base_link, new_base_link)
+        clock = MagicMock()
+        clock.now.return_value.timestamp.return_value = 2_000_000_000
+        with patch("cogs.base_commands.datetime", clock):
+            await BASE_SET_LINK_CALLBACK(self.cog, ctx, old_base_link, new_base_link)
 
         # Verify
         mock_base_layout.find_one.assert_called_once()
         self.assertEqual(mock_base.link, new_base_link)
+        self.assertEqual(mock_base.expiration_date, 2_000_000_000 + 15 * 86400)
         mock_base.save_changes.assert_called_once()
         self.cog.send_base_renewal_log.assert_awaited_once_with(mock_base)
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have successfully renewed a base for `Barbarian Camp`.")

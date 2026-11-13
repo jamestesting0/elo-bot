@@ -129,7 +129,7 @@ class TestBaseExpirationAutorenew(unittest.IsolatedAsyncioTestCase):
                     "requested_by": BOT_USER_ID,
                     "payload": {"base_link": BASE_LINK},
                 })
-                self.assertEqual(base.expiration_date, NOW + (28 if renewed else 1) * 86400)
+                self.assertEqual(base.expiration_date, NOW + (15 if renewed else 1) * 86400)
                 if renewed:
                     base.save_changes.assert_awaited_once_with()
                 else:

@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 import anyio
 from beanie import PydanticObjectId
+from pymongo.errors import OperationFailure
 
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
@@ -14,7 +15,10 @@ from cogs.war_hosting import result_store, result_store_task, result_store_ui
 from cogs.war_hosting.helper_store import HelperScoreStoreOutcome
 from common.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 from common.constants import ERROR_EMOJI, IMPORTANT_EMOJI, STAR_EMOJI
-from database_models import Match
+from common.players import self_hosting
+from database_models import Match, Player
+from database_models.final_models import FinalPlayerProfile
+from database_models.match_models import Participant
 
 
 COMPLETE = ["3.100", "2.90", "1.80"]
@@ -36,6 +40,9 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         )
         self.autoqueue_patcher.start()
         self.addCleanup(self.autoqueue_patcher.stop)
+        self.player_lookup_patcher = patch.object(Player, "find_one", new=AsyncMock(return_value=None))
+        self.player_lookup_patcher.start()
+        self.addCleanup(self.player_lookup_patcher.stop)
 
     @staticmethod
     def _match(
@@ -166,6 +173,85 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
         self.assertTrue(ctx.send.await_args.args[0].startswith(str(match_commands.SUCCESS_EMOJI)))
         finalize.assert_awaited_once_with("TOKEN")
+
+    async def test_second_stored_side_delivers_invitation_before_opponent_finishes(self) -> None:
+        source = self._match(results=[[None, None, None], [None, None, None]])
+        fresh = self._match(results=[[None, None, None], [None, None, None]])
+        first = Match.model_construct(
+            id=PydanticObjectId("0123456789abcdef01234568"),
+            participants=[Participant(user_id="111", result=COMPLETE.copy()), Participant(user_id="222")],
+        )
+        second = Match.model_construct(
+            id=fresh.id,
+            participants=[Participant(user_id="111"), Participant(user_id="222")],
+        )
+        player = Player.model_construct(
+            id="player", user_id="111", tag="#PLAYER", elo=1000, highest_elo=1000, matches=[],
+        )
+        thread = MagicMock()
+        thread.guild.id = 456
+        thread.send = AsyncMock(return_value=SimpleNamespace(id=900))
+        self.bot.http.request = AsyncMock(side_effect=ipy.errors.NotFound(
+            SimpleNamespace(status=404, reason="Not Found"),
+        ))
+        self.bot.fetch_channel = AsyncMock(return_value=thread)
+        self.bot.fetch_member = AsyncMock(return_value=MagicMock(has_role=MagicMock(return_value=False)))
+        outcome = HelperScoreStoreOutcome(
+            results=tuple(COMPLETE), changed=True, skipped=(), job_id="job", status="succeeded",
+            summary="ok", trusted=tuple(zip(DISTRICTS, COMPLETE)),
+        )
+
+        async def update_player(_query, operation):
+            for key, value in operation["$set"].items():
+                setattr(player, key, value)
+            return SimpleNamespace(matched_count=1)
+
+        async def update_match(_query, operation):
+            second.participants[0].result = operation["$set"]["participants.0.result"]
+            return SimpleNamespace(matched_count=1)
+
+        fresh.get_pymongo_collection().update_one.side_effect = update_match
+        collection = MagicMock(update_one=AsyncMock(side_effect=update_player))
+        with (
+                patch.object(result_store, "Match") as match_model,
+                patch.object(result_store.helper_store, "store_helper_score", new=AsyncMock(return_value=outcome)),
+                patch.object(Player, "find_one", new=AsyncMock(side_effect=lambda *_a, **_k: player.model_copy())),
+                patch.object(Player, "get_pymongo_collection", return_value=collection),
+                patch.object(FinalPlayerProfile, "find_one", new=AsyncMock(return_value=None)),
+                patch.object(self_hosting.Match, "find",
+                             return_value=MagicMock(to_list=AsyncMock(return_value=[first, second]))),
+                patch.object(match_commands, "free_clan", new_callable=AsyncMock),
+                patch.object(match_commands, "remove_helper_task", new_callable=AsyncMock),
+        ):
+            match_model.find_one = AsyncMock(side_effect=[source, fresh])
+            await self.cog.store_match_result_automatically(self._slash_ctx(actor=777), source, 0)
+
+        self.assertEqual(fresh.participants[0].result, COMPLETE)
+        self.assertEqual(fresh.participants[1].result, [None, None, None])
+        self.assertEqual(second.participants[0].result, COMPLETE)
+        self.assertEqual(player.self_host_invitation_message_id, 900)
+        self.assertIn("<@111>", thread.send.await_args.args[0])
+
+    async def test_failed_result_write_does_not_check_or_send_invitation(self) -> None:
+        source = self._match(results=[[None, None, None], [None, None, None]])
+        fresh = self._match(results=[[None, None, None], [None, None, None]])
+        fresh.get_pymongo_collection().update_one.side_effect = OperationFailure("write failed")
+        outcome = HelperScoreStoreOutcome(
+            results=tuple(COMPLETE), changed=True, skipped=(), job_id="job", status="succeeded",
+            summary="ok", trusted=tuple(zip(DISTRICTS, COMPLETE)),
+        )
+        ctx = self._slash_ctx(actor=777)
+        with (
+                patch.object(result_store, "Match") as match_model,
+                patch.object(result_store.helper_store, "store_helper_score", new=AsyncMock(return_value=outcome)),
+                patch.object(Player, "find_one", new=AsyncMock()) as player_lookup,
+                self.assertLogs(level="ERROR"),
+        ):
+            match_model.find_one = AsyncMock(side_effect=[source, fresh])
+            await self.cog.store_match_result_automatically(ctx, source, 0)
+        player_lookup.assert_not_awaited()
+        self.assertEqual(fresh.participants[0].result, [None, None, None])
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
 
     async def test_persisted_scheduled_autostore_marks_started_message_ended_after_write(self) -> None:
         source = self._match(results=[[None, None, None], COMPLETE.copy()])
@@ -450,12 +536,15 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(result_store, "Match") as match_model,
                 patch.object(result_store.helper_store, "store_helper_score", new=AsyncMock(return_value=outcome)),
+                patch.object(result_store, "invite_eligible_players", wraps=self_hosting.invite_eligible_players)
+                as invitation_check,
         ):
             match_model.find_one = AsyncMock(side_effect=[unchanged, unchanged])
             await self.cog.store_match_result_automatically(unchanged_ctx, unchanged, 0)
         unchanged.get_pymongo_collection().update_one.assert_not_awaited()
         unchanged_ctx.send.assert_not_awaited()
         self.bot.fetch_user.assert_not_awaited()
+        invitation_check.assert_awaited_once_with(self.bot, ("111",), pending_only=True)
 
     def test_confirmation_commands_and_callbacks_are_not_registered(self) -> None:
         self.assertFalse(hasattr(MatchCommands, "match_result_confirm"))

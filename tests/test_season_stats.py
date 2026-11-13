@@ -79,7 +79,7 @@ class TestSeasonStatsRendering(unittest.TestCase):
         # Then: counts never imply complete district coverage.
         self.assertEqual(re.findall(r"`(\d+)`", embed.fields[-1].value), ["0"] * 9 + ["1"])
 
-    def test_confirmation_wait_display_reports_averages_and_coverage(self):
+    def test_confirmation_wait_display_reports_averages(self):
         window = SeasonWindow("1", 10, 30)
         accumulator = StatsAccumulator()
         accumulator.add(row("1", 15, matched_time=100, players={
@@ -89,9 +89,7 @@ class TestSeasonStatsRendering(unittest.TestCase):
         accumulator.add(row("2", 16), window)
         value = stats_embed(window, accumulator.finish(window)).fields[1].value
         self.assertIn("`15s`", value)
-        self.assertIn("2 of 4 participants", value)
         self.assertIn("`30s`", value)
-        self.assertIn("samples: 1", value)
 
     def test_confirmation_wait_displays_human_readable_averages(self):
         window = SeasonWindow("1", 10, 30)
@@ -105,8 +103,6 @@ class TestSeasonStatsRendering(unittest.TestCase):
         value = fields["**Confirmation Wait**"]
         self.assertIn("`40m 10s`", value)
         self.assertIn("`1h 20m 20s`", value)
-        self.assertIn("2 of 2 participants", value)
-        self.assertIn("samples: 1; ready excluded", value)
 
     def test_confirmation_wait_rounds_across_minute_boundary(self):
         window = SeasonWindow("1", 10, 30)

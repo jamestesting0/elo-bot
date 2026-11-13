@@ -1123,7 +1123,7 @@ class BaseCommands(ipy.Extension):
                                 resolution = SubmissionAcceptance(
                                     reviewer_id=str(ctx.author.id), base_id=PydanticObjectId(), quality=quality,
                                     note=note, builder_id=builder_id, accepted_builder_id=accepted_builder_id,
-                                    expiration_date=datetime.now().timestamp() + 28 * 86400,
+                                    expiration_date=datetime.now().timestamp() + 15 * 86400,
                                 )
                         case RejectDecision(reason=reason):
                             resolution = SubmissionRejection(reviewer_id=str(ctx.author.id), reason=reason)
@@ -1395,7 +1395,7 @@ class BaseCommands(ipy.Extension):
             return
 
         # update database
-        expiration_ts = datetime.now().timestamp() + 28 * 86400
+        expiration_ts = datetime.now().timestamp() + 15 * 86400
         district = DISTRICT_CODES_REVERSED[base_link.split('%')[2]]
         existing_base = await BaseLayout.find_one(BaseLayout.link == base_link)
         if existing_base:
@@ -1504,7 +1504,7 @@ class BaseCommands(ipy.Extension):
             return
 
         base.link = new_base_link
-        base.expiration_date = datetime.now().timestamp() + 28 * 86400
+        base.expiration_date = datetime.now().timestamp() + 15 * 86400
         await base.save_changes()
         await self.send_base_renewal_log(base)
 
@@ -1817,7 +1817,7 @@ class BaseCommands(ipy.Extension):
                 await delete_file(temp_path)
 
         # update database
-        expiration_ts = datetime.now().timestamp() + 28 * 86400
+        expiration_ts = datetime.now().timestamp() + 15 * 86400
         district = DISTRICT_CODES_REVERSED[base_link.split('%')[2]]
         
         # check if base already exists (even if private)
@@ -2641,7 +2641,7 @@ class BaseCommands(ipy.Extension):
 
         if new_link:
             base.link = new_link
-        base.expiration_date = datetime.now().timestamp() + 28 * 86400
+        base.expiration_date = datetime.now().timestamp() + 15 * 86400
 
         await base.save_changes()
         await self.send_base_renewal_log(base)

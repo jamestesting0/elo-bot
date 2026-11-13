@@ -139,7 +139,7 @@ async def preserve_and_renew_base(
             assert_never(unexpected)
     match outcome:
         case HelperPreserveBaseLinkTerminalJob(status="succeeded"):
-            base.expiration_date = datetime.now().timestamp() + 28 * 86400
+            base.expiration_date = datetime.now().timestamp() + 15 * 86400
             await base.save_changes()
             await runtime.send_base_renewal_log(base)
         case HelperPreserveBaseLinkTerminalJob(status="failed" | "cancelled"):
@@ -211,7 +211,7 @@ async def autorenew_base(
     match outcome:
         case HelperPreserveBaseLinkTerminalJob(status="succeeded"):
             await ctx.send(
-                f"{SUCCESS_EMOJI} The `{base.district}` base link was preserved and renewed for 28 days.",
+                f"{SUCCESS_EMOJI} The `{base.district}` base link was preserved and renewed for 15 days.",
                 ephemeral=True,
             )
         case HelperPreserveBaseLinkTerminalJob(status="failed"):

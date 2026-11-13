@@ -315,6 +315,16 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
                 # Then: extending a link cannot reduce its existing lifetime.
                 self.assertEqual(self.base["expiration_date"], 10_000_000_000.0)
 
+    async def test_recorded_attack_extends_expired_base_by_fifteen_days(self) -> None:
+        self.base["expiration_date"] = 1.0
+        match = Match.model_validate(deepcopy(self.match))
+        match.result_operation = MatchResultOperation(key="pending", response=RESULTS, created_at=10.0)
+
+        await match_commands.record_base_stats({"111": RESULTS["player1"].splitlines(),
+                                                "222": RESULTS["player2"].splitlines()}, match)
+
+        self.assertEqual(self.base["expiration_date"], 10.0 + 15 * 86400)
+
     async def test_publication_retry_preserves_an_explicitly_deleted_completed_record(self) -> None:
         # Given: bookkeeping completes, publication fails, then an operator deletes that record.
         self.thread.send.side_effect = [ipy.errors.HTTPException(MagicMock(status=503, reason="Unavailable")), MagicMock()]

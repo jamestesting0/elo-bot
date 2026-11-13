@@ -19,6 +19,69 @@ from tests._result_retry_store import ResultRetryStateMixin
 from tests._result_retry_store import RESULTS
 
 class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncioTestCase):
+    async def test_result_tiers_follow_defenders_and_survive_checkpoint_retry(self) -> None:
+        self.match["participants"][0]["bases"] = [
+            {"link": "base", "image": "image", "base_quality": "Good"},
+            {"link": "custom", "image": "image"},
+            None,
+        ]
+        self.match["participants"][1]["bases"] = [
+            {"link": "other", "image": "image", "base_quality": "Excellent"},
+            {"link": "legacy", "image": "image"},
+            {"link": "third", "image": "image", "base_quality": "Average"},
+        ]
+
+        def fail_checkpoint(updates):
+            if updates.get("$set", {}).get("result_operation.completed"):
+                self.before_match_update = lambda _updates: None
+                raise OperationFailure("injected completion failure")
+
+        self.before_match_update = fail_checkpoint
+        with self.assertRaises(OperationFailure):
+            await self.cog._finalize_match_results_locked("TOKEN", RESULTS)
+        self.match["participants"][1]["bases"][0]["base_quality"] = "Good"
+        self.state.player_collection.update_one.reset_mock()
+        await self.cog._finalize_match_results_locked("TOKEN", RESULTS)
+
+        recorded = self.state.records["11"]
+        self.assertEqual([s.base_quality for s in recorded.players["111"].districts.values()],
+                         ["Excellent", None, "Average"])
+        self.assertEqual([s.base_quality for s in recorded.players["222"].districts.values()],
+                         ["Good", None, None])
+        self.assertEqual(self.match["result_operation"]["record"]["players"]["111"]["districts"]
+                         ["Barbarian Camp"]["base_quality"], "Excellent")
+
+    async def test_correction_retains_original_tiers_without_guessing_legacy(self) -> None:
+        old = self.state.records["10"]
+        old.players["111"].districts["Barbarian Camp"].base_quality = "Excellent"
+        old.players["222"].districts["Barbarian Camp"].base_quality = "Average"
+        self.match["participants"][0]["bases"][0]["base_quality"] = "Good"
+        self.match["participants"][1]["bases"][0] = {
+            "link": "replacement", "image": "image", "base_quality": "Great",
+        }
+        ctx = MagicMock(custom_id="resubmit_modal|TOKEN", defer=AsyncMock(), send=AsyncMock(),
+                        guild=self.state.bot.fetch_guild.return_value)
+        corrected = {"player1": RESULTS["player2"], "player2": RESULTS["player1"]}
+
+        await self.cog.resubmit_modal.callback.func(self.cog, ctx, **corrected)
+
+        recorded = self.state.records["11"]
+        self.assertEqual([s.base_quality for s in recorded.players["111"].districts.values()],
+                         ["Excellent", None, None])
+        self.assertEqual([s.base_quality for s in recorded.players["222"].districts.values()],
+                         ["Average", None, None])
+
+    async def test_manual_record_has_unknown_tiers(self) -> None:
+        with patch.object(Match, "find_one", new=AsyncMock(return_value=None)):
+            await match_commands.record_match(
+                MagicMock(), self.state.bot, "111", "222", RESULTS, record_fixture.DISTRICTS,
+            )
+        recorded = self.state.records["11"]
+        self.assertTrue(all(
+            district.base_quality is None
+            for stats in recorded.players.values() for district in stats.districts.values()
+        ))
+
     async def test_challenge_confirmation_times_reach_completed_season_statistics(self) -> None:
         self.match["is_challenge"] = True
         self.match["confirmation_tracking"] = True
@@ -162,6 +225,7 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
 
     async def test_resubmit_retry_after_second_player_failure_finishes_original_correction(self) -> None:
         # Given: the old record is rolled back, then the corrected record fails for Player 2.
+        self.state.records["10"].players["111"].districts["Barbarian Camp"].base_quality = "Great"
         corrected = {"player1": RESULTS["player2"], "player2": RESULTS["player1"]}
         ctx = MagicMock(custom_id="resubmit_modal|TOKEN", defer=AsyncMock(), send=AsyncMock(),
                         guild=self.state.bot.fetch_guild.return_value)
@@ -180,6 +244,7 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
         self.assertEqual(len(self.state.players["222"]["matches"]), 1)
         self.assertEqual(self.state.players["111"]["matches"], self.state.players["222"]["matches"])
         self.assertEqual(self.state.players["111"]["elo"], first_player_elo)
+        self.assertEqual(self.state.records["11"].players["111"].districts["Barbarian Camp"].base_quality, "Great")
 
     async def test_finalization_clears_flags_for_consumed_started_base_stores(self) -> None:
         # Given: starting the match consumed the store and retained its stored flag.

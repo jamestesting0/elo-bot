@@ -1640,7 +1640,7 @@ async def record_base_stats(player_results: dict, match: Match):
                     {"link": base.link, "operation_receipts": {"$ne": receipt}},
                     {
                         "$push": {"records": new_record},
-                        "$max": {"expiration_date": now + 28 * 86400},
+                        "$max": {"expiration_date": now + 15 * 86400},
                         "$addToSet": {"operation_receipts": receipt},
                     },
                 )
@@ -1650,7 +1650,7 @@ async def record_base_stats(player_results: dict, match: Match):
             ).update(
                 {
                     "$push": {"records": new_record},
-                    "$max": {"expiration_date": now + 28 * 86400}
+                    "$max": {"expiration_date": now + 15 * 86400}
                 }
             )
 

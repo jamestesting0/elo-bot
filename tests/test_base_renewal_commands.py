@@ -59,10 +59,14 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.edit = AsyncMock()
 
         # When
-        await BASE_RENEW_MODAL_CALLBACK(self.cog, ctx, renewed_link=new_link)
+        clock = MagicMock()
+        clock.now.return_value.timestamp.return_value = 2_000_000_000
+        with patch("cogs.base_commands.datetime", clock):
+            await BASE_RENEW_MODAL_CALLBACK(self.cog, ctx, renewed_link=new_link)
 
         # Then
         self.assertEqual(base.link, new_link)
+        self.assertEqual(base.expiration_date, 2_000_000_000 + 15 * 86400)
         base.save_changes.assert_awaited_once_with()
         self.bot.fetch_channel.assert_awaited_once_with(BASE_RENEWAL_LOGS_CHANNEL)
         self.renewal_logs_channel.send.assert_awaited_once()

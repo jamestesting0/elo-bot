@@ -10,7 +10,8 @@ from interactions.api.http.route import Route
 from pymongo.errors import PyMongoError
 
 from common.constants import AUTOMATIC_MATCH_THREAD, LVL2_ROLES
-from database_models import Player, RecordedMatch
+from common.results.validation import is_valid_complete_match_result
+from database_models import Match, Player, RecordedMatch
 from database_models.final_models import FinalPlayerProfile
 
 
@@ -18,25 +19,50 @@ INVITATION_LOCKS: dict[str, anyio.Lock] = {}
 
 
 async def has_two_completed_matches(player: Player) -> bool:
-    """Include ranked records, autowins and official Final results, without counting corrections twice."""
-    count = len(player.matches)
-    if count >= 2:
-        return True
-    autowins = set(player.autowin_receipts)
+    """Count historical records and complete stored sides once per match."""
+    recorded_match_ids = set()
+    recorded_identities = set()
     for record in player.matches:
         match record:
-            case RecordedMatch(operation_key=str() as key):
-                autowins.discard(key.split(":", 1)[0])
-            case RecordedMatch() | Link():
-                pass
+            case RecordedMatch(operation_key=str() as key) if not key.startswith("manual:") and ":" in key:
+                match_id = key.split(":", 1)[0]
+                recorded_match_ids.add(match_id)
+                recorded_identities.add(f"match:{match_id}")
+            case RecordedMatch():
+                recorded_identities.add(f"record:{record.id}")
+            case Link():
+                continue
             case unreachable:
                 assert_never(unreachable)
-    count += len(autowins)
+    count = len(recorded_identities)
     if count >= 2:
         return True
     profile = await FinalPlayerProfile.find_one({"user_id": player.user_id})
     if profile is not None:
-        count += sum(stats.played + stats.forfeits for stats in profile.editions.values())
+        count += sum(stats.played for stats in profile.editions.values())
+    if count >= 2:
+        return True
+    matches = await Match.find({"participants.user_id": player.user_id, "final_superseded": {"$ne": True}}).to_list()
+    counted_ids = recorded_match_ids
+    for match in matches:
+        match_id = str(match.id)
+        if match.result_operation and match.result_operation.cancelled:
+            continue
+        if match_id in counted_ids or match.recorded_match_id:
+            continue
+        if match.final_result_id:
+            continue
+        for participant in match.participants:
+            if participant.user_id != player.user_id:
+                continue
+            results = participant.result
+            if (len(results) in {3, 7} and all(isinstance(result, str) and result for result in results)
+                    and is_valid_complete_match_result("\n".join(results), len(results))):
+                count += 1
+                counted_ids.add(match_id)
+                break
+        if count >= 2:
+            return True
     return count >= 2
 
 

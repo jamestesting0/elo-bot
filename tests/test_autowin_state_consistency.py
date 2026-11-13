@@ -26,16 +26,11 @@ class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTes
         self.assertEqual([row["wins"] for row in self.rows[Player]], [7, 7])
         self.assertTrue(self.rows[Player][0]["priority"])
 
-    async def test_invitation_check_follows_durable_autowin_completion(self) -> None:
-        async def check_completed(bot, user_ids):
-            self.assertIs(bot, self.bot)
-            self.assertEqual(user_ids, ("111", "222"))
-            self.assertTrue(self.rows[Match][0]["autowin_completed"])
-            self.assertTrue(all(str(self.match.id) in row["autowin_receipts"] for row in self.rows[Player]))
-
-        self.invite.side_effect = check_completed
+    async def test_autowin_does_not_trigger_invitation_check(self) -> None:
         await self.invoke(self.context())
-        self.invite.assert_awaited_once()
+        self.assertTrue(self.rows[Match][0]["autowin_completed"])
+        self.assertTrue(all(str(self.match.id) in row["autowin_receipts"] for row in self.rows[Player]))
+        self.invite.assert_not_awaited()
 
     async def test_concurrent_elo_change_is_preserved_with_the_autowin_award(self) -> None:
         # Given: another result adds 20 Elo after the autowin snapshot is read.

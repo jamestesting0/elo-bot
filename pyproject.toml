@@ -7,11 +7,11 @@ force-exclude = true
 [tool.ruff.lint]
 select = ["F", "PLC0415"]
 # Unused locals that still perform reads are kept on purpose: removing them would change the
-# observable call sequence. Tracked as follow-ups in the architecture plan.
+# observable call sequence.
 ignore = ["F841"]
 
 [tool.ruff.format]
-# The project has no formatter; keep existing layout so refactor diffs stay reviewable.
+# The project has no formatter; keep the existing layout so diffs stay reviewable.
 exclude = ["**/*.py"]
 
 [tool.ruff.lint.per-file-ignores]

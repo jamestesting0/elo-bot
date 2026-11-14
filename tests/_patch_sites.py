@@ -1,9 +1,8 @@
 """Patch one name at several import sites with a single shared object.
 
-A test that patched `module.Name` replaced `Name` for every function of that module. When those
-functions now live in several modules, `patch_sites(("a.Name", "b.Name"), ...)` gives each site the
-same mock, exactly like the original single patch. It accepts every `unittest.mock.patch` argument and
-works as a decorator, a context manager and with `start()`/`stop()`.
+When several modules look the same name up (the mixins of one extension, a feature and its caller),
+`patch_sites(("a.Name", "b.Name"), ...)` gives each site the same mock. It accepts every
+`unittest.mock.patch` argument and works as a decorator, a context manager and with `start()`/`stop()`.
 
 `patch_family(MATCH_MODULE_FAMILY, name, ...)` does the same for code that picks the name at runtime:
 it patches every module of the family that binds the same object as the name's first binder.
@@ -11,7 +10,7 @@ it patches every module of the family that binds the same object as the name's f
 import importlib
 from unittest import mock
 
-# The modules that together replaced the former cogs/match_commands.py.
+# The modules that hold MatchCommands and the match logic its mixins call.
 MATCH_MODULE_FAMILY = (
     "elo_bot.extensions.match",
     "elo_bot.features.base_store.match_adapters",

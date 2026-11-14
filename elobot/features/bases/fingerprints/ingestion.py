@@ -1,4 +1,5 @@
-from elobot.features.bases.fingerprints.types import ExtractionState, FingerprintError, ImageAttachment, PIPELINE_ID
+from elobot.db.fingerprint_types import ExtractionState, ImageAttachment, PIPELINE_ID
+from elobot.features.bases.fingerprints.types import FingerprintError
 from elobot.db import BaseLayout
 
 

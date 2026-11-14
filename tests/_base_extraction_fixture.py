@@ -7,7 +7,8 @@ import torch
 from PIL import Image
 from elobot.features.bases.fingerprints.artifacts import MANIFEST
 from elobot.features.bases.fingerprints.slicing import Detection
-from elobot.features.bases.fingerprints.types import PIPELINE_ID, ImageInput
+from elobot.db.fingerprint_types import PIPELINE_ID
+from elobot.features.bases.fingerprints.types import ImageInput
 from tests._relative_geometry_fixture import points
 
 

@@ -11,9 +11,8 @@ from PIL import Image, ImageChops, ImageDraw
 from elobot.features.bases.fingerprints import comparison, presentation, service
 from elobot.features.bases.fingerprints.extractor import extract_batch
 from elobot.features.bases.fingerprints.matcher import align_layout, score_layout
-from elobot.features.bases.fingerprints.types import (
-    ComparisonSummary, ExtractionResult, FingerprintError, ImageAttachment, ImageInput, PIPELINE_ID, PREVIOUS_PIPELINE_ID,
-)
+from elobot.features.bases.fingerprints.types import ComparisonSummary, ExtractionResult, FingerprintError, ImageInput
+from elobot.db.fingerprint_types import ImageAttachment, PIPELINE_ID, PREVIOUS_PIPELINE_ID
 from tests._relative_geometry_fixture import layout, points
 from tests._relative_geometry_fixture import prediction
 from tests._base_extraction_fixture import detections

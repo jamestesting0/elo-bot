@@ -7,7 +7,8 @@ from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 
 from elobot.features.bases.fingerprints.geometry import Geometry, SETTINGS, distinct, geometry, proposals, shortlist
-from elobot.features.bases.fingerprints.types import BaseFingerprint, LayoutMatch
+from elobot.db.fingerprint_types import BaseFingerprint
+from elobot.features.bases.fingerprints.types import LayoutMatch
 
 
 @dataclass(frozen=True, slots=True)

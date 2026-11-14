@@ -11,7 +11,8 @@ import time
 from pydantic import BaseModel, Field, ValidationError
 
 from elobot.features.bases.fingerprints.artifacts import MANIFEST, MAX_IPC_BYTES, MODEL_DIR, SCRATCH, verify_model
-from elobot.features.bases.fingerprints.types import BaseFingerprint, FingerprintError, ImageInput
+from elobot.db.fingerprint_types import BaseFingerprint
+from elobot.features.bases.fingerprints.types import FingerprintError, ImageInput
 
 
 class WorkerRequest(BaseModel):

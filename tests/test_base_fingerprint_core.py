@@ -13,7 +13,8 @@ from elobot.features.bases.fingerprints.artifacts import MANIFEST
 from elobot.features.bases.fingerprints.extractor import decode_image, extract_batch
 from elobot.features.bases.fingerprints.runtime import selected_device
 from elobot.features.bases.fingerprints.search import eligible
-from elobot.features.bases.fingerprints.types import BaseFingerprint, Building, DISTRICTS, ExtractionState, FingerprintError, ImageInput
+from elobot.db.fingerprint_types import BaseFingerprint, Building, ExtractionState
+from elobot.features.bases.fingerprints.types import DISTRICTS, FingerprintError, ImageInput
 from elobot.db import BaseLayout
 
 

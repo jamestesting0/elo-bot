@@ -7,10 +7,10 @@ from PIL import Image, UnidentifiedImageError
 
 from elobot.features.bases.fingerprints.artifacts import MANIFEST, MAX_IMAGE_BYTES, MAX_PIXELS, PIPELINE_MANIFESTS
 from elobot.features.bases.fingerprints.slicing import sliced_detections
-from elobot.features.bases.fingerprints.types import (
-    BaseFingerprint, Building, ExtractionResult, FingerprintError, HALL_TYPES, ImageInput,
-    LEGACY_PIPELINE_ID, PIPELINE_ID, PIPELINE_IDENTITIES, utcnow,
+from elobot.db.fingerprint_types import (
+    BaseFingerprint, Building, HALL_TYPES, LEGACY_PIPELINE_ID, PIPELINE_ID, PIPELINE_IDENTITIES, utcnow,
 )
+from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, ImageInput
 
 
 def decode_image(path: Path) -> Image.Image:

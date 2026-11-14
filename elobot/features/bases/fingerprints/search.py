@@ -11,10 +11,8 @@ from beanie import PydanticObjectId
 from pydantic import ConfigDict, ValidationError
 from pymongo.errors import PyMongoError
 
-from elobot.features.bases.fingerprints.types import (
-    BaseFingerprint, DISTRICTS, FingerprintError, HALL_TYPES, ImageAttachment, LayoutMatch,
-    PIPELINE_IDENTITIES, MatchScore,
-)
+from elobot.db.fingerprint_types import BaseFingerprint, HALL_TYPES, ImageAttachment, PIPELINE_IDENTITIES
+from elobot.features.bases.fingerprints.types import DISTRICTS, FingerprintError, LayoutMatch, MatchScore
 from elobot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI
 from elobot.config.presentation import COLOR
 from elobot.config.ids import LVL1_ROLES, LVL3_ROLES, WHITELISTED_STAFFS

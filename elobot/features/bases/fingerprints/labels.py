@@ -7,7 +7,8 @@ from PIL import Image
 from elobot.features.bases.fingerprints.artifacts import MANIFEST
 from elobot.features.bases.fingerprints.extractor import decode_image, extract_batch, verify_source
 from elobot.features.bases.fingerprints.presentation import render_panels
-from elobot.features.bases.fingerprints.types import BaseFingerprint, ExtractionResult, FingerprintError, ImageInput
+from elobot.db.fingerprint_types import BaseFingerprint
+from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, ImageInput
 
 
 def render_labels(path: Path, result: ExtractionResult, output: Path) -> None:

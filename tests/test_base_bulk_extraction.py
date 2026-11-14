@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from bson import ObjectId
 
 from elobot.features.bases.fingerprints import jobs
-from elobot.features.bases.fingerprints.types import ExtractionState, PIPELINE_ID
+from elobot.db.fingerprint_types import ExtractionState, PIPELINE_ID
 from elobot.db import BaseFingerprintTask, BaseLayout
 
 

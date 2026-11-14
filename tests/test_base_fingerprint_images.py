@@ -12,7 +12,8 @@ from bson import ObjectId
 from PIL import Image
 
 from elobot.features.bases.fingerprints import images, service
-from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, ImageAttachment
+from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError
+from elobot.db.fingerprint_types import ImageAttachment
 from elobot.db import BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 

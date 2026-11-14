@@ -11,7 +11,10 @@ from PIL import Image
 from elobot.features.bases.fingerprints.artifacts import MANIFEST, PREVIOUS_MANIFEST
 from elobot.features.bases.fingerprints.extractor import extract_batch
 from elobot.features.bases.fingerprints.slicing import Detection, deduplicate, sliced_detections
-from elobot.features.bases.fingerprints.types import LEGACY_PIPELINE_ID, PIPELINE_ID, PREVIOUS_PIPELINE_ID, PREVIOUS_SAHI_PIPELINE_ID, BaseFingerprint, FingerprintError
+from elobot.db.fingerprint_types import (
+    LEGACY_PIPELINE_ID, PIPELINE_ID, PREVIOUS_PIPELINE_ID, PREVIOUS_SAHI_PIPELINE_ID, BaseFingerprint,
+)
+from elobot.features.bases.fingerprints.types import FingerprintError
 from tests._relative_geometry_fixture import points
 from tests._relative_geometry_fixture import prediction
 

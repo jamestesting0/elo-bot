@@ -9,7 +9,7 @@ from ultralytics.utils import plotting
 from elobot.features.bases.fingerprints.extractor import extract_batch
 from elobot.features.bases.fingerprints.labels import create_labels
 from elobot.features.bases.fingerprints.slicing import Detection
-from elobot.features.bases.fingerprints.types import HALL_TYPES, BaseFingerprint
+from elobot.db.fingerprint_types import HALL_TYPES, BaseFingerprint
 from tests import _base_extraction_fixture as fixture
 from tests._relative_geometry_fixture import layout
 from tests._base_extraction_fixture import detections

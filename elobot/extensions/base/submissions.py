@@ -45,7 +45,7 @@ from elobot.features.base_submission.presentation import (
     mark_review_embed,
 )
 from elobot.features.bases.fingerprints.images import attachment_identity, download_base_screenshot
-from elobot.features.bases.fingerprints.types import PIPELINE_ID, ExtractionState
+from elobot.db.fingerprint_types import PIPELINE_ID, ExtractionState
 from elobot.features.bases.layouts.queries import _resolve_builder_id
 from elobot.features.bases.layouts.ui import _iter_message_components
 from elobot.features.bases.screenshots import capture_base_screenshot

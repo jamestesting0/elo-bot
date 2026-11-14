@@ -6,9 +6,8 @@ from pymongo.errors import DuplicateKeyError
 
 from elobot.features.bases.fingerprints.ingestion import source_filter
 from elobot.features.bases.fingerprints.removal import REMOVAL_REASON
-from elobot.features.bases.fingerprints.types import (
-    DISTRICTS, ExtractionResult, ExtractionState, FingerprintError, LEGACY_PIPELINE_ID, PIPELINE_IDENTITIES, utcnow,
-)
+from elobot.features.bases.fingerprints.types import DISTRICTS, ExtractionResult, FingerprintError
+from elobot.db.fingerprint_types import ExtractionState, LEGACY_PIPELINE_ID, PIPELINE_IDENTITIES, utcnow
 from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 
 

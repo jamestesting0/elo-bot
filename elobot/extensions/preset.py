@@ -13,7 +13,7 @@ from elobot.config.ids import GUILD_IDS
 from elobot.db import BaseLayout, Player
 from elobot.features.bases.fingerprints.images import attachment_identity, download_base_screenshot
 from elobot.features.bases.fingerprints.ingestion import replace_source
-from elobot.features.bases.fingerprints.types import ExtractionState, PIPELINE_ID
+from elobot.db.fingerprint_types import ExtractionState, PIPELINE_ID
 from elobot.integrations.files import delete_file
 
 

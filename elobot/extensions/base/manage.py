@@ -35,7 +35,7 @@ from elobot.discord.members import member_guild
 from elobot.extensions.base.groups import BASE_QUALITY_CHOICES
 from elobot.features.bases.fingerprints.images import attachment_identity, download_base_screenshot
 from elobot.features.bases.fingerprints.ingestion import replace_source
-from elobot.features.bases.fingerprints.types import PIPELINE_ID, ExtractionState
+from elobot.db.fingerprint_types import PIPELINE_ID, ExtractionState
 from elobot.features.bases.layouts.queries import BaseAutocompleteRow
 from elobot.features.bases.layouts.ui import (
     _builder_choice_label,

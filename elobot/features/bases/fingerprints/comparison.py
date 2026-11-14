@@ -9,17 +9,9 @@ from elobot.features.bases.fingerprints.artifacts import MANIFEST
 from elobot.features.bases.fingerprints.comparison_matcher import align_comparison
 from elobot.features.bases.fingerprints.extractor import decode_image, verify_source
 from elobot.features.bases.fingerprints.presentation import render_panels
+from elobot.db.fingerprint_types import HALL_TYPES, PIPELINE_ID, BaseFingerprint, Building, utcnow
 from elobot.features.bases.fingerprints.types import (
-    HALL_TYPES,
-    PIPELINE_ID,
-    BaseFingerprint,
-    Building,
-    ComparisonFingerprint,
-    ComparisonSummary,
-    ExtractionResult,
-    FingerprintError,
-    ImageInput,
-    utcnow,
+    ComparisonFingerprint, ComparisonSummary, ExtractionResult, FingerprintError, ImageInput,
 )
 
 if TYPE_CHECKING:

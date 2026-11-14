@@ -10,7 +10,8 @@ import interactions as ipy
 from PIL import Image
 
 from elobot.features.bases.fingerprints import labels, service
-from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, ImageAttachment, ImageInput, PIPELINE_ID
+from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, ImageInput
+from elobot.db.fingerprint_types import ImageAttachment, PIPELINE_ID
 from tests import _base_search_fixture as fixture
 from tests._relative_geometry_fixture import layout, points
 from tests._base_extraction_fixture import detections

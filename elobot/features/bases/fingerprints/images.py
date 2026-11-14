@@ -10,7 +10,8 @@ from interactions.api.http.route import Route
 
 from elobot.features.bases.fingerprints.artifacts import MAX_IMAGE_BYTES
 from elobot.features.bases.fingerprints.extractor import decode_image
-from elobot.features.bases.fingerprints.types import FingerprintError, ImageAttachment
+from elobot.features.bases.fingerprints.types import FingerprintError
+from elobot.db.fingerprint_types import ImageAttachment
 from elobot.config.emojis import ERROR_EMOJI
 
 

@@ -4,8 +4,9 @@ import os
 import sys
 from pathlib import Path
 
-from elobot.features.bases.fingerprints.types import (
-    FingerprintError, LEGACY_PIPELINE_ID, MODEL_SHA256, PIPELINE_ID, PREVIOUS_PIPELINE_ID, PREVIOUS_SAHI_PIPELINE_ID,
+from elobot.features.bases.fingerprints.types import FingerprintError
+from elobot.db.fingerprint_types import (
+    LEGACY_PIPELINE_ID, MODEL_SHA256, PIPELINE_ID, PREVIOUS_PIPELINE_ID, PREVIOUS_SAHI_PIPELINE_ID,
 )
 
 

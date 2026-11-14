@@ -5,7 +5,7 @@ import numpy as np
 
 from elobot.features.bases.fingerprints.geometry import Geometry
 from elobot.features.bases.fingerprints.matcher import assign, score_layout
-from elobot.features.bases.fingerprints.types import BaseFingerprint, PREVIOUS_SAHI_PIPELINE_ID
+from elobot.db.fingerprint_types import BaseFingerprint, PREVIOUS_SAHI_PIPELINE_ID
 from tests._relative_geometry_fixture import layout, points
 
 

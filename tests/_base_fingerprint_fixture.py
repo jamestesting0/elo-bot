@@ -1,4 +1,4 @@
-from elobot.features.bases.fingerprints.types import BaseFingerprint, Building, MODEL_SHA256, utcnow
+from elobot.db.fingerprint_types import BaseFingerprint, Building, MODEL_SHA256, utcnow
 
 
 def fingerprint(revision=0, buildings=None):

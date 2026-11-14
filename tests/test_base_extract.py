@@ -6,7 +6,8 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.errors import AutoReconnect
 
-from elobot.features.bases.fingerprints.types import ExtractionState, FingerprintError
+from elobot.db.fingerprint_types import ExtractionState
+from elobot.features.bases.fingerprints.types import FingerprintError
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elobot.config.ids import WHITELISTED_STAFFS
 

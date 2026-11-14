@@ -6,7 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from elobot.features.bases.fingerprints.types import BaseFingerprint, DISTRICTS, ExtractionResult, FingerprintError, LayoutMatch
+from elobot.db.fingerprint_types import BaseFingerprint
+from elobot.features.bases.fingerprints.types import DISTRICTS, ExtractionResult, FingerprintError, LayoutMatch
 
 
 class Fixture(BaseModel):

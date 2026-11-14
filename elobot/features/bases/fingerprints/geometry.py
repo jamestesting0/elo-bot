@@ -7,7 +7,7 @@ from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist
 
 from elobot.features.bases.fingerprints.artifacts import MANIFEST
-from elobot.features.bases.fingerprints.types import BaseFingerprint, HALL_TYPES
+from elobot.db.fingerprint_types import BaseFingerprint, HALL_TYPES
 
 
 SETTINGS = MANIFEST["matcher"]

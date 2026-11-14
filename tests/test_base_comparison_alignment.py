@@ -4,12 +4,8 @@ import unittest
 from pydantic import ValidationError
 
 from elobot.features.bases.fingerprints.matcher import align_layout
-from elobot.features.bases.fingerprints.types import (
-    BaseFingerprint,
-    ComparisonFingerprint,
-    ComparisonSummary,
-    LayoutMatch,
-)
+from elobot.db.fingerprint_types import BaseFingerprint
+from elobot.features.bases.fingerprints.types import ComparisonFingerprint, ComparisonSummary, LayoutMatch
 from tests._relative_geometry_fixture import layout, points
 
 

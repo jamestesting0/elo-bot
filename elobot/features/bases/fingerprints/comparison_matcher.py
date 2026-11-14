@@ -15,7 +15,8 @@ from elobot.features.bases.fingerprints.geometry import (
     shortlist,
 )
 from elobot.features.bases.fingerprints.matcher import Alignment, Fit, refine
-from elobot.features.bases.fingerprints.types import BaseFingerprint, ComparisonMatch
+from elobot.db.fingerprint_types import BaseFingerprint
+from elobot.features.bases.fingerprints.types import ComparisonMatch
 
 TOLERANCE: Final = .5
 

@@ -17,9 +17,9 @@ from elobot.features.bases.fingerprints.ingestion import source_filter
 from elobot.features.bases.fingerprints.jobs import claim_tasks, commit_result, enroll_batch, materialize_outbox, run_counts
 from elobot.features.bases.fingerprints.runtime import InferenceWorker, selected_device
 from elobot.features.bases.fingerprints.types import (
-    DISTRICTS, PIPELINE_ID, PIPELINE_IDENTITIES, BaseFingerprint, ComparisonSummary, ExtractionResult,
-    ExtractionState, FingerprintError, ImageInput, utcnow,
+    DISTRICTS, ComparisonSummary, ExtractionResult, FingerprintError, ImageInput,
 )
+from elobot.db.fingerprint_types import PIPELINE_ID, PIPELINE_IDENTITIES, BaseFingerprint, ExtractionState, utcnow
 from elobot.config.ids import BASE_SUBMISSION_CHANNEL, LVL1_ROLES, WHITELISTED_STAFFS
 from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 

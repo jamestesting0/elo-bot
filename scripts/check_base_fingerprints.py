@@ -16,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from elobot.features.bases.fingerprints.artifacts import MANIFEST, MANIFEST_SHA256, SCRATCH
 from elobot.features.bases.fingerprints.evaluation import PairEvaluation, legacy_score, load_fixtures, quality_report
 from elobot.features.bases.fingerprints.runtime import InferenceWorker, selected_device
+from elobot.db.fingerprint_types import BaseFingerprint, MODEL_SHA256, PIPELINE_ID, utcnow
 from elobot.features.bases.fingerprints.types import (
-    BaseFingerprint, DISTRICTS, ExtractionResult, FingerprintError, ImageInput, LayoutMatch,
-    MODEL_SHA256, PIPELINE_ID, utcnow,
+    DISTRICTS, ExtractionResult, FingerprintError, ImageInput, LayoutMatch,
 )
 
 

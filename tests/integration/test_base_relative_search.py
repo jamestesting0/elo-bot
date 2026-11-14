@@ -39,7 +39,7 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
 
         async def worker(payload):
             self.assertEqual(len(payload["candidates"]), 1)
-            from elobot.features.bases.fingerprints.types import BaseFingerprint
+            from elobot.db.fingerprint_types import BaseFingerprint
             query = BaseFingerprint.model_validate(payload["query"])
             candidates = [BaseFingerprint.model_validate(value) for value in payload["candidates"]]
             return {"scores": [(await asyncio.to_thread(score_layout, query, value,

@@ -10,12 +10,8 @@ from pymongo import ReturnDocument
 from pymongo.errors import PyMongoError
 
 from elobot.features.bases.fingerprints.ingestion import source_filter
-from elobot.features.bases.fingerprints.types import (
-    BaseFingerprint,
-    ExtractionState,
-    FingerprintError,
-    utcnow,
-)
+from elobot.db.fingerprint_types import BaseFingerprint, ExtractionState, utcnow
+from elobot.features.bases.fingerprints.types import FingerprintError
 from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 
 REMOVAL_REASON: Final = "unextracted"

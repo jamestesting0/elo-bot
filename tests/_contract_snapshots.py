@@ -96,7 +96,7 @@ def describe_attrs_obj(obj, skip=()) -> dict:
     out = {"type": type(obj).__name__}
     fields = attrs.fields_dict(type(obj)) if attrs.has(type(obj)) else vars(obj)
     for name in fields:
-        if name in skip:
+        if name in skip or name == "logger":  # logger class depends on the environment
             continue
         value = getattr(obj, name, None)
         if name == "extension":

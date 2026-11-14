@@ -40,7 +40,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='auditlog'>",
    "nsfw": false,
@@ -98,7 +97,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='auditlog'>",
    "nsfw": false,
@@ -179,7 +177,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -270,7 +267,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -351,7 +347,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -432,7 +427,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -515,7 +509,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -591,7 +584,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -644,7 +636,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -731,7 +722,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -788,7 +778,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -839,7 +828,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -922,7 +910,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -985,7 +972,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1066,7 +1052,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1149,7 +1134,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1230,7 +1214,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1295,7 +1278,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1378,7 +1360,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1463,7 +1444,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1556,7 +1536,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1637,7 +1616,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -1697,7 +1675,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -1761,7 +1738,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -1821,7 +1797,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -1884,7 +1859,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -1960,7 +1934,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -2022,7 +1995,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2084,7 +2056,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2148,7 +2119,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2212,7 +2182,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2276,7 +2245,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2341,7 +2309,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2406,7 +2373,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2470,7 +2436,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2532,7 +2497,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2590,7 +2554,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -2652,7 +2615,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='embed'>",
    "nsfw": false,
@@ -2714,7 +2676,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='giveaway'>",
    "nsfw": false,
@@ -2796,7 +2757,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='giveaway'>",
    "nsfw": false,
@@ -2858,7 +2818,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='giveaway'>",
    "nsfw": false,
@@ -2921,7 +2880,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -2990,7 +2948,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3054,7 +3011,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3119,7 +3075,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3170,7 +3125,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3221,7 +3175,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3285,7 +3238,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3349,7 +3301,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3413,7 +3364,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -3462,7 +3412,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='leaderboard'>",
    "nsfw": false,
@@ -3517,7 +3466,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -3568,7 +3516,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -3617,7 +3564,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -3662,7 +3608,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -3707,7 +3652,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -3764,7 +3708,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -3809,7 +3752,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -3867,7 +3809,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='queue'>",
    "nsfw": false,
@@ -3925,7 +3866,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='queue'>",
    "nsfw": false,
@@ -3983,7 +3923,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='queue'>",
    "nsfw": false,
@@ -4027,7 +3966,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedField: default_locale=english_us, value='Delete Post'>",
    "nsfw": false,
@@ -4068,7 +4006,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -4134,7 +4071,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -4196,7 +4132,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -4247,7 +4182,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -4309,7 +4243,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='thread'>",
    "nsfw": false,
@@ -4354,7 +4287,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
@@ -4399,7 +4331,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
@@ -4455,7 +4386,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='ban'>",
    "nsfw": false,
@@ -4517,7 +4447,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='override'>",
    "nsfw": false,
@@ -4577,7 +4506,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='sticky'>",
    "nsfw": false,
@@ -4637,7 +4565,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='unban'>",
    "nsfw": false,
@@ -4699,7 +4626,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='auditlog'>",
    "nsfw": false,
@@ -4757,7 +4683,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='auditlog'>",
    "nsfw": false,
@@ -4838,7 +4763,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -4929,7 +4853,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5010,7 +4933,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5091,7 +5013,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5174,7 +5095,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5250,7 +5170,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5303,7 +5222,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5390,7 +5308,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5447,7 +5364,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5498,7 +5414,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5581,7 +5496,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5644,7 +5558,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5725,7 +5638,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5808,7 +5720,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5889,7 +5800,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -5954,7 +5864,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -6037,7 +5946,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -6122,7 +6030,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -6215,7 +6122,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -6296,7 +6202,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='base'>",
    "nsfw": false,
@@ -6356,7 +6261,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -6420,7 +6324,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -6480,7 +6383,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -6543,7 +6445,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -6619,7 +6520,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='challenge'>",
    "nsfw": false,
@@ -6681,7 +6581,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -6743,7 +6642,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -6807,7 +6705,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -6871,7 +6768,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -6935,7 +6831,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -7000,7 +6895,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -7065,7 +6959,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -7129,7 +7022,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -7191,7 +7083,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -7249,7 +7140,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='data'>",
    "nsfw": false,
@@ -7311,7 +7201,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='embed'>",
    "nsfw": false,
@@ -7373,7 +7262,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='giveaway'>",
    "nsfw": false,
@@ -7455,7 +7343,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='giveaway'>",
    "nsfw": false,
@@ -7517,7 +7404,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='giveaway'>",
    "nsfw": false,
@@ -7580,7 +7466,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -7649,7 +7534,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -7713,7 +7597,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -7778,7 +7661,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -7829,7 +7711,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -7880,7 +7761,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -7944,7 +7824,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -8008,7 +7887,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -8072,7 +7950,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='helper'>",
    "nsfw": false,
@@ -8121,7 +7998,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='leaderboard'>",
    "nsfw": false,
@@ -8176,7 +8052,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -8227,7 +8102,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -8276,7 +8150,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -8321,7 +8194,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -8366,7 +8238,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -8423,7 +8294,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -8468,7 +8338,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='preset'>",
    "nsfw": false,
@@ -8526,7 +8395,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='queue'>",
    "nsfw": false,
@@ -8584,7 +8452,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='queue'>",
    "nsfw": false,
@@ -8642,7 +8509,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='queue'>",
    "nsfw": false,
@@ -8686,7 +8552,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedField: default_locale=english_us, value='Delete Post'>",
    "nsfw": false,
@@ -8727,7 +8592,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -8793,7 +8657,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -8855,7 +8718,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -8906,7 +8768,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='season'>",
    "nsfw": false,
@@ -8968,7 +8829,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='thread'>",
    "nsfw": false,
@@ -9013,7 +8873,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
@@ -9058,7 +8917,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
@@ -9114,7 +8972,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='ban'>",
    "nsfw": false,
@@ -9176,7 +9033,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='override'>",
    "nsfw": false,
@@ -9236,7 +9092,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='sticky'>",
    "nsfw": false,
@@ -9296,7 +9151,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='unban'>",
    "nsfw": false,
@@ -9349,7 +9203,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9397,7 +9250,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9445,7 +9297,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9495,7 +9346,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9545,7 +9395,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9593,7 +9442,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9637,7 +9485,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9681,7 +9528,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9729,7 +9575,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9777,7 +9622,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9825,7 +9669,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9873,7 +9716,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9917,7 +9759,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -9969,7 +9810,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10021,7 +9861,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10075,7 +9914,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10135,7 +9973,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10185,7 +10022,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10235,7 +10071,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10285,7 +10120,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10333,7 +10167,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10383,7 +10216,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10431,7 +10263,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10475,7 +10306,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10523,7 +10353,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10567,7 +10396,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10611,7 +10439,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10661,7 +10488,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10709,7 +10535,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10757,7 +10582,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10805,7 +10629,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10855,7 +10678,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10903,7 +10725,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='final'>",
    "nsfw": false,
@@ -10951,7 +10772,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='help'>",
    "nsfw": false,
@@ -11009,7 +10829,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11053,7 +10872,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11117,7 +10935,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11183,7 +11000,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11233,7 +11049,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11281,7 +11096,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11333,7 +11147,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11397,7 +11210,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11463,7 +11275,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11515,7 +11326,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11571,7 +11381,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11642,7 +11451,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11692,7 +11500,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11736,7 +11543,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11784,7 +11590,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11846,7 +11651,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11904,7 +11708,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -11971,7 +11774,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12033,7 +11835,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12104,7 +11905,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12169,7 +11969,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12234,7 +12033,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12296,7 +12094,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12359,7 +12156,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12433,7 +12229,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12504,7 +12299,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12568,7 +12362,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
@@ -12621,7 +12414,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -12682,7 +12474,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -12730,7 +12521,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -12782,7 +12572,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -12834,7 +12623,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -12886,7 +12674,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -12936,7 +12723,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -12986,7 +12772,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='player'>",
    "nsfw": false,
@@ -13034,7 +12819,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='open-raid-post'>",
    "nsfw": false,
@@ -13117,7 +12901,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='self'>",
    "nsfw": false,
@@ -13186,7 +12969,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='self'>",
    "nsfw": false,
@@ -13230,7 +13012,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='self'>",
    "nsfw": false,
@@ -13299,7 +13080,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='self'>",
    "nsfw": false,
@@ -13368,7 +13148,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='self'>",
    "nsfw": false,
@@ -13437,7 +13216,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='self'>",
    "nsfw": false,
@@ -13506,7 +13284,6 @@
    "integration_types": [
     "IntegrationType.GUILD_INSTALL"
    ],
-   "logger": "<Logger interactions (WARNING)>",
    "max_concurrency": "<MaxConcurrency object>",
    "name": "<LocalisedName: default_locale=english_us, value='self'>",
    "nsfw": false,
@@ -13549,7 +13326,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['auditlog_page']",
     "nsfw": false,
@@ -13615,7 +13391,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_submission_accept']",
     "nsfw": false,
@@ -13649,7 +13424,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_lb_page']",
     "nsfw": false,
@@ -13683,7 +13457,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_list_district_select']",
     "nsfw": false,
@@ -13717,7 +13490,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_list_embed_type_select']",
     "nsfw": false,
@@ -13751,7 +13523,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_quality_select']",
     "nsfw": false,
@@ -13817,7 +13588,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['renew_base_button']",
     "nsfw": false,
@@ -13851,7 +13621,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['district_type_select']",
     "nsfw": false,
@@ -13917,7 +13686,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_submission_find_similar']",
     "nsfw": false,
@@ -13983,7 +13751,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_submission_reject']",
     "nsfw": false,
@@ -14017,7 +13784,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['build_button']",
     "nsfw": false,
@@ -14051,7 +13817,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['free_clan_select']",
     "nsfw": false,
@@ -14085,7 +13850,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['participate_button']",
     "nsfw": false,
@@ -14119,7 +13883,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['rewards_button']",
     "nsfw": false,
@@ -14153,7 +13916,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['rules_button']",
     "nsfw": false,
@@ -14187,7 +13949,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['support_button']",
     "nsfw": false,
@@ -14221,7 +13982,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['support_select']",
     "nsfw": false,
@@ -14255,7 +14015,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['enter_giveaway']",
     "nsfw": false,
@@ -14289,7 +14048,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['help_category_select']",
     "nsfw": false,
@@ -14323,7 +14081,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['helper_lb_page']",
     "nsfw": false,
@@ -14357,7 +14114,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['view_accounts']",
     "nsfw": false,
@@ -14391,7 +14147,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['lb_page']",
     "nsfw": false,
@@ -14425,7 +14180,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['lb_season_select']",
     "nsfw": false,
@@ -14459,7 +14213,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['lb_tier_select']",
     "nsfw": false,
@@ -14493,7 +14246,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['match_queue']",
     "nsfw": false,
@@ -14527,7 +14279,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['elo_select']",
     "nsfw": false,
@@ -14561,7 +14312,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['season_lb_page']",
     "nsfw": false,
@@ -14597,7 +14347,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^auditlog_(left|right)\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -14632,7 +14381,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('base_lb_left\\\\|.*')]",
     "nsfw": false,
@@ -14667,7 +14415,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('base_lb_right\\\\|.*')]",
     "nsfw": false,
@@ -14702,7 +14449,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_left\\\\|.*\\\\|\\\\d+\\\\|.*$')]",
     "nsfw": false,
@@ -14737,7 +14483,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_page\\\\|.*\\\\|.*\\\\|.*\\\\|.*$')]",
     "nsfw": false,
@@ -14772,7 +14517,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_right\\\\|.*\\\\|\\\\d+\\\\|.*\\\\|.*$')]",
     "nsfw": false,
@@ -14807,7 +14551,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^p_base_delete\\\\|[^|]+\\\\|\\\\d+(?:\\\\|[0-9a-f]{24})?$')]",
     "nsfw": false,
@@ -14842,7 +14585,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^p_base_(left|right)\\\\|.*\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -14877,7 +14619,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^p_base_preset\\\\|[^|]+\\\\|\\\\d+(?:\\\\|[0-9a-f]{24}(?:\\\\|(?:add|remove))?)?$')]",
     "nsfw": false,
@@ -14912,7 +14653,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_compare\\\\|[\\\\w-]+\\\\|[0-9a-f]{24}$')]",
     "nsfw": false,
@@ -14947,7 +14687,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_labels\\\\|[\\\\w-]+\\\\|[0-9a-f]{24}$')]",
     "nsfw": false,
@@ -14982,7 +14721,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_similar\\\\|[\\\\w-]+\\\\|(previous|next|page)$')]",
     "nsfw": false,
@@ -15017,7 +14755,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^challenge_accept\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15052,7 +14789,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^challenge_cancel\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15087,7 +14823,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^challenge_reject\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15122,7 +14857,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betcancel\\\\|.+$')]",
     "nsfw": false,
@@ -15157,7 +14891,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betchoose\\\\|.+$')]",
     "nsfw": false,
@@ -15192,7 +14925,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betconfirm\\\\|.+$')]",
     "nsfw": false,
@@ -15227,7 +14959,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betopen\\\\|.+$')]",
     "nsfw": false,
@@ -15262,7 +14993,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalhistjump\\\\|.+$')]",
     "nsfw": false,
@@ -15297,7 +15027,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalhist\\\\|.+$')]",
     "nsfw": false,
@@ -15332,7 +15061,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalpair\\\\|.+$')]",
     "nsfw": false,
@@ -15367,7 +15095,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalpred\\\\|.+$')]",
     "nsfw": false,
@@ -15402,7 +15129,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalprofile(?:refresh)?\\\\|.+$')]",
     "nsfw": false,
@@ -15437,7 +15163,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('helper_lb_left\\\\|.*')]",
     "nsfw": false,
@@ -15472,7 +15197,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('helper_lb_right\\\\|.*')]",
     "nsfw": false,
@@ -15507,7 +15231,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('lb_(right|left)\\\\|.*')]",
     "nsfw": false,
@@ -15542,7 +15265,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('lb_refresh(?:\\\\|.*)?')]",
     "nsfw": false,
@@ -15577,7 +15299,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('lb_type_select(?:\\\\|.*)?')]",
     "nsfw": false,
@@ -15612,7 +15333,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_abort\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15647,7 +15367,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^confirm_occupied_match\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15682,7 +15401,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^delete_thread\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15717,7 +15435,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^district_select\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -15752,7 +15469,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('helper_stored_start\\\\|\\\\w+\\\\|\\\\d+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -15787,7 +15503,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('helper_stored_undo\\\\|\\\\w+\\\\|\\\\d+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -15825,7 +15540,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^host_clan_select\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -15863,7 +15577,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_host\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15898,7 +15611,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_cancel\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15933,7 +15645,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_confirm\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -15968,7 +15679,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^queued_(?:district|confirm|cancel)\\\\|\\\\d+\\\\|\\\\w+(?:\\\\|[0-2])?$')]",
     "nsfw": false,
@@ -16003,7 +15713,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_result_store\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -16038,7 +15747,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^submit_button\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -16073,7 +15781,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^reveal_opponent\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -16108,7 +15815,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('start_match\\\\|\\\\d+\\\\|[^|]+\\\\|[^|]+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -16143,7 +15849,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^submit_bases\\\\|\\\\w+(?:\\\\|[01]\\\\|\\\\d+\\\\|\\\\d+)?$')]",
     "nsfw": false,
@@ -16178,7 +15883,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('undo_base_storage\\\\|\\\\w+\\\\|\\\\d+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -16213,7 +15917,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^hitrates_select\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -16248,7 +15951,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_left\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -16283,7 +15985,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_right\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -16318,7 +16019,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^stats_select\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -16353,7 +16053,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('season_lb_left\\\\|.*')]",
     "nsfw": false,
@@ -16388,7 +16087,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('season_lb_right\\\\|.*')]",
     "nsfw": false,
@@ -16423,7 +16121,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^season_stats_(left|right)\\\\|(current|[0-9]+)$')]",
     "nsfw": false,
@@ -16458,7 +16155,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^season_stats_page\\\\|(current|[0-9]+)$')]",
     "nsfw": false,
@@ -16493,7 +16189,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "<MaxConcurrency object>",
     "name": "ComponentCallback::[re.compile('^live_spectate\\\\|\\\\w+\\\\|[0-9]+$')]",
     "nsfw": false,
@@ -16528,7 +16223,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^live_match_request\\\\|accept\\\\|([^|]+)\\\\|(\\\\d+)\\\\|(\\\\d+)(?:\\\\|([0-9a-f]{16}))?$')]",
     "nsfw": false,
@@ -16563,7 +16257,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^live_match_request\\\\|reject\\\\|([^|]+)\\\\|(\\\\d+)\\\\|(\\\\d+)(?:\\\\|([0-9a-f]{16}))?$')]",
     "nsfw": false,
@@ -16598,7 +16291,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_stored_live_start\\\\|\\\\w+\\\\|[0-9a-f]{16}$')]",
     "nsfw": false,
@@ -16633,7 +16325,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_stored_live_undo\\\\|\\\\w+\\\\|[0-9a-f]{16}$')]",
     "nsfw": false,
@@ -16668,7 +16359,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "<MaxConcurrency object>",
     "name": "ComponentCallback::[re.compile('^war_spectate\\\\|\\\\w+\\\\|[01]\\\\|[0-9]+$')]",
     "nsfw": false,
@@ -16703,7 +16393,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^tokenjump\\\\|.+$')]",
     "nsfw": false,
@@ -16738,7 +16427,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^tokenpage\\\\|.+$')]",
     "nsfw": false,
@@ -16773,7 +16461,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^bug_respond_button\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -17519,7 +17206,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['auditlog_page_modal']",
     "nsfw": false,
@@ -17586,7 +17272,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['base_submission_accept_modal']",
     "nsfw": false,
@@ -17621,7 +17306,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['base_lb_page_modal']",
     "nsfw": false,
@@ -17656,7 +17340,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['renew_base_modal']",
     "nsfw": false,
@@ -17723,7 +17406,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['base_submission_reject_modal']",
     "nsfw": false,
@@ -17758,7 +17440,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['helper_lb_page_modal']",
     "nsfw": false,
@@ -17793,7 +17474,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['lb_page_modal']",
     "nsfw": false,
@@ -17828,7 +17508,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['elo_registration_modal']",
     "nsfw": false,
@@ -17863,7 +17542,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['season_lb_page_modal']",
     "nsfw": false,
@@ -17898,7 +17576,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::['bug_response_modal']",
     "nsfw": false,
@@ -17935,7 +17612,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^base_page_modal\\\\|.*\\\\|.*\\\\|.*\\\\|.*$')]",
     "nsfw": false,
@@ -17971,7 +17647,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^base_similar_modal\\\\|[\\\\w-]+\\\\|page$')]",
     "nsfw": false,
@@ -18007,7 +17682,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^betamount\\\\|.+$')]",
     "nsfw": false,
@@ -18043,7 +17717,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^finalhistmodal\\\\|.+$')]",
     "nsfw": false,
@@ -18079,7 +17752,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^finalres\\\\|.+$')]",
     "nsfw": false,
@@ -18115,7 +17787,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^confirm_occupied_match_modal\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18151,7 +17822,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^resubmit_modal\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18190,7 +17860,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^store_modal\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18226,7 +17895,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^result_modal\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18262,7 +17930,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^submit_bases_modal\\\\|\\\\w+(?:\\\\|[01]\\\\|\\\\d+\\\\|\\\\d+)?$')]",
     "nsfw": false,
@@ -18298,7 +17965,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^season_stats_page_modal\\\\|(current|[0-9]+)$')]",
     "nsfw": false,
@@ -18334,7 +18000,6 @@
     "integration_types": [
      "IntegrationType.GUILD_INSTALL"
     ],
-    "logger": "<Logger interactions (WARNING)>",
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^tokenjumpmodal\\\\|.+$')]",
     "nsfw": false,

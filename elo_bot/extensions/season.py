@@ -94,7 +94,7 @@ class SeasonCommands(ipy.Extension):
             await ctx.send(f"{ERROR_EMOJI} The paginated message is no longer available.", ephemeral=True)
             return None
         if str(message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return None
         key = ctx.custom_id.partition("|")[2]
         valid_key = re.fullmatch(r"current|[0-9]+", key)
@@ -421,7 +421,7 @@ class SeasonCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"season_lb_right\|.*"))
     async def season_lb_right_button(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -465,7 +465,7 @@ class SeasonCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"season_lb_left\|.*"))
     async def season_lb_left_button(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -509,7 +509,7 @@ class SeasonCommands(ipy.Extension):
     @ipy.component_callback("season_lb_page")
     async def season_lb_page_button(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -523,7 +523,7 @@ class SeasonCommands(ipy.Extension):
             return
 
         if str(message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 

@@ -236,7 +236,7 @@ class PrivateBaseCommands:
     @ipy.component_callback(re.compile(r"^p_base_(left|right)\|.*\|\d+$"))
     async def p_base_pagination(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         await ctx.defer(edit_origin=True)
@@ -254,7 +254,7 @@ class PrivateBaseCommands:
     @ipy.component_callback(re.compile(r"^p_base_preset\|[^|]+\|\d+(?:\|[0-9a-f]{24}(?:\|(?:add|remove))?)?$"))
     async def p_base_preset(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         await ctx.defer(ephemeral=True)
@@ -295,7 +295,7 @@ class PrivateBaseCommands:
     @ipy.component_callback(re.compile(r"^p_base_delete\|[^|]+\|\d+(?:\|[0-9a-f]{24})?$"))
     async def p_base_delete(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         await ctx.defer(ephemeral=True)

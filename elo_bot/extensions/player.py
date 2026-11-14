@@ -552,7 +552,7 @@ class PlayerCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"^stats_select\|\d+$"))
     async def stats_select(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -638,7 +638,7 @@ class PlayerCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"^match_right\|\w+\|\d+$"))
     async def match_right_button(self, ctx: ipy.ComponentContext):
         if int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -672,7 +672,7 @@ class PlayerCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"^match_left\|\w+\|\d+$"))
     async def match_left_button(self, ctx: ipy.ComponentContext):
         if int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -865,7 +865,7 @@ class PlayerCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"^hitrates_select\|\d+$"))
     async def hitrates_select(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return

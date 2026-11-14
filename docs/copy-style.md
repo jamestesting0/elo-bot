@@ -22,7 +22,7 @@ Reuse the existing text for recurring situations instead of writing a variant:
 |---|---|
 | Failed permission check | `You do not have permission to run this command!` (components: `...to interact with this component!`) |
 | Cooldown | `Command is on cooldown, you can use it again {relative time}.` |
-| Another user's control | `You cannot interfere with other's components.` or `You cannot interact with other user's components.`, whichever the extension already uses |
+| Another user's control | `You cannot interact with another user's components.` |
 | Stale paginated message | `The paginated message is no longer available.` |
 | Clash of Clans unavailable | `Clash of Clans is currently under maintenance.` / `Clash of Clans' API server is having some unexpected issues.` |
 | Discord rejected the interaction | `Looks like something is wrong with Discord, please try again later.` |
@@ -36,7 +36,7 @@ Reuse the existing text for recurring situations instead of writing a variant:
 - **Helper** with a capital letter is the Helper bot and its API ("Helper score job `123` has been queued.");
   **helper** in lower case is a person with the helper role ("Please contact a helper.").
 - Queue copy says **match-making** ("the match-making queue"); keep it within that feature.
-- Both "canceled" and "cancelled" appear; use the spelling of the feature you are editing.
+- Write **cancelled** and **cancelling**, the spelling stored statuses and Helper jobs use too.
 - Name Discord objects the way users see them: match thread, match, round, district, base, clan.
 
 ## Examples from Final

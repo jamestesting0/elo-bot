@@ -169,7 +169,7 @@ class QueueCommands:
         await ctx.defer(ephemeral=True)
         action, user_id, attempt_id, *indexes = ctx.custom_id.split("|")
         if user_id != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
         if action == "queued_district" and (not indexes or len(ctx.values) != 1):
             await ctx.send(f"{ERROR_EMOJI} That district is not available for this queue entry.", ephemeral=True)

@@ -52,7 +52,7 @@ class MatchBaseCommands:
     @ipy.component_callback(re.compile(r"^submit_bases\|\w+(?:\|[01]\|\d+\|\d+)?$"))
     async def submit_bases_button(self, ctx: ipy.ComponentContext):
         if ctx.channel and int(ctx.channel.id) == COMMAND_CHANNEL and not ctx.message.contains_mention(ctx.author):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         parts = ctx.custom_id.split("|")
@@ -60,7 +60,7 @@ class MatchBaseCommands:
         match = await Match.find_one(Match.token == token)
         if not match:
             await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
-            await ctx.send(f"{ERROR_EMOJI} It seems that this match has been canceled.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} It seems that this match has been cancelled.", ephemeral=True)
             return
 
         if not match.base_submission:
@@ -167,7 +167,7 @@ class MatchBaseCommands:
         # load match and base data
         match: Match = await Match.find_one(Match.token == token)
         if not match:
-            await ctx.send(f"{ERROR_EMOJI} Match not found or canceled.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} Match not found or cancelled.", ephemeral=True)
             return
 
         if is_final_match(match):

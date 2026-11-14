@@ -720,7 +720,7 @@ class LeaderboardCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"lb_(right|left)\|.*"))
     async def lb_pagination(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -787,7 +787,7 @@ class LeaderboardCommands(ipy.Extension):
     @ipy.component_callback("lb_page")
     async def lb_page_button(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -801,7 +801,7 @@ class LeaderboardCommands(ipy.Extension):
             return
 
         if str(message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -881,7 +881,7 @@ class LeaderboardCommands(ipy.Extension):
         await ctx.defer(ephemeral=True)
 
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -956,7 +956,7 @@ class LeaderboardCommands(ipy.Extension):
         await ctx.defer(ephemeral=True)
 
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -1018,7 +1018,7 @@ class LeaderboardCommands(ipy.Extension):
     async def lb_tier_select(self, ctx: ipy.ComponentContext):
         await ctx.defer(ephemeral=True)
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         tier = ctx.values[0]
@@ -1066,7 +1066,7 @@ class LeaderboardCommands(ipy.Extension):
         starting_index = 0
         if lb_type in {"Tokens", "Predictions"} and isinstance(ctx.message.components, list) and len(ctx.message.components) > 1:
             if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-                await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.", ephemeral=True)
+                await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
                 return
             starting_index = int(ctx.message.components[-1].components[-1].custom_id.split("|")[1]) - LB_ENTRIES_PER_PAGE
         players_sorted, board_size, paged = await self._board_rows(

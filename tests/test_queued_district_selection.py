@@ -357,11 +357,11 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
                     self.assertNotIn(match.token, self.matches)
                     self.assertTrue(all(component["disabled"] for row in messages[701]["components"]
                                         for component in row["components"]))
-                    self.assertIn("successfully canceled", messages[703]["content"])
+                    self.assertIn("successfully cancelled", messages[703]["content"])
                 else:
                     self.assertIn(match.token, self.matches)
                     self.assertFalse(messages[701]["components"][3]["components"][0]["disabled"])
-                    self.assertIn("action has been canceled", messages[703]["content"])
+                    self.assertIn("action has been cancelled", messages[703]["content"])
 
     async def test_presets_preselect_only_eligible_primary_and_remain_editable(self):
         player = self.players["111"]
@@ -800,7 +800,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(match.token, self.matches)
         self.assertTrue(self.players["222"].priority)
         self.assertTrue(self.players["111"].last_cancel)
-        self.assertIn("successfully canceled", response.send.await_args.args[0])
+        self.assertIn("successfully cancelled", response.send.await_args.args[0])
         self.users["222"].send.assert_awaited()
         self.assertLess(self.events.index("match-delete"), self.events.index("player-write"))
 
@@ -966,7 +966,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertIn(match.token, self.matches)
         self.assertIsNone(self.players["111"].last_cancel)
         self.assertFalse(self.players["222"].priority)
-        self.assertIn("action has been canceled", response.send.await_args.args[0])
+        self.assertIn("action has been cancelled", response.send.await_args.args[0])
 
     async def test_cancel_prompt_cannot_delete_match_confirmed_while_waiting(self):
         selection = self.seed(districts=DISTRICTS)
@@ -1094,7 +1094,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(match.token, self.matches)
         self.assertFalse(self.queues[3].players)
         self.assertFalse(self.queues[3].district_selections)
-        self.assertIn("successfully canceled", response.send.await_args.args[0])
+        self.assertIn("successfully cancelled", response.send.await_args.args[0])
 
     async def test_failed_cancellation_bookkeeping_has_no_success_notification(self):
         selection = self.seed()

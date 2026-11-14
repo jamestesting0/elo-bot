@@ -96,7 +96,7 @@ class BaseListCommands:
     @ipy.component_callback(re.compile(r"^base_right\|.*\|\d+\|.*\|.*$"))
     async def base_right_button(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -121,7 +121,7 @@ class BaseListCommands:
     @ipy.component_callback(re.compile(r"^base_left\|.*\|\d+\|.*$"))
     async def base_left_button(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -146,7 +146,7 @@ class BaseListCommands:
     @ipy.component_callback(re.compile(r"^base_page\|.*\|.*\|.*\|.*$"))
     async def base_page_button(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -161,7 +161,7 @@ class BaseListCommands:
             return
 
         if ctx.author and int(ctx.author.id) != int(message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -198,7 +198,7 @@ class BaseListCommands:
     @ipy.component_callback("base_list_district_select")
     async def base_list_district_select(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -229,7 +229,7 @@ class BaseListCommands:
     @ipy.component_callback("base_list_embed_type_select")
     async def base_list_embed_type_select(self, ctx: ipy.ComponentContext):
         if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 

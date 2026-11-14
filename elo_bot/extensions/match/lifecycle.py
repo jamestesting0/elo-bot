@@ -77,14 +77,14 @@ class MatchLifecycleCommands:
 
     async def _select_match_district(self, ctx: ipy.ComponentContext, match: Match | None, index: str) -> None:
         if ctx.channel and int(ctx.channel.id) == COMMAND_CHANNEL and not str(ctx.author.id) in ctx.message.content:
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
 
         if not match:
             await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
-            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **canceled**.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **cancelled**.", ephemeral=True)
 
             return
 
@@ -119,7 +119,7 @@ class MatchLifecycleCommands:
         _, token = ctx.custom_id.split("|")
         match = await Match.find_one(Match.token == token)
         if not match:
-            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **canceled**.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **cancelled**.", ephemeral=True)
             return
         if is_final_match(match):
             await ctx.send("Final districts are fixed. A manager can resume its thread with `/final round start`.", ephemeral=True)
@@ -142,7 +142,7 @@ class MatchLifecycleCommands:
         _, token = ctx.custom_id.split("|")
         match = await Match.find_one(Match.token == token)
         if not match:
-            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **canceled**.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **cancelled**.", ephemeral=True)
             return
         if is_final_match(match):
             await ctx.send("Final districts are fixed. A manager can resume its thread with `/final round start`.", ephemeral=True)
@@ -174,7 +174,7 @@ class MatchLifecycleCommands:
         await ctx.defer(ephemeral=True)
 
         if ctx.channel and int(ctx.channel.id) == COMMAND_CHANNEL and not str(ctx.author.id) in ctx.message.content:
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -183,7 +183,7 @@ class MatchLifecycleCommands:
         match = await Match.find_one(Match.token == token)
         if not match:
             await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
-            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **canceled**.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} It seems that this match is **cancelled**.", ephemeral=True)
 
             return
 
@@ -343,14 +343,14 @@ class MatchLifecycleCommands:
         if res.custom_id == "cancel":
             await res.edit_origin(components=ipy.utils.misc_utils.disable_components(button_actionrow))
 
-            await ctx.send(f"{SUCCESS_EMOJI} The action has been canceled.", ephemeral=True)
+            await ctx.send(f"{SUCCESS_EMOJI} The action has been cancelled.", ephemeral=True)
 
     @ipy.component_callback(re.compile(r"^reveal_opponent\|\w+$"))
     async def reveal_opponent_button(self, ctx: ipy.ComponentContext):
         await ctx.defer(ephemeral=True)
 
         if ctx.channel and int(ctx.channel.id) == COMMAND_CHANNEL and not ctx.message.contains_mention(ctx.author):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -359,7 +359,7 @@ class MatchLifecycleCommands:
         match = await Match.find_one(Match.token == token)
         if not match:
             await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
-            await ctx.send(f"{ERROR_EMOJI} It seems that this match has been canceled.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} It seems that this match has been cancelled.", ephemeral=True)
 
             return
 
@@ -385,7 +385,7 @@ class MatchLifecycleCommands:
         await ctx.defer(ephemeral=True)
 
         if ctx.channel and int(ctx.channel.id) == COMMAND_CHANNEL and not str(ctx.author.id) in ctx.message.content:
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         _, token = ctx.custom_id.split("|")
@@ -447,7 +447,7 @@ class MatchLifecycleCommands:
                     deleted = await delete_unreserved_match(match, pre_thread=True)
             if not deleted:
                 await res.send(
-                    f"{ERROR_EMOJI} The match changed while cancellation was being confirmed. It was not canceled.",
+                    f"{ERROR_EMOJI} The match changed while cancellation was being confirmed. It was not cancelled.",
                     ephemeral=True,
                 )
                 return
@@ -470,7 +470,7 @@ class MatchLifecycleCommands:
                     author_player.last_cancel = datetime.now().timestamp()
                     await author_player.save_changes()
             except PyMongoError:
-                logging.exception("Canceled match %s has incomplete player bookkeeping", token)
+                logging.exception("Cancelled match %s has incomplete player bookkeeping", token)
                 await res.send(
                     f"{ERROR_EMOJI} The match was removed, but saving cancellation cooldown or opponent priority failed. "
                     "Please contact staff.", ephemeral=True,
@@ -495,7 +495,7 @@ class MatchLifecycleCommands:
             if forfeited_user:
                 try:
                     await forfeited_user.send(
-                        f"{IMPORTANT_EMOJI} The match is **canceled**. "
+                        f"{IMPORTANT_EMOJI} The match is **cancelled**. "
                         f"Next time please make sure your schedule is free when finding a match!"
                     )
                 except ipy.errors.Forbidden:
@@ -509,13 +509,13 @@ class MatchLifecycleCommands:
             await ctx.edit(msg.id, components=utils.misc_utils.disable_components(row))
 
             await res.send(
-                f"{SUCCESS_EMOJI} Match successfully canceled. "
+                f"{SUCCESS_EMOJI} Match successfully cancelled. "
                 f"You may only cancel once per week—please ensure your schedule is clear next time."
             )
 
         if res.custom_id == "cancel":
             await ctx.edit(msg.id, components=utils.misc_utils.disable_components(row))
-            await res.send(f"{SUCCESS_EMOJI} The action has been canceled.", ephemeral=True)
+            await res.send(f"{SUCCESS_EMOJI} The action has been cancelled.", ephemeral=True)
 
     @base.subcommand(sub_cmd_name="list", sub_cmd_description="List the upcoming matches")
     @ipy.slash_option(

@@ -93,7 +93,7 @@ embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
 - **Links:** clans `[Name (#TAG)](share_link)`, in-game players `[name (tag)](share_link)`, bases
   `[District](link)`. Wrap profile URLs in `<...>` to suppress previews and send raw link lists with
   `suppress_embeds=True`.
-- **Emphasis:** bold for the state or quantity that matters (`**canceled**`, `**disabled**`, `**all**`),
+- **Emphasis:** bold for the state or quantity that matters (`**cancelled**`, `**disabled**`, `**all**`),
   italics for reminders and notes (`{IMPORTANT_EMOJI} *Please kick the players out of the clan!*`).
   Markdown headings (`##`) and small text (`-#`) appear only in Components V2 views.
 
@@ -145,8 +145,7 @@ on profiles was removed because it added nothing (leaderboards keep theirs). Ret
 - Custom IDs are `name|arg|arg` and their callbacks match a regex such as `^stats_select\|\d+$`. Read state
   back from the custom ID and the message (embed title and fields) so controls keep working after a restart.
 - A control bound to the user who ran the command checks `ctx.message.interaction.user` against
-  `ctx.author` and answers other users ephemerally. Two wordings exist: "You cannot interfere with other's
-  components." and "You cannot interact with other user's components."; reuse the one in the same extension.
+  `ctx.author` and answers other users ephemerally with "You cannot interact with another user's components."
 - A missing or stale target says so: "The paginated message is no longer available.", "This page no longer
   exists.", "This search expired. Run a new search."
 

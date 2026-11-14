@@ -439,7 +439,7 @@ class ChallengeCommands(ipy.Extension):
 
         if ctx.channel and str(ctx.channel.id) == COMMAND_CHANNEL and not ctx.message.contains_mention(ctx.author):
             await ctx.send(
-                f"{ERROR_EMOJI} You cannot interact with other user's components.",
+                f"{ERROR_EMOJI} You cannot interact with another user's components.",
                 ephemeral=True
             )
             return
@@ -449,7 +449,7 @@ class ChallengeCommands(ipy.Extension):
         match = await Match.find_one(Match.token == token)
         if match is None:
             await ctx.send(
-                f"{ERROR_EMOJI} It seems that this match has been canceled.",
+                f"{ERROR_EMOJI} It seems that this match has been cancelled.",
                 ephemeral=True
             )
             return
@@ -473,7 +473,7 @@ class ChallengeCommands(ipy.Extension):
         async with CHALLENGE_ACCEPT_LOCK:
             match = await Match.find_one(Match.token == token)
             if match is None:
-                await ctx.send(f"{ERROR_EMOJI} It seems that this match has been canceled.", ephemeral=True)
+                await ctx.send(f"{ERROR_EMOJI} It seems that this match has been cancelled.", ephemeral=True)
                 return
             participant = next((p for p in match.participants if p.user_id == str(ctx.author.id)), None)
             if participant is None or participant.confirmed:
@@ -543,7 +543,7 @@ class ChallengeCommands(ipy.Extension):
 
         if ctx.channel and str(ctx.channel.id) == COMMAND_CHANNEL and not ctx.message.contains_mention(ctx.author):
             await ctx.send(
-                f"{ERROR_EMOJI} You cannot interact with other user's components.",
+                f"{ERROR_EMOJI} You cannot interact with another user's components.",
                 ephemeral=True,
             )
             return
@@ -625,7 +625,7 @@ class ChallengeCommands(ipy.Extension):
 
         if res.custom_id == "cancel":
             await ctx.edit_origin(components=ipy.utils.misc_utils.disable_components(button_actionrow))
-            await res.send(f"{SUCCESS_EMOJI} The action has been canceled.", ephemeral=True)
+            await res.send(f"{SUCCESS_EMOJI} The action has been cancelled.", ephemeral=True)
 
     @ipy.component_callback(re.compile(r"^challenge_cancel\|\w+$"))
     async def challenge_cancel_button(self, ctx: ipy.ComponentContext):
@@ -676,7 +676,7 @@ class ChallengeCommands(ipy.Extension):
                 deleted = await delete_unreserved_match(match, pre_thread=True)
             if not deleted:
                 await res.send(
-                    f"{ERROR_EMOJI} The challenge changed while cancellation was being confirmed. It was not canceled.",
+                    f"{ERROR_EMOJI} The challenge changed while cancellation was being confirmed. It was not cancelled.",
                     ephemeral=True,
                 )
                 return
@@ -695,7 +695,7 @@ class ChallengeCommands(ipy.Extension):
                             f"has decided to **cancel** the challenge against you."
                         )
                     else:
-                        await user.send(f"{IMPORTANT_EMOJI} You have **canceled** the challenge.")
+                        await user.send(f"{IMPORTANT_EMOJI} You have **cancelled** the challenge.")
                 except ipy.errors.Forbidden:
                     pass
 
@@ -710,7 +710,7 @@ class ChallengeCommands(ipy.Extension):
 
         if res.custom_id == "cancel":
             await ctx.edit_origin(components=ipy.utils.misc_utils.disable_components(button_actionrow))
-            await res.send(f"{SUCCESS_EMOJI} The action has been canceled.", ephemeral=True)
+            await res.send(f"{SUCCESS_EMOJI} The action has been cancelled.", ephemeral=True)
 
     @base.subcommand(sub_cmd_name="disable", sub_cmd_description="To disable the challenge module")
     @ipy.check(ipy.has_any_role(*LVL3_ROLES))
@@ -817,7 +817,7 @@ class ChallengeCommands(ipy.Extension):
                 challenger_user = await self.bot.fetch_user(int(challenger.user_id))
                 await challenger_user.send(
                     f"{IMPORTANT_EMOJI} Your opponent did **not** accept your challenge "
-                    f"for 24 hours, therefore it is canceled."
+                    f"for 24 hours, therefore it is cancelled."
                 )
             except ipy.errors.HTTPException:
                 pass

@@ -110,7 +110,7 @@ class BaseLeaderboardCommands:
     async def base_lb_right_button(self, ctx: ipy.ComponentContext):
         original_user = ctx.message.interaction.user.id if ctx.message.interaction else ctx.author.id
         if str(original_user) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -153,7 +153,7 @@ class BaseLeaderboardCommands:
     async def base_lb_left_button(self, ctx: ipy.ComponentContext):
         original_user = ctx.message.interaction.user.id if ctx.message.interaction else ctx.author.id
         if str(original_user) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -198,7 +198,7 @@ class BaseLeaderboardCommands:
 
         original_user = ctx.message.interaction.user.id if ctx.message.interaction else ctx.author.id
         if str(original_user) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -246,7 +246,7 @@ class BaseLeaderboardCommands:
 
         original_user = ctx.message.interaction.user.id if ctx.message.interaction else ctx.author.id
         if str(original_user) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
 
             return
@@ -292,7 +292,7 @@ class BaseLeaderboardCommands:
     async def base_lb_page_button(self, ctx: ipy.ComponentContext):
         original_user = ctx.message.interaction.user.id if ctx.message.interaction else ctx.author.id
         if str(original_user) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -307,7 +307,7 @@ class BaseLeaderboardCommands:
 
         original_user = message.interaction.user.id if message.interaction else ctx.author.id
         if str(original_user) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 

@@ -158,7 +158,7 @@ class HelperCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"helper_lb_right\|.*"))
     async def helper_lb_right_button(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -208,7 +208,7 @@ class HelperCommands(ipy.Extension):
     @ipy.component_callback(re.compile(r"helper_lb_left\|.*"))
     async def helper_lb_left_button(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -258,7 +258,7 @@ class HelperCommands(ipy.Extension):
     @ipy.component_callback("helper_lb_page")
     async def helper_lb_page_button(self, ctx: ipy.ComponentContext):
         if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 
@@ -272,7 +272,7 @@ class HelperCommands(ipy.Extension):
             return
 
         if str(message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interfere with other's components.",
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
 

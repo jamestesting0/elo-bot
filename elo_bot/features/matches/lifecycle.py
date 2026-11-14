@@ -276,14 +276,14 @@ async def cancel_match(bot: ipy.Client, token):
     player2 = await bot.fetch_user(match.participants[1].user_id)
 
     try:
-        await player1.send(f"{IMPORTANT_EMOJI} Your match against {player2.mention} has been canceled. This is "
+        await player1.send(f"{IMPORTANT_EMOJI} Your match against {player2.mention} has been cancelled. This is "
                            f"either due to both of you not confirming for more than 12 hours or the match failed to "
                            f"initiate due to some unknown bug.")
     except ipy.errors.Forbidden:
         pass
 
     try:
-        await player2.send(f"{IMPORTANT_EMOJI} Your match against {player1.mention} has been canceled. This is "
+        await player2.send(f"{IMPORTANT_EMOJI} Your match against {player1.mention} has been cancelled. This is "
                            f"either due to both of you not confirming for more than 12 hours or the match failed to "
                            f"initiate due to some unknown bug.")
     except ipy.errors.Forbidden:

@@ -186,7 +186,7 @@ class AuditlogCommands(ipy.Extension):
 
         owner = getattr(message.interaction.user, "id", message.interaction.user)
         if ctx.author and str(ctx.author.id) != str(owner):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         _, target = ctx.custom_id.split("|")
@@ -212,7 +212,7 @@ class AuditlogCommands(ipy.Extension):
 
         owner = getattr(message.interaction.user, "id", message.interaction.user)
         if ctx.author and str(ctx.author.id) != str(owner):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         await ctx.send_modal(build_page_jump_modal("auditlog_page_modal"))
@@ -226,7 +226,7 @@ class AuditlogCommands(ipy.Extension):
 
         owner = getattr(message.interaction.user, "id", message.interaction.user)
         if ctx.author and str(ctx.author.id) != str(owner):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with other user's components.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
             return
 
         total_pages = _auditlog_page_count(await AuditLogEntry.find_all().count())

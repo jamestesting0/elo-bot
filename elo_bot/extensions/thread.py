@@ -111,7 +111,7 @@ class ThreadCommands(ipy.Extension):
 
         if res.custom_id == "cancel":
             await res.edit_origin(components=ipy.utils.misc_utils.disable_components(button_actionrow))
-            await ctx.send(f"{SUCCESS_EMOJI} The action has been canceled.", ephemeral=True)
+            await ctx.send(f"{SUCCESS_EMOJI} The action has been cancelled.", ephemeral=True)
 
     @ipy.listen(ipy.events.ThreadDelete)
     async def on_thread_delete(self, event: ipy.events.ThreadDelete):

@@ -28,6 +28,8 @@ htmlcov/
 .claude/
 .codex/
 .omo/
+.import_linter_cache
+/tools/
 
 # Runtime data and generated artifacts
 /data/

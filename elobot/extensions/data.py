@@ -16,6 +16,8 @@ import coc
 import json
 from elobot.integrations.files import delete_file
 from elobot.integrations.http import download_file
+from elobot.features.finals.administration import migrate_final_identity, guard_result_deletion, guard_full_reset
+from elobot.core.finals import FinalError
 
 
 class DataCommands(ipy.Extension):
@@ -317,8 +319,6 @@ class DataCommands(ipy.Extension):
 
             return
 
-        from elobot.features.finals.administration import migrate_final_identity
-        from elobot.core.finals import FinalError
         try:
             await migrate_final_identity(old_user_id, new_user_id, str(ctx.author.id))
         except FinalError as error:
@@ -415,8 +415,6 @@ class DataCommands(ipy.Extension):
     async def data_delete_match(self, ctx: ipy.SlashContext, match_id: str):
         data_generation = PLAYER_DATA_BOUNDARY.generation
         await ctx.defer(ephemeral=True)
-        from elobot.features.finals.administration import guard_result_deletion
-        from elobot.core.finals import FinalError
         try:
             await guard_result_deletion(match_id)
         except FinalError as error:
@@ -535,8 +533,6 @@ class DataCommands(ipy.Extension):
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     async def data_reset_all(self, ctx: ipy.SlashContext):
         await ctx.defer(ephemeral=True)
-        from elobot.features.finals.administration import guard_full_reset
-        from elobot.core.finals import FinalError
         try:
             async with PLAYER_DATA_BOUNDARY.reset():
                 await guard_full_reset()

@@ -45,6 +45,7 @@ from elobot.features.matches.thread_messages import (
 from elobot.core.match_results import is_match_finished
 from elobot.integrations.files import delete_file
 from elobot.integrations.http import download_file
+from elobot.features.finals.lifecycle import resolve_final
 
 
 class MatchBaseCommands:
@@ -301,7 +302,6 @@ class MatchBaseCommands:
     async def _base_command_match(self, ctx, node_id=None):
         if node_id is None:
             return await Match.find_one(Match.thread == str(ctx.channel.id))
-        from elobot.features.finals.lifecycle import resolve_final
         final = await resolve_final()
         if ctx.guild_id != final.guild_id or ctx.author.has_role(ELO_BLACKLIST_ROLE):
             raise FinalError("Use this command in the Final's server while eligible.")
@@ -981,7 +981,6 @@ class MatchBaseCommands:
     @match_base_submit.autocomplete("match")
     @match_base_view.autocomplete("match")
     async def final_base_match_autocomplete(self, ctx: ipy.AutocompleteContext):
-        from elobot.features.finals.lifecycle import resolve_final
         try:
             final = await resolve_final()
             choices = [ipy.SlashCommandChoice(name=node.id, value=node.id) for node in final.nodes.values()

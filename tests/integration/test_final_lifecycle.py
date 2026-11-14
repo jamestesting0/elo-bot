@@ -23,7 +23,7 @@ class TestFinalLifecycle(FinalScenarioCase):
 
     async def test_failed_profile_write_does_not_confirm_half_a_bracket(self):
         final = await self.roster(5)
-        with patch("elobot.features.finals.profiles.rebuild_profiles", AsyncMock(side_effect=RuntimeError("profile unavailable"))):
+        with patch('elobot.features.finals.lifecycle.rebuild_profiles', AsyncMock(side_effect=RuntimeError("profile unavailable"))):
             with self.assertRaisesRegex(RuntimeError, "profile unavailable"):
                 await confirm_bracket(final, "manager")
         saved = await resolve_final()

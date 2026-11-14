@@ -9,6 +9,8 @@ from elobot.features.finals.persistence import transaction
 from elobot.db import EloFinal, Player, Season
 from elobot.db.token_models import FinalBettingMarket
 from elobot.db.match_models import Match
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
+from elobot.features.finals.profiles import rebuild_profiles
 
 
 async def resolve_final(season: int | None = None) -> EloFinal:
@@ -26,7 +28,6 @@ async def resolve_final(season: int | None = None) -> EloFinal:
 
 
 async def start_final(season: int | None, guild_id: int, channel_id: int) -> EloFinal:
-    from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
     try:
         async with PLAYER_DATA_BOUNDARY.write(PLAYER_DATA_BOUNDARY.generation):
             return await _start_final(season, guild_id, channel_id)
@@ -130,7 +131,6 @@ async def save_pairing_draft(final: EloFinal, owner: str, pairs: dict[str, list[
 
 
 async def confirm_bracket(final: EloFinal, owner: str, *, manual: bool = False) -> EloFinal:
-    from elobot.features.finals.profiles import rebuild_profiles
     if manual and (final.draft_owner != owner or final.draft_setup_revision != final.setup_revision):
         raise FinalError("This draft belongs to another manager or an earlier roster. Rebuild it first.")
     pairs = final.manual_draft if manual else automatic_pairs(final)
@@ -146,7 +146,6 @@ async def confirm_bracket(final: EloFinal, owner: str, *, manual: bool = False) 
 
 
 async def reset_bracket(final: EloFinal) -> None:
-    from elobot.features.finals.profiles import rebuild_profiles
     async def reset(session):
         collection = EloFinal.get_pymongo_collection()
         current = EloFinal.model_validate(await collection.find_one({"_id": final.id}, session=session))

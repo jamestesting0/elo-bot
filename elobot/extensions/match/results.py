@@ -74,6 +74,11 @@ from elobot.features.results.operations import (
 )
 from elobot.features.results.recording import _mark_result_publication_incomplete, record_base_stats, record_match
 from elobot.core.match_results import is_valid_complete_match_result
+from elobot.features.finals.result_ui import show_source_result_form
+from elobot.core.finals import FinalError
+from elobot.db.season_models import EloFinal
+from elobot.features.finals.results import FinalResultSubmission, automatic_operation_key, submit_result
+from elobot.features.finals.recovery import recover_final
 
 
 class MatchResultCommands:
@@ -93,8 +98,6 @@ class MatchResultCommands:
             return
 
         if is_final_match(match):
-            from elobot.features.finals.result_ui import show_source_result_form
-            from elobot.core.finals import FinalError
             try:
                 await show_source_result_form(ctx, match)
             except FinalError as error:
@@ -218,9 +221,6 @@ class MatchResultCommands:
             from beanie import PydanticObjectId
             from pydantic import ValidationError
 
-            from elobot.db.season_models import EloFinal
-            from elobot.features.finals.results import FinalResultSubmission, automatic_operation_key, submit_result
-            from elobot.core.finals import FinalError
             try:
                 final = await EloFinal.get(PydanticObjectId(mongo_match.final_id))
                 if final is None:
@@ -235,7 +235,6 @@ class MatchResultCommands:
                     contestant_revision=mongo_match.final_contestant_revision, attempt=mongo_match.final_attempt,
                     scores=scores,
                 ))
-                from elobot.features.finals.recovery import recover_final
                 async def release_final(source):
                     await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")
                     await free_match_clans(source)
@@ -594,8 +593,6 @@ class MatchResultCommands:
             return
 
         if is_final_match(match):
-            from elobot.features.finals.result_ui import show_source_result_form
-            from elobot.core.finals import FinalError
             try:
                 await show_source_result_form(ctx, match, correction=True)
             except FinalError as error:

@@ -18,9 +18,9 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         from tests._final_empty_storage import empty_final_storage
         empty_final_storage(self)
         wallet = SimpleNamespace(id="123", balance=5000, user_id="123", identity_claims=["123"])
-        self.wallet_grant = self.enterContext(patch("elobot.features.tokens.wallets.ensure_wallet", new=AsyncMock(return_value=wallet)))
-        self.deregister_write = self.enterContext(patch("elobot.features.finals.administration.deregister_player", new=AsyncMock()))
-        self.enterContext(patch("elobot.features.tokens.wallets.wallet_summary", new=AsyncMock(return_value=(5000, 0, 0))))
+        self.wallet_grant = self.enterContext(patch_sites(('elobot.features.tokens.wallets.ensure_wallet', 'elobot.extensions.final.ensure_wallet', 'elobot.extensions.player.ensure_wallet'), new=AsyncMock(return_value=wallet)))
+        self.deregister_write = self.enterContext(patch('elobot.extensions.player.deregister_player', new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.final.wallet_summary', 'elobot.extensions.player.wallet_summary'), new=AsyncMock(return_value=(5000, 0, 0))))
         self.bot = MagicMock()
         self.bot.ext = {}
         self.bot.coc_client = MagicMock()

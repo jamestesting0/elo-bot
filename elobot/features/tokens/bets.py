@@ -8,6 +8,7 @@ from elobot.core.finals import FinalError
 from elobot.features.tokens.wallets import ensure_wallet
 from elobot.db import EloFinal, Player
 from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.features.tokens.settlement import set_settlement_intent
 
 
 class BetAction(BaseModel):
@@ -122,7 +123,6 @@ async def close_market(market_id: str) -> None:
 
 
 async def void_market(market_id: str, actor: str, reason: str) -> None:
-    from elobot.features.tokens.settlement import set_settlement_intent
     if not reason.strip():
         raise FinalError("Enter a reason for the refund.")
     async def void(session):

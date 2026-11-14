@@ -24,6 +24,9 @@ from elobot.features.players.match_choices import fallback_global_match_choices
 from elobot.features.players.match_choices import hydrate_match_id_choice_names
 from elobot.features.players.match_choices import publish_match_id_choices
 from elobot.features.players.match_choices import select_match_id_choices
+from elobot.features.finals.administration import guard_deregistration, deregister_player
+from elobot.core.finals import FinalError
+from elobot.features.tokens.wallets import ensure_wallet, wallet_summary
 
 
 async def construct_match_embed(bot: ipy.Client, guild: ipy.Guild, match_id: str, player_id: str) -> ipy.Embed:
@@ -264,8 +267,6 @@ class PlayerCommands(ipy.Extension):
         required=True
     )
     async def player_deregister(self, ctx: ipy.SlashContext, player: ipy.User):
-        from elobot.features.finals.administration import guard_deregistration
-        from elobot.core.finals import FinalError
         try:
             await guard_deregistration(str(player.id))
         except FinalError as error:
@@ -277,7 +278,6 @@ class PlayerCommands(ipy.Extension):
             
             return
 
-        from elobot.features.finals.administration import deregister_player
         try:
             await deregister_player(str(player.id))
         except FinalError as error:
@@ -334,8 +334,6 @@ class PlayerCommands(ipy.Extension):
             matches=[]
         )
         await new_player.insert()
-        from elobot.features.tokens.wallets import ensure_wallet
-        from elobot.core.finals import FinalError
         try:
             await ensure_wallet(str(ctx.user.id))
         except FinalError as error:
@@ -516,8 +514,6 @@ class PlayerCommands(ipy.Extension):
             custom_id=f"stats_select|{user.id}"
         )
 
-        from elobot.features.tokens.wallets import ensure_wallet, wallet_summary
-        from elobot.core.finals import FinalError
         try:
             available, _, _ = await wallet_summary(await ensure_wallet(player_id))
             tokens_str = f"{available:,} {TOKEN_EMOJI}"

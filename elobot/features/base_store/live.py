@@ -2,6 +2,7 @@ import interactions as ipy
 from pydantic import JsonValue
 
 from elobot.db import BaseStore, Match
+from elobot.discord.mentions import mention_user
 
 
 def live_base_snapshot_filter(match: Match) -> dict[str, JsonValue]:
@@ -28,7 +29,6 @@ def live_stores(match: Match, reservation_id: str | None = None) -> list[tuple[i
 
 
 def format_live_slot_line(user_id: str, slot: str, names: dict[str, str] | None = None) -> str:
-    from elobot.discord.mentions import mention_user
     return f"{(names or {}).get(user_id, mention_user(None, user_id))} — {slot}"
 
 

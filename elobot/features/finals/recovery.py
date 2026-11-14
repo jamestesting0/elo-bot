@@ -23,6 +23,8 @@ from elobot.discord.mentions import mention_user
 from elobot.db import EloFinal, Match
 from elobot.db.final_models import FinalMatchResult
 from elobot.db.token_models import FinalBettingMarket
+from elobot.features.base_store.storage import BaseStoreReleaseConflict, BaseStoreReleaseDenied
+from elobot.features.finals.matches import bind_thread
 
 
 async def select_financial_work(final_id: PydanticObjectId) -> tuple[EloFinal, list[str]]:
@@ -120,7 +122,6 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
 async def recover_final(final: EloFinal, *, bot=None,
                         release_completed: Callable[[Match], Awaitable[None]] | None = None,
                         release_deleted: Callable[[Match], Awaitable[None]] | None = None) -> list[str]:
-    from elobot.features.base_store.storage import BaseStoreReleaseConflict, BaseStoreReleaseDenied
     final, markets = await select_financial_work(final.id)
     pending = []
     for market_id in markets:
@@ -231,7 +232,6 @@ async def recover_final(final: EloFinal, *, bot=None,
         if node.provisioning and node.match_id and not node.thread_id:
             source = await Match.get(node.match_id)
             if source and source.thread and source.final_contestant_revision == node.contestant_revision and source.final_attempt == node.attempt:
-                from elobot.features.finals.matches import bind_thread
                 await bind_thread(final, source, source.thread)
                 continue
         if node.state in {"TIED", "NEEDS_MANAGER"}:

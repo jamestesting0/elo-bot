@@ -8,6 +8,8 @@ from elobot.features.finals.persistence import transaction
 from elobot.core.finals import FINAL_DISTRICTS, FinalError, ROUND_NODES
 from elobot.db import EloFinal, Match, Participant, Player
 from elobot.db.season_models import EloFinalMatch
+from elobot.features.matches.messages import MatchMessageState
+from elobot.features.matches.timing import hosting_started
 
 
 def require_current_match(final: EloFinal, source: Match) -> EloFinalMatch:
@@ -22,8 +24,6 @@ def require_current_match(final: EloFinal, source: Match) -> EloFinalMatch:
 
 async def schedule_final_match(source: Match, timestamp: int, *, player: int | None = None) -> Match:
     """Commit both the physical schedule and its surviving pairing copy together."""
-    from elobot.features.matches.messages import MatchMessageState
-    from elobot.features.matches.timing import hosting_started
 
     expected = dict(MatchMessageState.capture(source, player or 0).binding_filter())
 

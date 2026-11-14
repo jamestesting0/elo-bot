@@ -10,6 +10,7 @@ from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, UNAVAIL
 from elobot.db import BaseLayout, BaseLink, Match, Player
 from elobot.core.finals import is_final_match
 from elobot.features.matches.base_selection import district_base_quality, ensure_secondary_base_index, get_base_quality
+from elobot.db.final_models import FinalMatchResult
 
 
 def is_missing_scout_view(match: Match, player_id: str | int):
@@ -126,7 +127,6 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
             final_hits = {}
             final_usage = {}
             if is_final_match(match):
-                from elobot.db.final_models import FinalMatchResult
                 history = await FinalMatchResult.find({"snapshot.contestants": str(player.id), "snapshot.outcome": "Played"}).to_list()
                 seen_attempts = set()
                 for result in history:

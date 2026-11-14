@@ -15,6 +15,7 @@ from elobot.db import EloFinal, EloFinalMatch
 from elobot.db.final_models import FinalMatchResult, FinalPrediction, FinalResultSnapshot
 from elobot.db.season_models import FinalResultProgress
 from elobot.db import Match
+from tests._patch_sites import patch_sites
 
 
 class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):
@@ -43,8 +44,8 @@ class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):
 
         cog._edition = AsyncMock(side_effect=lookup)
         ctx = MagicMock(defer=AsyncMock(side_effect=defer), send=AsyncMock(side_effect=send))
-        with patch("elobot.features.finals.publication.bracket_embed", return_value=embed), \
-                patch("elobot.features.finals.rendering.render_bracket", side_effect=render):
+        with patch_sites(('elobot.features.finals.publication.bracket_embed', 'elobot.extensions.final.bracket_embed'), return_value=embed), \
+                patch('elobot.extensions.final.render_bracket', side_effect=render):
             await cog.final_bracket_view.callback.func(cog, ctx, 13)
         self.assertEqual(events, ["acknowledged", "loaded", "rendered", "sent"])
         ctx.defer.assert_awaited_once_with()
@@ -59,7 +60,7 @@ class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):
         ctx.guild.fetch_member = AsyncMock(
             side_effect=lambda user: SimpleNamespace(id=1, display_name="Player A") if user == "1" else None,
         )
-        with patch("elobot.features.finals.rendering.render_bracket", side_effect=FinalError("Image unavailable.")):
+        with patch('elobot.extensions.final.render_bracket', side_effect=FinalError("Image unavailable.")):
             await cog.final_bracket_view.callback.func(cog, ctx, 13)
         ctx.defer.assert_awaited_once_with()
         ctx.send.assert_awaited_once()
@@ -136,7 +137,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
                 query = MagicMock(to_list=AsyncMock(return_value=[]))
                 with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
                         patch.object(FinalMatchResult, "find", return_value=query), \
-                        patch("elobot.features.finals.rendering.render_bracket", return_value=b"image"):
+                        patch('elobot.extensions.final.render_bracket', return_value=b"image"):
                     await cog.final_prediction_view.callback.func(cog, ctx, 13)
                 payload = ctx.send.await_args.kwargs
                 description = payload["file"].description
@@ -162,7 +163,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
         ctx.guild.fetch_member = AsyncMock(return_value=None)
         with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
-                patch("elobot.features.finals.rendering.render_bracket", side_effect=FinalError("Image unavailable.")):
+                patch('elobot.extensions.final.render_bracket', side_effect=FinalError("Image unavailable.")):
             await cog.final_prediction_view.callback.func(cog, ctx, 13)
         payload = ctx.send.await_args.kwargs
         self.assertTrue(payload["ephemeral"])

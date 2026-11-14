@@ -76,7 +76,7 @@ class EmbedCommands(ipy.Extension):
         await ctx.defer(ephemeral=True)
 
         if embed_type == "Elo Information":
-            description = open("assets/information.md", "r").read()
+            description = open("assets/embeds/information.md", "r").read()
 
             embed = ipy.Embed(
                 title="**Clan Capital Elo System**",
@@ -208,7 +208,7 @@ class EmbedCommands(ipy.Extension):
 
     @ipy.component_callback("rules_button")
     async def rules_button(self, ctx: ipy.ComponentContext):
-        description = open("assets/rules.md", "r").read()
+        description = open("assets/embeds/rules.md", "r").read()
 
         embed = ipy.Embed(
             title="**Elo Rules**",
@@ -221,7 +221,7 @@ class EmbedCommands(ipy.Extension):
 
     @ipy.component_callback("build_button")
     async def build_button(self, ctx: ipy.ComponentContext):
-        description = open("assets/base_building.md", "r").read()
+        description = open("assets/embeds/base_building.md", "r").read()
 
         embed = ipy.Embed(
             title="**Base Building Contest**",
@@ -234,7 +234,7 @@ class EmbedCommands(ipy.Extension):
 
     @ipy.component_callback("rewards_button")
     async def rewards_button(self, ctx: ipy.ComponentContext):
-        description = open("assets/rewards.md", "r").read()
+        description = open("assets/embeds/rewards.md", "r").read()
 
         embed = ipy.Embed(
             title="**Elo Rewards**",
@@ -373,7 +373,7 @@ class EmbedCommands(ipy.Extension):
             emoji=ipy.PartialEmoji(name="war", id=1050832305410805760)
         )
 
-        guide = open("assets/quickstart.md", "r").read()
+        guide = open("assets/embeds/quickstart.md", "r").read()
         try:
             await event.after.send(guide, components=participate_button)
         except ipy.errors.Forbidden:

@@ -3,8 +3,8 @@ from elo_bot.integrations.files import read_json
 
 
 async def choose_tip():
-    tips: list = await read_json("tips.json", "assets/")
-    facts: list = await read_json("facts.json", "assets/")
+    tips: list = await read_json("tips.json", "assets/tips/")
+    facts: list = await read_json("facts.json", "assets/tips/")
     count = len(tips) + len(facts)
     index = await ServerState.advance_tip_index(count)
     facts_before = index * len(facts) // count

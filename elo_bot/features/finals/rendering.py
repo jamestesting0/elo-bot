@@ -8,8 +8,8 @@ from elo_bot.discord.mentions import mention_user
 from elo_bot.db import EloFinal
 
 
-TEMPLATE = Path("assets/elo_final_bracket.png")
-FONT = Path("assets/supercell_magic_webfont.ttf")
+TEMPLATE = Path("assets/finals/elo_final_bracket.png")
+FONT = Path("assets/finals/supercell_magic_webfont.ttf")
 FALLBACK_FONTS = (Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
                   Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
                   Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))

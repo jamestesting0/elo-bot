@@ -21,7 +21,7 @@ elo_bot/
   features/              # Domain logic per feature (queue, matches, results, base_store, hosting, bases, finals...)
   extensions/            # One interactions.py Extension per slash command; big ones are mixin packages
 tests/                   # Async unittest suites with mocked external boundaries; tests/integration needs MongoDB
-assets/                  # Tracked user content plus ignored building-image corpus
+assets/                  # images/ (embed images), embeds/ (/embed text), tips/, finals/ (bracket template, font)
 data/                    # Ignored mutable JSON runtime state
 temp/                    # Disposable command/download scratch space
 ```
@@ -62,7 +62,8 @@ temp/                    # Disposable command/download scratch space
 - Keep Final correction/refund notes in audit storage and private staff confirmation. Player match pages show current official results without staff notes or duplicate correction entries.
 - Imports stay at module level (ruff PLC0415); only the ML loaders in `features/bases/fingerprints` and `scripts/` defer imports.
 - Mutable JSON state defaults to `data/`; file-writing handlers coordinate through `bot.file_locks`.
-- `assets/*.md` and `assets/tips.json` are user-facing runtime inputs, not incidental documentation.
+- `assets/embeds/*.md` and `assets/tips/*.json` are user-facing runtime inputs, not incidental documentation.
+- Embed images are served from `assets/images/` on `main` through `ASSETS_URL` in `elo_bot/config/presentation.py`.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 

@@ -48,7 +48,7 @@ class TestFinalRendering(unittest.TestCase):
             with self.subTest(names=names), \
                     patch("elo_bot.features.finals.rendering.fitted_label", lru_cache(maxsize=None)(fitted_label)), \
                     patch.object(Image.Image, "save", partialmethod(Image.Image.save, compress_level=0)), \
-                    Image.open("assets/elo_final_bracket.png") as template, \
+                    Image.open("assets/finals/elo_final_bracket.png") as template, \
                     Image.open(BytesIO(render_bracket(final))) as rendered:
                 self.assertEqual(rendered.size, (1672, 941))
                 difference = ImageChops.difference(template.convert("RGB"), rendered).convert("L")

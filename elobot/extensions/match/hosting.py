@@ -46,10 +46,8 @@ from elobot.discord.channel_edits import schedule_channel_name_edit
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 from elobot.discord.members import member_guild
 from elobot.discord.mentions import mention_user
-from elobot.extensions.match.adapters import (
-    construct_occupied_slots_error,
-    construct_start_slot_instruction,
-    get_start_base_store_slot_availability,
+from elobot.features.base_store.match_adapters import (
+    construct_occupied_slots_error, construct_start_slot_instruction, get_start_base_store_slot_availability,
 )
 from elobot.extensions.match.groups import base, set_group, war_group
 from elobot.features.base_store.live import live_stores, ready_live_reservation_id
@@ -63,7 +61,7 @@ from elobot.features.base_store.slots import (
 )
 from elobot.features.base_store.start import StoredStartState, held_store, shared_store_clan
 from elobot.features.finals.matches import schedule_final_match
-from elobot.features.finals.types import FinalError, is_final_match
+from elobot.core.finals import FinalError, is_final_match
 from elobot.features.hosting.live.preflight import LivePreflight
 from elobot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elobot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag
@@ -86,7 +84,7 @@ from elobot.features.matches.resources import (
 )
 from elobot.features.matches.timing import hosting_started
 from elobot.features.matches.tips import choose_tip
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 
 
 class MatchHostingCommands:

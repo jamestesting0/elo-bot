@@ -6,7 +6,7 @@ from beanie import PydanticObjectId
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from elobot.features.finals.persistence import transaction
-from elobot.features.finals.types import FinalError, NODE_IDS
+from elobot.core.finals import FinalError, NODE_IDS
 from elobot.db import EloFinal, Player
 from elobot.db.final_models import FinalPrediction
 

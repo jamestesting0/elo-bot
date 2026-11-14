@@ -10,7 +10,7 @@ from elobot.features.hosting.war.war_start import SelfHostedWarStartReply, WarSt
 from elobot.integrations.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
 from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.matches import bind_thread
-from elobot.features.finals.types import FINAL_DISTRICTS
+from elobot.core.finals import FINAL_DISTRICTS
 from elobot.features.tokens.bets import open_market
 from elobot.db import BaseStore, Clan, Match
 from elobot.db.token_models import FinalBettingMarket

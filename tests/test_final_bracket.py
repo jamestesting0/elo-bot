@@ -1,7 +1,7 @@
 import unittest
 
 from elobot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket, require_round_ready
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.db import EloFinal
 
 

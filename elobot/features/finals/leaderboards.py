@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from elobot.features.finals.lifecycle import resolve_final
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.tokens.wallets import ensure_wallet
 from elobot.discord.mentions import mention_user
 from elobot.db import EloFinal, Player

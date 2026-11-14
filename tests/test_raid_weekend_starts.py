@@ -17,7 +17,7 @@ from elobot.features.base_store.start import held_store, ready_store, shared_sto
 from elobot.config.ids import BOT_ID
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
 from tests._patch_sites import patch_sites
-import elobot.extensions.match.adapters as match_adapters_module
+import elobot.features.base_store.match_adapters as match_adapters_module
 import elobot.extensions.match.hosting as match_hosting_module
 import elobot.extensions.match.lifecycle as match_lifecycle_module
 

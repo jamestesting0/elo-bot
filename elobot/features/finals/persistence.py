@@ -5,7 +5,7 @@ from pymongo.read_concern import ReadConcern
 from pymongo.write_concern import WriteConcern
 from pymongo import IndexModel
 
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
 from elobot.db.season_models import EloFinal
 from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet

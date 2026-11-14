@@ -8,7 +8,7 @@ from elobot.features.base_store.live import live_base_snapshot_filter
 from elobot.config.game import BASE_STORE_SLOTS
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.features.results.operations import result_input_error
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.db import BaseStore, Match
 
 

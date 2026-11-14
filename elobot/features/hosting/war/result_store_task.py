@@ -1,4 +1,4 @@
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 import functools
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -8,7 +8,7 @@ import interactions as ipy
 
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war import result_store_ui
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.db import Match
 
 

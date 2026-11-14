@@ -7,7 +7,7 @@ import interactions as ipy
 from elobot.db import Clan, HelperTask, Match, ServerState
 from elobot.discord.embeds import embed_edit_payload
 from elobot.discord.mentions import mention_user
-from elobot.extensions.match.adapters import sync_base_store_slots
+from elobot.features.base_store.match_adapters import sync_base_store_slots
 from elobot.features.base_store.slots import (
     collect_base_store_slot_owners,
     format_clan_availability_status,

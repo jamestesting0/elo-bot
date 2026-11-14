@@ -14,7 +14,7 @@ from elobot.features.finals.predictions import rescore_predictions
 from elobot.features.finals.profiles import rebuild_profiles
 from elobot.features.finals.publication import PUBLICATION_LOCKS, publish_bracket
 from elobot.features.finals.result_ui import result_embed
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.results.helper_credits import award_helper_once
 from elobot.features.hosting.self_hosted.invitations import invite_eligible_players
 from elobot.features.tokens.settlement import recover_market, set_settlement_intent

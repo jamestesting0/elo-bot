@@ -9,7 +9,7 @@ from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.discord.message_edits import edit_channel_message
 from elobot.features.finals.lifecycle import resolve_final
 from elobot.features.finals.rendering import bracket_text, render_bracket
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.discord.mentions import mention_user
 from elobot.db import EloFinal
 

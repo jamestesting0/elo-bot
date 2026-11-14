@@ -3,10 +3,10 @@ import interactions as ipy
 from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.config.emojis import STAR_EMOJI
 from elobot.config.ids import ELO_BLACKLIST_ROLE, LVL1_ROLES, LVL2_ROLES
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from beanie import PydanticObjectId
 from elobot.db import Match
-from elobot.features.finals.types import FINAL_DISTRICTS, Outcome
+from elobot.core.finals import FINAL_DISTRICTS, Outcome
 from elobot.core.parsing import get_destruction, get_stars
 from elobot.discord.mentions import mention_user
 from elobot.db import EloFinal, EloFinalMatch

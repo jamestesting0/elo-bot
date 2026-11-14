@@ -52,10 +52,11 @@ from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 from elobot.discord.members import member_guild
 from elobot.discord.mentions import mention_user
 from elobot.discord.message_edits import edit_channel_message
-from elobot.extensions.match.adapters import ResultDetectionType, clear_match_base_stores
+from elobot.core.match_results import ResultDetectionType
+from elobot.features.base_store.match_adapters import clear_match_base_stores
 from elobot.extensions.match.groups import base, result_group
 from elobot.features.players.match_choices import fetch_user_match_id_choices, forget_replaced_match_choice
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.features.hosting.self_hosted.invitations import invite_eligible_players
 from elobot.features.matches.cleanup import has_reserved_match_slots
 from elobot.features.matches.controls import check_match_control, reject_outdated_match_control
@@ -86,7 +87,7 @@ from elobot.features.results.operations import (
     rollback_result_operation,
 )
 from elobot.features.results.recording import _mark_result_publication_incomplete, record_base_stats, record_match
-from elobot.features.results.validation import is_valid_complete_match_result, is_valid_match_result_entry
+from elobot.core.match_results import is_valid_complete_match_result, is_valid_match_result_entry
 from elobot.integrations.helper_api import HelperScoreAttackLimit
 
 
@@ -108,7 +109,7 @@ class MatchResultCommands:
 
         if is_final_match(match):
             from elobot.features.finals.result_ui import show_source_result_form
-            from elobot.features.finals.types import FinalError
+            from elobot.core.finals import FinalError
             try:
                 await show_source_result_form(ctx, match)
             except FinalError as error:
@@ -234,7 +235,7 @@ class MatchResultCommands:
 
             from elobot.db.season_models import EloFinal
             from elobot.features.finals.results import FinalResultSubmission, automatic_operation_key, submit_result
-            from elobot.features.finals.types import FinalError
+            from elobot.core.finals import FinalError
             try:
                 final = await EloFinal.get(PydanticObjectId(mongo_match.final_id))
                 if final is None:
@@ -609,7 +610,7 @@ class MatchResultCommands:
 
         if is_final_match(match):
             from elobot.features.finals.result_ui import show_source_result_form
-            from elobot.features.finals.types import FinalError
+            from elobot.core.finals import FinalError
             try:
                 await show_source_result_form(ctx, match, correction=True)
             except FinalError as error:

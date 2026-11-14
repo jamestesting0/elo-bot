@@ -1,8 +1,8 @@
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from pydantic import JsonValue
 
 from elobot.db import Match, Player
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 
 
 async def claim_autowin(match: Match, winner_id: str, actor_id: str, reason: str) -> Match:

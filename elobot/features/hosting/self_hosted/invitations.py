@@ -10,7 +10,7 @@ from interactions.api.http.route import Route
 from pymongo.errors import PyMongoError
 
 from elobot.config.ids import AUTOMATIC_MATCH_THREAD, LVL2_ROLES
-from elobot.features.results.validation import is_valid_complete_match_result
+from elobot.core.match_results import is_valid_complete_match_result
 from elobot.db import Match, Player, RecordedMatch
 from elobot.db.final_models import FinalPlayerProfile
 

@@ -20,8 +20,8 @@ from elobot.integrations.helper_api import (
 )
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elobot.config.ids import MATCH_CHANNEL
-from elobot.features.finals.types import is_final_match
-from elobot.features.results.validation import is_match_finished
+from elobot.core.finals import is_final_match
+from elobot.core.match_results import is_match_finished
 from elobot.db import Match, Player
 
 

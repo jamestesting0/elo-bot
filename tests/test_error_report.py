@@ -6,7 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.app import errors, runtime
+from elobot.app import errors
+from elobot.discord import runtime
 
 
 class TestErrorReport(unittest.IsolatedAsyncioTestCase):

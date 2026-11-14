@@ -7,7 +7,7 @@ from datetime import datetime
 import coc
 import interactions as ipy
 
-from elobot.app import runtime
+from elobot.discord import runtime
 from elobot.app.events import on_raid_weekend_end
 from elobot.config.emojis import ERROR_EMOJI, STAFF_EMOJI, SUCCESS_EMOJI
 from elobot.config.presentation import COLOR, FOOTER_IMAGE

@@ -5,7 +5,7 @@ import coc
 import interactions as ipy
 
 from elobot.features.matches.resources import ResourceClanReservation, ResourceMatchSideReservation
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 import elobot.features.hosting.war.result_store_task as result_store_task
 import elobot.features.hosting.war.war_start as war_start
 from elobot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag

@@ -4,7 +4,7 @@ from tests.integration._final_fixture import FinalScenarioCase
 from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.predictions import PredictionAction, apply_prediction_action, begin_prediction, change_prediction_state
 from elobot.features.finals.prediction_ui import prediction_view
-from elobot.features.finals.types import FinalError, NODE_IDS
+from elobot.core.finals import FinalError, NODE_IDS
 from elobot.db.final_models import FinalPrediction
 from elobot.features.finals.results import FinalResultSubmission, submit_result
 from elobot.features.finals.recovery import recover_final

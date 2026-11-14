@@ -15,7 +15,7 @@ from elobot.config.emojis import ERROR_EMOJI
 from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from elobot.db import BaseLayout, Season, Player, DistrictSeasonData, PlayerSeasonData
 from elobot.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
-from elobot.discord.season_stats import stats_controls, stats_embed
+from elobot.features.seasons.presentation import stats_controls, stats_embed
 from elobot.features.seasons.stats import SeasonStatsError, SeasonWindow, season_windows
 from elobot.features.seasons.stats_data import load_season_stats
 import math

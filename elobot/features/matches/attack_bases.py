@@ -8,7 +8,7 @@ from elobot.config.emojis import IMPORTANT_EMOJI
 from elobot.config.game import DISTRICT_CODES_REVERSED
 from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, UNAVAILABLE_IMAGE
 from elobot.db import BaseLayout, BaseLink, Match, Player
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.features.matches.base_selection import district_base_quality, ensure_secondary_base_index, get_base_quality
 
 

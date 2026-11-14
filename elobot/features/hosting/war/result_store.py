@@ -12,7 +12,7 @@ from elobot.features.hosting.war import result_store_ui
 from elobot.features.hosting.war import helper_store
 from elobot.integrations.helper_api import HelperScoreAttackLimit
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
-from elobot.features.results.validation import is_match_finished, is_valid_complete_match_result
+from elobot.core.match_results import is_match_finished, is_valid_complete_match_result
 from elobot.features.results.operations import result_input_error
 from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from elobot.features.hosting.self_hosted.invitations import invite_eligible_players

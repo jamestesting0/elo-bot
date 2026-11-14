@@ -1,4 +1,4 @@
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from copy import deepcopy
 import asyncio
 from dataclasses import dataclass, replace
@@ -14,7 +14,7 @@ import interactions as ipy
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
 
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 import elobot.features.hosting.live.live_reservations as live_reservations
 from elobot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
 from elobot.features.base_store.live import live_pair_ready, live_stores
@@ -27,7 +27,7 @@ from elobot.features.matches.messages import MatchMessageState, match_message_em
 from elobot.features.matches.message_lock import coordinated_match_message, match_message_lock
 from elobot.db import Match
 from elobot.features.finals.hosting import accept_final_start
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.db.match_models import ExpectedLiveStartState
 from elobot.features.matches.timing import hosting_started

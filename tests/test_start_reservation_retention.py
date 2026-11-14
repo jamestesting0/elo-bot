@@ -12,7 +12,7 @@ from elobot.config.ids import MATCH_CHANNEL
 from elobot.db import BaseStore
 from tests import _match_publication_fixture as publication_tests
 from tests._patch_sites import patch_sites
-import elobot.extensions.match.adapters as match_adapters_module
+import elobot.features.base_store.match_adapters as match_adapters_module
 import elobot.extensions.match.lifecycle as match_lifecycle_module
 
 
@@ -86,7 +86,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
             {"name": "Players", "value": "100 vs 200"}, {"name": "Time", "value": "1000"},
         ]}]})
         self.messages[80] = public
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             await live_start.complete_live_start(self.case.bot, self.case.ctx, request)
 
@@ -257,7 +257,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
                                                "color": 0xBE0000})
         self.messages[80]["components"] = []
         request = self.case.live_request()
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             await live_start.complete_live_start(self.case.bot, self.case.ctx, request)
         self.assertEqual(self.messages[80]["embeds"][0]["title"], "**Match Started**")

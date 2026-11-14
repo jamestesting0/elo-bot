@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests._patch_sites import patch_sites
 import elobot.features.matches.resources as resources_module
-import elobot.extensions.match.adapters as match_adapters_module
+import elobot.features.base_store.match_adapters as match_adapters_module
 import elobot.extensions.match.base_store as match_base_store_module
 import elobot.extensions.match.dashboards as match_dashboards_module
 import elobot.extensions.match.hosting as match_hosting_module

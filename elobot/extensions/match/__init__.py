@@ -7,7 +7,7 @@ from elobot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 from elobot.db import ServerState
 import coc
 from datetime import datetime
-from elobot.extensions.match.adapters import sync_base_store_slots
+from elobot.features.base_store.match_adapters import sync_base_store_slots
 from elobot.extensions.match import groups
 from elobot.extensions.match.queue import QueueCommands
 from elobot.extensions.match.lifecycle import MatchLifecycleCommands

@@ -1,4 +1,4 @@
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from copy import deepcopy
 import logging
 
@@ -9,7 +9,7 @@ from elobot.config.ids import MATCH_CHANNEL
 from elobot.features.matches.message_lock import match_message_lock
 from elobot.features.matches.messages import _PUBLICATION_PLACEHOLDERS, mark_match_message_ended, match_message_embeds
 from elobot.features.matches.publication_state import restore_match_publication
-from elobot.features.results.validation import is_valid_match_result_entry
+from elobot.core.match_results import is_valid_match_result_entry
 from elobot.db import Match
 
 

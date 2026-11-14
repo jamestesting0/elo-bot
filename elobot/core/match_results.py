@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal
 
 if TYPE_CHECKING:
     from elobot.db import Match
@@ -47,3 +47,6 @@ def is_match_finished(match: "Match", player: int | None = None) -> bool:
         len(getattr(participant, "result", [])) == district_count and all(participant.result)
         for participant in participants
     )
+
+
+type ResultDetectionType = Literal["Strict", "Relaxed"]

@@ -2,7 +2,7 @@ from pymongo.errors import DuplicateKeyError
 
 from tests.integration._final_fixture import FinalMongoCase
 from elobot.features.finals.persistence import transaction
-from elobot.features.finals.types import FINAL_DISTRICTS
+from elobot.core.finals import FINAL_DISTRICTS
 from elobot.db import EloFinal, Match, Participant
 from elobot.db.final_models import FinalMatchResult, FinalResultOperation, FinalResultSnapshot
 from elobot.db.token_models import TokenWallet

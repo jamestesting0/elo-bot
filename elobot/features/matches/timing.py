@@ -1,4 +1,4 @@
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.db import Match
 
 

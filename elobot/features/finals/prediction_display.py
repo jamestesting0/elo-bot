@@ -1,5 +1,5 @@
 from elobot.config.emojis import LOSS_EMOJI, STAR_EMOJI, WIN_EMOJI
-from elobot.features.finals.types import NODE_IDS
+from elobot.core.finals import NODE_IDS
 from elobot.core.parsing import get_destruction, get_stars
 from elobot.discord.mentions import mention_user
 from elobot.db import EloFinal

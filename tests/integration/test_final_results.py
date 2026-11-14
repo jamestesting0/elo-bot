@@ -1,7 +1,7 @@
 from tests.integration._final_fixture import FinalScenarioCase
 from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.db import Match, Player, RecordedMatch
 from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile
 from elobot.features.finals.recovery import recover_final

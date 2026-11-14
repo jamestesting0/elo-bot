@@ -1,7 +1,7 @@
 import interactions as ipy
 from pymongo import AsyncMongoClient
 
-from elobot.app import runtime
+from elobot.discord import runtime
 from elobot.config.settings import DATA_BASES
 
 

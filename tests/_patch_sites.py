@@ -14,7 +14,7 @@ from unittest import mock
 # The modules that together replaced the former cogs/match_commands.py.
 MATCH_MODULE_FAMILY = (
     "elobot.extensions.match",
-    "elobot.extensions.match.adapters",
+    "elobot.features.base_store.match_adapters",
     "elobot.extensions.match.base_store",
     "elobot.extensions.match.bases",
     "elobot.extensions.match.dashboards",

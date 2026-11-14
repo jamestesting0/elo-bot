@@ -8,7 +8,7 @@ from tests._season_stats_fixture import row
 
 import elobot.extensions.season as commands
 from elobot.config.emojis import ERROR_EMOJI
-from elobot.discord.season_stats import stats_controls, stats_embed
+from elobot.features.seasons.presentation import stats_controls, stats_embed
 from elobot.features.seasons.stats import SeasonWindow, StatsAccumulator
 
 

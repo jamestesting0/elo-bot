@@ -3,7 +3,7 @@ import asyncio
 from tests.integration._final_fixture import FinalScenarioCase
 from elobot.features.finals.hosting import accept_final_start
 from elobot.features.finals.lifecycle import confirm_bracket
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.tokens.bets import BetAction, apply_bet, open_market, projected_return
 from elobot.features.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
 from elobot.features.tokens.wallets import ensure_wallet, wallet_summary

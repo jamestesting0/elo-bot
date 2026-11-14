@@ -4,7 +4,7 @@ from pymongo.errors import DuplicateKeyError
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from elobot.features.finals.bracket import automatic_pairs, build_bracket
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.finals.persistence import transaction
 from elobot.db import EloFinal, Player, Season
 from elobot.db.token_models import FinalBettingMarket

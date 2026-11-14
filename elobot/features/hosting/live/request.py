@@ -11,7 +11,7 @@ import interactions as ipy
 from elobot.features.base_store.live import live_pair_ready
 from elobot.config.presentation import COLOR
 from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.features.matches.timing import hosting_started
 from elobot.db import Match
 

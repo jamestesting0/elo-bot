@@ -1,6 +1,6 @@
 from pymongo.asynchronous.client_session import AsyncClientSession
 
-from elobot.features.finals.types import FINAL_DISTRICTS
+from elobot.core.finals import FINAL_DISTRICTS
 from elobot.core.parsing import get_destruction, get_stars
 from elobot.db import EloFinal, Player
 from elobot.db.final_models import FinalEditionStats, FinalMatchResult, FinalPlayerProfile

@@ -18,7 +18,7 @@ from elobot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elobot.config.game import HOST_CLAN_OPTIONS
 from elobot.db import Match, Player
 from elobot.features.finals.hosting import accept_final_start
-from elobot.features.finals.types import FinalError, is_final_match
+from elobot.core.finals import FinalError, is_final_match
 from elobot.features.matches import attack_bases
 from elobot.features.matches import resources
 

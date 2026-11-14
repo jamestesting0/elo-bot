@@ -6,7 +6,7 @@ from tests.integration._final_fixture import FinalScenarioCase
 from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.matches import bind_thread
 from elobot.features.finals.publication import publish_bracket
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.db import EloFinal
 from elobot.features.tokens.bets import close_market, open_market
 from elobot.features.tokens.presentation import publish_market, market_signature

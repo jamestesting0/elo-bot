@@ -30,14 +30,14 @@ from elobot.integrations.helper_api import (
     HelperTrackingFailure,
 )
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.features.matches.messages import MatchMessageState
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.features.base_store.slots import get_participant_base_store
 from elobot.db import Match, Player
 from elobot.features.finals.hosting import accept_final_start
 from elobot.features.matches.timing import hosting_started
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 
 
 async def resolve_stored_base_control(

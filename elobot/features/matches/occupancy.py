@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import interactions as ipy
 
 from elobot.db import Match
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 
 
 @dataclass(frozen=True, slots=True)

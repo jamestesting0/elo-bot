@@ -3,7 +3,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from elobot.features.finals.types import FinalError, NODE_IDS
+from elobot.core.finals import FinalError, NODE_IDS
 from elobot.discord.mentions import mention_user
 from elobot.db import EloFinal
 

@@ -11,7 +11,7 @@ from tests._war_start_fixture import WarStartFixture
 from tests._patch_sites import patch_sites
 import elobot.extensions.match as match_module
 import elobot.features.matches.resources as resources_module
-import elobot.extensions.match.adapters as match_adapters_module
+import elobot.features.base_store.match_adapters as match_adapters_module
 import elobot.extensions.match.dashboards as match_dashboards_module
 
 

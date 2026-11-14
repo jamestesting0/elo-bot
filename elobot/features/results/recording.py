@@ -15,7 +15,7 @@ from elobot.features.leaderboards.stats import (
     get_avg_destruction, get_avg_stars, get_opponent_avg_destruction, get_opponent_avg_stars, get_wins,
 )
 from elobot.features.players.match_choices import fetch_user_match_id_choices
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.features.hosting.self_hosted.invitations import invite_eligible_players
 from elobot.features.results.manual import complete_manual_result, persist_manual_result
 from elobot.features.results.operations import (

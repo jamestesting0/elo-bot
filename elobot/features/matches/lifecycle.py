@@ -14,7 +14,7 @@ from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, ORDINAL
 from elobot.db import BaseLink, Match, Participant, Player
 from elobot.db.player_models import QueueDistrictSelection
 from elobot.discord.mentions import mention_user
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.features.matches.base_selection import get_base_quality
 from elobot.features.matches.cleanup import delete_unreserved_match
 from elobot.features.matches.thread_messages import (

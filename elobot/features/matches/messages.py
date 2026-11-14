@@ -13,7 +13,7 @@ from pymongo.errors import PyMongoError
 from elobot.discord.embeds import embed_edit_payload
 from elobot.discord.message_edits import edit_channel_message
 from elobot.features.matches.message_lock import match_message_lock
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.db import Match
 from elobot.db.publication_models import MatchMessagePublication
 

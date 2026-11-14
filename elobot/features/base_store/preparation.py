@@ -5,7 +5,7 @@ from secrets import token_hex
 
 from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
 from elobot.config.emojis import ERROR_EMOJI
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.features.results.operations import result_input_error
 from elobot.features.base_store.models import (
     BaseStorePreparationFailure,

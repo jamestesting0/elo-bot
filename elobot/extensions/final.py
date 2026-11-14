@@ -10,7 +10,7 @@ from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.config.ids import ELO_BLACKLIST_ROLE, FINAL_CHANNEL, GUILD_IDS, LVL1_ROLES, LVL2_ROLES
 from elobot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elobot.features.finals import lifecycle
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.finals.bracket import seeded_players
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
@@ -36,7 +36,7 @@ class FinalCommands(Extension):
 
     async def _recover(self, edition):
         from elobot.features.finals.recovery import recover_final
-        from elobot.extensions.match.adapters import clear_match_base_stores
+        from elobot.features.base_store.match_adapters import clear_match_base_stores
         from elobot.features.matches.resources import free_match_clans, remove_helper_task
         async def release(source):
             await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")
@@ -849,7 +849,7 @@ class FinalCommands(Extension):
     @slash_option(name="round", description="Round", opt_type=OptionType.STRING)
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_match_list(self, ctx: SlashContext, round: str = None, season: int = None):
-        from elobot.features.finals.types import ROUND_NODES
+        from elobot.core.finals import ROUND_NODES
         try:
             edition = await self._edition(ctx, season)
             nodes = ROUND_NODES.get(round, tuple(edition.nodes))

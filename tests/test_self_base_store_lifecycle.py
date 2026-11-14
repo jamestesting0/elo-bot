@@ -25,7 +25,7 @@ from tests._stored_start_fixture import (
 )
 from tests._patch_sites import patch_sites
 import elobot.features.matches.resources as resources_module
-import elobot.extensions.match.adapters as match_adapters_module
+import elobot.features.base_store.match_adapters as match_adapters_module
 import elobot.extensions.match.queue as match_queue_module
 
 
@@ -599,7 +599,7 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
 
         with (
                 patch.object(self.cog, "_start_war", new_callable=AsyncMock) as legacy_start,
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                 patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
                 patch.object(stored_bases, "store_bases", new_callable=AsyncMock) as helper_store,

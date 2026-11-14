@@ -11,7 +11,7 @@ from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.config.ids import FINAL_CHANNEL
 from elobot.config.emojis import TOKEN_EMOJI
 from elobot.discord.message_edits import edit_channel_message
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.finals.publication import PUBLICATION_LOCKS
 from elobot.features.tokens.bets import projected_return
 from elobot.features.tokens.wallets import ensure_wallet, wallet_summary

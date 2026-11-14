@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, patch
 
 from tests.integration._final_fixture import FinalScenarioCase
 from elobot.features.finals.lifecycle import add_entrant, confirm_bracket, reset_bracket, resolve_final, save_pairing_draft, start_final
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.db import EloFinal, Player
 from elobot.db.final_models import FinalPlayerProfile
 

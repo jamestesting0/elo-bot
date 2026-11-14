@@ -3,7 +3,7 @@ import re
 
 import interactions as ipy
 
-from elobot.app import runtime
+from elobot.discord import runtime
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.config.ids import ELO_BLACKLIST_ROLE
 from elobot.config.settings import TOKENS

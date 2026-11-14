@@ -10,7 +10,7 @@ from PIL import Image, ImageChops
 from elobot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket
 from elobot.features.finals.rendering import bracket_labels, fitted_label, render_bracket
 from elobot.features.finals.prediction_display import prediction_statuses
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.db import EloFinal
 from elobot.db.final_models import FinalPrediction
 

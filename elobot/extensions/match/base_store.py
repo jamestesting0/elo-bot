@@ -22,7 +22,7 @@ from elobot.config.ids import (
 )
 from elobot.db import Match, Participant
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
-from elobot.extensions.match.adapters import clear_participant_base_store, sync_base_store_slots
+from elobot.features.base_store.match_adapters import clear_participant_base_store, sync_base_store_slots
 from elobot.extensions.match.groups import base_group
 from elobot.features.base_store.messages import BaseStoreReleaseReason
 from elobot.features.base_store.models import (
@@ -49,7 +49,7 @@ from elobot.features.matches.resources import (
     try_reserve_resource_clan,
     try_reserve_resource_match_side,
 )
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 
 
 class MatchBaseStoreCommands:

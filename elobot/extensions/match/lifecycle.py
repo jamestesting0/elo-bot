@@ -31,10 +31,10 @@ from elobot.config.presentation import (
 from elobot.db import Match, Participant, Player
 from elobot.discord.members import member_guild
 from elobot.discord.mentions import mention_user
-from elobot.extensions.match.adapters import clear_match_base_stores
+from elobot.features.base_store.match_adapters import clear_match_base_stores
 from elobot.extensions.match.groups import base
 from elobot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.features.matches.cleanup import (
     delete_unreserved_match,
     has_pending_match_operation,

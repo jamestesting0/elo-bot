@@ -1,6 +1,6 @@
 from tests.integration._final_fixture import FinalScenarioCase
 from elobot.features.finals.leaderboards import final_board_rows
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.tokens.wallets import ensure_wallet
 from elobot.db import EloFinal, Season
 from elobot.db.final_models import FinalPrediction

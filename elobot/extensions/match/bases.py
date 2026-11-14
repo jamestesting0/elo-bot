@@ -34,7 +34,7 @@ from elobot.config.presentation import (
 from elobot.db import BaseLayout, BaseLink, Match, OverrideCode, Participant
 from elobot.discord.mentions import mention_user
 from elobot.extensions.match.groups import base_group
-from elobot.features.finals.types import FinalError, is_final_match
+from elobot.core.finals import FinalError, is_final_match
 from elobot.features.matches.attack_bases import send_bases
 from elobot.features.matches.messages import (
     match_message_embeds,
@@ -42,7 +42,7 @@ from elobot.features.matches.messages import (
 from elobot.features.matches.thread_messages import (
     find_match_thread_announcement,
 )
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.integrations.files import delete_file
 from elobot.integrations.http import download_file
 

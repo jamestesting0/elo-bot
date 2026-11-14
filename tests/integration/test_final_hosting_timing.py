@@ -20,7 +20,7 @@ from elobot.features.hosting.war.war_start import WarAbort, abort_war_start
 from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.hosting import accept_final_start
 from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.matches.messages import MatchMessageState
 from elobot.features.matches.timing import hosting_started
 from elobot.features.tokens.bets import open_market

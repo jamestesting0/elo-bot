@@ -9,7 +9,7 @@ from elobot.features.finals.persistence import transaction
 from elobot.features.finals.matches import require_current_match
 from elobot.features.finals.profiles import rebuild_profiles
 from elobot.features.finals.predictions import rescore_predictions
-from elobot.features.finals.types import FinalError, Outcome, ROUND_NODES
+from elobot.core.finals import FinalError, Outcome, ROUND_NODES
 from elobot.core.parsing import get_destruction, get_stars
 from elobot.db import EloFinal, Match, Season, HelperHistory
 from elobot.db.final_models import FinalHelperCredit, FinalMatchResult, FinalResultOperation, FinalResultSnapshot

@@ -10,7 +10,8 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from elobot.app import errors, runtime
+from elobot.app import errors
+from elobot.discord import runtime
 import elobot.extensions.final as final_commands
 import elobot.extensions.leaderboard as leaderboards
 from elobot.db import EloFinal, Player, PlayerSeasonData, RecordedMatch

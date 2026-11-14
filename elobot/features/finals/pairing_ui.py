@@ -1,7 +1,7 @@
 import interactions as ipy
 
 from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
-from elobot.features.finals.types import NODE_IDS
+from elobot.core.finals import NODE_IDS
 from elobot.discord.mentions import mention_user
 from elobot.db import EloFinal
 

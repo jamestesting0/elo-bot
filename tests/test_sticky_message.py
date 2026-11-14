@@ -8,7 +8,7 @@ import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import ValidationError
 
-from elobot.app import runtime
+from elobot.discord import runtime
 from elobot.features.sticky import commands as sticky_commands
 from elobot.db.sticky_models import StickyMessage
 

@@ -1,4 +1,4 @@
-from elobot.features.finals.types import FinalError, NODE_IDS, ROUND_NODES
+from elobot.core.finals import FinalError, NODE_IDS, ROUND_NODES
 from elobot.db.season_models import EloFinal, EloFinalMatch
 
 

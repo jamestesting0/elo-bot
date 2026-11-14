@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 
 from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
 from elobot.features.results.operations import result_input_error
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.db import Match
 
 

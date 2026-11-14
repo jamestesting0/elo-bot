@@ -5,7 +5,7 @@ from beanie import PydanticObjectId
 
 from elobot.features.finals.bracket import require_round_ready
 from elobot.features.finals.persistence import transaction
-from elobot.features.finals.types import FINAL_DISTRICTS, FinalError, ROUND_NODES
+from elobot.core.finals import FINAL_DISTRICTS, FinalError, ROUND_NODES
 from elobot.db import EloFinal, Match, Participant, Player
 from elobot.db.season_models import EloFinalMatch
 

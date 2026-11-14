@@ -6,7 +6,7 @@ from tests.integration._final_fixture import FinalScenarioCase
 from elobot.features.finals.hosting import accept_final_start
 from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.matches import prepare_match
-from elobot.features.finals.types import FINAL_DISTRICTS, FinalError
+from elobot.core.finals import FINAL_DISTRICTS, FinalError
 from elobot.db import Match, Clan
 from elobot.db.token_models import FinalBettingMarket
 from elobot.features.hosting.war import result_store_task

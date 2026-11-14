@@ -265,7 +265,7 @@ class PlayerCommands(ipy.Extension):
     )
     async def player_deregister(self, ctx: ipy.SlashContext, player: ipy.User):
         from elobot.features.finals.administration import guard_deregistration
-        from elobot.features.finals.types import FinalError
+        from elobot.core.finals import FinalError
         try:
             await guard_deregistration(str(player.id))
         except FinalError as error:
@@ -335,7 +335,7 @@ class PlayerCommands(ipy.Extension):
         )
         await new_player.insert()
         from elobot.features.tokens.wallets import ensure_wallet
-        from elobot.features.finals.types import FinalError
+        from elobot.core.finals import FinalError
         try:
             await ensure_wallet(str(ctx.user.id))
         except FinalError as error:
@@ -517,7 +517,7 @@ class PlayerCommands(ipy.Extension):
         )
 
         from elobot.features.tokens.wallets import ensure_wallet, wallet_summary
-        from elobot.features.finals.types import FinalError
+        from elobot.core.finals import FinalError
         try:
             available, _, _ = await wallet_summary(await ensure_wallet(player_id))
             tokens_str = f"{available:,} {TOKEN_EMOJI}"

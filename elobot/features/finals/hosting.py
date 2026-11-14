@@ -1,4 +1,4 @@
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 import time
 
 from beanie import PydanticObjectId
@@ -6,7 +6,7 @@ from beanie import PydanticObjectId
 from elobot.features.finals.bracket import require_round_ready
 from elobot.features.finals.persistence import transaction
 from elobot.features.finals.matches import require_current_match
-from elobot.features.finals.types import FinalError, ROUND_NODES
+from elobot.core.finals import FinalError, ROUND_NODES
 from elobot.db import EloFinal, Match
 from elobot.db import Clan
 from elobot.db.token_models import FinalBettingMarket

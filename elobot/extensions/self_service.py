@@ -19,7 +19,7 @@ import elobot.features.hosting.war.helper_reinvite as helper_reinvite
 from elobot.features.matches.resources import (
     format_available_resource_clans, try_reserve_resource_clan, try_reserve_resource_match_side,
 )
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elobot.features.hosting.war.helper_host import (
     AutomaticWarHost,

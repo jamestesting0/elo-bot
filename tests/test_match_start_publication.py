@@ -17,7 +17,7 @@ from elobot.db import Match
 from tests._match_publication_fixture import MatchPublicationStateMixin
 from tests._patch_sites import patch_sites
 import elobot.extensions.match as match_module
-import elobot.extensions.match.adapters as match_adapters_module
+import elobot.features.base_store.match_adapters as match_adapters_module
 import elobot.extensions.match.bases as match_bases_module
 
 class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsyncioTestCase):
@@ -127,7 +127,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         public = MagicMock(id=80, _channel_id=90, components=[], embeds=[ipy.Embed(fields=[ipy.EmbedField("Players", "100 vs 200"),
                                                   ipy.EmbedField("Time", "1000")])], edit=AsyncMock())
         self.bot.fetch_channel = AsyncMock(return_value=MagicMock(id=90, fetch_message=AsyncMock(return_value=public)))
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))), \
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             # When: the live completion publishes its bound thread message.
             message = await live_start.complete_live_start(self.bot, self.ctx, request)
@@ -160,7 +160,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             return await self.update_message_binding(query, update)
 
         with (
-            patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
+            patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
             patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
             patch.object(self.collection, "update_one", new=AsyncMock(side_effect=bind_public)),
             patch.object(live_start, "schedule_channel_name_edit"),
@@ -183,7 +183,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             return await self.update_message_binding(query, update)
 
         with (
-            patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
+            patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
             patch.object(live_start, "schedule_channel_name_edit"),
             patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
             patch.object(self.collection, "update_one", new=AsyncMock(side_effect=fail_public_binding)),

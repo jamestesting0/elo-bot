@@ -11,7 +11,7 @@ from elobot.db import Clan, HelperTask, Match
 from elobot.discord.decorators import create_async_task
 from elobot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 from elobot.features.base_store.start import StoredStartState
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.features.matches.controls import update_match_control
 from elobot.features.matches.messages import MatchMessageState
 

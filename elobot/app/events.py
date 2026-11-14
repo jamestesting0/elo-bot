@@ -1,7 +1,7 @@
 import coc
 import interactions as ipy
 
-from elobot.app import runtime
+from elobot.discord import runtime
 from elobot.config.ids import RAID_CHANNEL
 from elobot.features.base_store.slots import clear_all_base_store_slots
 

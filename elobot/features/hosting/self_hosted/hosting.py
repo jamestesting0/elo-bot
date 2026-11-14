@@ -7,7 +7,7 @@ import elobot.features.hosting.live.eligibility as live_eligibility
 from elobot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
 from elobot.features.hosting.live.preflight import LivePreflight
 from elobot.features.matches.resources import format_available_resource_clans, is_resource_clan_locked
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.features.base_store.live import live_stores, ready_live_reservation_id
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.features.matches.timing import hosting_started

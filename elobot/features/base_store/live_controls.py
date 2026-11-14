@@ -11,7 +11,7 @@ from elobot.features.hosting.war.stored_bases import HelperStoredBaseTerminalJob
 from elobot.features.base_store.live import live_pair_ready, live_stores
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.features.matches.timing import hosting_started
-from elobot.features.results.validation import is_match_finished
+from elobot.core.match_results import is_match_finished
 from elobot.db import Match
 
 

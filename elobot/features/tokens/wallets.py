@@ -3,7 +3,7 @@ import time
 from pymongo.errors import DuplicateKeyError
 
 from elobot.features.finals.persistence import transaction
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.db import Player
 from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 

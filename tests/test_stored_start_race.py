@@ -13,7 +13,7 @@ from elobot.features.hosting.war import result_store_task
 from tests._stored_start_fixture import StoredStartFixture, terminal_job
 from tests._patch_sites import patch_sites
 import elobot.features.matches.resources as resources_module
-import elobot.extensions.match.adapters as match_adapters_module
+import elobot.features.base_store.match_adapters as match_adapters_module
 import elobot.extensions.match.base_store as match_base_store_module
 import elobot.extensions.match.queue as match_queue_module
 

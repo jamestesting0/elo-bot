@@ -11,7 +11,7 @@ from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
 from elobot.features.finals.recovery import mark_deleted_attempt, recover_final
 from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.matches.messages import MatchMessageState
 from elobot.db import Clan, EloFinal, Match
 from elobot.db.final_models import FinalMatchResult

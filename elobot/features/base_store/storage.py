@@ -18,8 +18,8 @@ from elobot.features.base_store.repository import (
 )
 from elobot.features.base_store.messages import BaseStoreReleaseReason, StoredBaseMessageRetirement, retire_stored_base_message
 from elobot.features.base_store.legacy import resolve_stored_base_message_ids
-from elobot.features.results.validation import is_valid_complete_match_result
-from elobot.features.finals.types import is_final_match
+from elobot.core.match_results import is_valid_complete_match_result
+from elobot.core.finals import is_final_match
 from elobot.core.raid_weekend import latest_completed_raid_weekend_end_timestamp
 from elobot.db import Match
 from elobot.features.base_store.self_service import store_self_bases

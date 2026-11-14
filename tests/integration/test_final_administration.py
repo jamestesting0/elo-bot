@@ -3,7 +3,7 @@ from elobot.features.finals.administration import deregister_player, guard_dereg
 from elobot.features.finals.lifecycle import confirm_bracket
 from elobot.features.finals.predictions import begin_prediction, change_prediction_state
 from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.features.finals.types import FinalError
+from elobot.core.finals import FinalError
 from elobot.features.tokens.wallets import ensure_wallet
 from elobot.db import Player
 from elobot.db.final_models import FinalPrediction

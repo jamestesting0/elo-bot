@@ -3,7 +3,7 @@ from beanie import PydanticObjectId
 from pydantic import JsonValue
 
 from elobot.config.ids import MATCH_CHANNEL
-from elobot.features.finals.types import is_final_match
+from elobot.core.finals import is_final_match
 from elobot.db import Match
 
 

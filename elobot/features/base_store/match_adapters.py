@@ -1,4 +1,3 @@
-from typing import Literal
 
 import interactions as ipy
 
@@ -6,8 +5,6 @@ import elobot.features.base_store.presentation as base_store_presentation
 import elobot.features.base_store.storage as base_store_storage
 from elobot.db import Match, Participant
 from elobot.features.base_store.messages import BaseStoreReleaseReason
-
-type ResultDetectionType = Literal["Strict", "Relaxed"]
 
 
 def collect_occupied_base_store_slots(matches: list[Match]) -> dict[str, set[str]]:

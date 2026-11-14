@@ -289,9 +289,10 @@ class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsynci
                         await callback(self.cog)
                         clock.monotonic.return_value = started + 3599
                         await callback(self.cog)
-                    self.assertEqual(len(logs.output), 1)
-                    self.assertIn("50013", logs.output[0])
-                    self.assertIn("retrying in 1 hour", logs.output[0])
+                    warnings = [record.getMessage() for record in logs.records if record.name == "root"]
+                    self.assertEqual(len(warnings), 1)
+                    self.assertIn("50013", warnings[0])
+                    self.assertIn("retrying in 1 hour", warnings[0])
                     self.bot.fetch_channel.assert_awaited_once()
                     denied.side_effect = None
                     message.edit.reset_mock()

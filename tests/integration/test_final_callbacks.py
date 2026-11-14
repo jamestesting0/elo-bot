@@ -209,9 +209,12 @@ class TestFinalCallbacks(FinalScenarioCase):
         self.assertEqual(message.embeds[0].fields[0].value, "Season 7 Final")
         ctx.author.id = 8
         before = ctx.edit.await_count
+        ctx.send.reset_mock()
         await board.lb_season_select.callback.func(board, ctx)
         self.assertEqual(ctx.edit.await_count, before)
-        self.assertIn("cannot interfere", ctx.send.await_args.args[0])
+        ctx.send.assert_awaited_once()
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
     async def test_official_result_callback_reports_saved_state_when_discord_publication_fails(self):
         source = await prepare_match(self.final, "QF1")

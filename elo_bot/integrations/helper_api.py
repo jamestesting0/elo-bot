@@ -604,3 +604,203 @@ def helper_job_notification(outcome: HelperJob | HelperTrackingFailure) -> str:
             return _generic_job_notification(job)
         case unreachable:
             assert_never(unreachable)
+
+
+# Sequential matches play every district in one long job and report per-district progress in `result`.
+type HelperSequentialJobType = Literal["host_sequential_war_match", "host_sequential_live_match"]
+type HelperSequentialBaseSource = Literal["links", "stored"]
+
+
+class HelperSequentialWarPayload(HelperModel):
+    host_clan_tag: str
+    base_source: HelperSequentialBaseSource
+    player_tag: str
+    base_links: list[str] | None = Field(default=None, min_length=1, max_length=9)
+    districts: list[str] | None = Field(default=None, min_length=1, max_length=9)
+    slot: HelperStoredBaseSlot | None = None
+    remove_bases_after: Literal[False] | None = None
+    opponent_player_tag: str | None = None
+    kick_opponent: bool | None = None
+
+    @model_validator(mode="after")
+    def validate_source_fields(self) -> "HelperSequentialWarPayload":
+        # Helper rejects a request that mixes linked and stored fields, even empty ones.
+        linked = self.base_links is not None
+        stored = self.districts is not None or self.remove_bases_after is not None
+        if (self.base_source == "links") != linked or linked == stored:
+            raise HelperContractMismatchError("Sequential war payload mixes linked and stored fields.")
+        return self
+
+
+class HelperSequentialLivePayload(HelperModel):
+    host_clan_tag: str
+    base_source: HelperSequentialBaseSource
+    player_1_tag: str
+    player_2_tag: str
+    base_links_for_player_1: list[str] | None = Field(default=None, min_length=1, max_length=9)
+    base_links_for_player_2: list[str] | None = Field(default=None, min_length=1, max_length=9)
+    districts: list[str] | None = Field(default=None, min_length=1, max_length=9)
+    remove_bases_after: Literal[False] | None = None
+
+    @model_validator(mode="after")
+    def validate_source_fields(self) -> "HelperSequentialLivePayload":
+        linked = self.base_links_for_player_1 is not None and self.base_links_for_player_2 is not None
+        stored = self.districts is not None or self.remove_bases_after is not None
+        if (self.base_source == "links") != linked or linked == stored:
+            raise HelperContractMismatchError("Sequential live payload mixes linked and stored fields.")
+        return self
+
+
+class HelperSequentialJobCreateRequest(HelperModel):
+    job_type: HelperSequentialJobType = Field(alias="type")
+    requested_by: str
+    payload: HelperSequentialWarPayload | HelperSequentialLivePayload
+
+    @model_validator(mode="after")
+    def validate_payload_type(self) -> "HelperSequentialJobCreateRequest":
+        expected = (HelperSequentialWarPayload if self.job_type == "host_sequential_war_match"
+                    else HelperSequentialLivePayload)
+        if not isinstance(self.payload, expected):
+            raise HelperContractMismatchError(f"{self.job_type} received an incompatible payload.")
+        return self
+
+
+class HelperSequentialRoundPlayer(HelperModel):
+    posted: bool
+    completed: bool
+    closed: bool
+
+
+class HelperSequentialRound(HelperModel):
+    districts: dict[str, str]
+    players: dict[str, HelperSequentialRoundPlayer]
+
+
+class HelperSequentialCompletion(HelperModel):
+    workflow_finished: bool
+    districts_completed: int
+    districts_total: int
+    rounds: list[HelperSequentialRound]
+
+
+class HelperSequentialScore(HelperModel):
+    stars_gained: int | None = None
+    destruction_gained: float | None = None
+
+
+class HelperSequentialOutcome(HelperModel):
+    district: str
+    player: str
+    status: Literal["verified", "unresolved"]
+    score: HelperSequentialScore | None = None
+    cause: str | None = None
+
+
+class HelperSequentialPlayer(HelperModel):
+    key: str
+    tag: str
+
+
+class HelperSequentialMatchInfo(HelperModel):
+    players: list[HelperSequentialPlayer]
+
+
+class HelperSequentialResult(HelperModel):
+    stage: str
+    score_status: Literal["complete", "incomplete"]
+    label: str | None = None
+    failure_cause: str | None = None
+    match: HelperSequentialMatchInfo
+    completion: HelperSequentialCompletion
+    score_outcomes: list[HelperSequentialOutcome]
+
+
+class HelperSequentialJob(HelperModel):
+    id: str = Field(pattern=r"^[0-9a-f]{32}$")
+    job_type: HelperSequentialJobType = Field(alias="type")
+    status: HelperJobStatus
+    created_at: float
+    started_at: float | None
+    finished_at: float | None
+    result: HelperSequentialResult | None
+    error: str | None
+
+
+class HelperJobNotFound(HelperModel):
+    job_id: str
+
+
+type HelperSequentialRead = HelperSequentialJob | HelperJobNotFound | HelperTrackingFailure
+
+
+class HelperSequentialClient:
+    def __init__(self, api_base_url: str, api_key: str) -> None:
+        self.api_base_url = api_base_url.rstrip("/")
+        self.api_key = api_key
+
+    async def create(
+            self,
+            session: aiohttp.ClientSession,
+            request: HelperSequentialJobCreateRequest,
+    ) -> HelperJobCreateOutcome:
+        try:
+            async with session.post(
+                f"{self.api_base_url}/v1/jobs",
+                headers={"X-Api-Key": self.api_key},
+                json=request.model_dump(by_alias=True, exclude_none=True),
+            ) as response:
+                body = await response.text()
+                match response.status:  # noqa: MATCH_OK
+                    case 201:
+                        try:
+                            return HelperJobCreated.model_validate_json(body)
+                        except ValidationError:
+                            return HelperJobCreateAcceptedInvalid()
+                    case 409:
+                        try:
+                            return HelperJobCreateConflict.model_validate_json(body)
+                        except ValidationError:
+                            pass
+                        # Without an existing job ID, a 409 is Helper's device-capacity refusal.
+                        try:
+                            return HelperJobCreateRejected(error=HelperJobError.model_validate_json(body).error)
+                        except ValidationError:
+                            return HelperJobCreateUnavailable()
+                    case 400:
+                        try:
+                            return HelperJobCreateRejected(error=HelperJobError.model_validate_json(body).error)
+                        except ValidationError:
+                            return HelperJobCreateRejected(error=None)
+                    case _:
+                        return HelperJobCreateUnavailable()
+        except (aiohttp.ClientError, TimeoutError):
+            return HelperJobCreateUnavailable()
+
+    async def read(self, session: aiohttp.ClientSession, job_id: str) -> HelperSequentialRead:
+        try:
+            async with session.get(
+                f"{self.api_base_url}/v1/jobs/{job_id}",
+                headers={"X-Api-Key": self.api_key},
+            ) as response:
+                match response.status:  # noqa: MATCH_OK
+                    case 200:
+                        try:
+                            return HelperSequentialJob.model_validate_json(await response.text())
+                        except ValidationError:
+                            return HelperTrackingFailure(job_id=job_id, reason="Helper returned invalid job data.")
+                    case 404:
+                        return HelperJobNotFound(job_id=job_id)
+                    case status:
+                        return HelperTrackingFailure(job_id=job_id, reason=f"Helper answered with HTTP {status}.")
+        except (aiohttp.ClientError, TimeoutError):
+            return HelperTrackingFailure(job_id=job_id, reason="Helper could not be reached.")
+
+    async def read_raw(self, session: aiohttp.ClientSession, job_id: str) -> str:
+        async with session.get(
+            f"{self.api_base_url}/v1/jobs/{job_id}",
+            headers={"X-Api-Key": self.api_key},
+        ) as response:
+            return f"HTTP {response.status}\n{await response.text()}"
+
+    async def cancel(self, session: aiohttp.ClientSession, job_id: str) -> None:
+        await HelperJobCanceller(self.api_base_url, self.api_key).cancel(session, job_id)

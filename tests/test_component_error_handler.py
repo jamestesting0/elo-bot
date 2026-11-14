@@ -3,15 +3,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import beta
-import main
+from elobot.app import errors
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 
 
 class TestComponentErrorHandler(unittest.IsolatedAsyncioTestCase):
     async def test_max_concurrency_responds_privately_without_reporting_bug(self) -> None:
-        for module in (main, beta):
+        for module in (errors,):
             for bucket, label in (
                 (ipy.Buckets.USER, "user"),
                 (ipy.Buckets.CHANNEL, "channel"),
@@ -34,7 +33,7 @@ class TestComponentErrorHandler(unittest.IsolatedAsyncioTestCase):
                     report_error.assert_not_awaited()
 
     async def test_unexpected_error_still_reports_bug(self) -> None:
-        for module in (main, beta):
+        for module in (errors,):
             with self.subTest(module=module.__name__):
                 ctx = MagicMock(spec=ipy.ComponentContext)
                 ctx.send = AsyncMock()

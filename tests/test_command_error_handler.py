@@ -3,13 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import beta
-import main
+from elobot.app import errors
 from elobot.config.emojis import ERROR_EMOJI
 
 
 class TestCommandErrorHandler(unittest.IsolatedAsyncioTestCase):
-    handlers = ((main.on_command_error, main), (beta.on_command_error, beta))
+    handlers = ((errors.on_command_error, errors),)
 
     async def test_max_concurrency_message_describes_limit_and_bucket(self) -> None:
         for handler, module in self.handlers:

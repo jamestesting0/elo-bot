@@ -4,12 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 import coc
 import interactions as ipy
 
-import beta
-import main
+from elobot.app import errors
 
 
 class TestAutocompleteErrorHandler(unittest.IsolatedAsyncioTestCase):
-    handlers = (main.on_autocomplete_error, beta.on_autocomplete_error)
+    handlers = (errors.on_autocomplete_error,)
 
     @staticmethod
     def http_error(code):

@@ -6,14 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import beta
-import main
+from elobot.app import errors, runtime
 
 
 class TestErrorReport(unittest.IsolatedAsyncioTestCase):
     async def test_long_traceback_still_reaches_owner(self) -> None:
         error = RuntimeError("x" * 5000 + "TAIL")
-        for module in (main, beta):
+        for module in (errors,):
             with self.subTest(module=module.__name__):
                 ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), kwargs={}, custom_id="store-bases")
                 ctx.author.mention = "<@1>"
@@ -21,7 +20,7 @@ class TestErrorReport(unittest.IsolatedAsyncioTestCase):
                 response = MagicMock(send=AsyncMock(), defer=AsyncMock())
                 bot = MagicMock(wait_for_component=AsyncMock(return_value=SimpleNamespace(ctx=response)))
                 bot.owner.send = AsyncMock()
-                with patch.object(module, "bot", bot), redirect_stderr(io.StringIO()):
+                with patch.object(runtime, "bot", bot, create=True), redirect_stderr(io.StringIO()):
                     await module.report_error(ctx, error)
 
                 description = bot.owner.send.await_args.kwargs["embed"].description

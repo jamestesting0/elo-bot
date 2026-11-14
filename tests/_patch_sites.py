@@ -4,8 +4,27 @@ A test that patched `module.Name` replaced `Name` for every function of that mod
 functions now live in several modules, `patch_sites(("a.Name", "b.Name"), ...)` gives each site the
 same mock, exactly like the original single patch. It accepts every `unittest.mock.patch` argument and
 works as a decorator, a context manager and with `start()`/`stop()`.
+
+`patch_family(MATCH_MODULE_FAMILY, name, ...)` does the same for code that picks the name at runtime:
+it patches every module of the family that binds the same object as the name's first binder.
 """
+import importlib
 from unittest import mock
+
+# The modules that together replaced the former cogs/match_commands.py.
+MATCH_MODULE_FAMILY = (
+    "elobot.extensions.match",
+    "elobot.features.queue.policy",
+    "elobot.features.queue.state",
+    "elobot.features.queue.matching",
+    "elobot.features.matches.occupancy",
+    "elobot.features.matches.resources",
+    "elobot.features.matches.lifecycle",
+    "elobot.features.matches.attack_bases",
+    "elobot.features.matches.tips",
+    "elobot.features.results.recording",
+    "elobot.features.hosting.live.preflight",
+)
 
 
 class _SitesPatch(mock._patch):
@@ -35,3 +54,13 @@ def patch_sites(targets: tuple[str, ...], *args, **kwargs):
     patcher.__class__ = _SitesPatch
     patcher.extra_targets = tuple(targets[1:])
     return patcher
+
+
+def patch_family(family: tuple[str, ...], name: str, *args, **kwargs):
+    modules = [importlib.import_module(module) for module in family]
+    binders = [module for module in modules if hasattr(module, name)]
+    if not binders:
+        return patch_sites((f"{family[0]}.{name}",), *args, **kwargs)
+    original = getattr(binders[0], name)
+    targets = tuple(f"{module.__name__}.{name}" for module in binders if getattr(module, name) is original)
+    return patch_sites(targets, *args, **kwargs)

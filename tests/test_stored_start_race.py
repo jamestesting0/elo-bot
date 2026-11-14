@@ -12,6 +12,8 @@ from elobot.features.hosting.war import war_start
 from elobot.features.hosting.war import helper_base_store
 from elobot.features.hosting.war import result_store_task
 from tests._stored_start_fixture import StoredStartFixture, terminal_job
+from tests._patch_sites import patch_sites
+import elobot.features.matches.resources as resources_module
 
 
 class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
@@ -30,7 +32,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(self_commands, "Match", new=MagicMock(
             find_one=AsyncMock(return_value=self.match),
         )))
-        self.enterContext(patch.object(match_commands, "is_match_finished", return_value=False))
+        self.enterContext(patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False))
         self.enterContext(patch.object(self_commands, "is_match_finished", return_value=False))
         self.enterContext(patch.object(self_commands, "is_raid_weekend", return_value=False))
         self.self_confirm = self.enterContext(patch.object(
@@ -43,7 +45,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(match_commands, "sync_base_store_slots", new=AsyncMock(
             side_effect=self.fixture.slot_map,
         )))
-        self.enterContext(patch.object(match_commands, "choose_bases", new=AsyncMock(return_value=self.match)))
+        self.enterContext(patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=self.match)))
         clan = MagicMock(tag=next(iter(self.fixture.clans)), availability_str="Available")
         self.enterContext(patch.object(self_commands, "Clan", new=MagicMock(
             find_all=MagicMock(return_value=MagicMock(to_list=AsyncMock(return_value=[clan]))),
@@ -188,7 +190,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
         remove.assert_not_awaited()
         self.assertTrue(self.match.participants[0].base_store.ready)
         self.assertIn("already in progress", undo_ctx.send.await_args.args[0])
-        self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[(str(self.match.token), 0)].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[(str(self.match.token), 0)].locked())
 
     async def test_stored_message_conflict_reports_committed_start_without_releasing_slot(self) -> None:
         # Given Helper succeeded, and local start committed before a stored-message conflict.
@@ -254,7 +256,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(self.match.participants[0].base_store)
         self.assertFalse(self.match.participants[0].base_store.ready)
         self.assertTrue(self.match.participants[0].opponent_bases_stored)
-        self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[(str(self.match.token), 0)].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[(str(self.match.token), 0)].locked())
         self.ctx.channel.send.assert_not_awaited()
 
     async def test_declined_slash_start_preserves_message_when_reservation_changed(self) -> None:

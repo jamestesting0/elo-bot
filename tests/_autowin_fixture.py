@@ -16,6 +16,8 @@ from elobot.extensions import data as data_commands
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import RecordedMatch
 from tests._result_retry_store import matches
+from tests._patch_sites import patch_sites
+import elobot.extensions.match as match_module
 
 
 class AutowinStateMixin:
@@ -44,7 +46,7 @@ class AutowinStateMixin:
         self.users = {user_id: MagicMock(spec=ipy.User, id=int(user_id), mention=f"<@{user_id}>", send=AsyncMock())
                       for user_id in ("111", "222")}
         self.bot.fetch_user = AsyncMock(side_effect=lambda user_id: self.users[str(user_id)])
-        self.cog = match_commands.MatchCommands(self.bot)
+        self.cog = match_module.MatchCommands(self.bot)
 
         def loaded(model, query):
             row = next((row for row in self.rows[model] if self.matches(row, query)), None)
@@ -108,10 +110,10 @@ class AutowinStateMixin:
         self.enterContext(patch.object(Match, "set", new=legacy_set))
         self.enterContext(patch.object(Helper, "find_one", return_value=MagicMock(upsert=AsyncMock(side_effect=legacy_credit))))
         self.free_clans = self.enterContext(patch.object(match_commands, "free_match_clans", new=AsyncMock()))
-        self.cleanup = self.enterContext(patch.object(match_commands, "remove_helper_task", new=AsyncMock()))
+        self.cleanup = self.enterContext(patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new=AsyncMock()))
         self.autoqueue = self.enterContext(patch.object(match_commands, "autoqueue_completed_match_participants", new=AsyncMock()))
         self.schedule = self.enterContext(patch.object(match_commands, "schedule_channel_name_edit", new=MagicMock()))
-        self.invite = self.enterContext(patch.object(match_commands, "invite_eligible_players", new=AsyncMock()))
+        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
 
     @staticmethod
     def value(row, path):

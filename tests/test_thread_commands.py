@@ -7,11 +7,13 @@ import interactions as ipy
 
 sys.path.append(os.getcwd())
 
-import elobot.extensions.match as match_commands
-from elobot.extensions.match import MatchCommands, confirm_match
+from elobot.extensions.match import MatchCommands
+from elobot.features.matches.lifecycle import confirm_match
 from elobot.extensions.thread import ThreadCommands
 from elobot.config.ids import LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
 from elobot.db import BaseStore, Participant
+from tests._patch_sites import patch_sites
+import elobot.features.matches.lifecycle as lifecycle_module
 
 
 class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
@@ -50,8 +52,8 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
 
         # When the match thread and its initial message are created.
         with (
-                patch.object(match_commands, "Match") as match_model,
-                patch.object(match_commands.random, "choice", return_value=[0, 1, 0]),
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch.object(lifecycle_module.random, "choice", return_value=[0, 1, 0]),
         ):
             match_model.find_one = AsyncMock(return_value=match)
             await confirm_match(self.bot, "TOKEN")
@@ -109,9 +111,9 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
 
         # When the match thread and its initial embed are created.
         with (
-                patch.object(match_commands, "Match") as match_model,
-                patch.object(match_commands, "Player") as player_model,
-                patch.object(match_commands.random, "choice", return_value=[0, 1, 0]),
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
+                patch.object(lifecycle_module.random, "choice", return_value=[0, 1, 0]),
         ):
             match_model.find_one = AsyncMock(return_value=match)
             player_model.find_one = AsyncMock(side_effect=preset_players)

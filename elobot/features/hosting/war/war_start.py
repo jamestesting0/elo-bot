@@ -19,6 +19,8 @@ from elobot.config.game import HOST_CLAN_OPTIONS
 from elobot.db import Match
 from elobot.features.finals.hosting import accept_final_start
 from elobot.features.finals.types import FinalError, is_final_match
+from elobot.features.matches import attack_bases
+from elobot.features.matches import resources
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,9 +90,9 @@ async def start_war(
     timestamp = int(datetime.now().timestamp())
     host_id = str(start.host.id)
     clan_tag = start.clan.tag
-    reservation = start.clan_reservation or match_commands.current_resource_clan_reservation(clan_tag)
+    reservation = start.clan_reservation or resources.current_resource_clan_reservation(clan_tag)
     if not reservation:
-        reservation = await match_commands.try_reserve_resource_clan(clan_tag)
+        reservation = await resources.try_reserve_resource_clan(clan_tag)
     if not reservation:
         return None
     try:
@@ -103,7 +105,7 @@ async def start_war(
     except BaseException:
         reservation.release()
         raise
-    if not await match_commands.claim_resource_clan(
+    if not await resources.claim_resource_clan(
             reservation,
             match_doc,
             player,
@@ -192,7 +194,7 @@ async def complete_war_start(
         ctx, match_doc, expected_message_state, content=player_obj.mention, embed=embed, components=components,
     )
 
-    await match_commands.send_bases(bot, token, player, opponent, scout=start.scout)
+    await attack_bases.send_bases(bot, token, player, opponent, scout=start.scout)
     if not await mark_store_reserved(bot, match_doc, player):
         raise BaseStoreMessageConflict("The match started, but its held base-slot message could not be updated.")
     channel_status = "🟢" if all(match_doc.hosts) else "🔵"
@@ -274,7 +276,7 @@ async def complete_war_start(
         case unreachable:
             assert_never(unreachable)
 
-    await match_commands.remove_helper_task(match_doc.thread, match_doc.participants[player].user_id)
+    await resources.remove_helper_task(match_doc.thread, match_doc.participants[player].user_id)
     if all(match_doc.times):
         schedule_channel_name_edit(ctx.channel, channel_status)
     return message
@@ -312,7 +314,7 @@ async def _abort_war_start_locked(ctx: ipy.ComponentContext | ipy.SlashContext, 
         publication_error = None
     except ipy.errors.HTTPException as error:
         publication_error = error
-    await match_commands.free_clan(old_clan, expected_thread=str(match_doc.thread))
+    await resources.free_clan(old_clan, expected_thread=str(match_doc.thread))
     if not await mark_store_reserved(ctx.bot, match_doc, player, ready=True):
         raise BaseStoreMessageConflict("The match was aborted, but its held base-slot message could not be updated.")
     schedule_channel_name_edit(ctx.channel, "🟡")

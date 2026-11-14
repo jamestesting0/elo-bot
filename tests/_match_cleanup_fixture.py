@@ -18,6 +18,9 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
 from elobot.extensions import challenge as challenge_commands
 from elobot.db import Participant
+from tests._patch_sites import patch_sites
+import elobot.extensions.match as match_module
+from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 
 class PendingMatchStateMixin:
@@ -89,8 +92,10 @@ class ThreadReservationStateMixin:
         for participant in self.case.runtime.fixture.match["participants"]:
             participant.update(result=[None, None, None], base_store=None, opponent_bases_stored=False)
         self.reservation_lock = anyio.Lock()
-        for module in (preparation, match_commands, thread_commands):
+        for module in (preparation, thread_commands):
             self.enterContext(patch.object(module, "BASE_STORE_RESERVATION_LOCK", self.reservation_lock, create=True))
+        self.enterContext(patch_family(MATCH_MODULE_FAMILY, "BASE_STORE_RESERVATION_LOCK", self.reservation_lock,
+                                       create=True))
         self.preparer = MagicMock(
             _base_store_sync_slots=AsyncMock(return_value={"#HELD": ["Slot 1"]}),
             _base_store_choose_bases=AsyncMock(),
@@ -150,14 +155,15 @@ class MatchCleanupStateMixin:
         self.enterContext(patch.object(Match, "get_pymongo_collection", return_value=self.collection))
         model = MagicMock(find_one=AsyncMock(return_value=self.match))
         model.find.return_value.to_list = AsyncMock(return_value=[self.match])
-        for module in (thread_commands, match_commands, challenge_commands):
+        for module in (thread_commands, challenge_commands):
             self.enterContext(patch.object(module, "Match", new=model))
+        self.enterContext(patch_family(MATCH_MODULE_FAMILY, "Match", new=model))
         self.bot = MagicMock()
         self.bot.fetch_user = AsyncMock(return_value=MagicMock(send=AsyncMock()))
         self.bot.fetch_guild = AsyncMock(return_value=MagicMock(fetch_thread=AsyncMock(return_value=None)))
         self.bot.http.get_channel = AsyncMock(side_effect=ipy.errors.NotFound(MagicMock(status=404)))
         self.thread_cog = thread_commands.ThreadCommands(self.bot)
-        self.match_cog = match_commands.MatchCommands(self.bot)
+        self.match_cog = match_module.MatchCommands(self.bot)
         self.challenge_cog = challenge_commands.ChallengeCommands(self.bot)
         self.ctx = MagicMock(spec=ipy.SlashContext)
         self.ctx.defer, self.ctx.send = AsyncMock(), AsyncMock(return_value=MagicMock(id=123))
@@ -176,7 +182,7 @@ class MatchCleanupStateMixin:
         self.enterContext(patch.object(storage, "retire_stored_base_message", new_callable=AsyncMock))
         self.enterContext(patch.object(storage, "sync_base_store_slots", new_callable=AsyncMock))
         self.player = MagicMock(last_cancel=None, save_changes=AsyncMock())
-        self.enterContext(patch.object(match_commands, "Player", new=MagicMock(
+        self.enterContext(patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'), new=MagicMock(
             find_one=AsyncMock(return_value=self.player),
         )))
 

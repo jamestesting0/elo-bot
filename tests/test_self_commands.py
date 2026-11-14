@@ -14,6 +14,7 @@ from elobot.config.game import BASE_STORE_SLOTS
 from elobot.config.ids import BOT_ID
 from elobot.config.presentation import COLOR
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, TICK_EMOJI
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -253,8 +254,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 patch("elobot.features.hosting.self_hosted.hosting.Clan") as clan_model, \
                 patch("elobot.features.hosting.self_hosted.hosting.Player") as player_model, \
                 patch("elobot.features.hosting.self_hosted.hosting.random.shuffle"), \
-                patch("elobot.extensions.match.Match") as preflight_match, \
-                patch("elobot.extensions.match.Player") as preflight_player, \
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as preflight_match, \
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as preflight_player, \
                 patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)), \
                 patch("elobot.extensions.match.is_raid_weekend", return_value=False), \
                 patch("elobot.features.hosting.live.helper_live.Match") as helper_match, \
@@ -262,7 +263,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                     "elobot.features.hosting.live.helper_live.live_eligibility.clan_has_all_base_store_slots",
                     new=AsyncMock(return_value=True),
                 ), \
-                patch("elobot.features.hosting.live.helper_live.match_commands.choose_bases", new=choose), \
+                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=choose), \
                 patch("elobot.features.hosting.live.helper_live.live_start.start_live_match", new=start), \
                 patch("elobot.features.hosting.live.helper_live.live_start.abort_live_start", new=abort), \
                 patch(
@@ -672,16 +673,16 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 with patch("elobot.features.hosting.self_hosted.hosting.Clan") as clan_model, \
                         patch("elobot.features.hosting.self_hosted.hosting.Player") as player_model, \
                         patch("elobot.features.hosting.self_hosted.hosting.random.shuffle"), \
-                        patch("elobot.extensions.match.Match") as preflight_match, \
-                        patch("elobot.extensions.match.Player") as preflight_player, \
+                        patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as preflight_match, \
+                        patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as preflight_player, \
                         patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)), \
                         patch("elobot.extensions.match.is_raid_weekend", return_value=eligibility == "raid-weekend"), \
                         patch(
                             "elobot.extensions.match.helper_live.host_live_automatically",
                             new_callable=AsyncMock,
                         ) as host_live, \
-                        patch(
-                            "elobot.features.hosting.live.helper_live.match_commands.choose_bases",
+                        patch_sites(
+                            ('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'),
                             new_callable=AsyncMock,
                         ) as choose_bases, \
                         patch(
@@ -692,12 +693,12 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                             "elobot.features.hosting.live.helper_live.live_start.start_live_match",
                             new_callable=AsyncMock,
                         ) as start, \
-                        patch(
-                            "elobot.features.hosting.live.live_start.match_commands.try_reserve_resource_match_side",
+                        patch_sites(
+                            ('elobot.extensions.match.try_reserve_resource_match_side', 'elobot.features.matches.resources.try_reserve_resource_match_side'),
                             new_callable=AsyncMock,
                         ) as reserve_side, \
-                        patch(
-                            "elobot.features.hosting.live.live_start.match_commands.try_reserve_resource_clan",
+                        patch_sites(
+                            ('elobot.extensions.match.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                             new_callable=AsyncMock,
                         ) as reserve_clan, \
                         patch(
@@ -740,7 +741,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         with patch("elobot.extensions.self_service.Match") as match_model, \
                 patch("elobot.extensions.self_service.Clan") as clan_model, \
                 patch("elobot.features.hosting.war.helper_host.Player") as player_model, \
-                patch("elobot.extensions.match.choose_bases", new=AsyncMock(return_value=match)), \
+                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
                 patch("elobot.features.hosting.war.helper_host.get_available_helper_slot",
                       new=AsyncMock(return_value=1), create=True), \
                 patch("elobot.features.hosting.war.war_start.start_war", new_callable=AsyncMock) as start, \
@@ -1147,10 +1148,10 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                     coc_client=self.bot.coc_client, reply=war_start.SelfHostedWarStartReply(),
                 )
                 occupy = AsyncMock(side_effect=RuntimeError("occupancy failed") if occupancy_fails else None)
-                with patch("elobot.extensions.match.Match") as match_model, \
-                        patch("elobot.extensions.match.Clan") as clan_model, \
-                        patch("elobot.extensions.match.occupy_clan", new=occupy), \
-                        patch("elobot.extensions.match.free_clan", new=AsyncMock()), \
+                with patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
+                        patch_sites(('elobot.extensions.match.Clan', 'elobot.features.matches.resources.Clan')) as clan_model, \
+                        patch('elobot.features.matches.resources.occupy_clan', new=occupy), \
+                        patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()), \
                         patch.object(war_start, "complete_war_start", new=AsyncMock(side_effect=publish)) as complete:
                     match_model.find_one = AsyncMock(return_value=match)
                     clan_model.find_one = AsyncMock(return_value=self.clan_record)
@@ -1361,7 +1362,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         choose = AsyncMock(return_value=match)
         with patch("elobot.extensions.self_service.Match") as match_model, \
                 patch("elobot.extensions.self_service.Clan") as clan_model, \
-                patch("elobot.extensions.match.choose_bases", new=choose):
+                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=choose):
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=[])
             await self.cog.self_host_war.callback.func(self.cog, ctx)
@@ -1383,7 +1384,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 patch("elobot.features.hosting.war.helper_host.Player") as player_model, \
                 patch("elobot.features.hosting.war.helper_host.get_available_helper_slot",
                       new=AsyncMock(return_value=1)), \
-                patch("elobot.extensions.match.choose_bases", new=choose):
+                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=choose):
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=[self.clan_record])
             clan_model.find_one = AsyncMock(return_value=self.clan_record)

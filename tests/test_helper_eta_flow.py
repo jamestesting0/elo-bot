@@ -12,6 +12,7 @@ from elobot.features.hosting.war.confirmation import confirm_helper_queue
 from elobot.integrations.helper_api import HelperEtaReader, HelperJobCanceller, HelperTrackingFailure
 from elobot.features.hosting.war.helper_host import AutomaticWarHost, host_war_automatically
 from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -153,7 +154,7 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
         )
         with patch("elobot.features.hosting.war.helper_host.Player") as player_model, \
                 patch("elobot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
-                patch("elobot.extensions.match.choose_bases", new=AsyncMock(return_value=match)), \
+                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
                 patch(
                     "elobot.features.hosting.war.helper_host_job.time",
                     new=MagicMock(time=MagicMock(return_value=1000.0)),
@@ -201,8 +202,8 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         self.start_war.side_effect = lambda *_args: self.events.append("start") or None
 
-        with patch(
-                "elobot.features.hosting.war.helper_host.match_commands.available_resource_clans_text",
+        with patch_sites(
+                ('elobot.extensions.match.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
                 new=AsyncMock(return_value="Available clans:\n- None"),
         ) as available_clans:
             # When automatic hosting tries to commit the local start.

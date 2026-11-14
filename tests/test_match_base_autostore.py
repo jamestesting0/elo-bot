@@ -8,6 +8,7 @@ from elobot.extensions.match import MatchCommands
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.config.ids import LVL2_ROLES, PLAYER_ROLE
 from elobot.db import Match, Participant
+from tests._patch_sites import patch_sites
 
 
 class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
@@ -27,7 +28,7 @@ class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
 
     async def _invoke(self, player: int) -> AsyncMock:
         with (
-            patch("elobot.extensions.match.Match") as match_model,
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
             patch("elobot.extensions.match.base_store_storage.store_self_bases", new_callable=AsyncMock) as store,
         ):
             match_model.find_one = AsyncMock(return_value=self.match)
@@ -127,7 +128,7 @@ class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
         self.ctx.author.has_role.side_effect = lambda role_id: role_id == LVL2_ROLES[-1]
 
         with (
-            patch("elobot.extensions.match.Match") as match_model,
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
             patch.object(self.cog, "_prepare_base_store", new_callable=AsyncMock) as prepare,
         ):
             match_model.find_one = AsyncMock(return_value=self.match)

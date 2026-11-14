@@ -22,6 +22,8 @@ from elobot.features.hosting.war.district_selection import match_district_index,
 from elobot.features.base_store.live import live_pair_ready, live_stores
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.db import Match
+from elobot.features.matches import attack_bases
+from elobot.features.matches import resources
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,14 +117,14 @@ async def host_live_automatically(
         case live_reservations.LiveReservationsBusy():
             await ctx.send(
                 f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return
         case live_reservations.LiveReservationsClanUnavailable():
             await ctx.send(
                 f"{ERROR_EMOJI} **{request.clan.name}** is currently occupied.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return
@@ -139,13 +141,13 @@ async def host_live_automatically(
                 return
             player1_user = await runtime.bot.fetch_user(request.match.participants[0].user_id)
             player2_user = await runtime.bot.fetch_user(request.match.participants[1].user_id)
-            await match_commands.choose_bases(
+            await attack_bases.choose_bases(
                 str(request.match.token),
                 player1_user,
                 player2_user,
                 return_match_data=True,
             )
-            await match_commands.choose_bases(
+            await attack_bases.choose_bases(
                 str(request.match.token),
                 player2_user,
                 player1_user,
@@ -161,7 +163,7 @@ async def host_live_automatically(
         if live_start.hosting_started(match_doc):
             await ctx.send(
                 f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return
@@ -232,14 +234,14 @@ async def host_live_automatically(
         case live_start.LiveStartBusy():
             await ctx.send(
                 f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return
         case live_start.LiveStartClanUnavailable():
             await ctx.send(
                 f"{ERROR_EMOJI} **{request.clan.name}** is currently occupied.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return

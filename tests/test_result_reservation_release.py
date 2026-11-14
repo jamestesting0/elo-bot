@@ -8,6 +8,7 @@ from elobot.extensions import match as match_commands
 from elobot.features.base_store.storage import BaseStoreReleaseConflict
 from elobot.db import BaseStore, Match
 from tests import _result_retry_store as fixture
+from tests._patch_sites import patch_sites
 
 
 class TestResultReservationRelease(unittest.IsolatedAsyncioTestCase):
@@ -113,7 +114,7 @@ class TestResultReservationRelease(unittest.IsolatedAsyncioTestCase):
     async def test_a_finished_side_alone_does_not_release_the_reservation(self) -> None:
         self.runtime.match["participants"][1]["result"] = [None, None, None]
         release_side = self.enterContext(patch.object(match_commands, "clear_participant_base_store", new=AsyncMock()))
-        self.enterContext(patch.object(match_commands, "free_clan", new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()))
         await self.runtime.cog._finish_stored_result_side(await Match.find_one({"token": "TOKEN"}), 0)
         release_side.assert_not_awaited()
         self.assert_store_held()

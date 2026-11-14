@@ -9,6 +9,7 @@ from pydantic import JsonValue
 
 from elobot.extensions.match import MatchCommands
 from elobot.db import BaseLink, BaseStore, Match, Participant
+from tests._patch_sites import patch_sites
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ASUBMITTED"
@@ -70,8 +71,8 @@ class TestMatchParticipantUpdates(unittest.IsolatedAsyncioTestCase):
 
                 database_set = AsyncMock(return_value=snapshot)
                 with (
-                    patch("elobot.extensions.match.Match") as match_model,
-                    patch("elobot.extensions.match.BaseLayout") as base_model,
+                    patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                    patch_sites(('elobot.extensions.match.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout')) as base_model,
                     patch.object(Match, "set", new=database_set),
                 ):
                     match_model.find_one = AsyncMock(return_value=snapshot)

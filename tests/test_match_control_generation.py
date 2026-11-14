@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-import elobot.extensions.match as commands
 import tests._stored_base_controls_fixture as fixtures
 from elobot.config.ids import STAFF_ROLE
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import Match, Player
+from tests._patch_sites import patch_sites
 
 
 class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
@@ -40,8 +40,8 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
                 self.ctx.send_modal.reset_mock()
                 with (
                     patch.object(Match, "set", new_callable=AsyncMock) as write,
-                    patch.object(commands, "try_reserve_resource_clan", new=AsyncMock(return_value=MagicMock())),
-                    patch.object(commands, "claim_resource_clan", new=AsyncMock(return_value=True)) as claim,
+                    patch_sites(('elobot.extensions.match.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock(return_value=MagicMock())),
+                    patch_sites(('elobot.extensions.match.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=True)) as claim,
                 ):
                     await getattr(self.cog, name).callback.func(self.cog, self.ctx)
                 write.assert_not_awaited()

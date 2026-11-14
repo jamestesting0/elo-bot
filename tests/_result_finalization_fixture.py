@@ -4,7 +4,6 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.results import UpdateResult
-import elobot.extensions.match as match_commands
 from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import result_store
 from elobot.config.ids import MATCH_CHANNEL
@@ -112,9 +111,9 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
         self._async_boundary("fetch_user_match_id_choices")
         self._async_boundary("choose_tip").return_value = "tip"
         self.match = make_result_match(stored_bases=True)
-        self.match_model = self.enterContext(patch.object(match_commands, "Match"))
+        self.match_model = self.enterContext(patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')))
         self.match_model.find_one = AsyncMock(side_effect=lambda _query: self.match)
-        self.player_model = self.enterContext(patch.object(match_commands, "Player"))
+        self.player_model = self.enterContext(patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')))
         self.record = self._async_boundary("record_match")
 
         def record(*_args: RecordArgument) -> tuple[str, str]:
@@ -127,7 +126,7 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
         self.lifecycle.attach_mock(self.operation_collection.update_one, "checkpoint")
 
     def _async_boundary(self, name: str) -> AsyncMock:
-        return self.enterContext(patch.object(match_commands, name, new_callable=AsyncMock))
+        return self.enterContext(patch_family(MATCH_MODULE_FAMILY, name, new_callable=AsyncMock))
 
     async def _finish_thread(self, *, name: str) -> None:
         self.thread.name = name
@@ -164,6 +163,8 @@ from elobot.db import Player, RecordedMatch
 from tests._result_retry_store import apply_operations, matches
 from tests._result_retry_store import apply_update
 from tests import _result_retry_store as result_fixture
+from tests._patch_sites import patch_sites
+from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 
 RESULTS = result_fixture.RESULTS

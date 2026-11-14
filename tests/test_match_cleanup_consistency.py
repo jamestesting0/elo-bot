@@ -13,6 +13,7 @@ from elobot.db import BaseStore
 
 
 from tests._match_cleanup_fixture import MatchCleanupStateMixin
+from tests._patch_sites import patch_sites
 
 class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_manual_thread_delete_retains_match_when_discord_delete_fails(self) -> None:
@@ -148,7 +149,7 @@ class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsync
         store = self.match.participants[0].base_store
         self.collection.update_one.side_effect = [UpdateResult({"n": 1}, True)]
         message = MagicMock(id=77, delete=AsyncMock(), edit=AsyncMock(), embeds=[])
-        with patch.object(war_start.match_commands, "free_clan", new_callable=AsyncMock) as free, \
+        with patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
                 patch.object(war_start, "schedule_channel_name_edit") as rename:
             # When: abort commits but cannot update the retained reservation's controls.
             with self.assertRaises(war_start.BaseStoreMessageConflict):

@@ -1,10 +1,12 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from elobot.extensions.match import MatchCommands, Player, autoqueue_expiry, is_autoqueue_active
+from elobot.extensions.match import MatchCommands, Player
+from elobot.features.queue.state import autoqueue_expiry, is_autoqueue_active
+from tests._patch_sites import patch_sites
 
 
 class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
@@ -48,8 +50,8 @@ class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
         ):
             with self.subTest(enabled=enabled, duration=duration):
                 player = self.make_player()
-                with patch("elobot.extensions.match.Player") as player_model, \
-                        patch("elobot.extensions.match.datetime") as datetime_model:
+                with patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+                        patch_sites(('elobot.extensions.match.datetime', 'elobot.features.queue.state.datetime', 'elobot.features.queue.matching.datetime', 'elobot.features.matches.resources.datetime', 'elobot.features.matches.lifecycle.datetime', 'elobot.features.matches.attack_bases.datetime', 'elobot.features.results.recording.datetime')) as datetime_model:
                     player_model.find_one = AsyncMock(return_value=player)
                     datetime_model.now.return_value.timestamp.return_value = 2_000_000_000
 
@@ -60,7 +62,7 @@ class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
 
     async def test_enable_without_duration_is_rejected_without_persistence(self) -> None:
         player = self.make_player()
-        with patch("elobot.extensions.match.Player") as player_model:
+        with patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model:
             player_model.find_one = AsyncMock(return_value=player)
 
             await self.invoke_autoqueue(enabled=True, duration=None)
@@ -70,7 +72,7 @@ class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
         player.save_changes.assert_not_awaited()
 
     async def test_unregistered_user_is_rejected_without_persistence(self) -> None:
-        with patch("elobot.extensions.match.Player") as player_model:
+        with patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model:
             player_model.find_one = AsyncMock(return_value=None)
 
             await self.invoke_autoqueue(enabled=False, duration=None)

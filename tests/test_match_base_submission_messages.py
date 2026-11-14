@@ -10,6 +10,7 @@ from pymongo.errors import PyMongoError
 from elobot.extensions.match import MatchCommands
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.db import BaseStore, Match, Participant
+from tests._patch_sites import patch_sites
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ASUBMITTED"
 
@@ -32,10 +33,10 @@ class TestMatchBaseSubmissionMessages(unittest.IsolatedAsyncioTestCase):
         database_set = patch.object(Match, "set", new=AsyncMock(return_value=self.match))
         self.database_set = database_set.start()
         self.addCleanup(database_set.stop)
-        match_model = patch("elobot.extensions.match.Match")
+        match_model = patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
         match_model.start().find_one = AsyncMock(return_value=self.match)
         self.addCleanup(match_model.stop)
-        base_model = patch("elobot.extensions.match.BaseLayout")
+        base_model = patch_sites(('elobot.extensions.match.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout'))
         base_model.start().find_one = AsyncMock(return_value=None)
         self.addCleanup(base_model.stop)
         self.thread = MagicMock(id=123)

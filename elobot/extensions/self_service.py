@@ -16,12 +16,10 @@ from elobot.features.base_store.models import StoredBaseActionRequest
 import elobot.features.hosting.war.helper_spectate as helper_spectate
 import elobot.features.hosting.self_hosted.hosting as self_hosting
 import elobot.features.hosting.war.helper_reinvite as helper_reinvite
-from elobot.extensions.match import (
-    format_available_resource_clans,
-    is_match_finished,
-    try_reserve_resource_clan,
-    try_reserve_resource_match_side,
+from elobot.features.matches.resources import (
+    format_available_resource_clans, try_reserve_resource_clan, try_reserve_resource_match_side,
 )
+from elobot.extensions.match import is_match_finished
 from elobot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elobot.features.hosting.war.helper_host import (
     AutomaticWarHost,

@@ -22,6 +22,8 @@ from elobot.features.hosting.war.helper_slot import get_available_helper_slot
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.features.base_store.start import StoredStartState
 from elobot.db import Match, Player
+from elobot.features.matches import attack_bases
+from elobot.features.matches import resources
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,7 +96,7 @@ async def host_war_automatically(
         assert slot is not None
         player_user = await runtime.bot.fetch_user(participant.user_id)
         opponent_user = await runtime.bot.fetch_user(match_doc.participants[opponent].user_id)
-        match_doc = await match_commands.choose_bases(
+        match_doc = await attack_bases.choose_bases(
             match_doc.token, player_user, opponent_user, return_match_data=True,
         )
         base_links = [base.link for base in match_doc.participants[opponent].bases if base and base.link]
@@ -134,7 +136,7 @@ async def host_war_automatically(
     if not started_message:
         await ctx.send(
             f"{ERROR_EMOJI} **{request.clan.name}** is currently occupied.\n\n"
-            f"{await match_commands.available_resource_clans_text()}",
+            f"{await resources.available_resource_clans_text()}",
             ephemeral=True,
         )
         return

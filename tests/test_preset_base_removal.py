@@ -11,6 +11,7 @@ import elobot.extensions.match as match_commands
 import elobot.extensions.preset as preset_commands
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import BaseLayout, Player
+from tests._patch_sites import patch_sites
 
 
 class TestPresetBaseRemoval(unittest.IsolatedAsyncioTestCase):
@@ -115,8 +116,8 @@ class TestPresetBaseRemoval(unittest.IsolatedAsyncioTestCase):
 
         # When match creation reloads the removed presets from the persisted record.
         with (
-            patch.object(match_commands, "Match") as match_model,
-            patch.object(match_commands, "Player") as player_model,
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+            patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             player_model.find_one = AsyncMock(side_effect=[fresh_player, opponent])

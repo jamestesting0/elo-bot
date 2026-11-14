@@ -10,7 +10,7 @@ from elobot.features.finals.types import FINAL_DISTRICTS, FinalError
 from elobot.db import Match, Clan
 from elobot.db.token_models import FinalBettingMarket
 from elobot.features.hosting.war import result_store_task
-import elobot.extensions.match as match_commands
+import elobot.extensions.match as match_module
 
 
 class TestFinalHosting(FinalScenarioCase):
@@ -64,7 +64,7 @@ class TestFinalHosting(FinalScenarioCase):
     async def test_final_base_controls_use_command_and_foreign_owner_is_rejected(self):
         final, source, _ = await self.pairing()
         bot = MagicMock(ext={})
-        cog = match_commands.MatchCommands(bot)
+        cog = match_module.MatchCommands(bot)
         ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), send_modal=AsyncMock())
         ctx.channel.id = 987
         ctx.guild_id = source.routing_guild_id

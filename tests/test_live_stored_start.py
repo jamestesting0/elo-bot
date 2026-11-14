@@ -11,6 +11,8 @@ from elobot.features.hosting.live import helper_live
 from elobot.features.hosting.war.helper_host_job import run_helper_host_job
 from elobot.features.base_store.live import live_store_components
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
+from tests._patch_sites import patch_sites
+import elobot.features.matches.resources as resources_module
 
 
 class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
@@ -32,7 +34,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
         )
         self.availability = self.enterContext(patch.object(helper_live, "confirm_helper_availability",
                                                          new=AsyncMock(return_value=True)))
-        self.choose = self.enterContext(patch.object(helper_live.match_commands, "choose_bases", new_callable=AsyncMock))
+        self.choose = self.enterContext(patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock))
         self.slots = self.enterContext(patch.object(helper_live.live_eligibility, "clan_has_all_base_store_slots",
                                                   new=AsyncMock(return_value=False)))
 
@@ -41,7 +43,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
         start = AsyncMock(return_value=live_start.LiveStartSucceeded(message=self.f.message()))
         async def run(runtime, ctx, request):
             self.assertEqual(request.additional_cancel_user_ids, frozenset({"222"}))
-            self.assertTrue(helper_live.match_commands.RESOURCE_MATCH_SIDE_LOCKS[("LIVE", 1)].locked())
+            self.assertTrue(resources_module.RESOURCE_MATCH_SIDE_LOCKS[("LIVE", 1)].locked())
             await run_helper_host_job(runtime, ctx, request)
         with patch.object(live_start, "start_live_match", new=start), patch.object(helper_live, "run_helper_host_job", new=run):
             await helper_live.host_live_automatically(self.f.runtime, self.f.ctx, self.request)
@@ -57,7 +59,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
         )
         self.choose.assert_not_awaited()
         self.slots.assert_not_awaited()
-        self.assertFalse(helper_live.match_commands.RESOURCE_MATCH_SIDE_LOCKS[("LIVE", 1)].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[("LIVE", 1)].locked())
 
     async def test_public_progress_is_forwarded_to_availability_prompt(self):
         self.f.jobs(["succeeded"], "host_live_match_on_stored")
@@ -93,7 +95,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
             player1_elo=1000, player2_elo=1000, scout=False,
             reply=live_start.AutomaticLiveStartReply(), stored_reservation_id=PAIR,
         )
-        with patch.object(live_start.match_commands, "claim_resource_clan", new=claim):
+        with patch_sites(('elobot.extensions.match.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=claim):
             outcome = await live_start.start_live_match(self.f.bot, self.f.ctx, request)
         self.assertIsInstance(outcome, live_start.LiveStartClanUnavailable)
         self.assertFalse(any(self.f.document["times"]))
@@ -116,7 +118,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
                                host_clans=[CLAN, None], old_msgs=[700, None])
         self.match = await self.f.find({})
         started = MagicMock(id=700, delete=AsyncMock(), edit=AsyncMock(), embeds=[])
-        with patch.object(live_start.match_commands, "free_clan", new_callable=AsyncMock), patch.object(
+        with patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock), patch.object(
             live_start, "schedule_channel_name_edit",
         ):
             aborted = await live_start.abort_live_start(self.f.ctx, live_start.LiveAbort(self.match, started))

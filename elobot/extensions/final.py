@@ -14,6 +14,8 @@ from elobot.features.finals.types import FinalError
 from elobot.features.finals.bracket import seeded_players
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
+from elobot.features.matches import lifecycle as lifecycle_module
+from elobot.features.queue import policy
 
 
 async def get_current_elo_final_season():
@@ -34,7 +36,8 @@ class FinalCommands(Extension):
 
     async def _recover(self, edition):
         from elobot.features.finals.recovery import recover_final
-        from elobot.extensions.match import clear_match_base_stores, free_match_clans, remove_helper_task
+        from elobot.extensions.match import clear_match_base_stores
+        from elobot.features.matches.resources import free_match_clans, remove_helper_task
         async def release(source):
             await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")
             await free_match_clans(source)
@@ -702,7 +705,6 @@ class FinalCommands(Extension):
                   choices=[ipy.SlashCommandChoice(name=name, value=name) for name in
                            ("Quarterfinals", "Semifinals", "Final")])
     async def final_round_start(self, ctx: SlashContext, round: str):
-        import elobot.extensions.match as matches
         from elobot.features.finals.bracket import require_round_ready
         from elobot.features.finals.matches import bind_thread, prepare_match
         from pymongo.errors import PyMongoError
@@ -712,11 +714,11 @@ class FinalCommands(Extension):
         try:
             edition = await self._edition(ctx, manager=True)
             for node_id in require_round_ready(edition, round):
-                async with matches.QUEUE_OPERATION_LOCK:
+                async with policy.QUEUE_OPERATION_LOCK:
                     source = await prepare_match(edition, node_id)
                 if source is None:
                     continue
-                thread = await matches.confirm_match(self.bot, source.token)
+                thread = await lifecycle_module.confirm_match(self.bot, source.token)
                 await bind_thread(edition, source, thread)
                 completed.append(f"{node_id}: <#{thread}>")
         except (FinalError, ipy.errors.HTTPException, PyMongoError, ThreadMessageBindingError) as error:

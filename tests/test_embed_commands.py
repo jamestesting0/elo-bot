@@ -8,11 +8,12 @@ import interactions as ipy
 import elobot.extensions.match as match_commands
 from elobot.extensions.embed import EmbedCommands
 from elobot.db import BaseStore, ServerState
+import elobot.features.matches.resources as resources_module
 
 
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        match_commands.RESOURCE_CLAN_LOCKS.clear()
+        resources_module.RESOURCE_CLAN_LOCKS.clear()
 
     async def test_clan_availability_embed_shows_slot_thread_mentions(self):
         bot = MagicMock()

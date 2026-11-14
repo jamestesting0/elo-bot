@@ -6,6 +6,7 @@ import interactions as ipy
 import elobot.extensions.match as match_commands
 from elobot.extensions.match import MatchCommands
 from elobot.db import Match
+from tests._patch_sites import patch_sites
 
 
 class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
@@ -49,9 +50,9 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(Match, "save_changes", new_callable=AsyncMock) as save_changes,
                 patch.object(Match, "get_pymongo_collection", return_value=collection),
-                patch.object(match_commands, "Match") as match_model,
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                 patch.object(match_commands, "clear_match_base_stores", new_callable=AsyncMock) as clear_stores,
-                patch.object(match_commands, "free_clan", new_callable=AsyncMock) as free_clan,
+                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan,
                 patch.object(
                     match_commands,
                     "record_base_stats",
@@ -96,7 +97,7 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
         fixture.free_clans.side_effect = release_clans
         fixture.users["111"].send.side_effect = RuntimeError("winner DM failed")
 
-        with patch.object(match_commands, "free_clan", new_callable=AsyncMock) as free_clan:
+        with patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             with self.assertRaisesRegex(RuntimeError, "winner DM failed"):
                 await fixture.invoke(fixture.context())
 

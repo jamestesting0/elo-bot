@@ -16,6 +16,7 @@ from elobot.db import Match, Participant
 from elobot.features.base_store import publication
 from elobot.features.base_store.models import BaseStorePresentationRequest
 from elobot.db import BaseStore
+from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 
 class MatchPublicationStateMixin:
@@ -65,13 +66,12 @@ class MatchPublicationStateMixin:
         collection_patch = patch.object(Match, "get_pymongo_collection", return_value=self.collection)
         collection_patch.start()
         self.addCleanup(collection_patch.stop)
-        for module, name in (
-                (war_start.match_commands, "send_bases"),
-                (war_start.match_commands, "remove_helper_task"),
-                (base_store_storage, "clear_participant_base_store"),
-                (live_start.match_commands, "clear_match_base_stores"),
+        for boundary in (
+                patch_family(MATCH_MODULE_FAMILY, "send_bases", new_callable=AsyncMock),
+                patch_family(MATCH_MODULE_FAMILY, "remove_helper_task", new_callable=AsyncMock),
+                patch.object(base_store_storage, "clear_participant_base_store", new_callable=AsyncMock),
+                patch_family(MATCH_MODULE_FAMILY, "clear_match_base_stores", new_callable=AsyncMock),
         ):
-            boundary = patch.object(module, name, new_callable=AsyncMock)
             boundary.start()
             self.addCleanup(boundary.stop)
 

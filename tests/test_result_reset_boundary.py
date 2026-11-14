@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import anyio
 
-from elobot.extensions import match as match_commands
 from elobot.extensions import data as data_commands
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
@@ -12,6 +11,7 @@ from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.features.players.data_boundary import PlayerDataBoundary
 from elobot.db import Match
 from tests import _result_retry_store as retry_fixture
+from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 
 class TestResultResetBoundary(unittest.IsolatedAsyncioTestCase):
@@ -21,8 +21,9 @@ class TestResultResetBoundary(unittest.IsolatedAsyncioTestCase):
         self.runtime = retry_fixture.ResultRetryState(self)
         self.runtime.setUp()
         self.boundary = PlayerDataBoundary()
-        for module in (data_commands, match_commands, result_store):
+        for module in (data_commands, result_store):
             self.enterContext(patch.object(module, "PLAYER_DATA_BOUNDARY", self.boundary))
+        self.enterContext(patch_family(MATCH_MODULE_FAMILY, "PLAYER_DATA_BOUNDARY", self.boundary))
         self.ctx = MagicMock(defer=AsyncMock(), send=AsyncMock(), message=None, author=MagicMock(id=999))
         self.data = data_commands.DataCommands(self.runtime.state.bot)
         self.runtime.state.bot.fetch_user = AsyncMock(return_value=MagicMock(mention="<@111>", send=AsyncMock()))

@@ -6,12 +6,13 @@ from beanie import PydanticObjectId
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
-import elobot.extensions.match as match_commands
 from elobot.config.presentation import RED_COLOR
 from elobot.features.results.operations import ResultOperationConflict
 from elobot.db import Match, Participant
 from elobot.db.result_models import MatchResultOperation
 from tests._result_retry_store import apply_operations, matches
+from tests._patch_sites import patch_sites
+import elobot.extensions.match as match_module
 
 
 class TestLiveResultEmbed(unittest.IsolatedAsyncioTestCase):
@@ -39,9 +40,9 @@ class TestLiveResultEmbed(unittest.IsolatedAsyncioTestCase):
                                  send=AsyncMock(return_value=MagicMock(id=43, edit=AsyncMock())))
         self.thread = MagicMock(fetch_message=AsyncMock(return_value=MagicMock(id=901, edit=AsyncMock())))
         bot = MagicMock(fetch_channel=AsyncMock(return_value=self.channel))
-        self.cog = match_commands.MatchCommands(bot)
+        self.cog = match_module.MatchCommands(bot)
         self.embed = ipy.Embed(title="**Match has Ended**", description="111: 9 stars, 300%; 222: 6 stars, 270%")
-        self.enterContext(patch.object(match_commands, "choose_tip", new=AsyncMock(return_value="tip")))
+        self.enterContext(patch_sites(('elobot.extensions.match.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
 
     async def publish(self) -> None:
         await self.cog._publish_result_embeds_locked(self.match, self.thread, self.embed)

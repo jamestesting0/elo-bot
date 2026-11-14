@@ -12,11 +12,11 @@ from beanie.odm.settings.document import DocumentSettings
 
 from elobot.features.base_store import live_service
 from elobot.extensions.match import MatchCommands
-import elobot.extensions.match as match_commands
 from elobot.features.hosting.war import helper_base_store_availability
 from elobot.config.game import HOST_CLAN_CHOICES
 from elobot.db import BaseLink, BaseStore, Match, Participant
 from tests import _helper_stored_bases_fixture as transport
+import elobot.features.matches.resources as resources_module
 
 
 CLAN = str(HOST_CLAN_CHOICES[0].value)
@@ -43,10 +43,10 @@ class LiveBaseFixture:
         self.collection = MagicMock(update_one=self.write, find_one=AsyncMock(side_effect=self.find))
         case.enterContext(patch.object(Match, "get_pymongo_collection", return_value=self.collection))
         case.enterContext(patch.object(Match, "find_one", new=AsyncMock(side_effect=self.find)))
-        match_commands.RESOURCE_CLAN_LOCKS.clear()
-        match_commands.RESOURCE_MATCH_SIDE_LOCKS.clear()
-        match_commands._RESOURCE_CLAN_RESERVATIONS.set({})
-        match_commands._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
+        resources_module.RESOURCE_CLAN_LOCKS.clear()
+        resources_module.RESOURCE_MATCH_SIDE_LOCKS.clear()
+        resources_module._RESOURCE_CLAN_RESERVATIONS.set({})
+        resources_module._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
         self.bot = MagicMock()
         self.bot.user.id = 999
         self.bot.user.display_name = "Helper"

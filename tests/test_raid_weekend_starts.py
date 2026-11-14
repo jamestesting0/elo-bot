@@ -17,6 +17,7 @@ from elobot.features.hosting.war import helper_base_store_availability
 from elobot.features.base_store.start import held_store, ready_store, shared_store_clan
 from elobot.config.ids import BOT_ID
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
+from tests._patch_sites import patch_sites
 
 
 class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
@@ -52,26 +53,26 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
         self.enterContext(patch("elobot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
         clan_stub = SimpleNamespace(tag=CLAN, name="Helper Clan", availability_str="Available")
-        self.enterContext(patch.object(commands, "Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
+        self.enterContext(patch_sites(('elobot.extensions.match.Clan', 'elobot.features.matches.resources.Clan'), new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
         self.enterContext(patch("elobot.extensions.self_service.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
-        self.enterContext(patch.object(commands, "occupy_clan", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "free_clan", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "available_resource_clans_text", new=AsyncMock(return_value="Available")))
-        self.enterContext(patch.object(commands, "send_bases", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "remove_helper_task", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "choose_tip", new=AsyncMock(return_value="tip")))
+        self.enterContext(patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elobot.extensions.match.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'), new=AsyncMock(return_value="Available")))
+        self.enterContext(patch_sites(('elobot.extensions.match.send_bases', 'elobot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elobot.extensions.match.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
         self.enterContext(patch.object(commands, "get_start_base_store_slot_availability",
                                       new=AsyncMock(return_value=(["Slot 1", "Slot 2"], {}))))
         self.enterContext(patch.object(live_start, "schedule_channel_name_edit"))
         self.enterContext(patch.object(war_start, "schedule_channel_name_edit"))
         player_model = MagicMock(find_one=AsyncMock(return_value=SimpleNamespace(tag="#PLAYER", elo=1000)))
-        self.enterContext(patch.object(commands, "Player", new=player_model))
+        self.enterContext(patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'), new=player_model))
         self.enterContext(patch.object(helper_host, "Player", new=player_model))
         self.enterContext(patch("elobot.features.base_store.controls.Player", new=player_model))
         self.f.runtime.coc_client.get_player = AsyncMock(return_value=SimpleNamespace(
             tag="#PLAYER", town_hall=3, share_link="https://player.example",
         ))
-        self.choose = self.enterContext(patch.object(commands, "choose_bases", new_callable=AsyncMock))
+        self.choose = self.enterContext(patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock))
         self.empty_slot = self.enterContext(patch.object(helper_host, "get_available_helper_slot", new_callable=AsyncMock))
         self.enterContext(patch.object(helper_host, "confirm_helper_availability", new=AsyncMock(return_value=True)))
         self.enterContext(patch.object(helper_base_store_availability,

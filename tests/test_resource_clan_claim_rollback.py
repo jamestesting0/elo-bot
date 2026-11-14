@@ -4,6 +4,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import elobot.extensions.match as match_commands
+from tests._patch_sites import patch_sites
+import elobot.features.matches.resources as resources_module
 
 
 class OccupancyFailure(RuntimeError):
@@ -12,10 +14,10 @@ class OccupancyFailure(RuntimeError):
 
 class TestResourceClanClaimRollback(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        match_commands.RESOURCE_CLAN_LOCKS.clear()
-        match_commands.RESOURCE_MATCH_SIDE_LOCKS.clear()
-        match_commands._RESOURCE_CLAN_RESERVATIONS.set({})
-        match_commands._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
+        resources_module.RESOURCE_CLAN_LOCKS.clear()
+        resources_module.RESOURCE_MATCH_SIDE_LOCKS.clear()
+        resources_module._RESOURCE_CLAN_RESERVATIONS.set({})
+        resources_module._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
 
     async def test_occupancy_failure_rolls_back_match_claim_before_unlocking(self) -> None:
         # Given a replacement claim whose occupancy write parks and then fails.
@@ -57,8 +59,8 @@ class TestResourceClanClaimRollback(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
                 patch.object(match_commands.Clan, "find_one", new=AsyncMock(return_value=clan)), \
-                patch.object(match_commands, "occupy_clan", new=AsyncMock(side_effect=occupy_then_fail)), \
-                patch.object(match_commands, "free_clan", new_callable=AsyncMock) as free_clan:
+                patch('elobot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=occupy_then_fail)), \
+                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             # When the durable match claim is visible while occupancy remains unfinished.
             claim_task = asyncio.create_task(run_claim())
             await asyncio.wait_for(occupancy_started.wait(), timeout=5)
@@ -93,5 +95,5 @@ class TestResourceClanClaimRollback(unittest.IsolatedAsyncioTestCase):
         )
         free_clan.assert_not_awaited()
         self.assertEqual(clan.availability_str, "Available")
-        self.assertFalse(match_commands.RESOURCE_CLAN_LOCKS["#NEW"].locked())
-        self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[("MATCH", 0)].locked())
+        self.assertFalse(resources_module.RESOURCE_CLAN_LOCKS["#NEW"].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[("MATCH", 0)].locked())

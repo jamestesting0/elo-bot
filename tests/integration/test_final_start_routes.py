@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.extensions import match as match_commands
 from elobot.features.base_store.controls import start_stored_bases
 from elobot.features.base_store.models import StoredBaseActionRequest
 from elobot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
@@ -15,6 +14,7 @@ from elobot.features.finals.types import FINAL_DISTRICTS
 from elobot.features.tokens.bets import open_market
 from elobot.db import BaseStore, Clan, Match
 from elobot.db.token_models import FinalBettingMarket
+import elobot.extensions.match as match_module
 
 
 class TestFinalStartRoutes(FinalScenarioCase):
@@ -76,7 +76,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
     async def test_stored_helper_request_receives_seven_districts_after_market_closure(self):
         final, source, market = await self.pairing()
         bot, ctx = self.transport(ipy.ComponentContext)
-        runtime = match_commands.MatchCommands(bot)
+        runtime = match_module.MatchCommands(bot)
         runtime.helper_api_base_url = "http://127.0.0.1:1"
         runtime.helper_api_key = "test-only"
         async def reject(session, request):
@@ -97,7 +97,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
         final, source, market = await self.pairing()
         await final.set({"prediction_state": "OPEN"})
         bot, ctx = self.transport(ipy.ComponentContext)
-        runtime = match_commands.MatchCommands(bot)
+        runtime = match_module.MatchCommands(bot)
         runtime.helper_api_base_url = "http://127.0.0.1:1"
         runtime.helper_api_key = "test-only"
         with patch.object(HelperEtaReader, "read", new=AsyncMock(return_value=HelperEta(

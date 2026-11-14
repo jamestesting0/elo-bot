@@ -13,6 +13,7 @@ from elobot.features.hosting.war import result_store_ui
 from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
 from elobot.db import Match, Player
 from tests._result_finalization_fixture import VALID_RESULTS, RecordArgument, make_result_match, record_result
+from tests._patch_sites import patch_sites
 
 
 class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
@@ -41,9 +42,9 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
         second_member = MagicMock(id=222)
         self.guild.fetch_member = AsyncMock(side_effect=[first_member, second_member])
         with (
-                patch.object(match_commands, "datetime") as clock,
-                patch.object(match_commands, "Player") as player_model,
-                patch.object(match_commands, "queue_player", new_callable=AsyncMock) as queue,
+                patch_sites(('elobot.extensions.match.datetime', 'elobot.features.queue.state.datetime', 'elobot.features.queue.matching.datetime', 'elobot.features.matches.resources.datetime', 'elobot.features.matches.lifecycle.datetime', 'elobot.features.matches.attack_bases.datetime', 'elobot.features.results.recording.datetime')) as clock,
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
+                patch_sites(('elobot.extensions.match.queue_player', 'elobot.features.queue.matching.queue_player'), new_callable=AsyncMock) as queue,
         ):
             clock.now.return_value.timestamp.return_value = 100
             player_model.find_one = AsyncMock(side_effect=[first, second])
@@ -60,9 +61,9 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
     async def test_disabled_expired_boundary_and_malformed_preferences_skip_queueing(self) -> None:
         players = [self._player("0"), self._player("99"), self._player("100"), self._player("invalid")]
         with (
-                patch.object(match_commands, "datetime") as clock,
-                patch.object(match_commands, "Player") as player_model,
-                patch.object(match_commands, "queue_player", new_callable=AsyncMock) as queue,
+                patch_sites(('elobot.extensions.match.datetime', 'elobot.features.queue.state.datetime', 'elobot.features.queue.matching.datetime', 'elobot.features.matches.resources.datetime', 'elobot.features.matches.lifecycle.datetime', 'elobot.features.matches.attack_bases.datetime', 'elobot.features.results.recording.datetime')) as clock,
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
+                patch_sites(('elobot.extensions.match.queue_player', 'elobot.features.queue.matching.queue_player'), new_callable=AsyncMock) as queue,
         ):
             clock.now.return_value.timestamp.return_value = 100
             player_model.find_one = AsyncMock(side_effect=players)
@@ -84,13 +85,9 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
         self.guild.fetch_member = AsyncMock(side_effect=[first_member, second_member])
         stderr = io.StringIO()
         with (
-                patch.object(match_commands, "datetime") as clock,
-                patch.object(match_commands, "Player") as player_model,
-                patch.object(
-                    match_commands,
-                    "queue_player",
-                    new=AsyncMock(side_effect=[RuntimeError("queue failed"), None]),
-                ) as queue,
+                patch_sites(('elobot.extensions.match.datetime', 'elobot.features.queue.state.datetime', 'elobot.features.queue.matching.datetime', 'elobot.features.matches.resources.datetime', 'elobot.features.matches.lifecycle.datetime', 'elobot.features.matches.attack_bases.datetime', 'elobot.features.results.recording.datetime')) as clock,
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
+                patch_sites(('elobot.extensions.match.queue_player', 'elobot.features.queue.matching.queue_player'), new=AsyncMock(side_effect=[RuntimeError("queue failed"), None])) as queue,
                 redirect_stderr(stderr),
         ):
             clock.now.return_value.timestamp.return_value = 100
@@ -144,17 +141,17 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(Match, "save_changes", new_callable=AsyncMock),
                 patch.object(Match, "get_pymongo_collection", return_value=collection),
-                patch.object(match_commands, "Match") as match_model,
-                patch.object(match_commands, "Player") as player_model,
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
                 patch.object(match_commands, "record_match", new=record),
-                patch.object(match_commands, "invite_eligible_players", new_callable=AsyncMock) as invite,
+                patch_sites(('elobot.extensions.match.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new_callable=AsyncMock) as invite,
                 patch.object(match_commands, "record_base_stats", new_callable=AsyncMock),
                 patch.object(match_commands, "clear_match_base_stores", new_callable=AsyncMock) as clear_stores,
                 patch.object(match_commands, "award_helper_once", new_callable=AsyncMock) as credit,
                 patch.object(match_commands, "free_match_clans", new_callable=AsyncMock),
-                patch.object(match_commands, "remove_helper_task", new_callable=AsyncMock),
-                patch.object(match_commands, "fetch_user_match_id_choices", new_callable=AsyncMock),
-                patch.object(match_commands, "choose_tip", new=AsyncMock(return_value="tip")),
+                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.fetch_user_match_id_choices', 'elobot.features.results.recording.fetch_user_match_id_choices'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")),
                 patch.object(match_commands, "schedule_channel_name_edit", new=schedule),
                 patch.object(match_commands, "autoqueue_completed_match_participants", new=terminal),
         ):
@@ -192,7 +189,7 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
         thread.name = "🟢 Match TOKEN"
         self.bot.fetch_channel = AsyncMock(return_value=thread)
         with (
-                patch.object(match_commands, "Match") as match_model,
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                 patch.object(match_commands, "autoqueue_completed_match_participants", new_callable=AsyncMock) as terminal,
         ):
             match_model.find_one = AsyncMock(return_value=incomplete)
@@ -237,8 +234,8 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
                 patch.object(Player, "find_one", new=AsyncMock(return_value=None)),
                 patch.object(result_store_ui, "notify_stored_result", new_callable=AsyncMock),
                 patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
-                patch.object(match_commands, "free_clan", new_callable=AsyncMock),
-                patch.object(match_commands, "remove_helper_task", new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch.object(
                     match_commands,
                     "autoqueue_completed_match_participants",

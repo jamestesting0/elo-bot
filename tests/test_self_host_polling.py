@@ -12,6 +12,7 @@ from elobot.features.hosting.war import result_store_task
 from elobot.extensions.self_service import SelfCommands
 from elobot.integrations.helper_api import HelperJob
 from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -161,7 +162,7 @@ class TestSelfHostPolling(unittest.IsolatedAsyncioTestCase):
                 patch("elobot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
                 patch("elobot.features.hosting.war.helper_host.Player") as mock_player, \
                 patch("elobot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
-                patch("elobot.extensions.match.choose_bases", new=AsyncMock(return_value=match)), \
+                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
                 patch(
                     "elobot.features.hosting.war.war_start.start_war",
                     new=self.start_war,

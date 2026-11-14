@@ -31,6 +31,9 @@ from elobot.features.finals.types import FinalError
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.db.match_models import ExpectedLiveStartState
 from elobot.features.matches.timing import hosting_started
+from elobot.features.matches import attack_bases
+from elobot.features.matches import resources
+from elobot.features.matches import tips
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,8 +122,8 @@ async def reserve_live_start(match_token: str, clan_tag: str) -> live_reservatio
 
     return await live_reservations.reserve_live_start(
         live_reservations.LiveReservationOperations(
-            reserve_match_side=match_commands.try_reserve_resource_match_side,
-            reserve_clan=match_commands.try_reserve_resource_clan,
+            reserve_match_side=resources.try_reserve_resource_match_side,
+            reserve_clan=resources.try_reserve_resource_clan,
             find_match=find_match,
             is_match_finished=match_commands.is_match_finished,
         ),
@@ -179,7 +182,7 @@ async def start_live_match(
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return LiveStartBusy()
-        claimed = await match_commands.claim_resource_clan(
+        claimed = await resources.claim_resource_clan(
             reservations.clan,
             start.match,
             0,
@@ -282,11 +285,11 @@ async def complete_live_start(
     else:
         await publish_match_message(
             ctx, match_doc, MatchMessageState.capture(match_doc, 0), embed=public_embed,
-            content=await match_commands.choose_tip(), components=spectate_controls, public_channel=channel,
+            content=await tips.choose_tip(), components=spectate_controls, public_channel=channel,
         )
 
-    await match_commands.send_bases(bot, match_doc.token, 1, 0, scout=start.scout)
-    await match_commands.send_bases(bot, match_doc.token, 0, 1, scout=start.scout)
+    await attack_bases.send_bases(bot, match_doc.token, 1, 0, scout=start.scout)
+    await attack_bases.send_bases(bot, match_doc.token, 0, 1, scout=start.scout)
     for player in range(len(match_doc.participants)):
         if not await mark_store_reserved(bot, match_doc, player):
             raise BaseStoreMessageConflict("The match started, but its held base-slot message could not be updated.")
@@ -321,8 +324,8 @@ async def complete_live_start(
             )
         case unreachable:
             assert_never(unreachable)
-    await match_commands.remove_helper_task(match_doc.thread, match_doc.participants[0].user_id)
-    await match_commands.remove_helper_task(match_doc.thread, match_doc.participants[1].user_id)
+    await resources.remove_helper_task(match_doc.thread, match_doc.participants[0].user_id)
+    await resources.remove_helper_task(match_doc.thread, match_doc.participants[1].user_id)
     schedule_channel_name_edit(ctx.channel, "🟢")
     return message
 
@@ -377,7 +380,7 @@ async def _abort_live_start_locked(
         except ipy.errors.HTTPException as error:
             publication_error = error
     for host_clan in host_clans:
-        await match_commands.free_clan(host_clan, expected_thread=str(match_doc.thread))
+        await resources.free_clan(host_clan, expected_thread=str(match_doc.thread))
     for player in range(len(match_doc.participants)):
         if not await mark_store_reserved(ctx.bot, match_doc, player, ready=True):
             raise BaseStoreMessageConflict("The match was aborted, but its held base-slot message could not be updated.")

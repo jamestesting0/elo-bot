@@ -16,6 +16,8 @@ from elobot.db import Match
 
 
 from tests._match_publication_fixture import MatchPublicationStateMixin
+from tests._patch_sites import patch_sites
+import elobot.extensions.match as match_module
 
 class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_war_binding_failure_never_publishes_started_controls(self) -> None:
@@ -99,7 +101,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.assertEqual(self.collection.update_one.await_args_list[1].args[0]["old_msgs.0"], None)
         self.assertEqual(self.message_data["components"], [])
         self.assertEqual(self.message_data["embeds"][0]["title"], "**Match Update Incomplete**")
-        war_start.match_commands.send_bases.assert_not_awaited()
+        match_module.send_bases.assert_not_awaited()
         self.bot.http.pin_message.assert_not_awaited()
         self.ctx.send.assert_not_awaited()
 
@@ -114,7 +116,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.assertIsNone(self.persisted["old_msgs.0"])
         self.assertEqual(self.collection.update_one.await_args.args[0]["times.1"], None)
         self.assertEqual(self.message_data["components"], [])
-        war_start.match_commands.send_bases.assert_not_awaited()
+        match_module.send_bases.assert_not_awaited()
 
     async def test_live_success_preserves_attacking_order_without_releasing_slots(self) -> None:
         # Given: the committed live match has an existing public announcement.
@@ -124,7 +126,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         public = MagicMock(id=80, _channel_id=90, components=[], embeds=[ipy.Embed(fields=[ipy.EmbedField("Players", "100 vs 200"),
                                                   ipy.EmbedField("Time", "1000")])], edit=AsyncMock())
         self.bot.fetch_channel = AsyncMock(return_value=MagicMock(id=90, fetch_message=AsyncMock(return_value=public)))
-        with patch.object(live_start.match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.match))), \
+        with patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             # When: the live completion publishes its bound thread message.
             message = await live_start.complete_live_start(self.bot, self.ctx, request)
@@ -142,7 +144,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         })
         self.assertEqual(self.persisted["old_msgs.0"], int(message.id))
         self.assertEqual(self.trace, ["send", "bind", "bind", "edit", "pin", "bind", "bind", "bind"])
-        live_start.match_commands.clear_match_base_stores.assert_not_awaited()
+        match_module.clear_match_base_stores.assert_not_awaited()
         self.ctx.send.assert_not_awaited()
 
     async def test_new_public_spectate_control_waits_for_message_binding(self) -> None:
@@ -157,8 +159,8 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             return await self.update_message_binding(query, update)
 
         with (
-            patch.object(live_start.match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.match))),
-            patch.object(live_start.match_commands, "choose_tip", new=AsyncMock(return_value="Tip")),
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
+            patch_sites(('elobot.extensions.match.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
             patch.object(self.collection, "update_one", new=AsyncMock(side_effect=bind_public)),
             patch.object(live_start, "schedule_channel_name_edit"),
         ):
@@ -180,9 +182,9 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             return await self.update_message_binding(query, update)
 
         with (
-            patch.object(live_start.match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.match))),
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
             patch.object(live_start, "schedule_channel_name_edit"),
-            patch.object(live_start.match_commands, "choose_tip", new=AsyncMock(return_value="Tip")),
+            patch_sites(('elobot.extensions.match.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
             patch.object(self.collection, "update_one", new=AsyncMock(side_effect=fail_public_binding)),
         ):
             with self.assertRaises(PyMongoError):
@@ -262,11 +264,11 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
                     # When: completed results update the initiation message.
                     with (
                         patch.object(Match, "find_one", new=AsyncMock(return_value=self.match)),
-                        patch.object(match_commands, "free_clan", new_callable=AsyncMock),
-                        patch.object(match_commands, "remove_helper_task", new_callable=AsyncMock),
+                        patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                        patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                         patch.object(match_commands, "autoqueue_completed_match_participants", new_callable=AsyncMock),
                     ):
-                        await match_commands.MatchCommands._finish_stored_result_side(cog, self.match, 0)
+                        await match_module.MatchCommands._finish_stored_result_side(cog, self.match, 0)
                     # Then: both newly ended and already-ended messages lose the placeholder.
                     final = self.message_data["embeds"][0]
                     self.assertEqual(final["title"], "**Match Ended**")

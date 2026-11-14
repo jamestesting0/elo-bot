@@ -10,6 +10,7 @@ import elobot.extensions.match as match_commands
 import elobot.features.hosting.self_hosted.hosting as self_hosting
 from elobot.extensions.self_service import SelfCommands
 from elobot.config.ids import BOT_ID
+import elobot.features.matches.resources as resources_module
 
 
 REQUESTER_ID = "123456789012345678"
@@ -17,10 +18,10 @@ REQUESTER_ID = "123456789012345678"
 
 class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        match_commands.RESOURCE_CLAN_LOCKS.clear()
-        match_commands.RESOURCE_MATCH_SIDE_LOCKS.clear()
-        match_commands._RESOURCE_CLAN_RESERVATIONS.set({})
-        match_commands._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
+        resources_module.RESOURCE_CLAN_LOCKS.clear()
+        resources_module.RESOURCE_MATCH_SIDE_LOCKS.clear()
+        resources_module._RESOURCE_CLAN_RESERVATIONS.set({})
+        resources_module._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
         self.bot = MagicMock()
         self.bot.user = MagicMock(id=BOT_ID)
         self.bot.coc_client.get_clan = AsyncMock(return_value=MagicMock(tag="#CLAN", name="Helper Clan"))

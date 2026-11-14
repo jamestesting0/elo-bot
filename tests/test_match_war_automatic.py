@@ -7,6 +7,7 @@ import interactions as ipy
 from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import war_start
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from tests._patch_sites import patch_sites
 
 
 class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
@@ -76,8 +77,8 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
 
-        with patch("elobot.extensions.match.Match") as match_model, \
-                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+        with patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False), \
                 patch("elobot.extensions.match.is_raid_weekend", return_value=False), \
                 patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)), \
                 patch(
@@ -108,8 +109,8 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         match = self.make_match()
         clan = self.bot.coc_client.get_clan.return_value
 
-        with patch("elobot.extensions.match.Match") as match_model, \
-                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+        with patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False), \
                 patch("elobot.extensions.match.is_raid_weekend", return_value=False), \
                 patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)), \
                 patch(
@@ -153,8 +154,8 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         match = self.make_match()
         match.times[0] = 1000
 
-        with patch("elobot.extensions.match.Match") as match_model, \
-                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+        with patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False), \
                 patch("elobot.extensions.match.is_clan_available", new_callable=AsyncMock) as clan_available, \
                 patch(
                     "elobot.features.hosting.war.helper_host.host_war_automatically",
@@ -179,9 +180,9 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
 
-        with patch("elobot.extensions.match.Match") as match_model, \
-                patch("elobot.extensions.match.Clan") as clan_model, \
-                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+        with patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elobot.extensions.match.Clan', 'elobot.features.matches.resources.Clan')) as clan_model, \
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False), \
                 patch("elobot.extensions.match.is_raid_weekend", return_value=False), \
                 patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=False)), \
                 patch(

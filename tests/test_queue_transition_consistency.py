@@ -12,6 +12,10 @@ from pymongo.errors import OperationFailure
 
 from elobot.extensions import match as match_commands
 from elobot.db import Match, Player, Queue, ServerState
+from tests._patch_sites import patch_sites
+import elobot.extensions.match as match_module
+import elobot.features.queue.matching as matching_module
+import elobot.features.queue.state as state_module
 
 
 class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
@@ -47,8 +51,8 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.inserted: list[Match] = []
         self.bot = MagicMock(user=MagicMock(id=match_commands.BOT_ID), fetch_user=AsyncMock())
         self.bot.fetch_user.side_effect = lambda user_id: MagicMock(id=int(user_id), send=AsyncMock())
-        self.cog = match_commands.MatchCommands(self.bot)
-        self.enterContext(patch.object(match_commands, "QUEUE_OPERATION_LOCK", anyio.Lock()))
+        self.cog = match_module.MatchCommands(self.bot)
+        self.enterContext(patch_sites(('elobot.extensions.match.QUEUE_OPERATION_LOCK', 'elobot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elobot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elobot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), anyio.Lock()))
 
         async def find_queue(query, **_kwargs) -> Queue:
             return self.snapshot(query["tier"])
@@ -147,7 +151,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.failed_tier = 0
         # When
         with self.assertRaises(OperationFailure):
-            await match_commands.promote_tier1_aged_players(self.snapshot(0), self.snapshot(1), 100_000.0)
+            await state_module.promote_tier1_aged_players(self.snapshot(0), self.snapshot(1), 100_000.0)
         # Then: a failed transition cannot remove the only persisted membership.
         self.assertEqual(self.memberships("111"), [1])
         self.assertEqual(self.queues[1].entered_at, {"111": 100.0})
@@ -172,7 +176,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.failed_tier = 2
         # When
         with self.assertRaises(OperationFailure):
-            await match_commands.move_queue_tier(3, 2, 1000.0)
+            await state_module.move_queue_tier(3, 2, 1000.0)
         # Then
         self.assertEqual(self.memberships("111"), [3])
         self.assertEqual(self.queues[3].entered_at, {"111": 100.0})
@@ -182,10 +186,10 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.seed(3, "111")
         self.failed_tier = 3
         with self.assertRaises(OperationFailure):
-            await match_commands.move_queue_tier(3, 2, 1000.0)
+            await state_module.move_queue_tier(3, 2, 1000.0)
         self.assertTrue(self.memberships("111"))
         # When
-        await match_commands.move_queue_tier(3, 2, 2000.0)
+        await state_module.move_queue_tier(3, 2, 2000.0)
         # Then: the original promotion age and exactly one membership survive retry.
         self.assertEqual(self.memberships("111"), [2])
         self.assertEqual(self.queues[2].entered_at, {"111": 1000.0})
@@ -207,7 +211,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         inserted = AsyncMock()
         # When
         with patch.object(Match, "insert", new=inserted), self.assertRaises(ipy.errors.HTTPException):
-            await match_commands.match_with_best_queue(self.bot, self.players["111"], None, [(self.snapshot(3), 200)])
+            await matching_module.match_with_best_queue(self.bot, self.players["111"], None, [(self.snapshot(3), 200)])
         # Then: the unmatched opponent remains queued with its original age.
         inserted.assert_not_awaited()
         self.assertEqual(self.memberships("333"), [3])
@@ -229,11 +233,11 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.seed(3, "333")
         self.failed_tier = 3
         with self.assertRaises(OperationFailure):
-            await match_commands.match_with_best_queue(self.bot, self.players["111"], None, [(self.snapshot(3), 200)])
+            await matching_module.match_with_best_queue(self.bot, self.players["111"], None, [(self.snapshot(3), 200)])
         self.assertEqual(len(self.inserted), 1)
         self.assertEqual(self.memberships("333"), [3])
         # When: another player attempts to match against the interrupted queue entry.
-        matched = await match_commands.match_with_best_queue(
+        matched = await matching_module.match_with_best_queue(
             self.bot, self.players["444"], None, [(self.snapshot(3), 200)],
         )
         # Then: the existing match is retained and its opponent cannot be matched twice.
@@ -248,7 +252,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user.side_effect = lambda user_id: MagicMock(id=int(user_id), send=failed_send)
         # When
         with self.assertRaises(ipy.errors.HTTPException):
-            await match_commands.match_with_best_queue(self.bot, self.players["111"], None, [(self.snapshot(3), 200)])
+            await matching_module.match_with_best_queue(self.bot, self.players["111"], None, [(self.snapshot(3), 200)])
         # Then: the durable match owns both participants despite the notification error.
         self.assertEqual(len(self.inserted), 1)
         self.assertEqual(self.memberships("333"), [])
@@ -267,7 +271,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user.side_effect = fetch_user
         # When
         with self.assertRaises(ipy.errors.HTTPException):
-            await match_commands.match_players(self.bot, 3, 200)
+            await matching_module.match_players(self.bot, 3, 200)
         # Then: only the uncreated pair remains queued.
         self.assertEqual(len(self.inserted), 1)
         self.assertEqual(self.memberships("111"), [])

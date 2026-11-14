@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.extensions.match import confirm_match
+from elobot.features.matches.lifecycle import confirm_match
 from elobot.config.ids import STAFF_ROLE
 from elobot.features.finals.lifecycle import confirm_bracket
 from elobot.features.finals.matches import prepare_match

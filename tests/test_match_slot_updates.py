@@ -9,6 +9,7 @@ from pydantic import JsonValue
 
 from elobot.extensions.match import MatchCommands
 from elobot.db import BaseLink, Match, Participant
+from tests._patch_sites import patch_sites
 
 
 class TestMatchSlotUpdates(unittest.IsolatedAsyncioTestCase):
@@ -72,7 +73,7 @@ class TestMatchSlotUpdates(unittest.IsolatedAsyncioTestCase):
 
         # When: the second save finishes before the first save reaches Mongo.
         with (
-            patch("elobot.extensions.match.Match") as match_model,
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
             patch.object(Match, "set", new=persist),
         ):
             match_model.find_one = AsyncMock(side_effect=lambda *_args: self.match.model_copy(deep=True))

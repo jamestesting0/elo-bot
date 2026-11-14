@@ -29,6 +29,8 @@ from elobot.db import BaseStore, Clan, Match
 from elobot.db.match_models import ExpectedLiveStartState
 from elobot.db.token_models import FinalBettingMarket
 from tests.integration._final_fixture import FinalScenarioCase
+from tests._patch_sites import patch_sites
+import elobot.extensions.match as match_module
 
 
 class TestFinalHostingTiming(FinalScenarioCase):
@@ -60,7 +62,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         ctx.channel.fetch_pinned_messages = AsyncMock(return_value=[MagicMock(embeds=[ipy.Embed(title="Match")])])
         ctx.channel.send = AsyncMock(return_value=MagicMock(id=900, created_at=datetime.now(UTC),
             edit=AsyncMock(), embeds=[ipy.Embed(title="Live Match Request")]))
-        runtime = match_commands.MatchCommands(bot)
+        runtime = match_module.MatchCommands(bot)
         runtime.helper_api_base_url = "http://127.0.0.1:1"
         runtime.helper_api_key = "test-only"
         bot.get_ext.return_value = runtime
@@ -206,7 +208,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch("elobot.extensions.match.claim_resource_clan", new=AsyncMock(return_value=False)):
+        with patch_sites(('elobot.extensions.match.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
             first = await start_live_match(bot, ctx, start)
         self.assertIsInstance(first, LiveStartClanUnavailable)
         accepted_at = (await Match.get(source.id)).final_started_at
@@ -232,7 +234,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch("elobot.extensions.match.occupy_clan", new=AsyncMock(side_effect=RuntimeError("occupancy failed"))):
+        with patch('elobot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=RuntimeError("occupancy failed"))):
             with self.assertRaisesRegex(RuntimeError, "occupancy failed"):
                 await start_live_match(bot, ctx, start)
         saved = await Match.get(source.id)

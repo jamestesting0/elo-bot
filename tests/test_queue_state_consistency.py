@@ -8,7 +8,7 @@ from beanie.odm.fields import LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
-from elobot.extensions.match import add_player_to_queue, normalize_queue_timestamps, remove_player_from_queue
+from elobot.features.queue.state import add_player_to_queue, normalize_queue_timestamps, remove_player_from_queue
 from elobot.db import Player, Queue
 
 

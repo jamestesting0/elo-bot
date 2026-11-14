@@ -3,6 +3,7 @@ from collections import Counter
 from unittest.mock import patch
 
 from elobot.extensions import match as match_commands
+import elobot.features.matches.tips as tips_module
 
 
 class TestTipRotation(unittest.IsolatedAsyncioTestCase):
@@ -21,7 +22,7 @@ class TestTipRotation(unittest.IsolatedAsyncioTestCase):
             last_index = (last_index + 1) % count
             return last_index
 
-        with patch.object(match_commands, "read_json", side_effect=read_content), \
+        with patch('elobot.features.matches.tips.read_json', side_effect=read_content), \
                 patch.object(match_commands.ServerState, "advance_tip_index", side_effect=advance):
             messages = [await match_commands.choose_tip() for _ in range(10)]
 
@@ -31,8 +32,8 @@ class TestTipRotation(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(Counter(messages[5:]), Counter(expected))
 
     async def test_real_content_is_selected_by_the_shared_index(self):
-        tips = await match_commands.read_json("tips.json", "assets/")
-        facts = await match_commands.read_json("facts.json", "assets/")
+        tips = await tips_module.read_json("tips.json", "assets/")
+        facts = await tips_module.read_json("facts.json", "assets/")
         with patch.object(match_commands.ServerState, "advance_tip_index", side_effect=[0, len(tips) + len(facts) - 1]):
             tip = await match_commands.choose_tip()
             fact = await match_commands.choose_tip()

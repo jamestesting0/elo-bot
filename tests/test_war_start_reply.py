@@ -9,6 +9,7 @@ from pymongo.results import UpdateResult
 from elobot.features.base_store import storage as base_store_storage
 from elobot.features.hosting.war import war_start
 from elobot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
+from tests._patch_sites import patch_sites
 
 
 PLAYER_ID = "100"
@@ -76,10 +77,10 @@ class TestStoredWarStartReply(unittest.IsolatedAsyncioTestCase):
         clan = MagicMock(tag="#CLAN", share_link="https://clan")
         clan.name = "QA Clan"
         with (
-                patch.object(war_start.match_commands, "Match", new=match_model),
-                patch.object(war_start.match_commands, "Player", new=player_model),
-                patch.object(war_start.match_commands, "send_bases", new_callable=AsyncMock),
-                patch.object(war_start.match_commands, "remove_helper_task", new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=match_model),
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'), new=player_model),
+                patch_sites(('elobot.extensions.match.send_bases', 'elobot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch.object(
                     base_store_storage,
                     "clear_participant_base_store",

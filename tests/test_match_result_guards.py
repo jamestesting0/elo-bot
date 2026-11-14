@@ -6,6 +6,7 @@ import interactions as ipy
 from elobot.extensions.match import MatchCommands
 from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
 from elobot.db import Match
+from tests._patch_sites import patch_sites
 
 
 VALID_RESULT = "0.0\n3.100\n2.20"
@@ -64,7 +65,7 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
         process_results.assert_awaited_once_with(ctx, response, data_generation=data_generation)
 
     @patch("elobot.extensions.match.record_match", new_callable=AsyncMock)
-    @patch("elobot.extensions.match.Player")
+    @patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
     async def test_match_submit_rejects_invalid_result_for_either_player(
             self, mock_player, mock_record_match):
         for field in ("player1_result", "player2_result"):
@@ -103,8 +104,8 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
                     mock_record_match.assert_not_awaited()
                     self.assertIn("invalid", ctx.send.await_args.args[0].lower())
 
-    @patch("elobot.extensions.match.Player")
-    @patch("elobot.extensions.match.Match")
+    @patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
+    @patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_resubmit_modal_rejects_invalid_result_before_history_lookup(
             self, mock_match, mock_player):
         for field in ("player1", "player2"):
@@ -133,7 +134,7 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
                     mock_player.find_one.assert_not_awaited()
                     self.assertIn("invalid", ctx.send.await_args.args[0].lower())
 
-    @patch("elobot.extensions.match.Match")
+    @patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_result_store_modal_rejects_out_of_range_entry(self, mock_match):
         for invalid_entry in ("4.50", "3.101", "-1.50", "3.-1"):
             with self.subTest(invalid_entry=invalid_entry):

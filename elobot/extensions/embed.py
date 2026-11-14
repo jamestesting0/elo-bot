@@ -6,7 +6,6 @@ from typing import Literal
 
 from pymongo.errors import PyMongoError
 
-import elobot.extensions.match as match_commands
 import interactions as ipy
 from elobot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.config.presentation import BANNER_IMAGE, COLOR, FOOTER_IMAGE, REWARDS_IMAGE
@@ -17,6 +16,7 @@ from elobot.db import Clan, Match, Player, ServerState
 from elobot.features.base_store.slots import collect_base_store_slot_owners, format_clan_availability_status
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
+from elobot.features.matches import resources
 
 
 class EmbedCommands(ipy.Extension):
@@ -400,27 +400,27 @@ class EmbedCommands(ipy.Extension):
         if clan.availability_str == "Available":
             await ctx.send(
                 f"{ERROR_EMOJI} The clan is already available.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return
 
-        reservation = await match_commands.try_reserve_resource_clan(clan_tag)
+        reservation = await resources.try_reserve_resource_clan(clan_tag)
         if not reservation:
             await ctx.send(
                 f"{ERROR_EMOJI} The clan availability is currently changing.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return
-        released = await match_commands.free_clan(
+        released = await resources.free_clan(
             clan_tag,
             expected_availability=clan.availability_str,
         )
         if not released:
             await ctx.send(
                 f"{ERROR_EMOJI} The clan availability changed before it could be freed.\n\n"
-                f"{await match_commands.available_resource_clans_text()}",
+                f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
             return

@@ -15,6 +15,7 @@ from elobot.features.hosting.war import helper_base_store_availability
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests import _match_publication_fixture as recovery_tests
 from tests._stored_start_fixture import terminal_job
+import elobot.extensions.match as match_module
 
 
 REAL_CLEAR = storage.clear_participant_base_store
@@ -28,7 +29,7 @@ class TestEphemeralBaseStoreUndo(unittest.IsolatedAsyncioTestCase):
         self.bot = self.case.bot
         self.bot._user = ipy.User(client=self.bot, id=999, username="Bot", avatar=None)
         self.bot.fetch_channel = AsyncMock(return_value=self.fixture.ctx.channel)
-        self.cog = match_commands.MatchCommands(self.bot)
+        self.cog = match_module.MatchCommands(self.bot)
         self.case.match.final_districts = ["Barbarian Camp", "Wizard Valley", "Capital Peak"]
         self.bot.http.post_initial_response = AsyncMock(side_effect=self.initial_response)
         self.bot.http.edit_interaction_message = AsyncMock(side_effect=self.edit_interaction)

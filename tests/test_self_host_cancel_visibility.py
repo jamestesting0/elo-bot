@@ -10,6 +10,7 @@ import interactions as ipy
 import elobot.features.hosting.war.helper_host as helper_host
 import elobot.features.hosting.war.helper_host_job as helper_host_job
 from elobot.integrations.helper_api import HelperJob, HelperJobCreated, HelperJobEvent
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -99,11 +100,7 @@ class TestSelfHostCancelVisibility(unittest.IsolatedAsyncioTestCase):
         with patch.object(helper_host, "confirm_helper_availability", new=AsyncMock(return_value=True)), \
                 patch.object(helper_host, "get_available_helper_slot", new=AsyncMock(return_value=1)), \
                 patch.object(helper_host, "Player") as player_model, \
-                patch.object(
-                    helper_host.match_commands,
-                    "choose_bases",
-                    new=AsyncMock(return_value=self.match),
-                ), \
+                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=self.match)), \
                 patch.object(
                     helper_host_job.HelperJobCreator,
                     "create",

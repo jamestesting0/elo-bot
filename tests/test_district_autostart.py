@@ -15,6 +15,7 @@ from elobot.integrations.helper_api import (
     HelperJobCreateRequest,
 )
 from elobot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
+from tests._patch_sites import patch_sites
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]
@@ -62,8 +63,8 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=True, started=False)
         with (
-                patch("elobot.extensions.match.Match") as match_model,
-                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 patch("elobot.extensions.match.helper_host.host_war_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
@@ -84,8 +85,8 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=True)
         with (
-                patch("elobot.extensions.match.Match") as match_model,
-                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 patch("elobot.extensions.match.helper_host.host_war_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
@@ -107,11 +108,11 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         clan = self.bot.coc_client.get_clan.return_value
         side = MagicMock()
         with (
-                patch("elobot.extensions.match.Match") as match_model,
-                patch("elobot.extensions.match.is_match_finished", return_value=False),
-                patch("elobot.extensions.match.try_reserve_resource_match_side",
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elobot.extensions.match.try_reserve_resource_match_side', 'elobot.features.matches.resources.try_reserve_resource_match_side'),
                       new=AsyncMock(return_value=side)),
-                patch("elobot.extensions.match.try_reserve_resource_clan",
+                patch_sites(('elobot.extensions.match.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                       new_callable=AsyncMock) as reserve_clan,
                 patch("elobot.extensions.match.confirm_pending_opponent_bases",
                       new_callable=AsyncMock) as confirm_bases,
@@ -141,8 +142,8 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=False, started=False)
         with (
-                patch("elobot.extensions.match.Match") as match_model,
-                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 patch("elobot.extensions.match.helper_live.host_live_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
@@ -162,8 +163,8 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=False)
         with (
-                patch("elobot.extensions.match.Match") as match_model,
-                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 patch("elobot.extensions.match.helper_live.host_live_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
@@ -195,8 +196,8 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
                 ctx = self.context()
                 match = self.match(is_war=is_war)
                 with (
-                        patch("elobot.extensions.match.Match") as match_model,
-                        patch("elobot.extensions.match.is_match_finished", return_value=False),
+                        patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                        patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 ):
                     match_model.find_one = AsyncMock(return_value=match)
                     if is_war:
@@ -224,12 +225,12 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         side0 = MagicMock()
         side1 = MagicMock()
         with (
-                patch("elobot.extensions.match.Match") as match_model,
-                patch("elobot.extensions.match.Player") as player_model,
-                patch("elobot.extensions.match.is_match_finished", return_value=False),
-                patch("elobot.extensions.match.try_reserve_resource_match_side",
+                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
+                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elobot.extensions.match.try_reserve_resource_match_side', 'elobot.features.matches.resources.try_reserve_resource_match_side'),
                       new=AsyncMock(side_effect=[side0, side1])),
-                patch("elobot.extensions.match.try_reserve_resource_clan",
+                patch_sites(('elobot.extensions.match.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                       new_callable=AsyncMock) as reserve_clan,
                 patch("elobot.extensions.match.live_start.start_live_match",
                       new_callable=AsyncMock) as start_live,

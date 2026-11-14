@@ -9,6 +9,8 @@ from interactions.models.discord.message import process_message_payload
 import elobot.extensions.match as match_commands
 from elobot.features.hosting.live import live_start
 from elobot.db import Participant
+from tests._patch_sites import patch_sites
+import elobot.extensions.match as match_module
 
 
 class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
@@ -18,7 +20,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel = AsyncMock()
         self.bot.coc_client = MagicMock()
         self.bot.coc_client.get_clan = AsyncMock()
-        self.cog = match_commands.MatchCommands(self.bot)
+        self.cog = match_module.MatchCommands(self.bot)
 
     @staticmethod
     def make_match(*, is_war: bool, times: list[int | None], hosts: list[str | None],
@@ -78,8 +80,8 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.bot.coc_client.get_clan.return_value = clan
 
         with (
-            patch.object(match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=match))),
-            patch.object(match_commands, "choose_tip", new=AsyncMock(return_value="tip")),
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=match))),
+            patch_sites(('elobot.extensions.match.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")),
             patch.object(match_commands, "schedule_channel_name_edit"),
             patch.object(match_commands, "publish_match_message", new=AsyncMock()) as published,
         ):
@@ -125,9 +127,9 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.bot.coc_client.get_clan.return_value = self.clan("#NEW")
 
         with (
-            patch.object(match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=match))),
-            patch.object(match_commands, "try_reserve_resource_clan", new=AsyncMock(return_value=MagicMock())),
-            patch.object(match_commands, "claim_resource_clan", new=AsyncMock(return_value=True)),
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=match))),
+            patch_sites(('elobot.extensions.match.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock(return_value=MagicMock())),
+            patch_sites(('elobot.extensions.match.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=True)),
             patch.object(match_commands, "publish_match_message", new=AsyncMock()) as published,
         ):
             await self.cog.match_set_clan.callback.func(self.cog, ctx, clan="#NEW")
@@ -157,7 +159,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         published = AsyncMock()
 
         with (
-            patch.object(match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=match))),
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=match))),
             patch.object(match_commands, "append_helper_task", new=AsyncMock()),
             patch.object(match_commands, "publish_match_message", published),
         ):
@@ -199,7 +201,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel.return_value = channel
 
         with (
-            patch.object(match_commands, "Match", new=MagicMock(find_one=AsyncMock(return_value=match))),
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=match))),
             patch.object(match_commands, "append_helper_task", new=AsyncMock()),
             patch.object(match_commands, "publish_match_message", new=AsyncMock()) as published,
             patch.object(match_commands, "schedule_channel_name_edit"),
@@ -237,12 +239,12 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         )
         request = fixture.live_request()
         with (
-            patch.object(live_start.match_commands, "Match", new=MagicMock(
+            patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(
                 find_one=AsyncMock(return_value=fixture.match),
             )),
             patch.object(live_start, "mark_store_reserved", new=AsyncMock(return_value=True)),
-            patch.object(live_start.match_commands, "send_bases", new=AsyncMock()),
-            patch.object(live_start.match_commands, "remove_helper_task", new=AsyncMock()),
+            patch_sites(('elobot.extensions.match.send_bases', 'elobot.features.matches.attack_bases.send_bases'), new=AsyncMock()),
+            patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new=AsyncMock()),
             patch.object(live_start, "schedule_channel_name_edit"),
         ):
             await live_start.complete_live_start(fixture.bot, fixture.ctx, request)

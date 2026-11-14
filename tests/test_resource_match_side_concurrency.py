@@ -5,14 +5,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import elobot.extensions.match as match_commands
 from elobot.extensions.match import MatchCommands
+from tests._patch_sites import patch_sites
+import elobot.features.matches.resources as resources_module
 
 
 class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.enterContext(patch.dict(match_commands.RESOURCE_CLAN_LOCKS, clear=True))
-        self.enterContext(patch.dict(match_commands.RESOURCE_MATCH_SIDE_LOCKS, clear=True))
+        self.enterContext(patch.dict(resources_module.RESOURCE_CLAN_LOCKS, clear=True))
+        self.enterContext(patch.dict(resources_module.RESOURCE_MATCH_SIDE_LOCKS, clear=True))
         for reservations in (
-            match_commands._RESOURCE_CLAN_RESERVATIONS, match_commands._RESOURCE_MATCH_SIDE_RESERVATIONS,
+            resources_module._RESOURCE_CLAN_RESERVATIONS, resources_module._RESOURCE_MATCH_SIDE_RESERVATIONS,
         ):
             token = reservations.set({})
             self.addCleanup(reservations.reset, token)
@@ -60,7 +62,7 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
                 patch.object(match_commands.Clan, "find_one", new=AsyncMock(side_effect=find_clan)), \
-                patch.object(match_commands, "occupy_clan", new_callable=AsyncMock) as occupy:
+                patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
             # When both ready requests are released to claim simultaneously.
             reservations = [
                 await match_commands.try_reserve_resource_clan("#A"),
@@ -79,8 +81,8 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(results.count(True), 1)
         self.assertEqual(results.count(False), 1)
         self.assertEqual(occupy.await_count, 1)
-        self.assertFalse(match_commands.RESOURCE_CLAN_LOCKS["#A"].locked())
-        self.assertFalse(match_commands.RESOURCE_CLAN_LOCKS["#B"].locked())
+        self.assertFalse(resources_module.RESOURCE_CLAN_LOCKS["#A"].locked())
+        self.assertFalse(resources_module.RESOURCE_CLAN_LOCKS["#B"].locked())
 
     async def test_different_sides_of_same_match_remain_independently_claimable(self) -> None:
         # Given two available clans requested for different sides of the same canonical match.
@@ -113,7 +115,7 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
                 patch.object(match_commands.Clan, "find_one", new=AsyncMock(side_effect=find_clan)), \
-                patch.object(match_commands, "occupy_clan", new_callable=AsyncMock) as occupy:
+                patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
             # When each side claims its own clan.
             reservations = [
                 await match_commands.try_reserve_resource_clan("#A"),
@@ -129,8 +131,8 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(results, [True, True])
         self.assertEqual(canonical_match.host_clans, ["#A", "#B"])
         self.assertEqual(occupy.await_count, 2)
-        self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[("SAME", 0)].locked())
-        self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[("SAME", 1)].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[("SAME", 0)].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[("SAME", 1)].locked())
 
     async def test_different_matches_and_clans_remain_independently_claimable(self) -> None:
         # Given available clans requested by different matches.
@@ -170,7 +172,7 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_commands.Match, "find_one", new=AsyncMock(side_effect=find_match)), \
                 patch.object(match_commands.Clan, "find_one", new=AsyncMock(side_effect=find_clan)), \
-                patch.object(match_commands, "occupy_clan", new_callable=AsyncMock) as occupy:
+                patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
             # When both matches claim their unrelated clans.
             reservations = [
                 await match_commands.try_reserve_resource_clan("#A"),
@@ -217,8 +219,8 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
         )
 
         try:
-            with patch.object(match_commands, "Match") as match_model, \
-                    patch.object(match_commands, "Clan") as clan_model, \
+            with patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elobot.extensions.match.Clan', 'elobot.features.matches.resources.Clan')) as clan_model, \
                     patch.object(match_commands, "is_raid_weekend", return_value=False), \
                     patch.object(match_commands.helper_host, "host_war_automatically", new_callable=AsyncMock) as host:
                 match_model.find_one = AsyncMock(return_value=match)

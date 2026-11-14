@@ -5,13 +5,16 @@ COLOR = 0x5951FE
 RED_COLOR = 0xBE0000
 GREEN_COLOR = 0x9EDE73
 
-# Images
-FOOTER_IMAGE = "https://cdn.discordapp.com/attachments/1213353024442073178/1442599647905316865/a735fcd211f5dbf9ecdab5222db0f9a0.webp?ex=6926051e&is=6924b39e&hm=6fec17f97508157e46c6448efe57e100de38d2753c91ec0553f41659563105d2&"
-UNAVAILABLE_IMAGE = "https://cdn.discordapp.com/attachments/881073424884199435/1223206051264987188/unavailable-image.jpg?ex=66190268&is=66068d68&hm=9c4190435c2fbb230cd3249c42c26951fc9b1a34a7e3fcd85e534e2775419b93&"
-GOLDPASS_IMAGE = "https://cdn.discordapp.com/attachments/1248641611676778528/1285951321928634369/7dd2d1941fdca5d48dc88c4e49c45746.png?ex=66fb4c3e&is=66f9fabe&hm=5fc8240a1a17dfe3c5ae7b38c82931395fbcab7b178f9ebfbbadddbd602aafde&"
-REWARDS_IMAGE = "https://cdn.discordapp.com/attachments/1156184370508476497/1298351529069252730/Clash-of-Clans-best-clan-capital-base-layouts-june-2023.webp?ex=67193f96&is=6717ee16&hm=9b6ea9b4c1475c93c3d6e20138b43944b1b638cfe5181dd4849edf781682d393&"
-BANNER_IMAGE = "https://cdn.discordapp.com/attachments/1213353024442073178/1559238872343519382/ChatGPT_Image_Oct_12_2026_05_50_18_PM_copy.png?ex=6ace59dc&is=6acd085c&hm=7117a3a1767ff243cd31bca22411a7324c359f294ffffdc8bcb636ca72f0953c&"
-LINE_SEPERATOR_GIF = "https://steemitimages.com/DQmWzwFNgstEC4fJZwFHaAtnn2SnyuQpXmxP5LddJdBjGt5/21.gif"
+# Images, served from assets/ on the main branch
+ASSETS_URL = "https://raw.githubusercontent.com/jamestesting0/elo-bot/main/assets"
+FOOTER_IMAGE = f"{ASSETS_URL}/footer.png"
+UNAVAILABLE_IMAGE = f"{ASSETS_URL}/unavailable.png"
+GOLDPASS_IMAGE = f"{ASSETS_URL}/goldpass.png"
+REWARDS_IMAGE = f"{ASSETS_URL}/rewards.png"
+BANNER_IMAGE = f"{ASSETS_URL}/banner.png"
+LINE_SEPERATOR_GIF = f"{ASSETS_URL}/line_separator.gif"
+# Stored on match bases and base layouts saved before the images moved to assets/.
+LEGACY_UNAVAILABLE_IMAGE = "https://cdn.discordapp.com/attachments/881073424884199435/1223206051264987188/unavailable-image.jpg?ex=66190268&is=66068d68&hm=9c4190435c2fbb230cd3249c42c26951fc9b1a34a7e3fcd85e534e2775419b93&"
 
 # Text and links
 FOOTER_TEXT = "Clan capital Elo system"

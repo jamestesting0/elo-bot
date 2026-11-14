@@ -6,7 +6,7 @@ from beanie.odm.operators.find.comparison import NotIn
 
 from elo_bot.config.emojis import IMPORTANT_EMOJI
 from elo_bot.config.game import DISTRICT_CODES_REVERSED
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, UNAVAILABLE_IMAGE
+from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, LEGACY_UNAVAILABLE_IMAGE, UNAVAILABLE_IMAGE
 from elo_bot.db import BaseLayout, BaseLink, Match, Player
 from elo_bot.core.finals import is_final_match
 from elo_bot.features.matches.base_selection import district_base_quality, ensure_secondary_base_index, get_base_quality
@@ -23,7 +23,7 @@ def is_missing_scout_view(match: Match, player_id: str | int):
         if not base:
             continue
 
-        if not base.image or base.image == UNAVAILABLE_IMAGE:
+        if not base.image or base.image in (UNAVAILABLE_IMAGE, LEGACY_UNAVAILABLE_IMAGE):
             # Get district name and return the missing base link
             district = match.final_districts[i] if i < len(match.final_districts) else None
             if not district and base.link:

@@ -49,5 +49,4 @@ htmlcov/
 # Local documentation and deployment notes
 /docs/
 /oracle_scripts.md
-/oracle-cloud-init.sh
 /download_bases.py

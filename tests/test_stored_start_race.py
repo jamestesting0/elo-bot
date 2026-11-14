@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import anyio
 
-import elobot.extensions.match as match_commands
 import elobot.extensions.self_service as self_commands
 from elobot.features.base_store.models import SelfBaseStoreRequest
 from elobot.features.base_store.publication import BaseStoreMessageConflict
@@ -14,6 +13,9 @@ from elobot.features.hosting.war import result_store_task
 from tests._stored_start_fixture import StoredStartFixture, terminal_job
 from tests._patch_sites import patch_sites
 import elobot.features.matches.resources as resources_module
+import elobot.extensions.match.adapters as match_adapters_module
+import elobot.extensions.match.base_store as match_base_store_module
+import elobot.extensions.match.queue as match_queue_module
 
 
 class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
@@ -28,24 +30,22 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
         self.self_cog = self_commands.SelfCommands(self.bot)
         self.ctx = self.fixture.make_slash_context()
         self.ctx.author.id = self.match.participants[0].user_id
-        self.enterContext(patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=self.match)))
+        self.enterContext(patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=self.match)))
         self.enterContext(patch.object(self_commands, "Match", new=MagicMock(
             find_one=AsyncMock(return_value=self.match),
         )))
-        self.enterContext(patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False))
+        self.enterContext(patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False))
         self.enterContext(patch.object(self_commands, "is_match_finished", return_value=False))
         self.enterContext(patch.object(self_commands, "is_raid_weekend", return_value=False))
         self.self_confirm = self.enterContext(patch.object(
             self_commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True),
         ))
-        self.stored_confirm = self.enterContext(patch.object(
-            match_commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True),
-        ))
-        self.enterContext(patch.object(match_commands, "is_clan_available", new=AsyncMock(return_value=True)))
-        self.enterContext(patch.object(match_commands, "sync_base_store_slots", new=AsyncMock(
+        self.stored_confirm = self.enterContext(patch_sites(('elobot.extensions.match.base_store.confirm_pending_opponent_bases', 'elobot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)))
+        self.enterContext(patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)))
+        self.enterContext(patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'), new=AsyncMock(
             side_effect=self.fixture.slot_map,
         )))
-        self.enterContext(patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=self.match)))
+        self.enterContext(patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=self.match)))
         clan = MagicMock(tag=next(iter(self.fixture.clans)), availability_str="Available")
         self.enterContext(patch.object(self_commands, "Clan", new=MagicMock(
             find_all=MagicMock(return_value=MagicMock(to_list=AsyncMock(return_value=[clan]))),
@@ -54,7 +54,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch("elobot.features.hosting.self_hosted.hosting.Player", new=MagicMock(
             find_one=AsyncMock(return_value=MagicMock(tag="#PLAYER")),
         )))
-        self.enterContext(patch.object(match_commands.Player, "find_one", new=AsyncMock(
+        self.enterContext(patch.object(match_queue_module.Player, "find_one", new=AsyncMock(
             return_value=MagicMock(tag="#PLAYER"),
         )))
         self.native_host = self.enterContext(patch.object(self_commands, "host_war_automatically", new=AsyncMock()))
@@ -146,7 +146,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
 
     async def test_store_rejects_a_side_already_reserved_for_start(self) -> None:
         # Given a start already owning this match side.
-        lease = await match_commands.try_reserve_resource_match_side(str(self.match.token), 0)
+        lease = await match_base_store_module.try_reserve_resource_match_side(str(self.match.token), 0)
         with patch.object(helper_base_store, "store_bases_interactively", new=AsyncMock(
             return_value=terminal_job("store_bases", "failed"),
         )) as helper_store:

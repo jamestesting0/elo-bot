@@ -162,7 +162,7 @@ class TestSelfHostPolling(unittest.IsolatedAsyncioTestCase):
                 patch("elobot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
                 patch("elobot.features.hosting.war.helper_host.Player") as mock_player, \
                 patch("elobot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
-                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
+                patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
                 patch(
                     "elobot.features.hosting.war.war_start.start_war",
                     new=self.start_war,

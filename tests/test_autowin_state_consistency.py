@@ -3,11 +3,13 @@ from unittest.mock import AsyncMock, patch
 
 from pymongo.errors import OperationFailure
 
-from elobot.extensions import match as match_commands
 from elobot.db import BaseStore, Helper, Match, Player
 
 
 from tests._autowin_fixture import AutowinStateMixin
+from tests._patch_sites import patch_sites
+import elobot.extensions.match.base_store as match_base_store_module
+import elobot.extensions.match.results as match_results_module
 
 class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_second_player_failure_retries_without_awarding_the_winner_twice(self) -> None:
@@ -57,7 +59,7 @@ class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTes
         from elobot.features.results.operations import begin_result_operation
 
         # Given: a result operation claims Mongo after the autowin snapshot was read.
-        original_claim = match_commands.claim_autowin
+        original_claim = match_results_module.claim_autowin
 
         async def competing_result(match, *args):
             await begin_result_operation(match.model_copy(deep=True), {
@@ -66,7 +68,7 @@ class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTes
             return await original_claim(match, *args)
 
         # When
-        with patch.object(match_commands, "claim_autowin", new=competing_result):
+        with patch('elobot.extensions.match.results.claim_autowin', new=competing_result):
             await self.invoke(self.context())
         # Then: the queued result decision exclusively owns the terminal operation.
         self.assertEqual(self.elos(), [1000, 1000])
@@ -134,8 +136,8 @@ class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTes
         self.rows[Match][0]["participants"][0].update(base_store=store.model_dump(), opponent_bases_stored=True)
         ctx = self.context()
         # When
-        with patch.object(match_commands, "clear_match_base_stores", new=AsyncMock()) as clear_stores, \
-                patch.object(match_commands.base_store_publication, "mark_store_reserved", new=AsyncMock(return_value=True)):
+        with patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=AsyncMock()) as clear_stores, \
+                patch.object(match_base_store_module.base_store_publication, "mark_store_reserved", new=AsyncMock(return_value=True)):
             await self.invoke(ctx)
         # Then: ratings complete while the slot stays reserved and the public response explains why.
         clear_stores.assert_not_awaited()
@@ -153,7 +155,7 @@ class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTes
         self.rows[Match][0]["participants"][0]["opponent_bases_stored"] = True
         ctx = self.context()
         # When
-        with patch.object(match_commands, "clear_match_base_stores", new=AsyncMock()) as clear_stores:
+        with patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=AsyncMock()) as clear_stores:
             await self.invoke(ctx)
         # Then
         clear_stores.assert_not_awaited()

@@ -3,9 +3,12 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import elobot.extensions.match as match_commands
 from tests._patch_sites import patch_sites
 import elobot.features.matches.resources as resources_module
+import elobot.extensions.match.adapters as match_adapters_module
+import elobot.extensions.match.base_store as match_base_store_module
+import elobot.extensions.match.dashboards as match_dashboards_module
+import elobot.extensions.match.hosting as match_hosting_module
 
 
 class OccupancyFailure(RuntimeError):
@@ -49,24 +52,24 @@ class TestResourceClanClaimRollback(unittest.IsolatedAsyncioTestCase):
             raise OccupancyFailure("occupancy failed")
 
         async def run_claim():
-            reservation = await match_commands.try_reserve_resource_clan("#NEW")
-            return await match_commands.claim_resource_clan(
+            reservation = await match_base_store_module.try_reserve_resource_clan("#NEW")
+            return await match_hosting_module.claim_resource_clan(
                 reservation,
                 stale_match,
                 0,
                 updates={"hosts.0": "new-host"},
             )
 
-        with patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
-                patch.object(match_commands.Clan, "find_one", new=AsyncMock(return_value=clan)), \
+        with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
+                patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(return_value=clan)), \
                 patch('elobot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=occupy_then_fail)), \
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             # When the durable match claim is visible while occupancy remains unfinished.
             claim_task = asyncio.create_task(run_claim())
             await asyncio.wait_for(occupancy_started.wait(), timeout=5)
             self.assertEqual(canonical_match.host_clans[0], "#NEW")
             self.assertEqual(canonical_match.persistent_host_clans[0], "#NEW")
-            self.assertIsNone(await match_commands.try_reserve_resource_clan("#NEW"))
+            self.assertIsNone(await match_base_store_module.try_reserve_resource_clan("#NEW"))
             fail_occupancy.set()
             with self.assertRaisesRegex(OccupancyFailure, "occupancy failed"):
                 await asyncio.wait_for(claim_task, timeout=5)

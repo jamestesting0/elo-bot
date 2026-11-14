@@ -205,7 +205,7 @@ class TestResultFinalization(ResultFinalizationFixture):
         record_result(self.match)
         self.match.recorded_match_id = "1"
         self.clear_stores.side_effect = RuntimeError("release failed")
-        with patch_sites(('elobot.extensions.match.completed_result_changes', 'elobot.features.results.recording.completed_result_changes'), new=AsyncMock(return_value=("+5", "-5"))):
+        with patch_sites(('elobot.extensions.match.results.completed_result_changes', 'elobot.features.results.recording.completed_result_changes'), new=AsyncMock(return_value=("+5", "-5"))):
             with self.assertRaisesRegex(RuntimeError, "release failed"):
                 await self.cog._finalize_match_results("TOKEN")
             self.thread.send.assert_not_awaited()

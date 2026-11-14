@@ -8,7 +8,6 @@ from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
-from elobot.extensions import match as match_commands
 from elobot.db import Helper, Match, Participant, Player
 from tests._result_retry_store import read_field, write_field
 from pymongo.results import DeleteResult
@@ -109,11 +108,11 @@ class AutowinStateMixin:
         self.enterContext(patch.object(Player, "set", new=legacy_set))
         self.enterContext(patch.object(Match, "set", new=legacy_set))
         self.enterContext(patch.object(Helper, "find_one", return_value=MagicMock(upsert=AsyncMock(side_effect=legacy_credit))))
-        self.free_clans = self.enterContext(patch.object(match_commands, "free_match_clans", new=AsyncMock()))
-        self.cleanup = self.enterContext(patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new=AsyncMock()))
-        self.autoqueue = self.enterContext(patch.object(match_commands, "autoqueue_completed_match_participants", new=AsyncMock()))
-        self.schedule = self.enterContext(patch.object(match_commands, "schedule_channel_name_edit", new=MagicMock()))
-        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
+        self.free_clans = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new=AsyncMock()))
+        self.cleanup = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new=AsyncMock()))
+        self.autoqueue = self.enterContext(patch('elobot.extensions.match.results.autoqueue_completed_match_participants', new=AsyncMock()))
+        self.schedule = self.enterContext(patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit'), new=MagicMock()))
+        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
 
     @staticmethod
     def value(row, path):

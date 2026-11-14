@@ -8,7 +8,6 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 import elobot.features.base_store.self_service as self_service
-import elobot.extensions.match as match_commands
 import elobot.features.hosting.war.helper_base_store as helper_base_store
 import elobot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
 from elobot.features.hosting.war import war_start
@@ -26,6 +25,8 @@ from tests._stored_start_fixture import (
 )
 from tests._patch_sites import patch_sites
 import elobot.features.matches.resources as resources_module
+import elobot.extensions.match.adapters as match_adapters_module
+import elobot.extensions.match.queue as match_queue_module
 
 
 class DiscordFollowupFailure(Exception):
@@ -92,9 +93,9 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
         public_message.edit.side_effect = lambda **_kwargs: trace.append("success_message")
         ctx.send.side_effect = lambda *_args, **_kwargs: trace.append("success_response")
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                patch.object(match_commands, "sync_base_store_slots", new=AsyncMock(side_effect=self.slot_map)),
-                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(side_effect=choose)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'), new=AsyncMock(side_effect=self.slot_map)),
+                patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(side_effect=choose)),
                 patch.object(
                     helper_base_store,
                     "store_bases_interactively",
@@ -147,7 +148,7 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
         availability = AsyncMock(return_value=True)
         present = AsyncMock(return_value=True)
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
                 patch.object(helper_base_store_availability, "confirm_store_bases_availability", new=availability),
                 patch.object(self_service, "present_retained_base_store", new=present),
                 patch.object(helper_base_store, "store_bases_interactively", new_callable=AsyncMock) as store,
@@ -170,7 +171,7 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
             return False
 
         with patch.object(self_service, "present_retained_base_store", new=AsyncMock(side_effect=fail_recovery)), \
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)):
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)):
             await self.cog.store_self_bases(ctx, match, 0)
 
         ctx.send.assert_awaited_once_with(str(ERROR_EMOJI), ephemeral=True)
@@ -186,12 +187,12 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
             return terminal_job("store_bases", "succeeded")
 
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                patch.object(match_commands, "sync_base_store_slots", new=AsyncMock(side_effect=self.slot_map)),
-                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'), new=AsyncMock(side_effect=self.slot_map)),
+                patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)),
                 patch.object(helper_base_store, "store_bases_interactively",
                              new=AsyncMock(side_effect=complete_with_lost_reservation)),
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock) as clear,
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear,
         ):
             # When: the command attempts to publish the Helper success.
             await self.cog.store_self_bases(ctx, match, 0)
@@ -220,7 +221,7 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
                     new=availability,
                 ),
                 patch.object(self_service, "prepare_base_store", new=preparation),
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
         ):
             # When
             await self.cog.store_self_bases(ctx, match, 0)
@@ -244,17 +245,15 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
                 match = self.make_match()
                 ctx = self.make_slash_context()
                 with (
-                        patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                        patch.object(match_commands, "sync_base_store_slots",
-                                     new=AsyncMock(side_effect=self.slot_map)),
-                        patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)),
+                        patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                        patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'), new=AsyncMock(side_effect=self.slot_map)),
+                        patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)),
                         patch.object(
                             helper_base_store,
                             "store_bases_interactively",
                             new=AsyncMock(return_value=outcome),
                         ),
-                        patch.object(match_commands, "clear_participant_base_store",
-                                     new_callable=AsyncMock) as clear_store,
+                        patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear_store,
                 ):
                     # When
                     await self.cog.store_self_bases(ctx, match, 0)
@@ -277,11 +276,11 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
             return terminal_job("host_war_match_on_stored", "succeeded")
 
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                patch.object(match_commands.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
-                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
-                patch.object(match_commands, "is_clan_available", new=AsyncMock(return_value=True)),
-                patch.object(match_commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch.object(match_queue_module.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
+                patch_sites(('elobot.extensions.match.base_store.confirm_pending_opponent_bases', 'elobot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)),
                 patch.object(helper_base_store, "host_war_match_on_stored_interactively",
                              new=AsyncMock(side_effect=run_helper)) as helper_start,
                 patch.object(war_start, "start_war", new=AsyncMock(return_value=MagicMock())) as local_start,
@@ -349,18 +348,16 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
                 match = self.make_match(stored=True)
                 ctx = self.make_component_context("start")
                 with (
-                        patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                        patch.object(match_commands.Player, "find_one",
+                        patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                        patch.object(match_queue_module.Player, "find_one",
                                      new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
-                        patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
-                        patch.object(match_commands, "is_clan_available", new=AsyncMock(return_value=True)),
-                        patch.object(match_commands, "confirm_pending_opponent_bases",
-                                     new=AsyncMock(return_value=True)),
+                        patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                        patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
+                        patch_sites(('elobot.extensions.match.base_store.confirm_pending_opponent_bases', 'elobot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)),
                         patch.object(helper_base_store, "host_war_match_on_stored_interactively",
                                      new=AsyncMock(return_value=outcome)),
                         patch.object(war_start, "start_war", new_callable=AsyncMock) as local_start,
-                        patch.object(match_commands, "clear_participant_base_store",
-                                     new_callable=AsyncMock) as clear_store,
+                        patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear_store,
                 ):
                     # When
                     await self.cog.helper_stored_start_button.callback.func(self.cog, ctx)
@@ -389,17 +386,16 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
         if edit_failure:
             ctx.message.edit.side_effect = ipy.errors.HTTPException(MagicMock(status=503))
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                patch.object(match_commands.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
-                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
-                patch.object(match_commands, "is_clan_available", new=AsyncMock(return_value=True)),
-                patch.object(match_commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch.object(match_queue_module.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
+                patch_sites(('elobot.extensions.match.base_store.confirm_pending_opponent_bases', 'elobot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)),
                 patch.object(helper_base_store, "host_war_match_on_stored_interactively", new=AsyncMock(
                     return_value=terminal_job("host_war_match_on_stored", "succeeded"),
                 )),
                 patch.object(war_start, "start_war", new=AsyncMock(return_value=None, side_effect=failure)),
-                patch.object(match_commands, "clear_participant_base_store",
-                             new_callable=AsyncMock) as clear_store,
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear_store,
         ):
             # When
             await self.cog.helper_stored_start_button.callback.func(self.cog, ctx)
@@ -442,17 +438,16 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
             raise DiscordFollowupFailure("discord follow-up failed")
 
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                patch.object(match_commands.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
-                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
-                patch.object(match_commands, "is_clan_available", new=AsyncMock(return_value=True)),
-                patch.object(match_commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch.object(match_queue_module.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
+                patch_sites(('elobot.extensions.match.base_store.confirm_pending_opponent_bases', 'elobot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)),
                 patch.object(helper_base_store, "host_war_match_on_stored_interactively", new=AsyncMock(
                     return_value=terminal_job("host_war_match_on_stored", "succeeded"),
                 )),
                 patch.object(war_start, "start_war", new=AsyncMock(side_effect=committed_failure)),
-                patch.object(match_commands, "clear_participant_base_store",
-                             new_callable=AsyncMock) as clear_store,
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear_store,
         ):
             # When / Then
             with self.assertRaisesRegex(DiscordFollowupFailure, "discord follow-up failed"):
@@ -475,12 +470,11 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
             return terminal_job("remove_bases", "succeeded")
 
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 patch.object(helper_base_store, "remove_bases_interactively",
                              new=AsyncMock(side_effect=run_helper)) as remove,
-                patch.object(match_commands, "clear_participant_base_store",
-                             new=AsyncMock(return_value=True)) as clear_store,
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new=AsyncMock(return_value=True)) as clear_store,
         ):
             # When
             with anyio.fail_after(5):
@@ -539,12 +533,11 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
                 match = self.make_match(stored=True)
                 ctx = self.make_component_context("undo")
                 with (
-                        patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                        patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                        patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                        patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                         patch.object(helper_base_store, "remove_bases_interactively",
                                      new=AsyncMock(return_value=outcome)),
-                        patch.object(match_commands, "clear_participant_base_store",
-                                     new_callable=AsyncMock) as clear_store,
+                        patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear_store,
                 ):
                     # When
                     await self.cog.helper_stored_undo_button.callback.func(self.cog, ctx)
@@ -573,11 +566,11 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
             return terminal_job("remove_bases", "failed")
 
         with (
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)),
-                patch.object(match_commands.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
-                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
-                patch.object(match_commands, "is_clan_available", new=AsyncMock(return_value=True)),
-                patch.object(match_commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True)),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)),
+                patch.object(match_queue_module.Player, "find_one", new=AsyncMock(return_value=MagicMock(tag="#PLAYER"))),
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
+                patch_sites(('elobot.extensions.match.base_store.confirm_pending_opponent_bases', 'elobot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)),
                 patch.object(helper_base_store, "host_war_match_on_stored_interactively",
                              new=AsyncMock(side_effect=run_helper)) as helper_start,
                 patch.object(helper_base_store, "remove_bases_interactively",
@@ -606,9 +599,9 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
 
         with (
                 patch.object(self.cog, "_start_war", new_callable=AsyncMock) as legacy_start,
-                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
-                patch_sites(('elobot.extensions.match.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
                 patch.object(stored_bases, "store_bases", new_callable=AsyncMock) as helper_store,
                 patch.object(stored_bases, "host_war_match_on_stored", new_callable=AsyncMock) as helper_start,
                 patch.object(stored_bases, "remove_bases", new_callable=AsyncMock) as helper_remove,

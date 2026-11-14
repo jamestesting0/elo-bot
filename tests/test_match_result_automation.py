@@ -9,7 +9,6 @@ import anyio
 from beanie import PydanticObjectId
 from pymongo.errors import OperationFailure
 
-import elobot.extensions.match as match_commands
 from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war import result_store_ui
@@ -22,6 +21,8 @@ from elobot.db import Match, Player
 from elobot.db.final_models import FinalPlayerProfile
 from elobot.db.match_models import Participant
 from tests._patch_sites import patch_sites
+import elobot.extensions.match.adapters as match_adapters_module
+import elobot.extensions.match.queue as match_queue_module
 
 
 COMPLETE = ["3.100", "2.90", "1.80"]
@@ -38,9 +39,7 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         self.bot.owner.id = 999
         self.bot.fetch_user = AsyncMock(return_value=MagicMock(mention="<@111>", send=AsyncMock()))
         self.cog = MatchCommands(self.bot)
-        self.autoqueue_patcher = patch.object(
-            match_commands, "autoqueue_completed_match_participants", new_callable=AsyncMock
-        )
+        self.autoqueue_patcher = patch('elobot.extensions.match.results.autoqueue_completed_match_participants', new_callable=AsyncMock)
         self.autoqueue_patcher.start()
         self.addCleanup(self.autoqueue_patcher.stop)
         self.player_lookup_patcher = patch.object(Player, "find_one", new=AsyncMock(return_value=None))
@@ -104,7 +103,7 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
                 match = self._match()
                 ctx = self._slash_ctx(actor=777)
                 with (
-                    patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                    patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                     patch.object(MatchCommands, "store_match_result_automatically", new_callable=AsyncMock) as store,
                 ):
                     match_model.find_one = AsyncMock(return_value=match)
@@ -119,7 +118,7 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
 
         # When
         with (
-                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                 patch.object(MatchCommands, "store_match_result_automatically", new_callable=AsyncMock) as store,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -155,9 +154,9 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
                     "store_helper_score",
                     new=AsyncMock(return_value=outcome),
                 ) as store,
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch.object(self.cog, "_finalize_match_results_locked", new_callable=AsyncMock) as finalize,
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
@@ -174,7 +173,7 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         dm_buttons = dm_row.components
         self.assertEqual([button.label for button in dm_buttons], ["Play Again"])
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
-        self.assertTrue(ctx.send.await_args.args[0].startswith(str(match_commands.SUCCESS_EMOJI)))
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(match_queue_module.SUCCESS_EMOJI)))
         finalize.assert_awaited_once_with("TOKEN")
 
     async def test_second_stored_side_delivers_invitation_before_opponent_finishes(self) -> None:
@@ -223,8 +222,8 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
                 patch.object(FinalPlayerProfile, "find_one", new=AsyncMock(return_value=None)),
                 patch.object(self_hosting.Match, "find",
                              return_value=MagicMock(to_list=AsyncMock(return_value=[first, second]))),
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
             await self.cog.store_match_result_automatically(self._slash_ctx(actor=777), source, 0)
@@ -292,13 +291,13 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
                     new=AsyncMock(return_value=outcome),
                 ),
                 patch.object(result_store_ui, "notify_stored_result", new_callable=AsyncMock),
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch.object(self.cog, "_finalize_match_results_locked", new_callable=AsyncMock) as finalize,
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
-            with patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=fresh)):
+            with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=fresh)):
                 await result_store.store_match_result_automatically(self.cog, ctx, request)
 
         self.assertEqual(events, ["write", "edit"])
@@ -345,10 +344,10 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
                 patch.object(result_store, "Match") as match_model,
                 patch.object(result_store.helper_store, "store_helper_score", new=AsyncMock(return_value=outcome)),
                 patch.object(result_store_ui, "notify_stored_result", side_effect=fail_notification),
-                patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=fresh)),
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=fresh)),
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch.object(self.cog, "_finalize_match_results_locked", new_callable=AsyncMock),
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
@@ -463,9 +462,9 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
                     "store_helper_score",
                     new=AsyncMock(return_value=outcome),
                 ) as store,
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch.object(self.cog, "_finalize_match_results_locked", new_callable=AsyncMock) as finalize,
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
@@ -479,7 +478,7 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("participants.0.pending_result", updates)
         self.assertNotIn("components", ctx.send.await_args.kwargs)
         content = ctx.send.await_args.args[0]
-        self.assertTrue(content.startswith(str(match_commands.SUCCESS_EMOJI)))
+        self.assertTrue(content.startswith(str(match_queue_module.SUCCESS_EMOJI)))
         for district, score in zip(DISTRICTS, COMPLETE):
             stars, destruction = score.split(".")
             with self.subTest(district=district):
@@ -653,9 +652,9 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
                 patch.object(result_store, "Match") as match_model,
                 patch.object(result_store.helper_store, "store_helper_score", new=AsyncMock(return_value=outcome)),
                 patch.object(result_store_ui, "send_stored_result_dm", new=AsyncMock(side_effect=forbidden)),
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock) as clear_store,
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan,
-                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock) as remove_task,
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear_store,
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan,
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock) as remove_task,
                 patch.object(self.cog, "_finalize_match_results_locked", new_callable=AsyncMock) as finalize,
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
@@ -697,9 +696,9 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(result_store, "Match") as match_model,
                 patch.object(result_store.helper_store, "store_helper_score", new=AsyncMock(return_value=helper_outcome)),
-                patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch.object(self.cog, "_finalize_match_results_locked", new_callable=AsyncMock) as finalize,
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
@@ -810,7 +809,7 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
 
         # Then
         content = ctx.send.await_args.args[0]
-        self.assertTrue(content.startswith(str(match_commands.SUCCESS_EMOJI)))
+        self.assertTrue(content.startswith(str(match_queue_module.SUCCESS_EMOJI)))
         self.assertIn(str(request.scheduled_delay_minutes), content)
         self.assertIn(player_user.mention, content)
         ctx.send.assert_awaited_once()

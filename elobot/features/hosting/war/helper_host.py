@@ -4,7 +4,8 @@ from typing import Protocol
 import coc
 import interactions as ipy
 
-import elobot.extensions.match as match_commands
+from elobot.features.matches.resources import ResourceClanReservation, ResourceMatchSideReservation
+from elobot.features.results.validation import is_match_finished
 import elobot.features.hosting.war.result_store_task as result_store_task
 import elobot.features.hosting.war.war_start as war_start
 from elobot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag
@@ -34,8 +35,8 @@ class AutomaticWarHost:
     host: ipy.BaseUser
     scout: bool = False
     submitter_id: str | None = None
-    clan_reservation: "match_commands.ResourceClanReservation | None" = None
-    side_reservation: "match_commands.ResourceMatchSideReservation | None" = None
+    clan_reservation: 'ResourceClanReservation | None' = None
+    side_reservation: 'ResourceMatchSideReservation | None' = None
     stored_start: StoredStartState | None = None
 
 
@@ -184,7 +185,7 @@ async def host_war_district_automatically(
     if match_doc is None:
         await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match.", ephemeral=True)
         return
-    if not match_doc.is_war or match_commands.is_match_finished(match_doc, player=request.player):
+    if not match_doc.is_war or is_match_finished(match_doc, player=request.player):
         await ctx.send(f"{ERROR_EMOJI} This match is not available for district hosting.", ephemeral=True)
         return
 

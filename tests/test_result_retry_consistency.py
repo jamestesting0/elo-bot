@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from elobot.extensions import match as match_commands
 from elobot.features.base_store import storage
 from elobot.features.results.operations import ResultOperationConflict, begin_result_operation
 from elobot.features.seasons.stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
@@ -17,6 +16,8 @@ from tests import _result_retry_store as record_fixture
 from tests._result_retry_store import ResultRetryStateMixin
 
 from tests._result_retry_store import RESULTS
+from tests._patch_sites import patch_sites
+import elobot.extensions.match.results as match_results_module
 
 class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_result_tiers_follow_defenders_and_survive_checkpoint_retry(self) -> None:
@@ -73,7 +74,7 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
 
     async def test_manual_record_has_unknown_tiers(self) -> None:
         with patch.object(Match, "find_one", new=AsyncMock(return_value=None)):
-            await match_commands.record_match(
+            await match_results_module.record_match(
                 MagicMock(), self.state.bot, "111", "222", RESULTS, record_fixture.DISTRICTS,
             )
         recorded = self.state.records["11"]
@@ -250,7 +251,7 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
         # Given: starting the match consumed the store and retained its stored flag.
         self.match["participants"][0]["opponent_bases_stored"] = True
         # When
-        with patch.object(match_commands, "clear_match_base_stores", new=storage.clear_match_base_stores), \
+        with patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=storage.clear_match_base_stores), \
                 patch.object(storage, "sync_base_store_slots", new=AsyncMock()):
             await self.cog._finalize_match_results_locked("TOKEN", RESULTS)
         # Then: durable result completion permits releasing the consumed marker.
@@ -310,7 +311,7 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
                 match = Match.model_validate(deepcopy(self.match))
                 match.result_operation = operation
                 # When
-                await match_commands.record_base_stats({"111": RESULTS["player1"].splitlines(),
+                await match_results_module.record_base_stats({"111": RESULTS["player1"].splitlines(),
                                                         "222": RESULTS["player2"].splitlines()}, match)
                 # Then: extending a link cannot reduce its existing lifetime.
                 self.assertEqual(self.base["expiration_date"], 10_000_000_000.0)
@@ -320,7 +321,7 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
         match = Match.model_validate(deepcopy(self.match))
         match.result_operation = MatchResultOperation(key="pending", response=RESULTS, created_at=10.0)
 
-        await match_commands.record_base_stats({"111": RESULTS["player1"].splitlines(),
+        await match_results_module.record_base_stats({"111": RESULTS["player1"].splitlines(),
                                                 "222": RESULTS["player2"].splitlines()}, match)
 
         self.assertEqual(self.base["expiration_date"], 10.0 + 15 * 86400)

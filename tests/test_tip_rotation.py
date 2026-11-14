@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from elobot.extensions import match as match_commands
 import elobot.features.matches.tips as tips_module
+import elobot.extensions.match.results as match_results_module
 
 
 class TestTipRotation(unittest.IsolatedAsyncioTestCase):
@@ -24,7 +25,7 @@ class TestTipRotation(unittest.IsolatedAsyncioTestCase):
 
         with patch('elobot.features.matches.tips.read_json', side_effect=read_content), \
                 patch.object(match_commands.ServerState, "advance_tip_index", side_effect=advance):
-            messages = [await match_commands.choose_tip() for _ in range(10)]
+            messages = [await match_results_module.choose_tip() for _ in range(10)]
 
         expected = [f'💡 **TIP:** "{tip}"' for tip in contents["tips.json"]]
         expected += [f'💡 **ELO FACT:** "{fact}"' for fact in contents["facts.json"]]
@@ -35,8 +36,8 @@ class TestTipRotation(unittest.IsolatedAsyncioTestCase):
         tips = await tips_module.read_json("tips.json", "assets/")
         facts = await tips_module.read_json("facts.json", "assets/")
         with patch.object(match_commands.ServerState, "advance_tip_index", side_effect=[0, len(tips) + len(facts) - 1]):
-            tip = await match_commands.choose_tip()
-            fact = await match_commands.choose_tip()
+            tip = await match_results_module.choose_tip()
+            fact = await match_results_module.choose_tip()
 
         self.assertTrue(tip.startswith('💡 **TIP:** "'))
         self.assertTrue(fact.startswith('💡 **ELO FACT:** "'))

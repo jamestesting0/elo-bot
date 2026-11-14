@@ -117,7 +117,7 @@ class TestRaidAutostoreTask(unittest.IsolatedAsyncioTestCase):
         trigger = cog.raid_weekend_auto_store.trigger
         trigger.last_call_time = datetime(2026, 10, 8, 12, tzinfo=UTC)
 
-        with patch("elobot.extensions.match.store_before_raid_weekend", new_callable=AsyncMock) as store:
+        with patch('elobot.extensions.match.base_store.store_before_raid_weekend', new_callable=AsyncMock) as store:
             await cog.raid_weekend_auto_store.callback.func(cog)
 
         self.assertEqual(trigger.next_fire(), datetime(2026, 10, 9, 6, tzinfo=UTC))

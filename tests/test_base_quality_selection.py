@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from elobot.extensions import match as match_commands
 from elobot.features.matches import base_selection
 from elobot.db import BaseLink, Match, Participant
 from tests._patch_sites import patch_sites
 import elobot.features.matches.lifecycle as lifecycle_module
+import elobot.extensions.match.base_store as match_base_store_module
 
 
 DISTRICTS = ['Barbarian Camp', 'Balloon Lagoon', 'Dragon Cliffs']
@@ -38,10 +38,10 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
         async def save_match(match, *args, **kwargs):
             return await self.save(match, *args, **kwargs)
         self.enterContext(patch.object(Match, 'save_changes', new=save_match))
-        self.match_model = self.enterContext(patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')))
+        self.match_model = self.enterContext(patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')))
         self.match_model.find_one = AsyncMock(side_effect=self.load)
         self.match_model.find.return_value.to_list = AsyncMock(side_effect=self.all_matches)
-        self.base_model = self.enterContext(patch_sites(('elobot.extensions.match.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout')))
+        self.base_model = self.enterContext(patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout')))
         self.base_model.district.__eq__.side_effect = lambda v: {'district': v}
         self.base_model.quality.__eq__.side_effect = lambda v: {'quality': v}
         self.base_model.builder_id.__ne__.side_effect = lambda v: {'builder_id': {'$ne': v}}
@@ -49,7 +49,7 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
         self.base_model.find.side_effect = self.find_layouts
         self.enterContext(patch.object(base_selection, 'BaseLayout', self.base_model))
         self.enterContext(patch('elobot.features.matches.attack_bases.NotIn', side_effect=lambda _, links: {'link': {'$nin': links}}))
-        self.enterContext(patch_sites(('elobot.extensions.match.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))).find_one = AsyncMock(return_value=None)
+        self.enterContext(patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))).find_one = AsyncMock(return_value=None)
         self.requests = []
 
     def get(self, key):
@@ -106,7 +106,7 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
         return SimpleNamespace(to_list=AsyncMock(return_value=layouts))
 
     async def choose(self):
-        return await match_commands.choose_bases(
+        return await match_base_store_module.choose_bases(
             'QUALITY', SimpleNamespace(id=111), SimpleNamespace(id=222), True,
         )
 

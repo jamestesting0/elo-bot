@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-from elobot.extensions import match as match_commands
 from elobot.features.base_store import storage
 from elobot.features.hosting.war import war_start
 from elobot.config.emojis import SUCCESS_EMOJI
@@ -14,6 +13,7 @@ from elobot.db import BaseStore
 
 from tests._match_cleanup_fixture import MatchCleanupStateMixin
 from tests._patch_sites import patch_sites
+import elobot.extensions.match.lifecycle as match_lifecycle_module
 
 class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_manual_thread_delete_retains_match_when_discord_delete_fails(self) -> None:
@@ -96,7 +96,7 @@ class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsync
         self.make_pre_thread()
         self.insert_before_delete = True
         # When: the automatic cancellation helper uses its real Match boundary.
-        await match_commands.cancel_match(self.bot, "TOKEN")
+        await match_lifecycle_module.cancel_match(self.bot, "TOKEN")
         # Then: the accepted match stays present and receives no expiry notification.
         self.assertIsNotNone(self.persisted)
         self.bot.fetch_user.assert_not_awaited()
@@ -149,7 +149,7 @@ class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsync
         store = self.match.participants[0].base_store
         self.collection.update_one.side_effect = [UpdateResult({"n": 1}, True)]
         message = MagicMock(id=77, delete=AsyncMock(), edit=AsyncMock(), embeds=[])
-        with patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
+        with patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
                 patch.object(war_start, "schedule_channel_name_edit") as rename:
             # When: abort commits but cannot update the retained reservation's controls.
             with self.assertRaises(war_start.BaseStoreMessageConflict):

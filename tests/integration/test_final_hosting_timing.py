@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions import match as match_commands
 from elobot.features.base_store.controls import start_stored_bases
 from elobot.features.base_store.models import StoredBaseActionRequest
 from elobot.features.hosting.live.live_start import (
@@ -31,6 +30,8 @@ from elobot.db.token_models import FinalBettingMarket
 from tests.integration._final_fixture import FinalScenarioCase
 from tests._patch_sites import patch_sites
 import elobot.extensions.match as match_module
+import elobot.extensions.match.base_store as match_base_store_module
+import elobot.extensions.match.hosting as match_hosting_module
 
 
 class TestFinalHostingTiming(FinalScenarioCase):
@@ -79,8 +80,8 @@ class TestFinalHostingTiming(FinalScenarioCase):
         ctx.bot = bot
         await accept_final_start(original, str(ctx.author.id), clan_tag="#REVIEW", player=None if live else 0)
         accepted_at = (await Match.get(original.id)).final_started_at
-        reservation = await match_commands.try_reserve_resource_clan("#REVIEW")
-        self.assertTrue(await match_commands.claim_resource_clan(
+        reservation = await match_base_store_module.try_reserve_resource_clan("#REVIEW")
+        self.assertTrue(await match_hosting_module.claim_resource_clan(
             reservation, original, 0, player2_index=1 if live else None,
             expected_control=MatchMessageState.capture(original, 0),
             updates={"times.0": 1800000000, "hosts.0": "42"},
@@ -208,7 +209,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch_sites(('elobot.extensions.match.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
+        with patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
             first = await start_live_match(bot, ctx, start)
         self.assertIsInstance(first, LiveStartClanUnavailable)
         accepted_at = (await Match.get(source.id)).final_started_at
@@ -375,9 +376,9 @@ class TestFinalHostingTiming(FinalScenarioCase):
             "$unset": {"final_hosting_times": ""},
         })
         legacy = await Match.get(source.id)
-        reservation = await match_commands.try_reserve_resource_clan("#REVIEW")
+        reservation = await match_base_store_module.try_reserve_resource_clan("#REVIEW")
         self.assertIsNotNone(reservation)
-        self.assertTrue(await match_commands.claim_resource_clan(
+        self.assertTrue(await match_hosting_module.claim_resource_clan(
             reservation, legacy, 1, expected_control=MatchMessageState.capture(legacy, 1),
             updates={"times.1": 1800000000, "hosts.1": "host1"},
         ))

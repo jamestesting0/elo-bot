@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions import match as match_commands
 from elobot.features.base_store import storage
 from elobot.features.base_store import publication
 from elobot.features.base_store import controls
@@ -16,6 +15,8 @@ from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests import _match_publication_fixture as recovery_tests
 from tests._stored_start_fixture import terminal_job
 import elobot.extensions.match as match_module
+import elobot.extensions.match.base_store as match_base_store_module
+from tests._patch_sites import patch_sites
 
 
 REAL_CLEAR = storage.clear_participant_base_store
@@ -33,8 +34,11 @@ class TestEphemeralBaseStoreUndo(unittest.IsolatedAsyncioTestCase):
         self.case.match.final_districts = ["Barbarian Camp", "Wizard Valley", "Capital Peak"]
         self.bot.http.post_initial_response = AsyncMock(side_effect=self.initial_response)
         self.bot.http.edit_interaction_message = AsyncMock(side_effect=self.edit_interaction)
-        for module in (controls, match_commands):
-            self.enterContext(patch.object(module, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.case.match))))
+        self.enterContext(patch.object(controls, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.case.match))))
+        self.enterContext(patch_sites(
+            ('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.results.Match'),
+            new=MagicMock(find_one=AsyncMock(return_value=self.case.match)),
+        ))
         self.enterContext(patch.object(storage, "clear_participant_base_store", new=REAL_CLEAR))
         self.enterContext(patch.object(storage, "sync_base_store_slots", new=AsyncMock(return_value={})))
         self.enterContext(patch.object(helper_base_store_availability, "confirm_remove_bases_availability",
@@ -117,5 +121,5 @@ class TestEphemeralBaseStoreUndo(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(ctx.deferred)
             return self.case.match
 
-        match_commands.Match.find_one.side_effect = lookup_after_defer
+        match_base_store_module.Match.find_one.side_effect = lookup_after_defer
         await self.cog.undo_base_storage_button.callback.func(self.cog, ctx)

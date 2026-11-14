@@ -14,7 +14,7 @@ import interactions as ipy
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
 
-import elobot.extensions.match as match_commands
+from elobot.features.results.validation import is_match_finished
 import elobot.features.hosting.live.live_reservations as live_reservations
 from elobot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
 from elobot.features.base_store.live import live_pair_ready, live_stores
@@ -118,14 +118,14 @@ class LiveAbort:
 
 async def reserve_live_start(match_token: str, clan_tag: str) -> live_reservations.LiveReservationOutcome:
     async def find_match(token: str) -> Match | None:
-        return await match_commands.Match.find_one({"token": token})
+        return await Match.find_one({"token": token})
 
     return await live_reservations.reserve_live_start(
         live_reservations.LiveReservationOperations(
             reserve_match_side=resources.try_reserve_resource_match_side,
             reserve_clan=resources.try_reserve_resource_clan,
             find_match=find_match,
-            is_match_finished=match_commands.is_match_finished,
+            is_match_finished=is_match_finished,
         ),
         match_token,
         clan_tag,
@@ -151,10 +151,10 @@ async def start_live_match(
         case unreachable:
             assert_never(unreachable)
     try:
-        fresh_match = await match_commands.Match.find_one({"token": token})
+        fresh_match = await Match.find_one({"token": token})
         if (
                 fresh_match is None
-                or match_commands.is_match_finished(fresh_match)
+                or is_match_finished(fresh_match)
                 or hosting_started(fresh_match)
         ):
             return LiveStartBusy()
@@ -294,7 +294,7 @@ async def complete_live_start(
         if not await mark_store_reserved(bot, match_doc, player):
             raise BaseStoreMessageConflict("The match started, but its held base-slot message could not be updated.")
 
-    match_doc = await match_commands.Match.find_one(match_commands.Match.token == match_doc.token)
+    match_doc = await Match.find_one(Match.token == match_doc.token)
     assert match_doc is not None
     match start.reply:
         case AutomaticLiveStartReply():

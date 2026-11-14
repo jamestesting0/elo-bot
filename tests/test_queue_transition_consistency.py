@@ -16,6 +16,7 @@ from tests._patch_sites import patch_sites
 import elobot.extensions.match as match_module
 import elobot.features.queue.matching as matching_module
 import elobot.features.queue.state as state_module
+import elobot.extensions.match.queue as match_queue_module
 
 
 class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
@@ -41,7 +42,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
             player._save_state()
         self.queues = {
             tier: Queue.model_construct(id=PydanticObjectId(), tier=tier, players=[], entered_at={})
-            for tier in match_commands.QUEUE_TIERS
+            for tier in match_queue_module.QUEUE_TIERS
         }
         self.failed_tier: int | None = None
         self.pause_dequeue = False
@@ -52,7 +53,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.bot = MagicMock(user=MagicMock(id=match_commands.BOT_ID), fetch_user=AsyncMock())
         self.bot.fetch_user.side_effect = lambda user_id: MagicMock(id=int(user_id), send=AsyncMock())
         self.cog = match_module.MatchCommands(self.bot)
-        self.enterContext(patch_sites(('elobot.extensions.match.QUEUE_OPERATION_LOCK', 'elobot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elobot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elobot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), anyio.Lock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.queue.QUEUE_OPERATION_LOCK', 'elobot.extensions.match.lifecycle.QUEUE_OPERATION_LOCK', 'elobot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elobot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elobot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), anyio.Lock()))
 
         async def find_queue(query, **_kwargs) -> Queue:
             return self.snapshot(query["tier"])
@@ -131,7 +132,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
             await self.cog.match_dequeue.callback.func(self.cog, ctx)
 
         async def join() -> None:
-            await match_commands.queue_player(self.bot, author)
+            await match_queue_module.queue_player(self.bot, author)
 
         # When: both operations complete under a deterministic interleaving.
         with anyio.fail_after(3):
@@ -165,7 +166,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         author.has_role.return_value = False
         # When
         with self.assertRaises(OperationFailure):
-            await match_commands.queue_player(self.bot, author)
+            await match_queue_module.queue_player(self.bot, author)
         # Then: an unqueued player retains the award for retry.
         self.assertEqual(self.memberships("111"), [])
         self.assertTrue(self.players["111"].priority)
@@ -222,7 +223,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.seed(1, "111", "333", timestamp=3_000_000_000.0)
         self.seed(2, "111", "444", timestamp=3_000_000_000_000.0)
         # When
-        await match_commands.run_queue_matching_trigger(self.bot)
+        await match_queue_module.run_queue_matching_trigger(self.bot)
         # Then: that player participates in exactly one match and is no longer queued.
         appearances = sum(any(p.user_id == "111" for p in match.participants) for match in self.inserted)
         self.assertEqual(appearances, 1)

@@ -8,7 +8,7 @@ import interactions as ipy
 from elobot.discord.mentions import mention_user
 
 from elobot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
-import elobot.extensions.match as match_commands
+from elobot.features.matches.resources import ResourceClanReservation, ResourceMatchSideReservation
 from elobot.discord.channel_edits import schedule_channel_name_edit
 from elobot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
 from elobot.features.matches.message_lock import coordinated_match_message, match_message_lock
@@ -16,7 +16,7 @@ from elobot.features.base_store.start import FreshWarStartState, StoredStartStat
 from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elobot.config.game import HOST_CLAN_OPTIONS
-from elobot.db import Match
+from elobot.db import Match, Player
 from elobot.features.finals.hosting import accept_final_start
 from elobot.features.finals.types import FinalError, is_final_match
 from elobot.features.matches import attack_bases
@@ -52,8 +52,8 @@ class WarStart:
     coc_client: coc.Client
     reply: WarStartReply
     scout: bool = False
-    clan_reservation: "match_commands.ResourceClanReservation | None" = None
-    side_reservation: "match_commands.ResourceMatchSideReservation | None" = None
+    clan_reservation: 'ResourceClanReservation | None' = None
+    side_reservation: 'ResourceMatchSideReservation | None' = None
     stored_start: StoredStartState | None = None
 
 
@@ -209,7 +209,7 @@ async def complete_war_start(
                 ephemeral=True,
             )
         case SlashWarStartReply() | StoredWarStartReply():
-            refreshed_match = await match_commands.Match.find_one(match_commands.Match.token == token)
+            refreshed_match = await Match.find_one(Match.token == token)
             assert refreshed_match is not None
             opponent_bases = []
             for index in range(len(refreshed_match.final_districts)):
@@ -230,7 +230,7 @@ async def complete_war_start(
                 opponent_bases.append(f"[{district}]({opponent_base.link})")
             opponent_bases_text = "\n".join(opponent_bases)
 
-            player_doc = await match_commands.Player.find_one(match_commands.Player.user_id == player_id)
+            player_doc = await Player.find_one(Player.user_id == player_id)
             player_tag = player_doc.tag if player_doc else None
             if not player_tag:
                 await ctx.send(f"{ERROR_EMOJI} Player not found in database.", ephemeral=True)

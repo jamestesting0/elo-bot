@@ -15,6 +15,7 @@ from tests import _result_finalization_fixture as result_fixture
 
 
 from tests._match_cleanup_fixture import PendingMatchStateMixin
+import elobot.extensions.match.lifecycle as match_lifecycle_module
 
 class TestPendingMatchCleanup(PendingMatchStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_thread_event_preserves_pending_second_player_write(self) -> None:
@@ -91,7 +92,7 @@ class TestPendingMatchCleanup(PendingMatchStateMixin, unittest.IsolatedAsyncioTe
             fetch_thread=AsyncMock(return_value=None)))
         await self.runtime.fixture.cog.match_data_clean_up.callback.func(self.runtime.fixture.cog)
         self.assertTrue(self.runtime.alive)
-        match_commands.free_match_clans.assert_not_awaited()
+        match_lifecycle_module.free_match_clans.assert_not_awaited()
 
     async def test_autowin_claim_after_cleanup_read_defeats_deletion(self) -> None:
         stale = await Match.find_one({"token": "TOKEN"})

@@ -18,6 +18,7 @@ from elobot.db.final_models import FinalMatchResult
 from elobot.db.token_models import FinalBettingMarket
 from elobot.features.tokens.bets import open_market
 from tests.integration._final_fixture import FinalScenarioCase
+from tests._patch_sites import patch_sites
 
 
 class TestFinalTiming(FinalScenarioCase):
@@ -234,8 +235,8 @@ class TestFinalTiming(FinalScenarioCase):
                     self.assertEqual((await resolve_final()).nodes[node_id].scheduled_times, expected)
                     raise ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
 
-                with patch("elobot.extensions.match.append_helper_task", new=AsyncMock()), \
-                        patch("elobot.extensions.match.publish_match_message", new=AsyncMock(side_effect=fail)):
+                with patch_sites(('elobot.extensions.match.lifecycle.append_helper_task', 'elobot.extensions.match.hosting.append_helper_task'), new=AsyncMock()), \
+                        patch('elobot.extensions.match.hosting.publish_match_message', new=AsyncMock(side_effect=fail)):
                     with self.assertRaises(ipy.errors.Forbidden):
                         if player is None:
                             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")

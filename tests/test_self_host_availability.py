@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import elobot.extensions.match as match_commands
 import elobot.features.hosting.self_hosted.hosting as self_hosting
 from elobot.extensions.self_service import SelfCommands
 from elobot.config.ids import BOT_ID
 import elobot.features.matches.resources as resources_module
+import elobot.extensions.match.base_store as match_base_store_module
 
 
 REQUESTER_ID = "123456789012345678"
@@ -242,13 +242,13 @@ class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
             MagicMock(clan=MagicMock(tag="#OPP")),
         ])
         attempts: list[str] = []
-        preferred_reservation = await match_commands.try_reserve_resource_clan("#PREFERRED")
+        preferred_reservation = await match_base_store_module.try_reserve_resource_clan("#PREFERRED")
         if not preferred_reservation:
             self.fail("The preferred-clan setup reservation was not acquired.")
 
-        async def record_reservation(clan_tag: str) -> match_commands.ResourceClanReservation | None:
+        async def record_reservation(clan_tag: str) -> match_base_store_module.ResourceClanReservation | None:
             attempts.append(clan_tag)
-            return await match_commands.try_reserve_resource_clan(clan_tag)
+            return await match_base_store_module.try_reserve_resource_clan(clan_tag)
 
         random_module = MagicMock()
         random_module.shuffle.side_effect = lambda candidates: None
@@ -434,7 +434,7 @@ class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
         match.token = "MATCH"
         clan = MagicMock(tag="#A", availability_str="Available")
         clan.name = "Alpha"
-        side_reservation = await match_commands.try_reserve_resource_match_side("MATCH", 0)
+        side_reservation = await match_base_store_module.try_reserve_resource_match_side("MATCH", 0)
 
         try:
             with patch("elobot.extensions.self_service.Match") as match_model, \

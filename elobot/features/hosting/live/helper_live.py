@@ -6,7 +6,7 @@ from typing import Protocol, assert_never
 import coc
 import interactions as ipy
 
-import elobot.extensions.match as match_commands
+from elobot.features.results.validation import is_match_finished
 import elobot.features.hosting.live.eligibility as live_eligibility
 import elobot.features.hosting.live.live_reservations as live_reservations
 import elobot.features.hosting.live.live_start as live_start
@@ -157,7 +157,7 @@ async def host_live_automatically(
         if match_doc is None:
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match.", ephemeral=True)
             return
-        if match_commands.is_match_finished(match_doc):
+        if is_match_finished(match_doc):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
         if live_start.hosting_started(match_doc):
@@ -285,7 +285,7 @@ async def host_live_district_automatically(
     if match_doc is None:
         await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match.", ephemeral=True)
         return
-    if match_doc.is_war or match_commands.is_match_finished(match_doc):
+    if match_doc.is_war or is_match_finished(match_doc):
         await ctx.send(f"{ERROR_EMOJI} This match is not available for district hosting.", ephemeral=True)
         return
 

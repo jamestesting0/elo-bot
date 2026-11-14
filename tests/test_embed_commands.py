@@ -5,10 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import elobot.extensions.match as match_commands
 from elobot.extensions.embed import EmbedCommands
 from elobot.db import BaseStore, ServerState
 import elobot.features.matches.resources as resources_module
+import elobot.extensions.match.base_store as match_base_store_module
+import elobot.extensions.match.dashboards as match_dashboards_module
 
 
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
@@ -84,11 +85,11 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         clan_a = MagicMock(tag="#A", name="Alpha", availability_str="<#101> occupied")
         clan_b = MagicMock(tag="#B", availability_str="Available")
         clan_b.name = "Bravo"
-        reservation = await match_commands.try_reserve_resource_clan("#A")
+        reservation = await match_base_store_module.try_reserve_resource_clan("#A")
 
         try:
             with patch("elobot.extensions.embed.Clan") as clan_model, \
-                    patch.object(match_commands.Clan, "find_all") as find_all:
+                    patch.object(match_dashboards_module.Clan, "find_all") as find_all:
                 clan_model.find_one = AsyncMock(return_value=clan_a)
                 find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])
 

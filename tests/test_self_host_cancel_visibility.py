@@ -100,7 +100,7 @@ class TestSelfHostCancelVisibility(unittest.IsolatedAsyncioTestCase):
         with patch.object(helper_host, "confirm_helper_availability", new=AsyncMock(return_value=True)), \
                 patch.object(helper_host, "get_available_helper_slot", new=AsyncMock(return_value=1)), \
                 patch.object(helper_host, "Player") as player_model, \
-                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=self.match)), \
+                patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=self.match)), \
                 patch.object(
                     helper_host_job.HelperJobCreator,
                     "create",

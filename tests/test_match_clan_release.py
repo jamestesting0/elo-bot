@@ -3,10 +3,10 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import interactions as ipy
 
-import elobot.extensions.match as match_commands
 from elobot.extensions.match import MatchCommands
 from elobot.db import Match
 from tests._patch_sites import patch_sites
+import elobot.extensions.match.lifecycle as match_lifecycle_module
 
 
 class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
@@ -50,14 +50,10 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(Match, "save_changes", new_callable=AsyncMock) as save_changes,
                 patch.object(Match, "get_pymongo_collection", return_value=collection),
-                patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
-                patch.object(match_commands, "clear_match_base_stores", new_callable=AsyncMock) as clear_stores,
-                patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan,
-                patch.object(
-                    match_commands,
-                    "record_base_stats",
-                    new=AsyncMock(side_effect=RuntimeError("later result work failed")),
-                ),
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock) as clear_stores,
+                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan,
+                patch('elobot.extensions.match.results.record_base_stats', new=AsyncMock(side_effect=RuntimeError("later result work failed"))),
         ):
             match_model.find_one = AsyncMock(return_value=match)
             # When durable result storage succeeds but later result work fails.
@@ -88,7 +84,7 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
     async def test_autowin_releases_both_war_clans_before_notifications(self) -> None:
         from tests._autowin_fixture import AutowinState
 
-        release_clans = match_commands.free_match_clans
+        release_clans = match_lifecycle_module.free_match_clans
         fixture = AutowinState(self)
         fixture.enterContext = self.enterContext
         fixture.addCleanup = self.addCleanup
@@ -97,7 +93,7 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
         fixture.free_clans.side_effect = release_clans
         fixture.users["111"].send.side_effect = RuntimeError("winner DM failed")
 
-        with patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
+        with patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             with self.assertRaisesRegex(RuntimeError, "winner DM failed"):
                 await fixture.invoke(fixture.context())
 

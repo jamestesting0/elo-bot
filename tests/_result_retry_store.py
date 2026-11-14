@@ -6,7 +6,6 @@ from beanie.odm.fields import ExpressionField, LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from bson import DBRef
 from pymongo.results import UpdateResult
-from elobot.extensions import match as match_commands
 from elobot.db import BaseLayout, BaseLink, Match, MatchDistrictStats, MatchPlayerStats, Participant, Player, RecordedMatch
 from pymongo.errors import DuplicateKeyError
 from pymongo.results import DeleteResult
@@ -16,6 +15,7 @@ from elobot.db.result_models import MatchResultOperation, ResultRecordSnapshot
 from tests._patch_sites import patch_sites
 import elobot.extensions.match as match_module
 from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
+import elobot.extensions.match.results as match_results_module
 
 
 
@@ -177,8 +177,8 @@ class RecordStateMixin:
         self.enterContext(patch.object(RecordedMatch, "find_all", return_value=query))
         self.enterContext(patch.object(Match, "find_one", new=AsyncMock(return_value=None)))
         self.enterContext(patch('elobot.features.results.recording.fetch_member_otherwise_user', new=AsyncMock(side_effect=self.users)))
-        self.choice_refresh = self.enterContext(patch_sites(('elobot.extensions.match.fetch_user_match_id_choices', 'elobot.features.results.recording.fetch_user_match_id_choices'), new_callable=AsyncMock))
-        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new_callable=AsyncMock))
+        self.choice_refresh = self.enterContext(patch_sites(('elobot.extensions.match.results.fetch_user_match_id_choices', 'elobot.features.results.recording.fetch_user_match_id_choices'), new_callable=AsyncMock))
+        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new_callable=AsyncMock))
 
     def make_record(self, record_id: str) -> RecordedMatch:
         return RecordedMatch.model_construct(id=record_id, time=1, players={
@@ -213,7 +213,7 @@ class RecordStateMixin:
         return UpdateResult({"n": int(matched), "nModified": int(matched)}, acknowledged=True)
 
     async def invoke_record(self) -> None:
-        await match_commands.record_match(MagicMock(), self.bot, "111", "222", RESULTS, DISTRICTS)
+        await match_results_module.record_match(MagicMock(), self.bot, "111", "222", RESULTS, DISTRICTS)
 
     def prepare_resubmit(self) -> MagicMock:
         match = Match.model_construct(id=PydanticObjectId(), token="TOKEN", matched_time=1, final_districts=DISTRICTS,
@@ -270,11 +270,11 @@ class RecordStateMixin:
         self.enterContext(patch.object(BaseLayout, "update", new=legacy_base_update))
         self.enterContext(patch.object(BaseLayout, "get_pymongo_collection", return_value=MagicMock(
             update_one=AsyncMock(side_effect=update_base))))
-        self.enterContext(patch.object(match_commands, "record_match", new=AsyncMock(side_effect=replace_record)))
-        self.enterContext(patch.object(match_commands, "record_base_stats", new=AsyncMock()))
-        self.enterContext(patch.object(match_commands, "clear_match_base_stores", new=AsyncMock()))
-        self.enterContext(patch.object(match_commands, "free_match_clans", new=AsyncMock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Test tip")))
+        self.enterContext(patch('elobot.extensions.match.results.record_match', new=AsyncMock(side_effect=replace_record)))
+        self.enterContext(patch('elobot.extensions.match.results.record_base_stats', new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Test tip")))
         channel = MagicMock(fetch_message=AsyncMock(return_value=MagicMock(edit=AsyncMock())),
                             send=AsyncMock(return_value=MagicMock(id=901, edit=AsyncMock())))
         self.bot.fetch_channel = AsyncMock(return_value=channel)
@@ -384,12 +384,12 @@ class ResultRetryStateMixin:
         for name in ("free_match_clans", "clear_match_base_stores", "remove_helper_task", "fetch_user_match_id_choices",
                      "autoqueue_completed_match_participants", "choose_tip"):
             self.enterContext(patch_family(MATCH_MODULE_FAMILY, name, new=AsyncMock()))
-        match_commands.choose_tip.return_value = "tip"
-        self.enterContext(patch.object(match_commands, "schedule_channel_name_edit", return_value=MagicMock()))
+        match_results_module.choose_tip.return_value = "tip"
+        self.enterContext(patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit'), return_value=MagicMock()))
         self.cog = match_module.MatchCommands(self.state.bot)
 
     async def invoke_record(self) -> None:
-        await match_commands.record_match(MagicMock(), self.state.bot, "111", "222", RESULTS, DISTRICTS, "TOKEN")
+        await match_results_module.record_match(MagicMock(), self.state.bot, "111", "222", RESULTS, DISTRICTS, "TOKEN")
 
 
 class RecordState(RecordStateMixin):

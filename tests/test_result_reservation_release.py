@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from pymongo.errors import OperationFailure
 
-from elobot.extensions import match as match_commands
 from elobot.features.base_store.storage import BaseStoreReleaseConflict
 from elobot.db import BaseStore, Match
 from tests import _result_retry_store as fixture
@@ -19,7 +18,7 @@ class TestResultReservationRelease(unittest.IsolatedAsyncioTestCase):
         self.runtime.match["participants"][0].update(base_store=deepcopy(self.store), opponent_bases_stored=True)
         self.release_fails = False
         self.release_proofs = []
-        self.release = self.enterContext(patch.object(match_commands, "clear_match_base_stores", new=AsyncMock(
+        self.release = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=AsyncMock(
             side_effect=self.release_store)))
         self.ctx = MagicMock(custom_id="resubmit_modal|TOKEN", defer=AsyncMock(), send=AsyncMock(), message=None,
                              guild=self.runtime.state.bot.fetch_guild.return_value)
@@ -113,8 +112,8 @@ class TestResultReservationRelease(unittest.IsolatedAsyncioTestCase):
 
     async def test_a_finished_side_alone_does_not_release_the_reservation(self) -> None:
         self.runtime.match["participants"][1]["result"] = [None, None, None]
-        release_side = self.enterContext(patch.object(match_commands, "clear_participant_base_store", new=AsyncMock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()))
+        release_side = self.enterContext(patch('elobot.extensions.match.base_store.clear_participant_base_store', new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()))
         await self.runtime.cog._finish_stored_result_side(await Match.find_one({"token": "TOKEN"}), 0)
         release_side.assert_not_awaited()
         self.assert_store_held()

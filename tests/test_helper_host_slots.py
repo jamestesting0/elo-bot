@@ -51,7 +51,7 @@ class TestAutomaticWarHostSlots(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(helper_host, "get_available_helper_slot", new=AsyncMock(return_value=None)) as slot,
                 patch.object(helper_host, "Player") as player_model,
-                patch_sites(('elobot.extensions.match.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock) as choose_bases,
+                patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock) as choose_bases,
                 patch.object(helper_host, "confirm_helper_availability", new_callable=AsyncMock) as confirm,
                 patch.object(helper_host.war_start, "start_war", new_callable=AsyncMock) as start,
                 patch.object(helper_host, "run_helper_host_job", new_callable=AsyncMock) as run_job,

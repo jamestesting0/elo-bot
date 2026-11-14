@@ -2841,6 +2841,320 @@
     "use_state_management": true
    }
   },
+  "HelperSequentialRun": {
+   "schema": {
+    "$defs": {
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     },
+     "SequentialRunEvent": {
+      "properties": {
+       "actor_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Actor Id"
+       },
+       "at": {
+        "title": "At",
+        "type": "number"
+       },
+       "detail": {
+        "default": "",
+        "title": "Detail",
+        "type": "string"
+       },
+       "kind": {
+        "title": "Kind",
+        "type": "string"
+       }
+      },
+      "required": [
+       "at",
+       "kind"
+      ],
+      "title": "SequentialRunEvent",
+      "type": "object"
+     },
+     "SequentialRunState": {
+      "enum": [
+       "CREATING",
+       "UNCERTAIN",
+       "ACTIVE",
+       "TERMINAL"
+      ],
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "close_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Close Reason"
+     },
+     "create_request": {
+      "additionalProperties": true,
+      "title": "Create Request",
+      "type": "object"
+     },
+     "created_at": {
+      "title": "Created At",
+      "type": "number"
+     },
+     "districts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Districts",
+      "type": "array"
+     },
+     "error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Error"
+     },
+     "events": {
+      "items": {
+       "$ref": "#/$defs/SequentialRunEvent"
+      },
+      "title": "Events",
+      "type": "array"
+     },
+     "final_attempt": {
+      "title": "Final Attempt",
+      "type": "integer"
+     },
+     "final_contestant_revision": {
+      "title": "Final Contestant Revision",
+      "type": "integer"
+     },
+     "final_id": {
+      "title": "Final Id",
+      "type": "string"
+     },
+     "final_node_id": {
+      "title": "Final Node Id",
+      "type": "string"
+     },
+     "host_clan_tag": {
+      "title": "Host Clan Tag",
+      "type": "string"
+     },
+     "job_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Job Id"
+     },
+     "job_status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Job Status"
+     },
+     "last_poll_error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Last Poll Error"
+     },
+     "last_polled_at": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Last Polled At"
+     },
+     "match_id": {
+      "$ref": "#/$defs/PydanticObjectId"
+     },
+     "match_token": {
+      "title": "Match Token",
+      "type": "string"
+     },
+     "open": {
+      "default": true,
+      "title": "Open",
+      "type": "boolean"
+     },
+     "player_tags": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Player Tags",
+      "type": "array"
+     },
+     "poll_failures": {
+      "default": 0,
+      "title": "Poll Failures",
+      "type": "integer"
+     },
+     "previous_run_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "progress_channel_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Progress Channel Id"
+     },
+     "progress_message_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Progress Message Id"
+     },
+     "requested_by": {
+      "title": "Requested By",
+      "type": "string"
+     },
+     "side": {
+      "title": "Side",
+      "type": "integer"
+     },
+     "snapshot": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Snapshot"
+     },
+     "start_message_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Message Id"
+     },
+     "state": {
+      "$ref": "#/$defs/SequentialRunState"
+     },
+     "thread_id": {
+      "title": "Thread Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "match_id",
+     "match_token",
+     "thread_id",
+     "final_id",
+     "final_node_id",
+     "final_contestant_revision",
+     "final_attempt",
+     "side",
+     "host_clan_tag",
+     "player_tags",
+     "districts",
+     "create_request",
+     "requested_by",
+     "state",
+     "created_at"
+    ],
+    "title": "HelperSequentialRun",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'match_id': 1, 'side': 1}, name='sequential_run_open_side', unique=True, partialFilterExpression={'open': True})",
+     "IndexModel({'host_clan_tag': 1, 'open': 1}, name='sequential_run_clan')",
+     "IndexModel({'thread_id': 1, 'created_at': -1}, name='sequential_run_thread')",
+     "IndexModel({'open': 1, 'created_at': -1}, name='sequential_run_open')"
+    ],
+    "name": "helper_sequential_runs",
+    "use_state_management": true
+   }
+  },
   "HelperTask": {
    "schema": {
     "$defs": {
@@ -5712,6 +6026,42 @@
       "expires_at": 1
      },
      "name": "override_code_expiry"
+    }
+   ]
+  ],
+  "SEQUENTIAL_RUN_INDEXES": [
+   [
+    {
+     "key": {
+      "match_id": 1,
+      "side": 1
+     },
+     "name": "sequential_run_open_side",
+     "partialFilterExpression": {
+      "open": true
+     },
+     "unique": true
+    },
+    {
+     "key": {
+      "host_clan_tag": 1,
+      "open": 1
+     },
+     "name": "sequential_run_clan"
+    },
+    {
+     "key": {
+      "created_at": -1,
+      "thread_id": 1
+     },
+     "name": "sequential_run_thread"
+    },
+    {
+     "key": {
+      "created_at": -1,
+      "open": 1
+     },
+     "name": "sequential_run_open"
     }
    ]
   ]

@@ -18,15 +18,17 @@ from elo_bot.extensions.match.result_store import MatchResultStoreCommands
 from elo_bot.extensions.match.hosting import MatchHostingCommands
 from elo_bot.extensions.match.settings import MatchSettingsCommands
 from elo_bot.extensions.match.dashboards import MatchDashboardTasks
+from elo_bot.extensions.match.sequential import MatchSequentialCommands
 
 
-class MatchCommands(QueueCommands, MatchLifecycleCommands, MatchBaseCommands, MatchBaseStoreCommands, MatchResultCommands, MatchResultStoreCommands, MatchHostingCommands, MatchSettingsCommands, MatchDashboardTasks, ipy.Extension):
+class MatchCommands(QueueCommands, MatchLifecycleCommands, MatchBaseCommands, MatchBaseStoreCommands, MatchResultCommands, MatchResultStoreCommands, MatchHostingCommands, MatchSettingsCommands, MatchDashboardTasks, MatchSequentialCommands, ipy.Extension):
     # Class attributes so interactions.py registers the /match command and its groups with this extension.
     base = groups.base
     base_group = groups.base_group
     war_group = groups.war_group
     set_group = groups.set_group
     result_group = groups.result_group
+    helper_group = groups.helper_group
 
     def __init__(self, bot):
         self.bot: ipy.Client = bot

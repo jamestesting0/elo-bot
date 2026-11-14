@@ -42,6 +42,7 @@ from elo_bot.db import (
 )
 from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
 from elo_bot.db.fingerprint_models import BASE_FINGERPRINT_INDEXES, EXTRACTION_RUN_INDEXES, FINGERPRINT_TASK_INDEXES
+from elo_bot.db.sequential_models import SEQUENTIAL_RUN_INDEXES, HelperSequentialRun
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 BETA_SYNC_FROM_MAIN = False
@@ -110,6 +111,7 @@ async def main():
             TokenLedgerEntry,
             FinalBettingMarket,
             FinalBet,
+            HelperSequentialRun,
         ],
         skip_indexes=True
     )
@@ -121,6 +123,7 @@ async def main():
     await BaseLayout.get_pymongo_collection().create_indexes(BASE_FINGERPRINT_INDEXES)
     await BaseFingerprintTask.get_pymongo_collection().create_indexes(FINGERPRINT_TASK_INDEXES)
     await BaseExtractionRun.get_pymongo_collection().create_indexes(EXTRACTION_RUN_INDEXES)
+    await HelperSequentialRun.get_pymongo_collection().create_indexes(SEQUENTIAL_RUN_INDEXES)
     await ServerState.current()
     print(f"  ✓ Beanie initialized in {time.time() - beanie_start:.2f}s")
 

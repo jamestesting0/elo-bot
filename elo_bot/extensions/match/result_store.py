@@ -42,6 +42,7 @@ from elo_bot.features.queue.matching import autoqueue_completed_match_participan
 from elo_bot.features.results.operations import (
     result_input_error,
 )
+from elo_bot.features.hosting.sequential.runs import open_run_refusal
 from elo_bot.integrations.helper_api import HelperScoreAttackLimit
 
 
@@ -61,6 +62,9 @@ class MatchResultStoreCommands:
             return
         if reason := result_input_error(match):
             await ctx.send(f"{ERROR_EMOJI} {reason}", ephemeral=True)
+            return
+        if refusal := await open_run_refusal(match, index):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
         # identify whether the clicker is one of the two players
@@ -485,6 +489,9 @@ class MatchResultStoreCommands:
             return
         if reason := result_input_error(match):
             await ctx.send(f"{ERROR_EMOJI} {reason}", ephemeral=True)
+            return
+        if refusal := await open_run_refusal(match, player):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
         # the district must be one of the chosen final districts

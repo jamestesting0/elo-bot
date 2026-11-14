@@ -66,10 +66,12 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(autostart)
         self.assertEqual(
             {str(option.name) for option in autostart.options},
-            {"player", "clan", "scout", "district"},
+            {"player", "clan", "scout", "district", "sequential"},
         )
         district = next(option for option in autostart.options if str(option.name) == "district")
         self.assertFalse(district.required)
+        sequential = next(option for option in autostart.options if str(option.name) == "sequential")
+        self.assertFalse(sequential.required)
         self.assertEqual(autostart.max_concurrency.concurrent, 1)
         self.assertIs(autostart.max_concurrency.bucket, CHANNEL_USER_CONCURRENCY_BUCKET)
 

@@ -497,10 +497,11 @@ class TestMatchCommands(MatchCommandsCase):
         command = self.cog.match_autostart
 
         self.assertEqual(command.resolved_name, "match autostart")
-        self.assertEqual([str(option.name) for option in command.options], ["clan", "scout", "district"])
+        self.assertEqual([str(option.name) for option in command.options], ["clan", "scout", "district", "sequential"])
         self.assertTrue(command.options[0].required)
         self.assertFalse(command.options[1].required)
         self.assertFalse(command.options[2].required)
+        self.assertFalse(command.options[3].required)
         self.assertEqual([str(option.name) for option in self.cog.match_start.options], ["clan", "scout"])
         self.assertEqual(len(command.checks), 1)
         self.assertIs(command.max_concurrency.bucket, match_base_store_module.CHANNEL_USER_CONCURRENCY_BUCKET)

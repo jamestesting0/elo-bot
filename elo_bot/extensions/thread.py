@@ -10,6 +10,8 @@ import asyncio
 from elo_bot.features.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
 from elo_bot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 from elo_bot.features.base_store.storage import clear_match_base_stores
+from elo_bot.core.finals import is_final_match
+from elo_bot.features.hosting.sequential.service import close_runs_for_thread
 from elo_bot.features.hosting.war import result_store
 from elo_bot.features.matches.resources import free_match_clans, remove_helper_task
 
@@ -101,6 +103,8 @@ class ThreadCommands(ipy.Extension):
                         )
                         return
                     await ctx.channel.delete(reason=f"Deleted by: {ctx.author} ({ctx.author.id})")
+                    if match and is_final_match(match):
+                        await close_runs_for_thread(str(match.thread))
                     if match and not await delete_unreserved_match(match):
                         logging.warning("Match %s changed before deleted-thread cleanup could finish", match.token)
                         return
@@ -124,6 +128,8 @@ class ThreadCommands(ipy.Extension):
             match = await Match.find_one(Match.thread == str(thread_id))
             if not match:
                 return
+            if is_final_match(match):
+                await close_runs_for_thread(str(thread_id))
             await clear_match_base_stores(match, reset_stored_flags=True, bot=self.bot, reason="thread_deleted")
             await self._delete_match_record(match)
 

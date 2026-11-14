@@ -14,14 +14,20 @@ from elo_bot.db.final_models import FinalMatchResult, FinalResultSnapshot
 
 
 def result_form(final: EloFinal, node: EloFinalMatch, owner: str, previous: FinalMatchResult | None = None,
-                *, winner: str | None = None, outcome: Outcome = "Played", reason: str | None = None) -> ipy.Modal:
+                *, winner: str | None = None, outcome: Outcome = "Played", reason: str | None = None,
+                stored: dict[str, list[str]] | None = None) -> ipy.Modal:
     custom_id = f"finalres|{final.season_number}|{node.id}|{owner}|{node.result_version}|" \
                 f"{node.contestant_revision}|{node.attempt}|{winner or '-'}|{int(outcome == 'Forfeit')}"
     fields = []
     for side, user in enumerate(node.contestants):
-        value = "\n".join(["0.00"] * 7) if outcome == "Forfeit" else (
-            "\n".join(previous.snapshot.scores[user]) if previous else None
-        )
+        if outcome == "Forfeit":
+            value = "\n".join(["0.00"] * 7)
+        elif previous:
+            value = "\n".join(previous.snapshot.scores[user])
+        elif stored and user in stored:
+            value = "\n".join(stored[user])
+        else:
+            value = None
         fields.append(ipy.ParagraphText(label=f"{final.player_nicknames[user][:35]}'s result",
                                        custom_id=f"player{side + 1}", value=value, max_length=100,
                                        placeholder="7 lines in district order, e.g. 2.83"))
@@ -73,4 +79,6 @@ async def show_source_result_form(ctx, source: Match, *, correction: bool = Fals
     if source.final_superseded or node.match_id != source.id or node.contestant_revision != source.final_contestant_revision:
         raise FinalError("This physical match was superseded. Use `/final match result` for the current pairing.")
     previous = await FinalMatchResult.get(node.result_id) if node.result_id else None
-    await ctx.send_modal(result_form(final, node, str(ctx.author.id), previous))
+    stored = {participant.user_id: list(participant.result) for participant in source.participants
+              if all(participant.result)}
+    await ctx.send_modal(result_form(final, node, str(ctx.author.id), previous, stored=stored))

@@ -12,6 +12,7 @@ from interactions import utils
 import elo_bot.features.base_store.publication as base_store_publication
 import elo_bot.features.hosting.live.helper_live as helper_live
 import elo_bot.features.hosting.live.live_start as live_start
+import elo_bot.features.hosting.sequential.service as sequential_service
 import elo_bot.features.hosting.war.helper_host as helper_host
 import elo_bot.features.hosting.war.war_start as war_start
 from elo_bot.config.emojis import (
@@ -62,6 +63,7 @@ from elo_bot.features.base_store.start import StoredStartState, held_store, shar
 from elo_bot.features.finals.matches import schedule_final_match
 from elo_bot.core.finals import FinalError, is_final_match
 from elo_bot.features.hosting.live.preflight import LivePreflight
+from elo_bot.features.hosting.sequential.runs import open_run_refusal
 from elo_bot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elo_bot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag
 from elo_bot.features.matches.attack_bases import is_missing_scout_view
@@ -119,7 +121,7 @@ class MatchHostingCommands:
     async def _start_war(self, ctx: ipy.SlashContext | ipy.ComponentContext, player: int,
                          clan: str, host: ipy.User = None, scout: bool = False, slot: str = None,
                          automatic: bool = False, district: str | None = None,
-                         stored_reservation_id: str | None = None):
+                         stored_reservation_id: str | None = None, sequential: bool = False):
         await ctx.defer(ephemeral=True)
 
         if not host:
@@ -134,6 +136,14 @@ class MatchHostingCommands:
         if is_match_finished(match, player=player):
             player_id = match.participants[player].user_id
             await ctx.send(f"{ERROR_EMOJI} The match has already finished for <@{player_id}>.", ephemeral=True)
+            return
+
+        if refusal := await open_run_refusal(match, player):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
+            return
+        if sequential and (district is not None or not is_final_match(match)):
+            await ctx.send(f"{ERROR_EMOJI} Sequential hosting plays all seven districts of a Final match. "
+                           "Leave `district` blank.", ephemeral=True)
             return
 
         if automatic and district is not None:
@@ -323,6 +333,23 @@ class MatchHostingCommands:
                     return
                 slot_instruction = construct_start_slot_instruction(available_slots, clan_obj.name)
 
+            if automatic and sequential:
+                await sequential_service.host_war_sequentially(
+                    self.bot,
+                    ctx,
+                    helper_host.AutomaticWarHost(
+                        match=match,
+                        player=player,
+                        clan=clan_obj,
+                        host=host,
+                        scout=scout,
+                        clan_reservation=reservation,
+                        side_reservation=side_reservation,
+                        stored_start=stored_start,
+                    ),
+                )
+                return
+
             if automatic:
                 await helper_host.host_war_automatically(
                     self,
@@ -436,9 +463,15 @@ class MatchHostingCommands:
         choices=DISTRICT_CHOICES,
         required=False,
     )
+    @ipy.slash_option(
+        name="sequential",
+        description="Host all seven Final districts in one Helper job",
+        opt_type=ipy.OptionType.BOOLEAN,
+        required=False,
+    )
     async def match_war_autostart(self, ctx: ipy.SlashContext, player: int,
                                   clan: str, scout: bool = False,
-                                  district: str | None = None):
+                                  district: str | None = None, sequential: bool = False):
         await self._start_war(
             ctx,
             player,
@@ -446,6 +479,7 @@ class MatchHostingCommands:
             scout=scout,
             automatic=True,
             district=district,
+            sequential=sequential,
         )
 
     @ipy.component_callback(re.compile(r"^host_clan_select\|\w+\|\d+$"))
@@ -476,6 +510,9 @@ class MatchHostingCommands:
                 f"{ERROR_EMOJI} You cannot set a clan for a match that has ended.",
                 ephemeral=True,
             )
+            return
+        if refusal := await open_run_refusal(match, index):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
         # authorization: unchanged logic, read from the document
@@ -661,6 +698,9 @@ class MatchHostingCommands:
                 or ctx.message.embeds[0].title == "**Match Ended**"):
             await ctx.send(f"{ERROR_EMOJI} You cannot abort a match that has ended.")
             return
+        if refusal := await open_run_refusal(match, index):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
+            return
 
         # authorization check against a host list
         if match.hosts and match.hosts[index] and str(ctx.author.id) != match.hosts[index]:
@@ -713,6 +753,9 @@ class MatchHostingCommands:
                 or ctx.message.embeds[0].title == "**Match Ended**"):
             await ctx.send(f"{ERROR_EMOJI} You cannot host a match that has ended.", ephemeral=True)
             return
+        if refusal := await open_run_refusal(match, index):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
+            return
 
         if not await update_match_control(
                 match, MatchMessageState.capture(match, index), {f"hosts.{index}": str(ctx.author.id)},
@@ -749,6 +792,10 @@ class MatchHostingCommands:
 
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
+            return
+
+        if refusal := await open_run_refusal(match):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
         # a live match must have a scheduled time
@@ -832,12 +879,19 @@ class MatchHostingCommands:
         choices=DISTRICT_CHOICES,
         required=False,
     )
+    @ipy.slash_option(
+        name="sequential",
+        description="Host all seven Final districts in one Helper job",
+        opt_type=ipy.OptionType.BOOLEAN,
+        required=False,
+    )
     async def match_autostart(
             self,
             ctx: ipy.SlashContext,
             clan: str,
             scout: bool = False,
             district: str | None = None,
+            sequential: bool = False,
     ) -> None:
         await self._start_live(
             ctx,
@@ -847,6 +901,7 @@ class MatchHostingCommands:
                 automatic=True,
                 requested_by=str(ctx.author.id),
                 district=district,
+                sequential=sequential,
             ),
         )
 
@@ -949,6 +1004,14 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
 
+        if refusal := await open_run_refusal(match):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
+            return
+        if request.sequential and (request.district is not None or not is_final_match(match)):
+            await ctx.send(f"{ERROR_EMOJI} Sequential hosting plays all seven districts of a Final match. "
+                           "Leave `district` blank.", ephemeral=True)
+            return
+
         if request.district is not None:
             await self._host_live_district(ctx, request, match)
             return
@@ -1049,6 +1112,24 @@ class MatchHostingCommands:
             )
             return
         slot_instruction = ""
+        if request.automatic and request.sequential:
+            await sequential_service.host_live_sequentially(
+                self.bot,
+                ctx,
+                helper_live.AutomaticLiveHost(
+                    match=match,
+                    clan=clan_obj,
+                    host=host,
+                    player1=player1_acc,
+                    player2=player2_acc,
+                    player1_elo=p1_doc.elo,
+                    player2_elo=p2_doc.elo,
+                    scout=scout,
+                    requested_by=str(ctx.author.id),
+                    stored_reservation_id=request.stored_reservation_id,
+                ),
+            )
+            return
         if request.automatic:
             assert request.requested_by is not None
             await helper_live.host_live_automatically(

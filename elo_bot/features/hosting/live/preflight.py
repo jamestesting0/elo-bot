@@ -15,3 +15,4 @@ class LivePreflight:
     district: str | None = None
     allow_opponent_cancel: bool = False
     stored_reservation_id: str | None = None
+    sequential: bool = False

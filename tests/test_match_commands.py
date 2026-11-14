@@ -14,9 +14,10 @@ from beanie import PydanticObjectId
 
 import elobot.extensions.match as match_commands
 from elobot.extensions.challenge import ChallengeCommands
-from elobot.extensions.match import (
-    MatchCommands, collect_occupied_base_store_slots, clear_participant_base_store, clear_match_base_stores,
-    construct_start_slot_instruction, get_start_base_store_slot_availability, is_match_finished,
+from elobot.extensions.match import MatchCommands, is_match_finished
+from elobot.extensions.match.adapters import (
+    collect_occupied_base_store_slots, clear_participant_base_store, clear_match_base_stores,
+    construct_start_slot_instruction, get_start_base_store_slot_availability,
 )
 from elobot.features.queue.policy import (
     QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUEUE_TIER_PRIORITY, QUEUE_TIER_NORMAL, QUEUE_TIER1_AGED_AFTER_SECONDS,
@@ -1915,7 +1916,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_tracks_occupancy_outside_raid_weekend(
             self, mock_match, mock_clan, mock_is_raid_weekend):
-        from elobot.extensions.match import sync_base_store_slots
+        from elobot.extensions.match.adapters import sync_base_store_slots
 
         match = MagicMock(participants=[
             MagicMock(base_store=BaseStore(
@@ -1941,7 +1942,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_blocks_all_clans_for_pending_legacy_reservation(
             self, mock_match, mock_clan):
-        from elobot.extensions.match import sync_base_store_slots
+        from elobot.extensions.match.adapters import sync_base_store_slots
 
         legacy_match = MagicMock(
             thread="987",
@@ -1968,7 +1969,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Clan")
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_ignores_orphaned_reservations(self, mock_match, mock_clan):
-        from elobot.extensions.match import sync_base_store_slots
+        from elobot.extensions.match.adapters import sync_base_store_slots
 
         orphaned_match = MagicMock(
             thread=None,
@@ -2003,7 +2004,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_does_not_block_for_started_legacy_match(
             self, mock_match, mock_clan):
-        from elobot.extensions.match import sync_base_store_slots
+        from elobot.extensions.match.adapters import sync_base_store_slots
 
         started_match = MagicMock(
             participants=[MagicMock(base_store=None, opponent_bases_stored=True)],
@@ -2026,7 +2027,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_expires_reservations_from_completed_weekend(
             self, mock_match, mock_clan, _mock_latest_raid_end):
-        from elobot.extensions.match import sync_base_store_slots
+        from elobot.extensions.match.adapters import sync_base_store_slots
 
         participant = MagicMock(
             base_store=BaseStore(clan_tag="#CLAN", slot="Slot 1", stored_at=100),

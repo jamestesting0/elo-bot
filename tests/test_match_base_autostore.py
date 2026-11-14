@@ -29,7 +29,7 @@ class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
     async def _invoke(self, player: int) -> AsyncMock:
         with (
             patch_sites(('elobot.extensions.match.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
-            patch("elobot.extensions.match.base_store_storage.store_self_bases", new_callable=AsyncMock) as store,
+            patch_sites(('elobot.extensions.match.base_store_storage.store_self_bases', 'elobot.extensions.match.adapters.base_store_storage.store_self_bases'), new_callable=AsyncMock) as store,
         ):
             match_model.find_one = AsyncMock(return_value=self.match)
             await self.cog.match_base_autostore.callback.func(self.cog, self.ctx, player=player)

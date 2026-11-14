@@ -36,7 +36,7 @@ class FinalCommands(Extension):
 
     async def _recover(self, edition):
         from elobot.features.finals.recovery import recover_final
-        from elobot.extensions.match import clear_match_base_stores
+        from elobot.extensions.match.adapters import clear_match_base_stores
         from elobot.features.matches.resources import free_match_clans, remove_helper_task
         async def release(source):
             await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")

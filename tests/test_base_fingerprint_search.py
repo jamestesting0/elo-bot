@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import elobot.extensions.base as commands
 from elobot.features.base_submission.presentation import build_review_components
 from elobot.features.bases.fingerprints.search import SearchSession
 from elobot.features.bases.fingerprints.types import FingerprintError
@@ -18,6 +17,7 @@ from tests._base_finder_lock_fixture import ContendedLock
 
 
 from tests._base_search_fixture import FingerprintSearchStateMixin
+from tests._patch_sites import patch_sites
 
 class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_saved_review_source_read_only_and_exact_button(self):
@@ -280,7 +280,7 @@ class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsynci
                     response=SimpleNamespace(status=403, reason="Forbidden"),
                     response_data={"code": 50013, "message": "Missing Permissions"})
                 with (patch.object(PendingBaseSubmission, "find", return_value=query),
-                      patch.object(commands, "time") as clock):
+                      patch_sites(('elobot.extensions.base.extraction.time', 'elobot.extensions.base.search.time')) as clock):
                     started = 10000 + index * 7200
                     clock.monotonic.return_value = started
                     with self.assertLogs(level="WARNING") as logs:

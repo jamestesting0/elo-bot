@@ -35,6 +35,18 @@ MATCH_MODULE_FAMILY = (
 )
 
 
+# The modules that together hold BaseCommands (elobot/extensions/base/).
+BASE_MODULE_FAMILY = (
+    "elobot.extensions.base",
+    "elobot.extensions.base.extraction",
+    "elobot.extensions.base.leaderboard",
+    "elobot.extensions.base.listing",
+    "elobot.extensions.base.manage",
+    "elobot.extensions.base.private",
+    "elobot.extensions.base.search",
+    "elobot.extensions.base.submissions",
+)
+
 class _SitesPatch(mock._patch):
     extra_targets: tuple[str, ...] = ()
 

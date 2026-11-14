@@ -16,7 +16,6 @@ from beanie.odm.settings.document import DocumentSettings
 import interactions as ipy
 from pymongo.results import InsertOneResult, UpdateResult
 
-import elobot.extensions.base as commands
 import elobot.extensions.preset as presets
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import BaseLayout, PendingBaseSubmission
@@ -35,7 +34,7 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
         root = self.enterContext(TemporaryDirectory(prefix="issue25-creation-"))
         self.enterContext(chdir(root))
         Path("temp").mkdir()
-        clock = self.enterContext(patch.object(commands, "datetime"))
+        clock = self.enterContext(patch_sites(('elobot.extensions.base.submissions.datetime', 'elobot.extensions.base.manage.datetime', 'elobot.extensions.base.private.datetime')))
         clock.now.return_value = NOW
         preset_clock = self.enterContext(patch.object(presets, "datetime"))
         preset_clock.now.return_value = NOW
@@ -115,10 +114,8 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
             Path(path).write_bytes(b"offline screenshot")
             return True
 
-        self.enterContext(patch.object(commands, "download_base_screenshot", new=AsyncMock(side_effect=download)))
-        self.enterContext(patch.object(
-            commands, "capture_base_screenshot", new=AsyncMock(side_effect=AssertionError("Unexpected capture")),
-        ))
+        self.enterContext(patch_sites(('elobot.extensions.base.submissions.download_base_screenshot', 'elobot.extensions.base.manage.download_base_screenshot', 'elobot.extensions.base.private.download_base_screenshot'), new=AsyncMock(side_effect=download)))
+        self.enterContext(patch_sites(('elobot.extensions.base.submissions.capture_base_screenshot', 'elobot.extensions.base.manage.capture_base_screenshot', 'elobot.extensions.base.private.capture_base_screenshot'), new=AsyncMock(side_effect=AssertionError("Unexpected capture"))))
         self.enterContext(patch.object(presets, "download_base_screenshot", new=AsyncMock(side_effect=download)))
         self.enterContext(patch.object(
             presets, "capture_base_screenshot", new=AsyncMock(side_effect=AssertionError("Unexpected capture")),
@@ -159,7 +156,7 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
         )
         query = MagicMock(count=AsyncMock(return_value=0))
         with (
-            patch_sites(('elobot.extensions.base.Player', 'elobot.features.bases.layouts.private.Player'), player),
+            patch_sites(('elobot.extensions.base.private.Player', 'elobot.features.bases.layouts.private.Player'), player),
             patch.object(BaseLayout, "find", return_value=query),
         ):
             await self.cog.base_private_add.callback.func(

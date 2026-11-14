@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
 
-import elobot.extensions.base as commands
 from elobot.features.bases.fingerprints.search import SearchSession, render_page
 from elobot.features.bases.fingerprints.types import MatchScore
 from elobot.config.emojis import ERROR_EMOJI
@@ -15,6 +14,7 @@ from elobot.db import BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._base_finder_lock_fixture import ContendedLock
 import elobot.extensions.base as base_module
+import elobot.extensions.base.listing as base_listing_module
 
 
 class TestSimilarPagination(unittest.IsolatedAsyncioTestCase):
@@ -62,7 +62,7 @@ class TestSimilarPagination(unittest.IsolatedAsyncioTestCase):
                 payload = await render_page(self.session, ctx)
                 self.assertEqual(len(payload["components"]), 2)
                 actual = payload["components"][0].to_dict()
-                expected = commands._build_base_list_components(
+                expected = base_listing_module._build_base_list_components(
                     "Any", index, "Performance", "Any", "Any", total,
                 )[-1].to_dict()
                 for row in (actual, expected):

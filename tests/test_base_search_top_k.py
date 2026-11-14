@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from bson import ObjectId
 
-import elobot.extensions.base as commands
 from elobot.features.bases.fingerprints import matcher, search
 from elobot.features.bases.fingerprints.worker import WorkerRequest
 from elobot.db import BaseLayout
@@ -26,7 +25,7 @@ class TestSearchTopK(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self) -> None:
         fixture.FingerprintSearchStateMixin.setUp(self)
-        self.enterContext(patch.object(commands, "find_matches", search.find_matches))
+        self.enterContext(patch('elobot.extensions.base.search.find_matches', search.find_matches))
         self.query = layout(points(53))
         self.partial = [layout([*points(53)[:-n],
                                 *[("cannon", .99 - i * .002, .79 - i * .002) for i in range(n)]])

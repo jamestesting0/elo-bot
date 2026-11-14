@@ -2,7 +2,7 @@ import os
 import sys
 import unittest
 from functools import partial
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import anyio
 import interactions as ipy
@@ -14,6 +14,7 @@ from elobot.config.game import BASE_TIERS
 from elobot.config.ids import COMMAND_CHANNEL
 from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 from tests._base_submission_fixtures import configure_pending_resolution
+from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -28,13 +29,13 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel = AsyncMock()
         self.bot.fetch_user = AsyncMock()
         self.cog = self.module.BaseCommands(self.bot)
-        self.enterContext(patch.object(
-            self.module, "BaseLayout", MagicMock(find_one=AsyncMock(return_value=None)),
+        self.enterContext(patch_family(
+            BASE_MODULE_FAMILY, "BaseLayout", MagicMock(find_one=AsyncMock(return_value=None)),
         ))
         self.pending = self._pending()
         self.pending_model = MagicMock()
         self.pending_model.get = AsyncMock(return_value=self.pending)
-        pending_patch = patch.object(self.module, "PendingBaseSubmission", self.pending_model, create=True)
+        pending_patch = patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission", self.pending_model, create=True)
         pending_patch.start()
         self.addCleanup(pending_patch.stop)
 
@@ -206,7 +207,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         submitter = MagicMock(mention="<@123>")
         submitter.send = AsyncMock()
         self.bot.fetch_user.return_value = submitter
-        with patch.object(self.module, "BaseLayout") as base_layout:
+        with patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout:
             base_layout.find_one = AsyncMock(return_value=None)
             base_layout.get = AsyncMock(return_value=None)
             created = MagicMock()
@@ -250,7 +251,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
                 ctx = self._context(self._review(), modal=True)
                 submitter = MagicMock(mention="<@123>", send=AsyncMock())
                 self.bot.fetch_user.return_value = submitter
-                with patch.object(self.module, "BaseLayout") as base_layout:
+                with patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout:
                     base_layout.find_one = AsyncMock(return_value=None)
                     base_layout.get = AsyncMock(return_value=None)
                     created = MagicMock(insert=AsyncMock())
@@ -276,7 +277,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         submitter = MagicMock(mention="<@123>")
         submitter.send = AsyncMock()
         self.bot.fetch_user.return_value = submitter
-        with patch.object(self.module, "BaseLayout") as base_layout:
+        with patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout:
             base_layout.find_one = AsyncMock(return_value=existing)
 
             # When: the moderator tries to accept the duplicate link.
@@ -309,7 +310,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         fallback = MagicMock()
         fallback.send = AsyncMock()
         self.bot.fetch_channel.return_value = fallback
-        with patch.object(self.module, "BaseLayout") as base_layout:
+        with patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout:
             base_layout.find_one = AsyncMock()
             # When: the moderator rejects with a required reason.
             await self.cog.reject_submission_modal.callback.func(self.cog, ctx, reason="Copied layout")
@@ -346,7 +347,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         submitter = MagicMock(mention="<@123>")
         submitter.send = AsyncMock()
         self.bot.fetch_user.return_value = submitter
-        with patch.object(self.module, "BaseLayout") as base_layout:
+        with patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout:
             base_layout.find_one = AsyncMock(return_value=None)
             base_layout.get = AsyncMock(return_value=None)
             created = MagicMock()
@@ -378,7 +379,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         submitter = MagicMock(mention="<@123>")
         submitter.send = AsyncMock()
         self.bot.fetch_user.return_value = submitter
-        with patch.object(self.module, "BaseLayout") as base_layout:
+        with patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout:
             base_layout.find_one = AsyncMock()
             # When: the moderator submits a rejection reason through the modal.
             await self.cog.reject_submission_modal.callback.func(self.cog, ctx, reason="Modal decision")

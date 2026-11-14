@@ -13,10 +13,12 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import AutoReconnect, DuplicateKeyError, OperationFailure, PyMongoError
 from pymongo.results import InsertOneResult, UpdateResult
 
-import elobot.extensions.base as commands
 from elobot.db import BaseLayout, PendingBaseSubmission
 from elobot.db.base_submission_models import SubmissionRejection
 import elobot.extensions.base as base_module
+from tests._patch_sites import patch_sites
+import elobot.extensions.base.extraction as base_extraction_module
+import elobot.extensions.base.submissions as base_submissions_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -134,7 +136,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
 
     async def test_duplicate_accept_updates_status_and_preserves_existing_base(self) -> None:
         # Given a base added to the bank after submission, before Accept is clicked.
-        with patch.object(commands.BaseLayout, "find_one", new=AsyncMock(return_value=object())):
+        with patch.object(base_extraction_module.BaseLayout, "find_one", new=AsyncMock(return_value=object())):
             ctx = self.context()
             ctx.send_modal = AsyncMock()
             # When a moderator clicks Accept and later retries the stale modal.
@@ -157,7 +159,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
     async def test_duplicate_rejection_save_failure_keeps_review_retryable(self) -> None:
         # Given a duplicate discovered after the Accept modal was opened, but saving fails.
         self.fail_phase = "rejected"
-        with patch.object(commands.BaseLayout, "find_one", new=AsyncMock(return_value=object())):
+        with patch.object(base_extraction_module.BaseLayout, "find_one", new=AsyncMock(return_value=object())):
             ctx = self.context()
             await self.accept(ctx)
         # Then no terminal message or notification precedes the saved rejection.
@@ -169,7 +171,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
 
     async def test_duplicate_rejection_publication_failure_can_be_retried(self) -> None:
         # Given a duplicate whose rejection saves but Discord cannot publish it.
-        with patch.object(commands.BaseLayout, "find_one", new=AsyncMock(return_value=object())):
+        with patch.object(base_extraction_module.BaseLayout, "find_one", new=AsyncMock(return_value=object())):
             with patch.object(self.message, "edit", new=AsyncMock(side_effect=ipy.errors.HTTPException(
                 MagicMock(status=500), "edit failed",
             ))):
@@ -235,7 +237,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         self.message.edit.assert_not_awaited()
         self.submitter.send.assert_not_awaited()
         self.assertEqual(self.row["resolution"]["phase"], "accepting")
-        self.assertNotIn(str(commands.SUCCESS_EMOJI), ctx.send.await_args.args[0])
+        self.assertNotIn(str(base_extraction_module.SUCCESS_EMOJI), ctx.send.await_args.args[0])
 
     async def test_fingerprint_status_failure_does_not_prevent_accepted_notification(self):
         await self.accept(self.context())
@@ -279,8 +281,8 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
 
         # When: the actual slash callback submits the review.
         with (
-            patch.object(commands, "download_base_screenshot", new=AsyncMock(return_value=True)),
-            patch.object(commands.os.path, "exists", return_value=False),
+            patch_sites(('elobot.extensions.base.submissions.download_base_screenshot', 'elobot.extensions.base.manage.download_base_screenshot', 'elobot.extensions.base.private.download_base_screenshot'), new=AsyncMock(return_value=True)),
+            patch.object(base_submissions_module.os.path, "exists", return_value=False),
             suppress(PyMongoError),
         ):
             await self.cog.base_submit.callback.func(
@@ -290,7 +292,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         # Then: an orphan post cannot accept moderation input or announce success.
         buttons = channel.send.await_args.kwargs["components"].components
         self.assertTrue(all(button.disabled for button in buttons))
-        self.assertTrue(all(str(commands.SUCCESS_EMOJI) not in call.args[0] for call in ctx.send.await_args_list))
+        self.assertTrue(all(str(base_extraction_module.SUCCESS_EMOJI) not in call.args[0] for call in ctx.send.await_args_list))
 
     async def test_accept_and_reject_in_separate_cogs_cannot_reverse_claimed_acceptance(self) -> None:
         # Given: acceptance is saved but its base insert acknowledgement was lost.

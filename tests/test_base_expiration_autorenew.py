@@ -97,8 +97,8 @@ class TestBaseExpirationAutorenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = NOW
 
         with (
-                patch_sites(('elobot.extensions.base.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as base_layout,
-                patch("elobot.extensions.base.datetime", new=clock),
+                patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as base_layout,
+                patch_sites(('elobot.extensions.base.submissions.datetime', 'elobot.extensions.base.manage.datetime', 'elobot.extensions.base.private.datetime'), new=clock),
                 patch("elobot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.expiration_date.__le__.return_value = "expiring"

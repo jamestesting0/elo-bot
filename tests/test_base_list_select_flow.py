@@ -305,7 +305,7 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
         }
         self.assertTrue(published_ids.isdisjoint(LEADERBOARD_SELECT_IDS))
 
-    @patch_sites(('elobot.extensions.base.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
     async def test_list_district_and_embed_selects_keep_filters_and_pagination(self, mock_base_layout):
         # Given: public Excellent bases for builder 111 across two districts, plus
         # quality, builder, and private rows that must never appear.

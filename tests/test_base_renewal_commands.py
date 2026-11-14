@@ -26,7 +26,8 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         # Given
         command_paths = {
             command.resolved_name
-            for command in vars(BaseCommands).values()
+            for klass in BaseCommands.__mro__[:BaseCommands.__mro__.index(ipy.Extension)]
+            for command in vars(klass).values()
             if isinstance(command, ipy.SlashCommand)
         }
 
@@ -44,8 +45,8 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("base autorenew", command_paths)
 
-    @patch("elobot.extensions.base.utils.misc_utils.disable_components", return_value=[])
-    @patch_sites(('elobot.extensions.base.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch('elobot.extensions.base.manage.utils.misc_utils.disable_components', return_value=[])
+    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
     async def test_renewal_modal_logs_success(self, mock_base_layout, _mock_disable_components) -> None:
         # Given
         old_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -63,7 +64,7 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         # When
         clock = MagicMock()
         clock.now.return_value.timestamp.return_value = 2_000_000_000
-        with patch("elobot.extensions.base.datetime", clock):
+        with patch_sites(('elobot.extensions.base.submissions.datetime', 'elobot.extensions.base.manage.datetime', 'elobot.extensions.base.private.datetime'), clock):
             await BASE_RENEW_MODAL_CALLBACK(self.cog, ctx, renewed_link=new_link)
 
         # Then

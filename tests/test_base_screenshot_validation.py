@@ -9,10 +9,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from PIL import Image
 
-import elobot.extensions.base as commands
 import elobot.extensions.preset as presets
 from elobot.features.bases.fingerprints import images
 import elobot.extensions.base as base_module
+from tests._patch_sites import patch_sites
+import elobot.extensions.base.submissions as base_submissions_module
+from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -22,7 +24,7 @@ class TestBaseScreenshotValidation(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         Path("temp").mkdir(exist_ok=True)
         self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(dir="temp")))
-        self.enterContext(patch.object(commands.secrets, "token_hex", return_value=f"{self.directory.name}/image"))
+        self.enterContext(patch.object(base_submissions_module.secrets, "token_hex", return_value=f"{self.directory.name}/image"))
         self.bot = MagicMock(spec=ipy.Client, ext={})
         self.bot.owner.send = AsyncMock(return_value=SimpleNamespace(
             id=100, channel=SimpleNamespace(id=200),
@@ -42,13 +44,15 @@ class TestBaseScreenshotValidation(unittest.IsolatedAsyncioTestCase):
         self.bases.find.return_value.count = AsyncMock(return_value=0)
         self.pending = MagicMock()
         self.pending.return_value.insert = AsyncMock()
-        for module in (commands, presets):
-            self.enterContext(patch.object(module, "BaseLayout", self.bases))
-        self.enterContext(patch.object(commands, "PendingBaseSubmission", self.pending))
-        for module in (commands, presets):
-            self.enterContext(patch.object(module, "Player", SimpleNamespace(
-                user_id="user_id", find_one=AsyncMock(return_value=self.player),
-            )))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "BaseLayout", self.bases))
+        self.enterContext(patch.object(presets, "BaseLayout", self.bases))
+        self.enterContext(patch_sites(('elobot.extensions.base.search.PendingBaseSubmission', 'elobot.extensions.base.submissions.PendingBaseSubmission'), self.pending))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=self.player),
+        )))
+        self.enterContext(patch.object(presets, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=self.player),
+        )))
         self.session = MagicMock()
         self.session.__aenter__ = AsyncMock(return_value=self.session)
         self.session.get.side_effect = lambda *_args, **_kwargs: self.response

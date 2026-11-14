@@ -3,6 +3,7 @@ from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+import interactions as ipy
 from bson import ObjectId
 from pymongo.errors import AutoReconnect
 
@@ -16,7 +17,7 @@ from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
 from elobot.features.bases.fingerprints.types import PIPELINE_ID
-import elobot.extensions.base as base_commands
+from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 import elobot.extensions.preset as preset_commands
 from unittest.mock import MagicMock
 
@@ -150,11 +151,14 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
         player = SimpleNamespace(elo=1000, base_presets={}, save_changes=AsyncMock())
         ctx = SimpleNamespace(defer=AsyncMock(), send=AsyncMock(),
                               author=SimpleNamespace(id=123), guild=SimpleNamespace(id=456))
-        for module in (base_commands, preset_commands):
-            self.enterContext(patch.object(module, "download_base_screenshot", new=AsyncMock(return_value=True)))
-            self.enterContext(patch.object(module, "delete_file", new=AsyncMock()))
-            self.enterContext(patch.object(module, "Player", SimpleNamespace(
-                user_id="user_id", find_one=AsyncMock(return_value=player))))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock(return_value=True)))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "delete_file", new=AsyncMock()))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=player))))
+        self.enterContext(patch.object(preset_commands, "download_base_screenshot", new=AsyncMock(return_value=True)))
+        self.enterContext(patch.object(preset_commands, "delete_file", new=AsyncMock()))
+        self.enterContext(patch.object(preset_commands, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=player))))
         attachment = SimpleNamespace(url="https://cdn.example/input.png")
         for name, command in (("staff", cog.base_add), ("private", cog.base_private_add),
                               ("preset", preset.preset_base_add)):
@@ -190,7 +194,7 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
     async def test_bulk_mixed_counts_and_discord_failure_keep_committed_success(self):
         service = FingerprintService(SimpleNamespace(), "isolated")
         service.cpu.start = AsyncMock()
-        service.bot.fetch_channel = AsyncMock(side_effect=base_commands.ipy.errors.Forbidden(
+        service.bot.fetch_channel = AsyncMock(side_effect=ipy.errors.Forbidden(
             response=SimpleNamespace(status=403, reason="Forbidden"), response_data={}))
         run, _ = await service.begin_run("123", 1)
         await enroll_batch(run)

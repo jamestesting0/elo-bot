@@ -63,7 +63,15 @@ from common.discord.channel_edits import schedule_channel_name_edit
 from common.discord.message_edits import edit_channel_message
 from common.results.helper_credits import award_helper_once
 from common.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    ADMIN_ROLE, BASE_SUBMISSION_THRESHOLD, BOT_ID, CLASHING_SWORD_EMOJI, COLOR, COMMAND_CHANNEL, CROSS_EMOJI,
+    DISTRICT_CHOICES, DISTRICT_CODES_REVERSED, DISTRICT_EMOJI, DISTRICT_INDEX, ELO_BLACKLIST_ROLE, ERROR_EMOJI,
+    FINAL_CHANNEL, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, HELPER_API_BASE_URL, HELPER_API_KEY, HOST_CLAN_CHOICES,
+    HOST_CLAN_OPTIONS, IMPORTANT_EMOJI, INFO_CHANNEL, LOADING_EMOJI, LOSS_EMOJI, LVL1_ROLES, LVL2_ROLES, LVL3_ROLES,
+    MATCH_CHANNEL, MODERATOR_ROLE, ORDINAL_REPRESENTATIONS, RED_COLOR, SEN_ROLE, STAFF_ROLE, STAR_EMOJI, SUCCESS_EMOJI,
+    TICK_EMOJI, UNAVAILABLE_IMAGE, WIN_EMOJI,
+)
 from common.discord.decorators import create_async_task
 from common.results.validation import is_match_finished, is_valid_complete_match_result, is_valid_match_result_entry
 from common.matches.base_selection import district_base_quality, ensure_secondary_base_index
@@ -94,7 +102,16 @@ from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from common.players.self_hosting import invite_eligible_players
 from database_models import Match, Participant, BaseLink, Clan, HelperTask, BaseLayout, \
     RecordedMatch, Player, Queue, MatchPlayerStats, MatchDistrictStats, Helper, HelperHistory, OverrideCode, ServerState
-from common.utils import *
+import coc
+import re
+import validators
+from common.constants import BASE_STORE_SLOTS, MAIN_GUILD
+from common.utils import (
+    calculate_elo, collect_base_store_slot_owners, delete_file, download_file, extract_integer,
+    fetch_member_otherwise_user, format_clan_availability_status, get_base_quality, get_destruction,
+    get_participant_base_store, get_stars, is_raid_weekend, member_guild, mention_user, read_json,
+)
+from datetime import datetime
 
 
 QUEUE_TIER_AGED = 0

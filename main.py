@@ -40,7 +40,12 @@ from datetime import datetime
 
 import coc
 
-from common.constants import *
+import interactions as ipy
+import os
+from common.constants import (
+    COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWORD, COLOR, DATA_BASES, ELO_BLACKLIST_ROLE, ERROR_EMOJI, FOOTER_IMAGE,
+    GUILD_IDS, LVL1_ROLES, MONGO_DB_URL, RAID_CHANNEL, STAFF_EMOJI, SUCCESS_EMOJI, TOKENS,
+)
 from common.utils import ComponentsV2ModalContext, clear_all_base_store_slots, get_extensions
 from common.base_fingerprints.service import FingerprintService
 from common.finals.persistence import register_final_indexes

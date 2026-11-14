@@ -8,7 +8,10 @@ from datetime import datetime, timedelta, timezone
 import anyio
 from pymongo.errors import PyMongoError
 
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    COLOR, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT, GIVEAWAY_EMOJI, GOLDPASS_IMAGE, GUILD_IDS, LVL1_ROLES, SUCCESS_EMOJI,
+)
 from database_models import Giveaway, Player, Season
 from common.utils import extract_integer, mention_user
 from cogs.leaderboard_commands import get_season_matches

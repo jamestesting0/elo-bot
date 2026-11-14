@@ -7,7 +7,10 @@ from typing import assert_never
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from common.constants import *
+from common.constants import (
+    COLOR, DISTRICT_CHOICES, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS, LB_ENTRIES_PER_PAGE, LVL1_ROLES, RANK_EMOJIS,
+    SUCCESS_EMOJI,
+)
 from common.constants import ERROR_EMOJI
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from database_models import BaseLayout, Season, Player, DistrictSeasonData, PlayerSeasonData
@@ -15,7 +18,9 @@ from common.discord.pagination import InvalidPageError, build_page_button, build
 from common.discord.season_stats import stats_controls, stats_embed
 from common.matches.season_stats import SeasonStatsError, SeasonWindow, season_windows
 from common.matches.season_stats_data import load_season_stats
-from common.utils import *
+import math
+from datetime import datetime
+from common.utils import extract_integer
 from common.utils import mention_user
 from cogs.base_commands import sort_bases
 

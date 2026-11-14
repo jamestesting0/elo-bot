@@ -5,7 +5,11 @@ import traceback
 from copy import copy
 from datetime import datetime
 
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    COLOR, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS, LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS, RANK_EMOJIS,
+    RANK_REVERSED_EMOJIS, SUCCESS_EMOJI,
+)
 from database_models import RecordedMatch, Player, Season
 from common.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
 from common.utils import get_season_by_number, mention_user, interpret_season_string

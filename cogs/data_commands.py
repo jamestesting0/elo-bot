@@ -8,9 +8,12 @@ from cogs.war_hosting import result_store
 from common.results.operations import cancel_result_operation
 from common.matches.cleanup import delete_unreserved_match, has_reserved_match_slots
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
-from common.constants import *
+import interactions as ipy
+from common.constants import ERROR_EMOJI, GUILD_IDS, LVL1_ROLES, LVL2_ROLES, SUCCESS_EMOJI
 from database_models import Match, Player, RecordedMatch, Season, Helper, BaseLayout
-from common.utils import *
+import coc
+import json
+from common.utils import delete_file, download_file
 
 
 class DataCommands(ipy.Extension):

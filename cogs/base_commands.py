@@ -34,7 +34,13 @@ from cogs.base_submission import (
     mark_review_embed,
     parse_base_district,
 )
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    BASE_QUALITY_EMOJIS, BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD, BASE_SUBMISSION_CHANNEL, BASE_TIERS, BOT_ID,
+    COLOR, COMMAND_CHANNEL, DISTRICT_CHOICES, DISTRICT_CODES_REVERSED, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT,
+    GUILD_IDS, HELPER_API_BASE_URL, HELPER_API_KEY, LB_ENTRIES_PER_PAGE, LINE_SEPERATOR_GIF, LOADING_EMOJI, LVL1_ROLES,
+    LVL2_ROLES, LVL3_ROLES, MAIN_GUILD, RANK_EMOJIS, RED_COLOR, SUCCESS_EMOJI, UNAVAILABLE_IMAGE, WHITELISTED_STAFFS,
+)
 from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout, PendingBaseSubmission, Player
 from database_models.base_submission_models import SubmissionAcceptance, SubmissionRejection
 from common.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number

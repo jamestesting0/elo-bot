@@ -5,7 +5,11 @@ from datetime import datetime
 import validators
 
 from cogs._base_screenshots import capture_base_screenshot
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    COLOR, DISTRICT_CHOICES, DISTRICT_CODES_REVERSED, DISTRICT_EMOJI, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS,
+    SUCCESS_EMOJI, UNAVAILABLE_IMAGE,
+)
 from database_models import BaseLayout, Player
 from common.base_fingerprints.images import attachment_identity, download_base_screenshot
 from common.base_fingerprints.ingestion import replace_source

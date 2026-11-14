@@ -2,9 +2,13 @@ import logging
 
 import anyio
 
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    CROSS_EMOJI, ERROR_EMOJI, FINAL_CHANNEL, GUILD_IDS, LOADING_EMOJI, LVL1_ROLES, MATCH_CHANNEL, SUCCESS_EMOJI,
+    TICK_EMOJI,
+)
 from database_models import Match
-from common.utils import *
+import asyncio
 from common.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
 from cogs.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 from cogs.base_store.storage import clear_match_base_stores

@@ -1,6 +1,7 @@
 import asyncio
 
-from common.constants import *
+import interactions as ipy
+from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS, LVL1_ROLES, SUCCESS_EMOJI
 from common.utils import mention_user, member_guild
 from database_models import Queue, ServerState
 

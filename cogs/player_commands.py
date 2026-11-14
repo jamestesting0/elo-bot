@@ -3,7 +3,11 @@ import re
 
 import coc
 
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    BOT_ID, COLOR, DISTRICT_EMOJI, DISTRICT_ORDER, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT, LEAGUES, LEAGUE_EMOJIS,
+    LOSS_EMOJI, LVL1_ROLES, MAIN_GUILD, PLAYER_ROLE, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI,
+)
 from common.discord.decorators import lock_files, create_async_task
 from database_models import Match, Player, RecordedMatch, Queue, Season
 from common.utils import read_json, interpret_season_string, fetch_member_otherwise_user, mention_user, member_guild

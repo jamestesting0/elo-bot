@@ -7,7 +7,11 @@ from typing import Literal
 from pymongo.errors import PyMongoError
 
 import cogs.match_commands as match_commands
-from common.constants import *
+import interactions as ipy
+from common.constants import (
+    ALEX_EMOJI, BANNER_IMAGE, CHAT_CHANNEL, CLASHING_SWORD_EMOJI, COLOR, ERROR_EMOJI, FOOTER_IMAGE, GUILD_IDS,
+    HOST_CLAN_OPTIONS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, REWARDS_IMAGE, STAFF_ROLE, SUCCESS_EMOJI,
+)
 from common.discord.embeds import embed_edit_payload
 from database_models import Clan, Match, Player, ServerState
 from common.utils import collect_base_store_slot_owners, format_clan_availability_status, mention_user, member_guild

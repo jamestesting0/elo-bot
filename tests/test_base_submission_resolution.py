@@ -16,6 +16,7 @@ from pymongo.results import InsertOneResult, UpdateResult
 import elobot.extensions.base as commands
 from elobot.db import BaseLayout, PendingBaseSubmission
 from elobot.db.base_submission_models import SubmissionRejection
+import elobot.extensions.base as base_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -106,7 +107,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         self.bot.ext = {}
         self.bot.user = SimpleNamespace(id=42)
         self.bot.fetch_user = AsyncMock(return_value=self.submitter)
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
 
     def context(self):
         ctx = MagicMock(spec=ipy.ModalContext)
@@ -204,7 +205,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         with suppress(PyMongoError):
             await self.accept(self.context())
         self.bot.ext = {}
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
 
         # When: a fresh cog retries Accept with different modal selections.
         retry = self.context()
@@ -298,7 +299,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         self.base_collection.find_one.reset_mock()
         self.base_collection.insert_one.reset_mock()
         self.bot.ext = {}
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
 
         # When: a fresh cog receives an already-open Reject modal.
         await self.reject(self.context())
@@ -314,7 +315,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         # Given: acceptance completed before a process restart.
         await self.accept(self.context(), builder="42")
         self.bot.ext = {}
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         ctx = self.context()
         ctx.author.id = 999
 
@@ -381,7 +382,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
 
         self.base_collection.find_one.side_effect = simultaneous_load
         self.bot.ext = {}
-        other_cog = commands.BaseCommands(self.bot)
+        other_cog = base_module.BaseCommands(self.bot)
 
         async def retry_other() -> None:
             await other_cog.accept_submission_modal.callback.func(

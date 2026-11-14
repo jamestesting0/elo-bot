@@ -14,9 +14,7 @@ from uuid import UUID
 import anyio
 import validators
 from beanie import PydanticObjectId
-from beanie.odm.queries.find import FindMany
 from interactions import utils
-from pydantic import BaseModel, ConfigDict, Field
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 import elobot.features.hosting.war.helper_preserve as helper_preserve
@@ -30,7 +28,7 @@ from elobot.features.base_submission.models import (
 )
 from elobot.features.base_submission.parsing import parse_base_district
 import interactions as ipy
-from elobot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elobot.config.ids import (
     BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD, BASE_SUBMISSION_CHANNEL, BOT_ID, COMMAND_CHANNEL, GUILD_IDS,
     LVL1_ROLES, LVL2_ROLES, LVL3_ROLES, MAIN_GUILD, WHITELISTED_STAFFS,
@@ -55,6 +53,26 @@ from elobot.features.bases.fingerprints.search import (
 )
 from elobot.features.bases.fingerprints.types import DISTRICTS, ExtractionState, FingerprintError, PIPELINE_ID
 from elobot.features.base_submission.presentation import FIND_SIMILAR_BUTTON_ID
+from elobot.features.bases.layouts.queries import BaseAutocompleteRow
+from elobot.features.bases.layouts.queries import BaseExtractionAutocompleteRow
+from elobot.features.bases.layouts.ui import _build_base_list_components
+from elobot.features.bases.layouts.ui import _builder_choice_label
+from elobot.features.bases.layouts.ui import _builder_names
+from elobot.features.bases.layouts.ui import _cached_user_name
+from elobot.features.bases.layouts.ui import _fingerprint_status_emoji
+from elobot.features.bases.layouts.ui import _iter_message_components
+from elobot.features.bases.layouts.queries import _one_listed_base
+from elobot.features.bases.layouts.ui import _parse_base_lb_title
+from elobot.features.bases.layouts.ui import _parse_base_list_state
+from elobot.features.bases.layouts.queries import _public_list_query
+from elobot.features.bases.layouts.queries import _resolve_builder_id
+from elobot.features.bases.layouts.ui import base_embed_names
+from elobot.features.bases.layouts.private import clear_private_base_preset
+from elobot.features.bases.layouts.ui import construct_base_embed
+from elobot.features.bases.layouts.ui import construct_base_leaderboard_string
+from elobot.features.bases.layouts.private import find_private_base_action
+from elobot.features.bases.layouts.queries import sort_bases
+from elobot.features.bases.layouts.private import update_private_base_message
 
 BASE_QUALITY_CHOICES = [
     ipy.SlashCommandChoice(name="Average", value="Average"),
@@ -62,379 +80,6 @@ BASE_QUALITY_CHOICES = [
     ipy.SlashCommandChoice(name="Great", value="Great"),
     ipy.SlashCommandChoice(name="Excellent", value="Excellent")
 ]
-
-
-class BaseAutocompleteRow(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    district: str
-    builder_id: str | None = None
-
-
-class BaseExtractionAutocompleteRow(BaseAutocompleteRow):
-    id: PydanticObjectId = Field(alias="_id")
-    link: str
-
-
-def _fingerprint_status_emoji(status: str) -> ipy.PartialEmoji:
-    if status in {"pending", "running"}:
-        return LOADING_EMOJI
-    if status in {"ready", "succeeded", "completed"}:
-        return SUCCESS_EMOJI
-    return ERROR_EMOJI
-
-
-def _resolve_builder_id(bot: ipy.Client, builder_id: str) -> str | None:
-    return None if builder_id == str(bot.user.id) else builder_id
-
-
-def _builder_names(bot: ipy.Client) -> dict[str, str]:
-    names = getattr(bot, "builder_names", None)
-    if names is None:
-        names = {}
-        bot.builder_names = names
-    return names
-
-
-def _cached_user_name(user) -> str | None:
-    if user is None:
-        return None
-    tag = getattr(user, "tag", None)
-    if isinstance(tag, str) and tag:
-        return tag
-    username = getattr(user, "username", None)
-    if isinstance(username, str) and username:
-        return username if username.startswith("@") else f"@{username}"
-    name = str(user)
-    return name if name else None
-
-
-def _builder_choice_label(bot: ipy.Client, guild: ipy.Guild | None, builder_id: str | None) -> str:
-    if not builder_id:
-        return "@anonymous"
-    builder_id = str(builder_id)
-    names = _builder_names(bot)
-    cached_name = names.get(builder_id)
-    if cached_name:
-        return cached_name
-    cached = guild.get_member(builder_id) if guild is not None else None
-    if cached is None:
-        cached = bot.get_user(builder_id)
-    name = _cached_user_name(cached)
-    if name:
-        names[builder_id] = name
-        return name
-    return f"<@{builder_id}>"
-
-
-def _parse_base_lb_title(title: str):
-    """extract district and optional quality from embed title."""
-    cleaned = title.replace("**", "")  # "Best Performing X Bases" or "Best Performing X Bases (Quality)"
-    cleaned = cleaned.replace("Best Performing ", "")
-
-    quality = None
-    if cleaned.endswith(")"):
-        # extract quality from parentheses
-        base_part, quality = cleaned.rsplit("(", 1)
-        quality = quality.rstrip(")")
-        cleaned = base_part.strip()
-
-    district = cleaned.replace(" Bases", "")
-    return district, quality
-
-
-async def construct_base_leaderboard_string(bot: ipy.Client, bases_sorted: list[BaseLayout], starting_index: int = 0):
-    leaderboard = ""
-    index = 0
-    for base in bases_sorted[starting_index:]:
-        if index >= 10:
-            break
-
-        if not base.builder_id:
-            builder_mention = mention_user(None, base.builder_id, mention_type="Builder")
-        else:
-            builder = await bot.fetch_user(base.builder_id)
-            builder_mention = mention_user(builder)
-
-        rank_index = starting_index + index
-        if rank_index > 2:
-            emoji = f"**#{rank_index + 1}**"
-        else:
-            emoji = RANK_EMOJIS[rank_index]
-
-        entries = len(base.records)
-        if entries > 0:
-            avg_stars = sum(record[1] for record in base.records) / entries
-            avg_destruction = sum(record[2] for record in base.records) / entries
-        else:
-            avg_stars = 0
-            avg_destruction = 0
-
-        leaderboard += (f"{emoji} {builder_mention} `{entries}` → "
-                        f"`{avg_stars:.2f}⭐ {avg_destruction:.2f}%`\n")
-
-        index += 1
-
-    return leaderboard
-
-
-async def sort_bases(query: FindMany[BaseLayout]) -> list[BaseLayout]:
-    query = query.find({"records.5": {"$exists": True}})
-
-    bases = await query.to_list()
-
-    bases_sorted = sorted(
-        bases,
-        key=lambda base: sum((r[1] * 1000 + r[2]) for r in base.records) / len(base.records),
-        reverse=False
-    )
-
-    return bases_sorted
-
-
-async def base_embed_names(guild: ipy.Guild, base: BaseLayout, embed_type: str) -> dict[str, str]:
-    user_ids = {record[0] for record in base.records[-10:]} if embed_type == "Defense Log" else set()
-    if base.builder_id:
-        user_ids.add(base.builder_id)
-    members = await asyncio.gather(*(guild.fetch_member(user_id) for user_id in user_ids))
-    return {user_id: mention_user(member, user_id, mention_type="Builder" if user_id == base.builder_id else "Player")
-            for user_id, member in zip(user_ids, members)}
-
-
-def construct_base_embed(
-        base: BaseLayout, embed_type: str = "Performance", *, names: dict[str, str],
-) -> ipy.Embed:
-    builder = base.builder_id
-    quality = base.quality
-
-    expiration_ts = ipy.Timestamp.fromtimestamp(base.expiration_date)
-    expiration_ts = expiration_ts.format(style=ipy.TimestampStyles.RelativeTime)
-
-    embed = ipy.Embed(
-        title=f"**{base.district} Base**",
-        description=f"{base.link}\n"
-                    f"*Expires {expiration_ts}*",
-        fields=[
-            ipy.EmbedField(
-                name="**Base Builder**",
-                value=names[builder] if builder else "Unknown builder"
-            ),
-            ipy.EmbedField(
-                name="**Base Quality**",
-                value=f"{BASE_QUALITY_EMOJIS[quality]} {quality}"
-            )
-        ],
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
-        color=COLOR
-    )
-
-    embed.set_image(base.image_url)
-
-    if embed_type == "Performance":
-        total_destruction = 0
-        total_1stars = 0
-        total_2stars = 0
-        total_3stars = 0
-        total_entries = 0
-
-        # iterate over the 'records' list from the model
-        for record in base.records:
-            total_entries += 1
-            total_destruction += record[2]
-            if record[1] == 1:
-                total_1stars += 1
-            if record[1] == 2:
-                total_2stars += 1
-            if record[1] == 3:
-                total_3stars += 1
-
-        embed.add_field(
-            name="**Performance**",
-            value=f"⭐ Rate: `{total_1stars * 100 / total_entries if total_entries else 0:.2f}%`\n"
-                  f"⭐⭐ Rate: `{total_2stars * 100 / total_entries if total_entries else 0:.2f}%`\n"
-                  f"⭐⭐⭐ Rate: `{total_3stars * 100 / total_entries if total_entries else 0:.2f}%`\n"
-                  f"Average Destruction: `{total_destruction / total_entries if total_entries else 0:.2f}%`\n"
-                  f"Total Entries: `{total_entries}`"
-        )
-
-    if embed_type == "Defense Log":
-        log = ""
-        count = 0
-        for record in reversed(base.records):
-            if count >= 10:
-                break
-
-            log += f"{names[record[0]]} → {record[1]}⭐ {record[2]}%"
-            # check for optional timestamp in record tuple
-            if len(record) == 4:
-                ts = ipy.Timestamp.fromtimestamp(record[3]).format(ipy.TimestampStyles.RelativeTime)
-                log += f" {ts}"
-            log += "\n"
-            count += 1
-
-        embed.add_field(
-            name="**Defense Log**",
-            value=log if log else "No defenses so far"
-        )
-
-    return embed
-
-
-async def _one_listed_base(
-        query: FindMany[BaseLayout], index: int, *, total: int | None = None,
-) -> tuple[BaseLayout | None, int]:
-    if total is None:
-        total = await query.count()
-    if index < 0 or index >= total:
-        return None, total
-
-    matches = await query.sort("_id").skip(index).limit(1).to_list()
-    return (matches[0] if matches else None), total
-
-
-def _iter_message_components(components):
-    rows = [components] if isinstance(components, ipy.ActionRow) else components or []
-    for row in rows:
-        yield from getattr(row, "components", [])
-
-
-def _public_list_query(bot: ipy.Client, district: str, base_quality: str, builder_id: str):
-    query = BaseLayout.find(BaseLayout.quality != "Private")
-    if district != "Any":
-        query = query.find(BaseLayout.district == district)
-    if base_quality != "Any":
-        query = query.find(BaseLayout.quality == base_quality)
-    if builder_id != "Any":
-        query = query.find(BaseLayout.builder_id == _resolve_builder_id(bot, builder_id))
-    return query
-
-
-def _parse_base_list_state(components):
-    for component in _iter_message_components(components):
-        custom_id = getattr(component, "custom_id", None) or ""
-        if custom_id.startswith("base_left|") or custom_id.startswith("base_right|"):
-            _, district, index, embed_type, base_quality, builder_id = custom_id.split("|")
-            return district, int(index), embed_type, base_quality, builder_id
-    raise ValueError("missing base list pagination state")
-
-
-def _build_base_list_components(
-        district: str, index: int, embed_type: str, base_quality: str, builder_id: str, total: int,
-):
-    district_select = ipy.StringSelectMenu(
-        ipy.StringSelectOption(label="Any", value="Any"),
-        *(ipy.StringSelectOption(label=str(choice.name), value=str(choice.value)) for choice in DISTRICT_CHOICES),
-        placeholder="📊 Select the district type",
-        custom_id="base_list_district_select",
-    )
-    embed_type_select = ipy.StringSelectMenu(
-        ipy.StringSelectOption(label="Performance", value="Performance"),
-        ipy.StringSelectOption(label="Defense Log", value="Defense Log"),
-        placeholder="📄 Select the embed type",
-        custom_id="base_list_embed_type_select",
-    )
-    left_button = ipy.Button(
-        style=ipy.ButtonStyle.PRIMARY,
-        label="◀️️",
-        custom_id=f"base_left|{district}|{index}|{embed_type}|{base_quality}|{builder_id}",
-        disabled=index == 0,
-    )
-    page_number_button = build_page_button(
-        index + 1,
-        total,
-        f"base_page|{district}|{embed_type}|{base_quality}|{builder_id}",
-    )
-    right_button = ipy.Button(
-        style=ipy.ButtonStyle.PRIMARY,
-        label="▶️",
-        custom_id=f"base_right|{district}|{index}|{embed_type}|{base_quality}|{builder_id}",
-        disabled=(total - 1 <= index),
-    )
-    return [
-        ipy.ActionRow(district_select),
-        ipy.ActionRow(embed_type_select),
-        ipy.ActionRow(left_button, page_number_button, right_button),
-    ]
-
-
-async def update_private_base_message(ctx: ipy.ComponentContext, district: str, index: int):
-    query = BaseLayout.find(BaseLayout.quality == "Private", BaseLayout.builder_id == str(ctx.author.id))
-    if district != "Any":
-        query = query.find(BaseLayout.district == district)
-
-    bases = await query.sort("_id").to_list()
-
-    if not bases:
-        await ctx.edit(ctx.message, content=f"{ERROR_EMOJI} No private bases found.", embeds=[], components=[])
-        return
-
-    index = min(max(index, 0), len(bases) - 1)
-    base = bases[index]
-
-    player = await Player.find_one(Player.user_id == str(ctx.author.id), fetch_links=True)
-    is_preset = False
-    if player and base.district in player.base_presets:
-        preset_base = player.base_presets[base.district]
-        is_preset = preset_base and preset_base.link == base.link
-
-    left_button = ipy.Button(
-        style=ipy.ButtonStyle.PRIMARY,
-        label="◀️️",
-        custom_id=f"p_base_left|{district}|{index - 1}",
-        disabled=index == 0,
-    )
-
-    right_button = ipy.Button(
-        style=ipy.ButtonStyle.PRIMARY,
-        label="▶️",
-        custom_id=f"p_base_right|{district}|{index + 1}",
-        disabled=(len(bases) - 1 <= index)
-    )
-
-    preset_label = "Preset Remove" if is_preset else "Preset Add"
-    preset_style = ipy.ButtonStyle.DANGER if is_preset else ipy.ButtonStyle.SUCCESS
-    preset_action = "remove" if is_preset else "add"
-    preset_button = ipy.Button(
-        style=preset_style,
-        label=preset_label,
-        custom_id=f"p_base_preset|{district}|{index}|{base.id}|{preset_action}"
-    )
-
-    remove_button = ipy.Button(
-        style=ipy.ButtonStyle.DANGER,
-        label="Delete",
-        custom_id=f"p_base_delete|{district}|{index}|{base.id}"
-    )
-
-    guild = await member_guild(ctx)
-    embed = construct_base_embed(base, "Performance", names=await base_embed_names(guild, base, "Performance"))
-    await ctx.edit(ctx.message, embed=embed, components=ipy.ActionRow(
-        left_button, right_button, preset_button, remove_button
-    ))
-
-
-async def find_private_base_action(
-        ctx: ipy.ComponentContext, district: str, base_id: str | None,
-) -> BaseLayout | None:
-    query: dict[str, str | PydanticObjectId] = {
-        "quality": "Private", "builder_id": str(ctx.author.id),
-    }
-    if base_id:
-        query["_id"] = PydanticObjectId(base_id)
-    else:
-        if not ctx.message.embeds or not ctx.message.embeds[0].description:
-            return None
-        query["link"] = ctx.message.embeds[0].description.splitlines()[0]
-    if district != "Any":
-        query["district"] = district
-    return await BaseLayout.find_one(query)
-
-
-async def clear_private_base_preset(player: Player, base: BaseLayout) -> None:
-    field = f"base_presets.{base.district}"
-    await player.get_pymongo_collection().update_one(
-        {"_id": player.id, "$or": [{f"{field}._id": base.id}, {field: base.to_ref()}]},
-        {"$set": {field: None}},
-    )
 
 
 class BaseCommands(ipy.Extension):

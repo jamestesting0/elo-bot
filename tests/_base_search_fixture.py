@@ -7,6 +7,7 @@ from elobot.features.bases.fingerprints.types import MatchScore
 from elobot.config.ids import BASE_SUBMISSION_CHANNEL
 from elobot.db import BaseLayout, PendingBaseSubmission
 from tests._base_fingerprint_fixture import fingerprint
+import elobot.extensions.base as base_module
 
 
 class FingerprintSearchStateMixin:
@@ -15,7 +16,7 @@ class FingerprintSearchStateMixin:
         self.bot.ext = {}
         self.bot.user = SimpleNamespace(id=1234)
         self.bot.base_fingerprints = SimpleNamespace(query=AsyncMock(return_value=fingerprint()))
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.bases = [BaseLayout.model_construct(
             id=ObjectId(), district="Barbarian Camp", link=f"https://base/{index}",
             image_url=f"https://image/{index}", quality="Good", expiration_date=0,

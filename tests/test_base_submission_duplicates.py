@@ -6,6 +6,8 @@ import interactions as ipy
 from pymongo.errors import OperationFailure
 
 import elobot.extensions.base as commands
+from tests._patch_sites import patch_sites
+import elobot.extensions.base as base_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -19,9 +21,9 @@ class TestBaseSubmissionDuplicates(unittest.IsolatedAsyncioTestCase):
                 bot = MagicMock(spec=ipy.Client)
                 bot.ext = {}
                 bot.fetch_channel = AsyncMock()
-                cog = commands.BaseCommands(bot)
+                cog = base_module.BaseCommands(bot)
                 ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
-                with patch.object(commands, "BaseLayout") as bases, \
+                with patch_sites(('elobot.extensions.base.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as bases, \
                         patch.object(commands, "download_base_screenshot", new=AsyncMock()) as download, \
                         patch.object(commands, "PendingBaseSubmission") as pending:
                     bases.find_one = AsyncMock(return_value=SimpleNamespace(quality=quality))
@@ -39,9 +41,9 @@ class TestBaseSubmissionDuplicates(unittest.IsolatedAsyncioTestCase):
     async def test_failed_duplicate_lookup_does_not_publish_submission(self) -> None:
         bot = MagicMock(spec=ipy.Client)
         bot.ext = {}
-        cog = commands.BaseCommands(bot)
+        cog = base_module.BaseCommands(bot)
         ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
-        with patch.object(commands, "BaseLayout") as bases, \
+        with patch_sites(('elobot.extensions.base.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as bases, \
                 patch.object(commands, "download_base_screenshot", new=AsyncMock()) as download:
             bases.find_one = AsyncMock(side_effect=OperationFailure("lookup failed"))
             await cog.base_submit.callback.func(

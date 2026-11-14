@@ -22,7 +22,7 @@ import math
 from datetime import datetime
 from elobot.core.parsing import extract_integer
 from elobot.discord.mentions import mention_user
-from elobot.extensions.base import sort_bases
+from elobot.features.bases.layouts.queries import sort_bases
 
 
 _stats_logger = logging.getLogger(__name__)

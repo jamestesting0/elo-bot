@@ -14,13 +14,14 @@ from elobot.config.emojis import ERROR_EMOJI
 from elobot.db import BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._base_finder_lock_fixture import ContendedLock
+import elobot.extensions.base as base_module
 
 
 class TestSimilarPagination(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         bot = MagicMock(spec=ipy.Client)
         bot.ext = {}
-        self.cog = commands.BaseCommands(bot)
+        self.cog = base_module.BaseCommands(bot)
         self.bases = [BaseLayout.model_construct(
             id=ObjectId(), district="Barbarian Camp", link=f"https://base/{index}",
             image_url=f"https://image/{index}", quality="Good", builder_id="123",

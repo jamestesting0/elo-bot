@@ -7,6 +7,7 @@ import interactions as ipy
 
 from elobot.extensions.base import BaseCommands
 from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -96,7 +97,7 @@ class TestBaseExpirationAutorenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = NOW
 
         with (
-                patch("elobot.extensions.base.BaseLayout") as base_layout,
+                patch_sites(('elobot.extensions.base.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as base_layout,
                 patch("elobot.extensions.base.datetime", new=clock),
                 patch("elobot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):

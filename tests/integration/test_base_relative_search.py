@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
 
-import elobot.extensions.base as commands
 from elobot.features.bases.fingerprints.matcher import score_layout
 from elobot.config.ids import BASE_SUBMISSION_CHANNEL
 from elobot.db import BaseLayout, PendingBaseSubmission
 from tests._relative_geometry_fixture import layout, points
 from tests.integration import _fingerprint_fixture as fixture
 from tests._relative_geometry_fixture import summary
+import elobot.extensions.base as base_module
 
 
 class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
@@ -29,7 +29,7 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(PendingBaseSubmission, "get", new=AsyncMock(return_value=self.submission)))
         self.bot = MagicMock(spec=ipy.Client)
         self.bot.ext = {}
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.ctx = SimpleNamespace(author=SimpleNamespace(id=123, has_any_role=lambda _: True),
                                    guild=SimpleNamespace(fetch_member=AsyncMock(
                                        return_value=SimpleNamespace(id=123, display_name="Builder"))),

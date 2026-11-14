@@ -6,6 +6,7 @@ import interactions as ipy
 from elobot.extensions.base import BaseCommands
 from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
 from elobot.config.presentation import COLOR
+from tests._patch_sites import patch_sites
 
 
 BASE_RENEW_MODAL_CALLBACK = BaseCommands.base_renew_modal.callback
@@ -44,7 +45,7 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("base autorenew", command_paths)
 
     @patch("elobot.extensions.base.utils.misc_utils.disable_components", return_value=[])
-    @patch("elobot.extensions.base.BaseLayout")
+    @patch_sites(('elobot.extensions.base.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
     async def test_renewal_modal_logs_success(self, mock_base_layout, _mock_disable_components) -> None:
         # Given
         old_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"

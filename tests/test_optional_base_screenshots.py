@@ -20,6 +20,7 @@ from elobot.integrations import helper_api
 from elobot.features.bases.fingerprints import images
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elobot.config.presentation import UNAVAILABLE_IMAGE
+import elobot.extensions.base as base_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -57,7 +58,7 @@ class TestOptionalBaseScreenshots(unittest.IsolatedAsyncioTestCase):
         self.review.edit = AsyncMock(side_effect=lambda **kwargs: SimpleNamespace(components=[kwargs["components"]]))
         self.review_channel = MagicMock(send=AsyncMock(return_value=self.review))
         self.bot.fetch_channel = AsyncMock(return_value=self.review_channel)
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.preset = presets.PresetCommands(self.bot)
         self.ctx = MagicMock(
             spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock(side_effect=self.respond),

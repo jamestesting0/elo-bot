@@ -22,6 +22,7 @@ from unittest.mock import MagicMock
 
 
 from tests.integration._fingerprint_fixture import FingerprintPersistenceStateMixin
+import elobot.extensions.base as base_module
 
 class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_outbox_restart_duplicate_and_atomic_commit_preserve_metadata(self):
@@ -144,7 +145,7 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
             id=101, channel=SimpleNamespace(id=102),
             attachments=[SimpleNamespace(id=103, url="https://cdn.example/upload.png")],
         ))
-        cog = base_commands.BaseCommands(bot)
+        cog = base_module.BaseCommands(bot)
         preset = preset_commands.PresetCommands(bot)
         player = SimpleNamespace(elo=1000, base_presets={}, save_changes=AsyncMock())
         ctx = SimpleNamespace(defer=AsyncMock(), send=AsyncMock(),

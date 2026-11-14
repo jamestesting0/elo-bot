@@ -12,6 +12,7 @@ from PIL import Image
 import elobot.extensions.base as commands
 import elobot.extensions.preset as presets
 from elobot.features.bases.fingerprints import images
+import elobot.extensions.base as base_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -27,7 +28,7 @@ class TestBaseScreenshotValidation(unittest.IsolatedAsyncioTestCase):
             id=100, channel=SimpleNamespace(id=200),
             attachments=[SimpleNamespace(id=300, url="https://cdn.example/stored.webp")],
         ))
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.preset = presets.PresetCommands(self.bot)
         self.ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
         self.ctx.author = SimpleNamespace(id=123, display_name="Builder")

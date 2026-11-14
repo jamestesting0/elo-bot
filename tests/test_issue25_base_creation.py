@@ -20,6 +20,8 @@ import elobot.extensions.base as commands
 import elobot.extensions.preset as presets
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import BaseLayout, PendingBaseSubmission
+from tests._patch_sites import patch_sites
+import elobot.extensions.base as base_module
 
 
 BASE_LINK: Final = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -100,7 +102,7 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
             id=100, channel=SimpleNamespace(id=200),
             attachments=[SimpleNamespace(id=300, url="https://cdn.example/base.webp")],
         ))
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.ctx = MagicMock(spec=ipy.ModalContext, defer=AsyncMock(), send=AsyncMock())
         self.ctx.author = SimpleNamespace(id=789)
         self.ctx.guild.id = 456
@@ -157,7 +159,7 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
         )
         query = MagicMock(count=AsyncMock(return_value=0))
         with (
-            patch.object(commands, "Player", player),
+            patch_sites(('elobot.extensions.base.Player', 'elobot.features.bases.layouts.private.Player'), player),
             patch.object(BaseLayout, "find", return_value=query),
         ):
             await self.cog.base_private_add.callback.func(

@@ -10,8 +10,11 @@ from pymongo.results import DeleteResult, UpdateResult
 
 import elobot.extensions.base as base_commands
 import elobot.extensions.preset as preset_commands
+import elobot.features.bases.layouts.private as layouts_private
+import elobot.features.bases.layouts.queries as layouts_queries
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import BaseLayout, Player
+import elobot.extensions.base as base_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -54,7 +57,10 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
         self.player_model = MagicMock()
         self.player_model.find_one = AsyncMock(return_value=self.player)
         for module, name, value in ((base_commands, "BaseLayout", self.base_model),
+                                    (layouts_queries, "BaseLayout", self.base_model),
+                                    (layouts_private, "BaseLayout", self.base_model),
                                     (base_commands, "Player", self.player_model),
+                                    (layouts_private, "Player", self.player_model),
                                     (preset_commands, "Player", self.player_model)):
             self.enterContext(patch.object(module, name, value))
         self.collection = MagicMock()
@@ -67,7 +73,7 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(Player, "get_pymongo_collection", return_value=self.player_collection))
         self.player_set = AsyncMock(return_value=self.player)
         self.enterContext(patch.object(Player, "set", new=self.player_set))
-        self.cog = base_commands.BaseCommands(MagicMock())
+        self.cog = base_module.BaseCommands(MagicMock())
 
     async def click_private(self, command: str) -> None:
         with patch.object(base_commands, "update_private_base_message", new=AsyncMock()):

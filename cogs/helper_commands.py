@@ -12,7 +12,7 @@ from common.constants import (
     CLAN_EMOJI, COLOR, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS, HOST_CLAN_CHOICES, LB_ENTRIES_PER_PAGE,
     LVL1_ROLES, LVL2_ROLES, RANK_EMOJIS, STAFF_ROLE, SUCCESS_EMOJI, TOWNHALL_EMOJIS,
 )
-from database_models import Helper, HelperHistory
+from database_models import Helper
 from common.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
 from common.utils import mention_user, member_guild
 

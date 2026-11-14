@@ -2259,7 +2259,7 @@ class BaseCommands(ipy.Extension):
             ipy.StringSelectOption(label="Skeleton Park", value="Skeleton Park"),
             ipy.StringSelectOption(label="Goblin Mines", value="Goblin Mines"),
             placeholder="📊 Select the district type",
-            custom_id=f"district_type_select"
+            custom_id="district_type_select"
         )
 
         left_button = ipy.Button(
@@ -2598,10 +2598,10 @@ class BaseCommands(ipy.Extension):
 
         modal = ipy.Modal(
             ipy.ParagraphText(
-                label=f"Insert the renewed base link here",
+                label="Insert the renewed base link here",
                 max_length=200,
                 placeholder="Please make sure that the renewed link is correct!",
-                custom_id=f"renewed_link",
+                custom_id="renewed_link",
                 required=False
             ),
             title="Base Renew Modal",

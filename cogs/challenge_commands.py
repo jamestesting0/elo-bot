@@ -289,7 +289,7 @@ class ChallengeCommands(ipy.Extension):
             return
 
         embed = ipy.Embed(
-            title=f"**YOU HAVE BEEN CHALLENGED!**",
+            title="**YOU HAVE BEEN CHALLENGED!**",
             description="This match affects your Elo. The challenge expires in 24 hours.\n"
                         "Disable challenges with `/challenge disable` or block a player with `/challenge block`.",
             fields=[

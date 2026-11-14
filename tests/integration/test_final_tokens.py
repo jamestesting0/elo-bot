@@ -3,7 +3,6 @@ import asyncio
 from tests.integration._final_fixture import FinalScenarioCase
 from common.finals.hosting import accept_final_start
 from common.finals.lifecycle import confirm_bracket
-from common.finals.matches import prepare_match
 from common.finals.types import FinalError
 from common.tokens.bets import BetAction, apply_bet, open_market, projected_return
 from common.tokens.settlement import advance_settlement, recover_market, set_settlement_intent

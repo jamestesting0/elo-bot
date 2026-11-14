@@ -12,15 +12,13 @@ import sys
 import traceback
 import functools
 from collections.abc import Awaitable, Callable
-from contextlib import nullcontext, suppress
+from contextlib import nullcontext
 from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Literal, Optional, assert_never
 
 from beanie.odm.operators.find.comparison import In, NotIn
-from beanie.odm.operators.update.array import Push
-from beanie.odm.operators.update.general import Inc
 from pymongo.errors import PyMongoError
 from interactions import utils
 import cogs.base_store.presentation as base_store_presentation
@@ -93,7 +91,7 @@ from common.matches.cleanup import delete_unreserved_match, has_pending_match_op
 from common.results.manual import (
     ManualResultConfirmationUnknown, complete_manual_result, manual_result_key, persist_manual_result,
 )
-from common.results.records import add_recorded_match, remove_base_record
+from common.results.records import add_recorded_match
 from common.results.operations import (
     ResultOperationConflict, begin_result_operation, complete_result_operation, completed_result_changes, persist_result_record,
     publish_result_operation, result_input_error, rollback_result_operation, bind_result_message,
@@ -101,7 +99,7 @@ from common.results.operations import (
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from common.players.self_hosting import invite_eligible_players
 from database_models import Match, Participant, BaseLink, Clan, HelperTask, BaseLayout, \
-    RecordedMatch, Player, Queue, MatchPlayerStats, MatchDistrictStats, Helper, HelperHistory, OverrideCode, ServerState
+    RecordedMatch, Player, Queue, MatchPlayerStats, MatchDistrictStats, HelperHistory, OverrideCode, ServerState
 import coc
 import re
 import validators

@@ -238,7 +238,7 @@ class GiveawayCommands(ipy.Extension):
         enter_button = ipy.Button(
             style=ipy.ButtonStyle.SECONDARY,
             label="Enter",
-            custom_id=f"enter_giveaway",
+            custom_id="enter_giveaway",
             emoji=GIVEAWAY_EMOJI
         )
 

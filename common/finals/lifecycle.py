@@ -1,6 +1,5 @@
 import time
 
-from beanie import PydanticObjectId
 from pymongo.errors import DuplicateKeyError
 from pymongo.asynchronous.client_session import AsyncClientSession
 

@@ -10,7 +10,7 @@ from common.constants import (
 )
 from common.discord.decorators import lock_files, create_async_task
 from database_models import Match, Player, RecordedMatch, Queue, Season
-from common.utils import read_json, interpret_season_string, fetch_member_otherwise_user, mention_user, member_guild
+from common.utils import interpret_season_string, fetch_member_otherwise_user, mention_user, member_guild
 from cogs.leaderboard_commands import (
     get_season_matches,
     get_winrate,

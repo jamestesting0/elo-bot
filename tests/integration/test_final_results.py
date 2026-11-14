@@ -1,6 +1,5 @@
 from tests.integration._final_fixture import FinalScenarioCase
 from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import prepare_match
 from common.finals.results import FinalResultSubmission, submit_result
 from common.finals.types import FinalError
 from database_models import Match, Player, RecordedMatch

@@ -1,4 +1,3 @@
-from typing import Literal
 
 from beanie import Document
 from pydantic import BaseModel, Field, model_validator

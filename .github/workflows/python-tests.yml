@@ -32,6 +32,9 @@ jobs:
 
       - uses: ./.github/actions/setup-python-deps
 
+      - name: Lint (pyflakes rules)
+        run: uvx ruff@0.17.5 check .
+
       - name: Run unit tests
         run: python -m unittest discover tests
 

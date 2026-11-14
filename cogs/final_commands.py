@@ -5,14 +5,14 @@ import logging
 from io import BytesIO
 from interactions import Extension, SlashContext, slash_option, OptionType
 
-from database_models import Player, EloFinal, Season
+from database_models import Player, EloFinal
 from common.constants import (
     COLOR, ELO_BLACKLIST_ROLE, ERROR_EMOJI, FINAL_CHANNEL, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS, IMPORTANT_EMOJI,
     LVL1_ROLES, LVL2_ROLES, SUCCESS_EMOJI, TOKEN_EMOJI,
 )
 from common.finals import lifecycle
 from common.finals.types import FinalError
-from common.finals.bracket import automatic_pairs, seeded_players
+from common.finals.bracket import seeded_players
 from common.utils import mention_user, member_guild
 
 

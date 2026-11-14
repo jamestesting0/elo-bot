@@ -34,7 +34,7 @@ from cogs.war_hosting.helper_api import (
     helper_job_notification,
 )
 from cogs.war_hosting.confirmation import confirm_helper_queue
-from common.constants import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI, STAFF_ROLE, SUCCESS_EMOJI
+from common.constants import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI, STAFF_ROLE
 from common.results.validation import is_valid_match_result_entry
 from database_models import Match, Player
 

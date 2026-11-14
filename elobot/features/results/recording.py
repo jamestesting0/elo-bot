@@ -11,12 +11,8 @@ from elobot.core.parsing import get_destruction, get_stars
 from elobot.db import BaseLayout, Match, MatchDistrictStats, MatchPlayerStats, Player, RecordedMatch
 from elobot.discord.members import fetch_member_otherwise_user
 from elobot.discord.message_edits import edit_channel_message
-from elobot.extensions.leaderboard import (
-    get_avg_destruction,
-    get_avg_stars,
-    get_opponent_avg_destruction,
-    get_opponent_avg_stars,
-    get_wins,
+from elobot.features.leaderboards.stats import (
+    get_avg_destruction, get_avg_stars, get_opponent_avg_destruction, get_opponent_avg_stars, get_wins,
 )
 from elobot.features.players.match_choices import fetch_user_match_id_choices
 from elobot.features.finals.types import is_final_match

@@ -1,7 +1,7 @@
 import anyio
 from beanie.odm.operators.update.general import Set
 
-from elobot.extensions.leaderboard import request_leaderboard_player_reload
+from elobot.features.leaderboards.refresh import request_leaderboard_player_reload
 from elobot.features.matches.resources import free_match_clans
 from elobot.features.players.match_choices import clear_match_id_choices, forget_match_id_choice
 from elobot.features.hosting.war import result_store

@@ -13,4 +13,4 @@ are part of the runtime contract (`bot.get_ext("MatchCommands")`).
 - Handlers use `self.bot`; shared runtime fields (`file_locks`, `coc_client_lock`, `match_id_choices`) are set in
   `elo_bot/app/bootstrap.py`. Code outside an interaction reads the client from `elo_bot.discord.runtime`.
 - Startup listeners (`@ipy.listen(ipy.events.Startup)`) rebuild caches and views; keep them idempotent.
-- Do not split a handler body without the extraction rules in ARCHITECTURE.md; effect order is observable.
+- Do not split a handler body without the extraction rules in docs/architecture.md; effect order is observable.

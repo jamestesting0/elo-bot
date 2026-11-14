@@ -1,7 +1,7 @@
-"""Generate COMMANDS.md: every slash command, component, modal, listener and Task mapped to the code that handles it.
+"""Generate docs/commands.md: every slash command, component, modal, listener and Task mapped to the code that handles it.
 
-    python scripts/commands_index.py          # rewrite COMMANDS.md
-    python scripts/commands_index.py --check  # exit 1 if COMMANDS.md is stale
+    python scripts/commands_index.py          # rewrite docs/commands.md
+    python scripts/commands_index.py --check  # exit 1 if docs/commands.md is stale
 """
 import functools
 import inspect
@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-OUTPUT = REPO / "COMMANDS.md"
+OUTPUT = REPO / "docs" / "commands.md"
 DUMMY_ENV = {
     "BOT_MAIN_TOKEN": "dummy-main-token",
     "BOT_BETA_TOKEN": "dummy-beta-token",
@@ -86,7 +86,7 @@ def main(argv: list[str]) -> int:
     text = render()
     if argv == ["--check"]:
         if OUTPUT.read_text() != text:
-            print("COMMANDS.md is stale; run `python scripts/commands_index.py`")
+            print("docs/commands.md is stale; run `python scripts/commands_index.py`")
             return 1
         return 0
     OUTPUT.write_text(text)

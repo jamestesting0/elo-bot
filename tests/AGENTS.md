@@ -15,7 +15,7 @@
 | File | Coverage focus |
 | --- | --- |
 | `test_match_{queue,lifecycle,base,base_store,results,hosting}_commands.py`, `test_match_choose_bases.py`, `test_match_dashboard_tasks.py` | The former broad `/match` suite, one module per `MatchCommands` mixin over `_match_commands_case.MatchCommandsCase` |
-| `test_contract_snapshots.py`, `test_commands_index.py` | Command surface and persistence contract vs `snapshots/`; `COMMANDS.md` is current |
+| `test_contract_snapshots.py`, `test_commands_index.py` | Command surface and persistence contract vs `snapshots/`; `docs/commands.md` is current |
 | `test_match_*.py`, `test_queued_district_selection.py` | Focused match lifecycle, publication and queue flows |
 | `test_base_store_*.py`, `test_live_base_*.py`, `test_raid_*.py` | Stored-base reservation lifecycle and raid auto-store |
 | `test_result_*.py`, `test_autowin_*.py`, `test_*_reset_*.py` | Result operations, retries, autowins and resets |

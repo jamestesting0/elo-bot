@@ -72,7 +72,7 @@ response; keep exception types and messages; pass locals explicitly.
   the match or base extension package that binds the name.
 - `tests/test_contract_snapshots.py` compares the full interaction surface and the persistence contract with
   `tests/snapshots/`. After an intended change run `python -m tests._contract_snapshots --update` and review the diff.
-- `COMMANDS.md` maps every command, component, modal, listener and Task to its code; regenerate it with
+- `docs/commands.md` maps every command, component, modal, listener and Task to its code; regenerate it with
   `python scripts/commands_index.py` (a unit test fails while it is stale).
 
 ## Known follow-ups

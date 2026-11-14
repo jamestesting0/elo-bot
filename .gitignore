@@ -47,6 +47,5 @@ htmlcov/
 *.log
 
 # Local documentation and deployment notes
-/docs/
-/oracle_scripts.md
+/docs/.local/
 /download_bases.py

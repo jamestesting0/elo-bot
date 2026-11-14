@@ -3,8 +3,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.match_commands import MatchCommands
-from database_models import BaseLink, Match, OverrideCode, Participant
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.db import BaseLink, Match, OverrideCode, Participant
+from tests._patch_sites import patch_sites
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AHELPER"
@@ -62,8 +63,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         match.thread = None
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             base_layout_model.find_one = AsyncMock(return_value=MagicMock(quality="Good"))
@@ -89,8 +90,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         match.participants[0].bases = [match.participants[0].bases[0]] * 3
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             base_layout_model.find_one = AsyncMock(return_value=MagicMock(quality="Good"))
@@ -115,8 +116,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         match.thread = None
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             base_layout_model.find_one = AsyncMock(return_value=None)
@@ -149,8 +150,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel.return_value = thread
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             base_layout_model.find_one = AsyncMock(return_value=None)
@@ -184,8 +185,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel.return_value = thread
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             base_layout_model.find_one = AsyncMock(return_value=MagicMock(quality="Good"))
@@ -212,8 +213,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         match.participants[0].bases[0] = None
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             base_layout_model.find_one = AsyncMock(return_value=MagicMock(quality="Good"))
@@ -253,8 +254,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
             return MagicMock(quality="Private") if quality_filter is None else None
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             base_layout_model.find_one = AsyncMock(side_effect=find_layout)
@@ -275,8 +276,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         match = self._match()
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
             patch.object(OverrideCode, "is_valid", new=AsyncMock(return_value=False)),
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -300,8 +301,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         match.is_war = False
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
             patch.object(OverrideCode, "is_valid", new=AsyncMock(return_value=False)),
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -321,8 +322,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         match.hosts = ["333", None]
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
             patch.object(OverrideCode, "is_valid", new=AsyncMock(return_value=False)),
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -348,8 +349,8 @@ class TestMatchBasePermissions(unittest.IsolatedAsyncioTestCase):
         original_base = match.participants[0].bases[0]
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.BaseLayout") as base_layout_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_layout_model,
             patch.object(OverrideCode, "is_valid", new=AsyncMock(return_value=False)),
         ):
             match_model.find_one = AsyncMock(return_value=match)

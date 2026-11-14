@@ -28,6 +28,8 @@ htmlcov/
 .claude/
 .codex/
 .omo/
+.import_linter_cache
+/tools/
 
 # Runtime data and generated artifacts
 /data/
@@ -45,7 +47,5 @@ htmlcov/
 *.log
 
 # Local documentation and deployment notes
-/docs/
-/oracle_scripts.md
-/oracle-cloud-init.sh
+/docs/.local/
 /download_bases.py

@@ -4,12 +4,13 @@ from unittest.mock import AsyncMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-import cogs.match_commands as match_commands
-from cogs.base_store.controls import resolve_stored_base_control
-from cogs.base_store.models import StoredBaseActionRequest, StoredBaseControlFailure, StoredBaseControlState
-from cogs.war_hosting import helper_base_store, stored_bases, war_start
-from common.constants import SUCCESS_EMOJI
-from database_models import Match
+from elo_bot.features.base_store.controls import resolve_stored_base_control
+from elo_bot.features.base_store.models import StoredBaseActionRequest, StoredBaseControlFailure, StoredBaseControlState
+from elo_bot.features.hosting.war import war_start
+from elo_bot.features.hosting.war import stored_bases
+from elo_bot.features.hosting.war import helper_base_store
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import Match
 
 
 from tests._stored_base_controls_fixture import StoredBaseControlsStateMixin
@@ -77,7 +78,7 @@ class TestStoredBaseControls(StoredBaseControlsStateMixin, unittest.IsolatedAsyn
                 callback = getattr(self.cog, f"{action}_button")
                 with (
                     patch.object(war_start, "start_war", new_callable=AsyncMock) as start,
-                    patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock) as clear,
+                    patch('elo_bot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear,
                 ):
                     # When: the registered manual callback receives the stale click.
                     await callback.callback.func(self.cog, self.ctx)
@@ -107,7 +108,7 @@ class TestStoredBaseControls(StoredBaseControlsStateMixin, unittest.IsolatedAsyn
     async def test_manual_undo_cannot_claim_success_when_conditional_clear_loses(self) -> None:
         # Given: the reservation changes immediately after the manual click is validated.
         self.ctx.custom_id = "undo_base_storage|TOKEN|0|CURRENT"
-        with patch.object(match_commands, "clear_participant_base_store", new=AsyncMock(return_value=False)) as clear:
+        with patch('elo_bot.extensions.match.base_store.clear_participant_base_store', new=AsyncMock(return_value=False)) as clear:
             # When: manual Undo attempts its conditional clear.
             await self.cog.undo_base_storage_button.callback.func(self.cog, self.ctx)
         # Then: it preserves the replacement and responds with failure.
@@ -176,8 +177,7 @@ class TestStoredBaseControls(StoredBaseControlsStateMixin, unittest.IsolatedAsyn
             self.assertEqual(reason, "undone")
             return True
 
-        with patch.object(match_commands, "clear_participant_base_store",
-                          new=AsyncMock(side_effect=clear_bound_reservation)) as clear:
+        with patch('elo_bot.extensions.match.base_store.clear_participant_base_store', new=AsyncMock(side_effect=clear_bound_reservation)) as clear:
             # When: the old manual Undo control is used.
             await self.cog.undo_base_storage_button.callback.func(self.cog, self.ctx)
         # Then: persisted binding precedes clearing and supplies the message to retire.
@@ -195,7 +195,7 @@ class TestStoredBaseControls(StoredBaseControlsStateMixin, unittest.IsolatedAsyn
         self.store.reservation_id, self.store.message_id = None, None
         self.collection.update_one.return_value = UpdateResult({"n": 0}, acknowledged=True)
         self.ctx.custom_id = "undo_base_storage|TOKEN|0"
-        with patch.object(match_commands, "clear_participant_base_store", new_callable=AsyncMock) as clear:
+        with patch('elo_bot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock) as clear:
             # When: the old Undo control loses its conditional binding update.
             await self.cog.undo_base_storage_button.callback.func(self.cog, self.ctx)
         # Then: neither clearing nor a success response can follow that failed binding.

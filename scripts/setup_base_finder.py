@@ -10,8 +10,8 @@ import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from common.base_fingerprints.artifacts import MANIFEST, MODEL_PATH, ROOT, WORKER_PYTHON, verify_model
-from common.base_fingerprints.types import FingerprintError
+from elo_bot.features.bases.fingerprints.artifacts import MANIFEST, MODEL_PATH, ROOT, WORKER_PYTHON, verify_model
+from elo_bot.features.bases.fingerprints.types import FingerprintError
 
 
 def download() -> None:
@@ -60,7 +60,7 @@ def main() -> None:
     verify_model()
     if not WORKER_PYTHON.is_file():
         raise FingerprintError("runtime_missing: restore the bot's Python environment and install requirements.txt")
-    subprocess.run([str(WORKER_PYTHON), "-m", "common.base_fingerprints.worker", "--check"],
+    subprocess.run([str(WORKER_PYTHON), "-m", "elo_bot.features.bases.fingerprints.worker", "--check"],
                    cwd=ROOT, check=True, timeout=120)
 
 

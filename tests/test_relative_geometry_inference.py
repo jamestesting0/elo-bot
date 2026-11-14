@@ -1,6 +1,6 @@
 import unittest
 
-from common.base_fingerprints.matcher import score_layout
+from elo_bot.features.bases.fingerprints.matcher import score_layout
 from tests._relative_geometry_fixture import layout, points
 
 

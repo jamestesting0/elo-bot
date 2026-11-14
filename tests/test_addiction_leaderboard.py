@@ -1,8 +1,8 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
-from cogs.leaderboard_commands import construct_leaderboard_string, sort_players
+from elo_bot.extensions.leaderboard import construct_leaderboard_string, sort_players
 
 
 def make_recorded_match(timestamp: int, player_id: str) -> SimpleNamespace:

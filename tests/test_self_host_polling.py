@@ -7,11 +7,12 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-import cogs.war_hosting.helper_host as helper_host
-from cogs.war_hosting import result_store_task
-from cogs.self_commands import SelfCommands
-from cogs.war_hosting.helper_api import HelperJob
-from common.constants import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+import elo_bot.features.hosting.war.helper_host as helper_host
+from elo_bot.features.hosting.war import result_store_task
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.integrations.helper_api import HelperJob
+from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -155,19 +156,19 @@ class TestSelfHostPolling(unittest.IsolatedAsyncioTestCase):
 
     async def invoke_self_host(self, ctx: ipy.SlashContext, match: MagicMock) -> None:
         self.bot.fetch_user = AsyncMock(return_value=MagicMock(id=200))
-        with patch("cogs.self_commands.Match") as mock_match, \
-                patch("cogs.self_commands.Clan") as mock_clan, \
-                patch("cogs.self_hosting.hosting.Player") as selection_player, \
-                patch("cogs.self_commands.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
-                patch("cogs.war_hosting.helper_host.Player") as mock_player, \
-                patch("cogs.war_hosting.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
-                patch("cogs.match_commands.choose_bases", new=AsyncMock(return_value=match)), \
+        with patch("elo_bot.extensions.self_service.Match") as mock_match, \
+                patch("elo_bot.extensions.self_service.Clan") as mock_clan, \
+                patch("elo_bot.features.hosting.self_hosted.hosting.Player") as selection_player, \
+                patch("elo_bot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
+                patch("elo_bot.features.hosting.war.helper_host.Player") as mock_player, \
+                patch("elo_bot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
                 patch(
-                    "cogs.war_hosting.war_start.start_war",
+                    "elo_bot.features.hosting.war.war_start.start_war",
                     new=self.start_war,
                 ), \
                 patch(
-                    "cogs.war_hosting.war_start.abort_war_start",
+                    "elo_bot.features.hosting.war.war_start.abort_war_start",
                     new=self.abort_war_start,
                     create=True,
                 ):
@@ -196,7 +197,7 @@ class TestSelfHostPolling(unittest.IsolatedAsyncioTestCase):
 
         # When
         with patch(
-                "cogs.war_hosting.helper_host_job.HelperJobPoller.wait",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait",
                 new=AsyncMock(side_effect=poll_forever),
         ):
             await self.invoke_self_host(ctx, self.make_match())
@@ -243,7 +244,7 @@ class TestSelfHostPolling(unittest.IsolatedAsyncioTestCase):
 
         # When the cancel path wins the race against the existing status monitor.
         with patch(
-                "cogs.war_hosting.helper_host_job.HelperJobPoller.wait",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait",
                 new=AsyncMock(side_effect=poll_forever),
         ):
             await self.invoke_self_host(ctx, self.make_match())
@@ -291,7 +292,7 @@ class TestSelfHostPolling(unittest.IsolatedAsyncioTestCase):
 
         # When
         with patch(
-                "cogs.war_hosting.helper_host_job.HelperJobPoller.wait",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait",
                 new=AsyncMock(side_effect=succeed_after_cancel_failure),
         ):
             await self.invoke_self_host(ctx, self.make_match())

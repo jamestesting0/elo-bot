@@ -1,20 +1,27 @@
 import unittest
+
+import elo_bot.features.matches.resources as matches_resources_module
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
+from elo_bot.extensions.match import MatchCommands
+from tests._patch_sites import patch_sites
+import elo_bot.features.matches.resources as resources_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.dashboards as match_dashboards_module
+import elo_bot.extensions.match.hosting as match_hosting_module
+import elo_bot.extensions.match.result_store as match_result_store_module
 
 
 class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        match_commands.RESOURCE_CLAN_LOCKS.clear()
-        match_commands.RESOURCE_MATCH_SIDE_LOCKS.clear()
-        match_commands._RESOURCE_CLAN_RESERVATIONS.set({})
-        match_commands._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
+        resources_module.RESOURCE_CLAN_LOCKS.clear()
+        resources_module.RESOURCE_MATCH_SIDE_LOCKS.clear()
+        resources_module._RESOURCE_CLAN_RESERVATIONS.set({})
+        resources_module._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
 
     def reservation_api(self):
-        reserve = getattr(match_commands, "try_reserve_resource_clan", None)
+        reserve = getattr(matches_resources_module, "try_reserve_resource_clan", None)
         self.assertIsNotNone(reserve, "process-wide per-clan reservation API is absent")
         return reserve
 
@@ -52,20 +59,20 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         # Given a clan whose durable availability belongs to a newer thread.
         clan = SimpleNamespace(availability_str="<#202> <@2> now", update=AsyncMock())
 
-        with patch.object(match_commands.Clan, "find_one", new=AsyncMock(return_value=clan)):
+        with patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(return_value=clan)):
             # When cleanup for the older thread tries to free it.
-            released = await match_commands.free_clan("#A", expected_thread="101")
+            released = await match_result_store_module.free_clan("#A", expected_thread="101")
 
         # Then the newer owner remains untouched and the tag lock is released.
         self.assertFalse(released)
         clan.update.assert_not_awaited()
-        lock = match_commands.RESOURCE_CLAN_LOCKS["#A"]
+        lock = resources_module.RESOURCE_CLAN_LOCKS["#A"]
         self.assertFalse(lock.locked())
 
     async def test_claim_exception_and_early_release_do_not_leak_tag_lock(self) -> None:
         # Given a reserved clan and a durable match write that raises.
         reserve = self.reservation_api()
-        claim = getattr(match_commands, "claim_resource_clan", None)
+        claim = getattr(matches_resources_module, "claim_resource_clan", None)
         self.assertIsNotNone(claim, "locked durable resource-clan claim API is absent")
         reservation = await reserve("#A")
         clan = SimpleNamespace(tag="#A", availability_str="Available", update=AsyncMock())
@@ -79,18 +86,18 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         )
         match.set = AsyncMock(side_effect=RuntimeError("write failed"))
 
-        with patch.object(match_commands.Match, "find_one", new=AsyncMock(return_value=match)), \
-                patch.object(match_commands.Clan, "find_one", new=AsyncMock(return_value=clan)):
+        with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)), \
+                patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(return_value=clan)):
             # When the locked claim raises during its durable update.
             with self.assertRaisesRegex(RuntimeError, "write failed"):
                 await claim(reservation, match, 0, updates={"is_war": True})
 
         # Then both exception cleanup and a separate early release leave the lock reusable.
-        self.assertFalse(match_commands.RESOURCE_CLAN_LOCKS["#A"].locked())
-        self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[("MATCH", 0)].locked())
+        self.assertFalse(resources_module.RESOURCE_CLAN_LOCKS["#A"].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[("MATCH", 0)].locked())
         early = await reserve("#A")
         early.release()
-        self.assertFalse(match_commands.RESOURCE_CLAN_LOCKS["#A"].locked())
+        self.assertFalse(resources_module.RESOURCE_CLAN_LOCKS["#A"].locked())
 
     async def test_locked_host_clan_select_and_match_set_clan_cannot_overwrite(self) -> None:
         # Given clan A reserved by another allocation while its document still says Available.
@@ -118,8 +125,8 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         set_ctx.channel.id = 101
 
         try:
-            with patch.object(match_commands, "Match") as match_model, \
-                    patch.object(match_commands, "Clan") as clan_model:
+            with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model:
                 match_model.find_one = AsyncMock(return_value=match)
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])
 
@@ -165,11 +172,11 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         )
 
         try:
-            with patch.object(match_commands, "Match") as match_model, \
-                    patch.object(match_commands, "Clan") as clan_model, \
-                    patch.object(match_commands, "is_raid_weekend", return_value=False), \
-                    patch.object(match_commands, "is_clan_available", new=AsyncMock(return_value=False)), \
-                    patch.object(match_commands.helper_host, "host_war_automatically", new_callable=AsyncMock) as host:
+            with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model, \
+                    patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                    patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=False)), \
+                    patch.object(match_hosting_module.helper_host, "host_war_automatically", new_callable=AsyncMock) as host:
                 match_model.find_one = AsyncMock(return_value=match)
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])
 
@@ -210,15 +217,11 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         ctx.channel.id = 101
 
         try:
-            with patch.object(match_commands, "Match") as match_model, \
-                    patch.object(match_commands, "Player") as player_model, \
-                    patch.object(match_commands, "Clan") as clan_model, \
-                    patch.object(match_commands, "is_raid_weekend", return_value=False), \
-                    patch.object(
-                        match_commands,
-                        "get_start_base_store_slot_availability",
-                        new_callable=AsyncMock,
-                    ) as slots:
+            with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
+                    patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model, \
+                    patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                    patch('elo_bot.extensions.match.hosting.get_start_base_store_slot_availability', new_callable=AsyncMock) as slots:
                 match_model.find_one = AsyncMock(return_value=match)
                 player_model.find_one = AsyncMock(side_effect=[MagicMock(tag="#P1"), MagicMock(tag="#P2")])
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])

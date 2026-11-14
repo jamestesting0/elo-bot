@@ -7,8 +7,9 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
-from cogs.match_commands import MatchCommands
-from database_models import BaseLink, BaseStore, Match, Participant
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.db import BaseLink, BaseStore, Match, Participant
+from tests._patch_sites import patch_sites
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ASUBMITTED"
@@ -70,8 +71,8 @@ class TestMatchParticipantUpdates(unittest.IsolatedAsyncioTestCase):
 
                 database_set = AsyncMock(return_value=snapshot)
                 with (
-                    patch("cogs.match_commands.Match") as match_model,
-                    patch("cogs.match_commands.BaseLayout") as base_model,
+                    patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                    patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as base_model,
                     patch.object(Match, "set", new=database_set),
                 ):
                     match_model.find_one = AsyncMock(return_value=snapshot)

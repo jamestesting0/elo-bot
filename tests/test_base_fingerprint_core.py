@@ -9,12 +9,13 @@ from bson import BSON
 from PIL import Image
 from pydantic import ValidationError
 
-from common.base_fingerprints.artifacts import MANIFEST
-from common.base_fingerprints.extractor import decode_image, extract_batch
-from common.base_fingerprints.runtime import selected_device
-from common.base_fingerprints.search import eligible
-from common.base_fingerprints.types import BaseFingerprint, Building, DISTRICTS, ExtractionState, FingerprintError, ImageInput
-from database_models import BaseLayout
+from elo_bot.features.bases.fingerprints.artifacts import MANIFEST
+from elo_bot.features.bases.fingerprints.extractor import decode_image, extract_batch
+from elo_bot.features.bases.fingerprints.runtime import selected_device
+from elo_bot.features.bases.fingerprints.search import eligible
+from elo_bot.db.fingerprint_types import BaseFingerprint, Building, ExtractionState
+from elo_bot.features.bases.fingerprints.types import DISTRICTS, FingerprintError, ImageInput
+from elo_bot.db import BaseLayout
 
 
 from tests._base_fingerprint_fixture import fingerprint

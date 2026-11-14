@@ -6,14 +6,14 @@ import anyio
 import interactions as ipy
 from pymongo.errors import AutoReconnect
 
-import cogs.base_commands as commands
-from common.base_fingerprints.removal import (
+from elo_bot.features.bases.fingerprints.removal import (
     BulkRemovalError,
     FingerprintRemoval,
     FingerprintRemovalProgress,
 )
-from common.base_fingerprints.types import FingerprintError
+from elo_bot.features.bases.fingerprints.types import FingerprintError
 from tests import _base_extract_fixture as fixture
+import elo_bot.extensions.base.extraction as base_extraction_module
 
 
 class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
@@ -26,9 +26,9 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
         fixture.BaseExtractStateMixin.setUp(self)
         self.bot.base_fingerprints.run_lock = anyio.Lock()
         self.bot.base_fingerprints.gpu = SimpleNamespace(close=AsyncMock())
-        self.single = self.enterContext(patch.object(commands, "remove_fingerprint", new=AsyncMock(
+        self.single = self.enterContext(patch('elo_bot.extensions.base.extraction.remove_fingerprint', new=AsyncMock(
             return_value=FingerprintRemoval(removed=1, cancelled=1))))
-        self.bulk = self.enterContext(patch.object(commands, "remove_all_fingerprints", new=AsyncMock(
+        self.bulk = self.enterContext(patch('elo_bot.extensions.base.extraction.remove_all_fingerprints', new=AsyncMock(
             return_value=FingerprintRemoval(removed=7, cancelled=2))))
 
     async def invoke(self, ctx: ipy.SlashContext, selection: str | None = None) -> None:
@@ -67,7 +67,7 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
         self.single.assert_awaited_once_with(self.base, self.bot.base_fingerprints.run_lock)
         self.assertEqual(events, ["committed", "sent"])
         self.assertIn("Fingerprint removed", ctx.send.await_args.args[0])
-        self.assertTrue(ctx.send.await_args.args[0].startswith(str(commands.SUCCESS_EMOJI)))
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(base_extraction_module.SUCCESS_EMOJI)))
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
     async def test_link_and_already_empty_base_report_actual_outcome(self) -> None:
@@ -76,7 +76,7 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
         await self.invoke(ctx, self.base.link)
         self.query.find.assert_called_once_with({"link": self.base.link})
         self.assertIn("No fingerprint was stored", ctx.send.await_args.args[0])
-        self.assertTrue(ctx.send.await_args.args[0].startswith(str(commands.SUCCESS_EMOJI)))
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(base_extraction_module.SUCCESS_EMOJI)))
 
     async def test_inaccessible_base_never_mutates_and_failures_never_claim_success(self) -> None:
         self.query.find.return_value.first_or_none.return_value = None
@@ -84,7 +84,7 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
         await self.invoke(ctx)
         self.single.assert_not_awaited()
         self.assertIn("unavailable", ctx.send.await_args.args[0])
-        self.assertTrue(ctx.send.await_args.args[0].startswith(str(commands.ERROR_EMOJI)))
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(base_extraction_module.ERROR_EMOJI)))
         self.query.find.return_value.first_or_none.return_value = self.base
         for error in (AutoReconnect("uncertain write"), FingerprintError("base changed")):
             with self.subTest(error=error):
@@ -92,7 +92,7 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
                 ctx = self.context()
                 await self.invoke(ctx)
                 self.assertNotIn("Fingerprint removed", ctx.send.await_args.args[0])
-                self.assertTrue(ctx.send.await_args.args[0].startswith(str(commands.ERROR_EMOJI)))
+                self.assertTrue(ctx.send.await_args.args[0].startswith(str(base_extraction_module.ERROR_EMOJI)))
                 self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
     async def test_bulk_reports_confirmed_counts_changed_records_and_partial_failure(self) -> None:
@@ -101,19 +101,19 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
         await self.cog.base_unextract_all.callback.func(self.cog, ctx)
         self.assertEqual(self.bulk.await_args.args[:2],
                          (self.bot.base_fingerprints.run_lock, self.bot.base_fingerprints.gpu.close))
-        self.assertIn(str(commands.LOADING_EMOJI), ctx.send.await_args.args[0])
+        self.assertIn(str(base_extraction_module.LOADING_EMOJI), ctx.send.await_args.args[0])
         self.assertIn("Removed 7 fingerprints", ctx.edit.await_args.kwargs["content"])
         self.assertIn("1 bases changed", ctx.edit.await_args.kwargs["content"])
-        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(commands.ERROR_EMOJI)))
-        self.assertNotIn(str(commands.LOADING_EMOJI), ctx.edit.await_args.kwargs["content"])
+        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(base_extraction_module.ERROR_EMOJI)))
+        self.assertNotIn(str(base_extraction_module.LOADING_EMOJI), ctx.edit.await_args.kwargs["content"])
         ctx.send.assert_awaited_once()
         self.bulk.side_effect = BulkRemovalError(FingerprintRemoval(removed=3))
         ctx = self.context()
         await self.cog.base_unextract_all.callback.func(self.cog, ctx)
         self.assertIn("incomplete", ctx.edit.await_args.kwargs["content"])
         self.assertIn("Confirmed removal of 3", ctx.edit.await_args.kwargs["content"])
-        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(commands.ERROR_EMOJI)))
-        self.assertNotIn(str(commands.LOADING_EMOJI), ctx.edit.await_args.kwargs["content"])
+        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(base_extraction_module.ERROR_EMOJI)))
+        self.assertNotIn(str(base_extraction_module.LOADING_EMOJI), ctx.edit.await_args.kwargs["content"])
         ctx.send.assert_awaited_once()
 
     async def test_bulk_progress_updates_one_message_with_confirmed_counts_and_throttles_edits(self) -> None:
@@ -122,7 +122,7 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
 
         async def remove(_lock, _release, on_progress) -> FingerprintRemoval:
             ctx.send.assert_awaited_once()
-            self.assertIn(str(commands.LOADING_EMOJI), ctx.send.await_args.args[0])
+            self.assertIn(str(base_extraction_module.LOADING_EMOJI), ctx.send.await_args.args[0])
             await on_progress(FingerprintRemovalProgress(0, 4, FingerprintRemoval()))
             await on_progress(FingerprintRemovalProgress(1, 4, FingerprintRemoval(removed=1)))
             await on_progress(FingerprintRemovalProgress(2, 4, FingerprintRemoval(removed=2)))
@@ -133,14 +133,14 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
             return completed
 
         self.bulk.side_effect = remove
-        with patch.object(commands.time, "monotonic", side_effect=[10, 10.2, 11.1, 11.2]):
+        with patch.object(base_extraction_module.time, "monotonic", side_effect=[10, 10.2, 11.1, 11.2]):
             await self.cog.base_unextract_all.callback.func(self.cog, ctx)
         self.assertEqual(ctx.edit.await_count, 3)
         for call in ctx.edit.await_args_list:
             self.assertIs(call.args[0], ctx.send.return_value)
         self.assertIn("Removed 3 fingerprints", ctx.edit.await_args.kwargs["content"])
-        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(commands.SUCCESS_EMOJI)))
-        self.assertNotIn(str(commands.LOADING_EMOJI), ctx.edit.await_args.kwargs["content"])
+        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(base_extraction_module.SUCCESS_EMOJI)))
+        self.assertNotIn(str(base_extraction_module.LOADING_EMOJI), ctx.edit.await_args.kwargs["content"])
 
     async def test_bulk_progress_delivery_failure_keeps_removal_running_and_publishes_final_outcome(self) -> None:
         ctx = self.context()
@@ -158,7 +158,7 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
         self.bulk.assert_awaited_once()
         self.assertEqual(ctx.edit.await_count, 2)
         self.assertIn("Removed 2 fingerprints", ctx.edit.await_args.kwargs["content"])
-        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(commands.SUCCESS_EMOJI)))
+        self.assertTrue(ctx.edit.await_args.kwargs["content"].startswith(str(base_extraction_module.SUCCESS_EMOJI)))
 
     async def test_bulk_initial_delivery_failure_does_not_start_removal_and_final_failure_does_not_repeat_it(self) -> None:
         ctx = self.context()

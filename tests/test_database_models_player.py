@@ -1,6 +1,6 @@
 import unittest
 
-from database_models import player_models
+from elo_bot.db import player_models
 
 
 class TestDatabasePlayerModels(unittest.TestCase):

@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
 
-import cogs.base_commands as commands
-from common.base_fingerprints.matcher import score_layout
-from common.constants import BASE_SUBMISSION_CHANNEL
-from database_models import BaseLayout, PendingBaseSubmission
+from elo_bot.features.bases.fingerprints.matcher import score_layout
+from elo_bot.config.ids import BASE_SUBMISSION_CHANNEL
+from elo_bot.db import BaseLayout, PendingBaseSubmission
 from tests._relative_geometry_fixture import layout, points
 from tests.integration import _fingerprint_fixture as fixture
 from tests._relative_geometry_fixture import summary
+import elo_bot.extensions.base as base_module
 
 
 class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
@@ -29,7 +29,7 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(PendingBaseSubmission, "get", new=AsyncMock(return_value=self.submission)))
         self.bot = MagicMock(spec=ipy.Client)
         self.bot.ext = {}
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.ctx = SimpleNamespace(author=SimpleNamespace(id=123, has_any_role=lambda _: True),
                                    guild=SimpleNamespace(fetch_member=AsyncMock(
                                        return_value=SimpleNamespace(id=123, display_name="Builder"))),
@@ -39,7 +39,7 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
 
         async def worker(payload):
             self.assertEqual(len(payload["candidates"]), 1)
-            from common.base_fingerprints.types import BaseFingerprint
+            from elo_bot.db.fingerprint_types import BaseFingerprint
             query = BaseFingerprint.model_validate(payload["query"])
             candidates = [BaseFingerprint.model_validate(value) for value in payload["candidates"]]
             return {"scores": [(await asyncio.to_thread(score_layout, query, value,

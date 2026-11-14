@@ -6,10 +6,10 @@ from unittest.mock import MagicMock, patch
 from pydantic import ValidationError
 from ultralytics.utils import plotting
 
-from common.base_fingerprints.extractor import extract_batch
-from common.base_fingerprints.labels import create_labels
-from common.base_fingerprints.slicing import Detection
-from common.base_fingerprints.types import HALL_TYPES, BaseFingerprint
+from elo_bot.features.bases.fingerprints.extractor import extract_batch
+from elo_bot.features.bases.fingerprints.labels import create_labels
+from elo_bot.features.bases.fingerprints.slicing import Detection
+from elo_bot.db.fingerprint_types import HALL_TYPES, BaseFingerprint
 from tests import _base_extraction_fixture as fixture
 from tests._relative_geometry_fixture import layout
 from tests._base_extraction_fixture import detections
@@ -40,7 +40,7 @@ class TestHallSelection(unittest.TestCase):
                 runners = (Detection("capital_peak", (100, 100, 160, 160), .88),
                            Detection("district_hall", (250, 250, 310, 310), .90003))
                 with self.subTest(district=district, winner=winner_type), patch(
-                    "common.base_fingerprints.extractor.sliced_detections",
+                    "elo_bot.features.bases.fingerprints.extractor.sliced_detections",
                     return_value=(*runners, *defenses, winner),
                 ):
                     result = extract_batch(MagicMock(), [self.source(district=district)], "cpu", include_bounds=True)[0]
@@ -68,7 +68,7 @@ class TestHallSelection(unittest.TestCase):
             for source, expected_count in ((self.source(district=0), 1),
                                           (self.source(pipeline="capital-v2-sahi448-4d63ddd9", district=0), 3)):
                 with self.subTest(pipeline=source.pipeline_id, order=ordered), patch(
-                    "common.base_fingerprints.extractor.sliced_detections", return_value=(*detections(), *ordered)
+                    "elo_bot.features.bases.fingerprints.extractor.sliced_detections", return_value=(*detections(), *ordered)
                 ):
                     model = MagicMock()
                     result = extract_batch(model, [source], "cpu")[0]
@@ -85,7 +85,7 @@ class TestHallSelection(unittest.TestCase):
     def test_labels_draw_only_the_selected_hall_on_each_panel(self) -> None:
         winner = Detection("district_hall", (500, 500, 560, 560), .95)
         extra = Detection("capital_peak", (100, 100, 160, 160), .8)
-        with patch("common.base_fingerprints.extractor.sliced_detections",
+        with patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections",
                    return_value=(*detections(), extra, winner)):
             fp = extract_batch(MagicMock(), [self.source()], "cpu")[0].fingerprint
             original = plotting.Annotator.box_label

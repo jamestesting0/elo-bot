@@ -4,15 +4,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-from cogs import match_commands
-from cogs.base_store import storage
-from cogs.war_hosting import war_start
-from common.constants import SUCCESS_EMOJI
-from common.matches.cleanup import delete_unreserved_match
-from database_models import BaseStore
+from elo_bot.features.base_store import storage
+from elo_bot.features.hosting.war import war_start
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.matches.cleanup import delete_unreserved_match
+from elo_bot.db import BaseStore
 
 
 from tests._match_cleanup_fixture import MatchCleanupStateMixin
+from tests._patch_sites import patch_sites
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_manual_thread_delete_retains_match_when_discord_delete_fails(self) -> None:
@@ -95,7 +96,7 @@ class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsync
         self.make_pre_thread()
         self.insert_before_delete = True
         # When: the automatic cancellation helper uses its real Match boundary.
-        await match_commands.cancel_match(self.bot, "TOKEN")
+        await match_lifecycle_module.cancel_match(self.bot, "TOKEN")
         # Then: the accepted match stays present and receives no expiry notification.
         self.assertIsNotNone(self.persisted)
         self.bot.fetch_user.assert_not_awaited()
@@ -148,7 +149,7 @@ class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsync
         store = self.match.participants[0].base_store
         self.collection.update_one.side_effect = [UpdateResult({"n": 1}, True)]
         message = MagicMock(id=77, delete=AsyncMock(), edit=AsyncMock(), embeds=[])
-        with patch.object(war_start.match_commands, "free_clan", new_callable=AsyncMock) as free, \
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
                 patch.object(war_start, "schedule_channel_name_edit") as rename:
             # When: abort commits but cannot update the retained reservation's controls.
             with self.assertRaises(war_start.BaseStoreMessageConflict):

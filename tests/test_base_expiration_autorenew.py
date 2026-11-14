@@ -5,8 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 from aiohttp import web
 import interactions as ipy
 
-from cogs.base_commands import BaseCommands
-from common.constants import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
+from elo_bot.extensions.base import BaseCommands
+from elo_bot.config.ids import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -96,9 +97,9 @@ class TestBaseExpirationAutorenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = NOW
 
         with (
-                patch("cogs.base_commands.BaseLayout") as base_layout,
-                patch("cogs.base_commands.datetime", new=clock),
-                patch("cogs.war_hosting.helper_preserve.datetime", new=clock),
+                patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout')) as base_layout,
+                patch_sites(('elo_bot.extensions.base.submissions.datetime', 'elo_bot.extensions.base.manage.datetime', 'elo_bot.extensions.base.private.datetime'), new=clock),
+                patch("elo_bot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.expiration_date.__le__.return_value = "expiring"
             base_layout.find.return_value.to_list = AsyncMock(return_value=[base])

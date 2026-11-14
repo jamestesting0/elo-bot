@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.season_commands import SeasonCommands
-from common.constants import SUCCESS_EMOJI
-from database_models import Player, Season
+from elo_bot.extensions.season import SeasonCommands
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import Player, Season
 
 
 class TestSeasonResetRatings(unittest.IsolatedAsyncioTestCase):

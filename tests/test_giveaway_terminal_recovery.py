@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.giveaway_commands import GiveawayCommands
-from database_models import Giveaway
+from elo_bot.extensions.giveaway import GiveawayCommands
+from elo_bot.db import Giveaway
 
 
 class TestGiveawayTerminalRecovery(unittest.IsolatedAsyncioTestCase):

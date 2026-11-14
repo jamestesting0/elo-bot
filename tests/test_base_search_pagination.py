@@ -7,20 +7,21 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
 
-import cogs.base_commands as commands
-from common.base_fingerprints.search import SearchSession, render_page
-from common.base_fingerprints.types import MatchScore
-from common.constants import ERROR_EMOJI
-from database_models import BaseLayout
+from elo_bot.features.bases.fingerprints.search import SearchSession, render_page
+from elo_bot.features.bases.fingerprints.types import MatchScore
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.db import BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._base_finder_lock_fixture import ContendedLock
+import elo_bot.extensions.base as base_module
+import elo_bot.extensions.base.listing as base_listing_module
 
 
 class TestSimilarPagination(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         bot = MagicMock(spec=ipy.Client)
         bot.ext = {}
-        self.cog = commands.BaseCommands(bot)
+        self.cog = base_module.BaseCommands(bot)
         self.bases = [BaseLayout.model_construct(
             id=ObjectId(), district="Barbarian Camp", link=f"https://base/{index}",
             image_url=f"https://image/{index}", quality="Good", builder_id="123",
@@ -61,7 +62,7 @@ class TestSimilarPagination(unittest.IsolatedAsyncioTestCase):
                 payload = await render_page(self.session, ctx)
                 self.assertEqual(len(payload["components"]), 2)
                 actual = payload["components"][0].to_dict()
-                expected = commands._build_base_list_components(
+                expected = base_listing_module._build_base_list_components(
                     "Any", index, "Performance", "Any", "Any", total,
                 )[-1].to_dict()
                 for row in (actual, expected):

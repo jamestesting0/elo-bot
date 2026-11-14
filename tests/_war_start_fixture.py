@@ -11,9 +11,10 @@ from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 from pymongo.results import UpdateResult
 
-from cogs.base_store import storage as base_store_storage
-from cogs.war_hosting import war_start
-from database_models import Match, Participant
+from elo_bot.features.base_store import storage as base_store_storage
+from elo_bot.features.hosting.war import war_start
+from elo_bot.db import Match, Participant
+from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 
 class WarStartFixture(unittest.IsolatedAsyncioTestCase):
@@ -58,12 +59,11 @@ class WarStartFixture(unittest.IsolatedAsyncioTestCase):
         collection_patch = patch.object(Match, "get_pymongo_collection", return_value=self.collection)
         collection_patch.start()
         self.addCleanup(collection_patch.stop)
-        for module, name in (
-                (war_start.match_commands, "send_bases"),
-                (war_start.match_commands, "remove_helper_task"),
-                (base_store_storage, "clear_participant_base_store"),
+        for boundary in (
+                patch_family(MATCH_MODULE_FAMILY, "send_bases", new_callable=AsyncMock),
+                patch_family(MATCH_MODULE_FAMILY, "remove_helper_task", new_callable=AsyncMock),
+                patch.object(base_store_storage, "clear_participant_base_store", new_callable=AsyncMock),
         ):
-            boundary = patch.object(module, name, new_callable=AsyncMock)
             boundary.start()
             self.addCleanup(boundary.stop)
 

@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.leaderboard_commands import LeaderboardCommands
-from common.constants import LB_ENTRIES_PER_PAGE
+from elo_bot.extensions.leaderboard import LeaderboardCommands
+from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
 
 
 class TestLeaderboardPagination(unittest.IsolatedAsyncioTestCase):
@@ -32,9 +32,9 @@ class TestLeaderboardPagination(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(modal.components[0].custom_id, "page")
         ctx.send.assert_not_awaited()
 
-    @patch("cogs.leaderboard_commands.Player")
-    @patch("cogs.leaderboard_commands.construct_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.leaderboard_commands.Season")
+    @patch("elo_bot.extensions.leaderboard.Player")
+    @patch("elo_bot.extensions.leaderboard.construct_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.leaderboard.Season")
     async def test_page_modal_jumps_to_last_page(
             self, mock_season, mock_construct_leaderboard, mock_player):
         # Given: eleven Elo players and two selector rows
@@ -85,9 +85,9 @@ class TestLeaderboardPagination(unittest.IsolatedAsyncioTestCase):
         ctx.defer.assert_not_awaited()
         ctx.send.assert_not_awaited()
 
-    @patch("cogs.leaderboard_commands.Player")
-    @patch("cogs.leaderboard_commands.construct_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.leaderboard_commands.Season")
+    @patch("elo_bot.extensions.leaderboard.Player")
+    @patch("elo_bot.extensions.leaderboard.construct_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.leaderboard.Season")
     async def test_highest_elo_page_modal_uses_row_one(
             self, mock_season, mock_construct_leaderboard, mock_player):
         # Given: a Highest Elo view with no season selector
@@ -126,8 +126,8 @@ class TestLeaderboardPagination(unittest.IsolatedAsyncioTestCase):
         ctx.edit.assert_awaited_once()
         ctx.message.edit.assert_not_awaited()
 
-    @patch("cogs.leaderboard_commands.Player")
-    @patch("cogs.leaderboard_commands.Season")
+    @patch("elo_bot.extensions.leaderboard.Player")
+    @patch("elo_bot.extensions.leaderboard.Season")
     async def test_page_modal_rejects_stale_total(self, mock_season, mock_player):
         # Given: a page-two modal after the leaderboard shrank to one page
         page_query = MagicMock()
@@ -158,8 +158,8 @@ class TestLeaderboardPagination(unittest.IsolatedAsyncioTestCase):
         ctx.message.edit.assert_not_awaited()
         ctx.defer.assert_not_awaited()
 
-    @patch("cogs.leaderboard_commands.sort_players", new_callable=AsyncMock)
-    @patch("cogs.leaderboard_commands.Season")
+    @patch("elo_bot.extensions.leaderboard.sort_players", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.leaderboard.Season")
     async def test_repeat_arrow_reuses_ranking_until_player_cache_changes(self, mock_season, mock_sort_players):
         # Given: a cached Addiction ranking for all seasons
         players = [SimpleNamespace(user_id="1", elo=1500, highest_elo=1600, matches=[])]

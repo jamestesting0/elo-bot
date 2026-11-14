@@ -7,9 +7,10 @@ import interactions as ipy
 from interactions.models.discord.message import process_message_payload
 from pymongo.errors import OperationFailure
 
-import cogs.embed_commands as commands
-import cogs.match_commands as match_commands
-from database_models import ServerState
+import elo_bot.extensions.embed as commands
+from elo_bot.db import ServerState
+from tests._patch_sites import patch_sites
+import elo_bot.extensions.match as match_module
 
 
 class TestDashboardPublicationConsistency(unittest.IsolatedAsyncioTestCase):
@@ -103,17 +104,17 @@ class TestDashboardPublicationConsistency(unittest.IsolatedAsyncioTestCase):
     async def test_periodic_jobs_preserve_pending_and_unavailable_dashboards(self) -> None:
         channel = MagicMock(fetch_message=AsyncMock(return_value=self.message))
         bot = MagicMock(ext={}, fetch_channel=AsyncMock(return_value=channel))
-        cog = match_commands.MatchCommands(bot)
+        cog = match_module.MatchCommands(bot)
         state = SimpleNamespace(
             hosting_queue_embed=SimpleNamespace(channel=100, message=200),
             clan_availability_embed=SimpleNamespace(channel=100, message=200),
         )
         with (
             patch.object(ServerState, "current", new=AsyncMock(return_value=state)),
-            patch.object(match_commands, "sync_base_store_slots", new=AsyncMock()) as sync,
-            patch.object(match_commands, "HelperTask") as tasks,
-            patch.object(match_commands, "Match") as matches,
-            patch.object(match_commands, "Clan") as clans,
+            patch_sites(('elo_bot.extensions.match.sync_base_store_slots', 'elo_bot.extensions.match.base_store.sync_base_store_slots', 'elo_bot.extensions.match.dashboards.sync_base_store_slots'), new=AsyncMock()) as sync,
+            patch_sites(('elo_bot.extensions.match.dashboards.HelperTask', 'elo_bot.features.matches.resources.HelperTask')) as tasks,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as matches,
+            patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clans,
         ):
             tasks.find.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
             matches.find.return_value.to_list = AsyncMock(return_value=[])
@@ -146,11 +147,11 @@ class TestDashboardPublicationConsistency(unittest.IsolatedAsyncioTestCase):
             description="This dashboard is being registered. Its controls are not available yet.",
         )]
         channel = MagicMock(fetch_message=AsyncMock(return_value=self.message))
-        cog = match_commands.MatchCommands(MagicMock(ext={}, fetch_channel=AsyncMock(return_value=channel)))
+        cog = match_module.MatchCommands(MagicMock(ext={}, fetch_channel=AsyncMock(return_value=channel)))
         state = SimpleNamespace(hosting_queue_embed=SimpleNamespace(channel=100, message=200))
         with (
             patch.object(ServerState, "current", new=AsyncMock(return_value=state)),
-            patch.object(match_commands, "HelperTask") as tasks,
+            patch_sites(('elo_bot.extensions.match.dashboards.HelperTask', 'elo_bot.features.matches.resources.HelperTask')) as tasks,
         ):
             tasks.find.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
             await cog.update_hosting_queue_embed.callback.func(cog)
@@ -166,13 +167,13 @@ class TestDashboardPublicationConsistency(unittest.IsolatedAsyncioTestCase):
         controls = [ipy.ActionRow(ipy.Button(style=ipy.ButtonStyle.SECONDARY, label="Free", custom_id="free_clan"))]
         self.message.components = controls
         channel = MagicMock(fetch_message=AsyncMock(return_value=self.message))
-        cog = match_commands.MatchCommands(MagicMock(ext={}, fetch_channel=AsyncMock(return_value=channel)))
+        cog = match_module.MatchCommands(MagicMock(ext={}, fetch_channel=AsyncMock(return_value=channel)))
         state = SimpleNamespace(clan_availability_embed=SimpleNamespace(channel=100, message=200))
         with (
             patch.object(ServerState, "current", new=AsyncMock(return_value=state)),
-            patch.object(match_commands, "sync_base_store_slots", new=AsyncMock()),
-            patch.object(match_commands, "Match") as matches,
-            patch.object(match_commands, "Clan") as clans,
+            patch_sites(('elo_bot.extensions.match.sync_base_store_slots', 'elo_bot.extensions.match.base_store.sync_base_store_slots', 'elo_bot.extensions.match.dashboards.sync_base_store_slots'), new=AsyncMock()),
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as matches,
+            patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clans,
         ):
             matches.find.return_value.to_list = AsyncMock(return_value=[])
             clans.find_all.return_value.to_list = AsyncMock(return_value=[])

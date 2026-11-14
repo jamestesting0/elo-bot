@@ -7,12 +7,12 @@ import interactions as ipy
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
-from common.constants import LVL2_ROLES
-from common.players import self_hosting
-from database_models import Match, Player, RecordedMatch
-from database_models.final_models import FinalEditionStats, FinalPlayerProfile
-from database_models.match_models import Participant
-from database_models.result_models import MatchResultOperation
+from elo_bot.config.ids import LVL2_ROLES
+from elo_bot.features.hosting.self_hosted import invitations as self_hosting
+from elo_bot.db import Match, Player, RecordedMatch
+from elo_bot.db.final_models import FinalEditionStats, FinalPlayerProfile
+from elo_bot.db.match_models import Participant
+from elo_bot.db.result_models import MatchResultOperation
 
 
 class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):

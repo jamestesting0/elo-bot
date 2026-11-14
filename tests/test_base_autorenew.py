@@ -6,8 +6,10 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from cogs.base_commands import BaseCommands
-from common.constants import BASE_RENEWAL_LOGS_CHANNEL, LOADING_EMOJI, RED_COLOR
+from elo_bot.extensions.base import BaseCommands
+from elo_bot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
+from elo_bot.config.emojis import LOADING_EMOJI
+from elo_bot.config.presentation import RED_COLOR
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -104,8 +106,8 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = 2_000_000_000.25
 
         with (
-                patch("cogs.war_hosting.helper_preserve.BaseLayout") as base_layout,
-                patch("cogs.war_hosting.helper_preserve.datetime", new=clock),
+                patch("elo_bot.features.hosting.war.helper_preserve.BaseLayout") as base_layout,
+                patch("elo_bot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.find_one = AsyncMock(return_value=base)
 
@@ -142,7 +144,7 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
         base.save_changes = AsyncMock()
         ctx = self.context()
 
-        with patch("cogs.war_hosting.helper_preserve.BaseLayout") as base_layout:
+        with patch("elo_bot.features.hosting.war.helper_preserve.BaseLayout") as base_layout:
             base_layout.find_one = AsyncMock(return_value=base)
 
             # When
@@ -187,8 +189,8 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = 2_000_000_000.25
 
         with (
-                patch("cogs.war_hosting.helper_preserve.BaseLayout") as base_layout,
-                patch("cogs.war_hosting.helper_preserve.datetime", new=clock),
+                patch("elo_bot.features.hosting.war.helper_preserve.BaseLayout") as base_layout,
+                patch("elo_bot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.find_one = AsyncMock(return_value=base)
 

@@ -10,11 +10,11 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-import beta
-import main
-import cogs.final_commands as final_commands
-import cogs.leaderboard_commands as leaderboards
-from database_models import EloFinal, Player, PlayerSeasonData, RecordedMatch
+from elo_bot.app import errors
+from elo_bot.discord import runtime
+import elo_bot.extensions.final as final_commands
+import elo_bot.extensions.leaderboard as leaderboards
+from elo_bot.db import EloFinal, Player, PlayerSeasonData, RecordedMatch
 
 
 class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
@@ -120,14 +120,14 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
             ctx.send.assert_awaited_once()
 
     async def test_bug_report_acknowledgement_waits_for_owner_delivery(self) -> None:
-        for module in (main, beta):
+        for module in (errors,):
             with self.subTest(module=module.__name__):
                 ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), kwargs={}, custom_id="test")
                 response = MagicMock(send=AsyncMock(), defer=AsyncMock())
                 error = ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
                 bot = MagicMock(wait_for_component=AsyncMock(return_value=SimpleNamespace(ctx=response)))
                 bot.owner.send = AsyncMock(side_effect=error)
-                with patch.object(module, "bot", bot), redirect_stderr(io.StringIO()):
+                with patch.object(runtime, "bot", bot, create=True), redirect_stderr(io.StringIO()):
                     with self.assertRaises(ipy.errors.Forbidden):
                         await module.report_error(ctx, RuntimeError("synthetic failure"))
 
@@ -135,7 +135,7 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
                 response.send.assert_not_awaited()
 
     async def test_failed_bug_response_keeps_retry_control(self) -> None:
-        for module in (main, beta):
+        for module in (errors,):
             with self.subTest(module=module.__name__):
                 button = ipy.Button(style=ipy.ButtonStyle.SECONDARY, label="Respond", custom_id="respond")
                 ctx = MagicMock(spec=ipy.ModalContext, defer=AsyncMock(), send=AsyncMock())
@@ -145,7 +145,7 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
                 error = ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
                 user = MagicMock(send=AsyncMock(side_effect=error))
                 bot = MagicMock(fetch_user=AsyncMock(return_value=user), owners=[])
-                with patch.object(module, "bot", bot):
+                with patch.object(runtime, "bot", bot, create=True):
                     await module.bug_respond_modal.callback(ctx, **{"100": "A response"})
 
                 user.send.assert_awaited_once()

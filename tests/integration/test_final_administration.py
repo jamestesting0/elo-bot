@@ -1,13 +1,13 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.administration import deregister_player, guard_deregistration, guard_full_reset, guard_result_deletion, migrate_final_identity
-from common.finals.lifecycle import confirm_bracket
-from common.finals.predictions import begin_prediction, change_prediction_state
-from common.finals.results import FinalResultSubmission, submit_result
-from common.finals.types import FinalError
-from common.tokens.wallets import ensure_wallet
-from database_models import Player
-from database_models.final_models import FinalPrediction
-from database_models.token_models import TokenLedgerEntry, TokenWallet
+from elo_bot.features.finals.administration import deregister_player, guard_deregistration, guard_full_reset, guard_result_deletion, migrate_final_identity
+from elo_bot.features.finals.lifecycle import confirm_bracket
+from elo_bot.features.finals.predictions import begin_prediction, change_prediction_state
+from elo_bot.features.finals.results import FinalResultSubmission, submit_result
+from elo_bot.core.finals import FinalError
+from elo_bot.features.tokens.wallets import ensure_wallet
+from elo_bot.db import Player
+from elo_bot.db.final_models import FinalPrediction
+from elo_bot.db.token_models import TokenLedgerEntry, TokenWallet
 
 
 class TestFinalAdministration(FinalScenarioCase):
@@ -38,7 +38,7 @@ class TestFinalAdministration(FinalScenarioCase):
 
     async def test_deregistration_races_a_join_without_an_unregistered_entrant(self):
         import asyncio
-        from common.finals.lifecycle import add_entrant, resolve_final
+        from elo_bot.features.finals.lifecycle import add_entrant, resolve_final
         final = await self.roster(5)
         async with asyncio.timeout(5):
             await asyncio.gather(add_entrant(final, "9", "Bettor"), deregister_player("9"), return_exceptions=True)
@@ -78,7 +78,7 @@ class TestFinalAdministration(FinalScenarioCase):
     async def test_final_result_delete_points_to_correction_and_retains_history(self):
         final = await confirm_bracket(await self.roster(8), "manager")
         await self.scheduled_pairing(final, "QF1")
-        from common.finals.lifecycle import resolve_final
+        from elo_bot.features.finals.lifecycle import resolve_final
         final = await resolve_final()
         node = final.nodes["QF1"]
         result = await submit_result(FinalResultSubmission(final_id=final.id, node_id=node.id, actor_id="manager",

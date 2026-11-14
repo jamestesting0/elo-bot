@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import anyio
 
-from cogs import data_commands
-from common.constants import SUCCESS_EMOJI
+from elo_bot.extensions import data as data_commands
+from elo_bot.config.emojis import SUCCESS_EMOJI
 from tests import _result_retry_store as retry_fixture
 
 

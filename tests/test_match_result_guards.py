@@ -3,9 +3,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.match_commands import MatchCommands
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
-from database_models import Match
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elo_bot.db import Match
+from tests._patch_sites import patch_sites
 
 
 VALID_RESULT = "0.0\n3.100\n2.20"
@@ -63,8 +64,8 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
         # Then: the validated payload reaches result processing once.
         process_results.assert_awaited_once_with(ctx, response, data_generation=data_generation)
 
-    @patch("cogs.match_commands.record_match", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Player")
+    @patch('elo_bot.extensions.match.results.record_match', new_callable=AsyncMock)
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
     async def test_match_submit_rejects_invalid_result_for_either_player(
             self, mock_player, mock_record_match):
         for field in ("player1_result", "player2_result"):
@@ -103,8 +104,8 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
                     mock_record_match.assert_not_awaited()
                     self.assertIn("invalid", ctx.send.await_args.args[0].lower())
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Match")
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_resubmit_modal_rejects_invalid_result_before_history_lookup(
             self, mock_match, mock_player):
         for field in ("player1", "player2"):
@@ -133,7 +134,7 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
                     mock_player.find_one.assert_not_awaited()
                     self.assertIn("invalid", ctx.send.await_args.args[0].lower())
 
-    @patch("cogs.match_commands.Match")
+    @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_result_store_modal_rejects_out_of_range_entry(self, mock_match):
         for invalid_entry in ("4.50", "3.101", "-1.50", "3.-1"):
             with self.subTest(invalid_entry=invalid_entry):

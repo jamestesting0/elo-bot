@@ -5,9 +5,10 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 import torch
 from PIL import Image
-from common.base_fingerprints.artifacts import MANIFEST
-from common.base_fingerprints.slicing import Detection
-from common.base_fingerprints.types import PIPELINE_ID, ImageInput
+from elo_bot.features.bases.fingerprints.artifacts import MANIFEST
+from elo_bot.features.bases.fingerprints.slicing import Detection
+from elo_bot.db.fingerprint_types import PIPELINE_ID
+from elo_bot.features.bases.fingerprints.types import ImageInput
 from tests._relative_geometry_fixture import points
 
 

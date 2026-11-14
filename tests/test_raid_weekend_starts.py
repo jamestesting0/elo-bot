@@ -7,13 +7,19 @@ import interactions as ipy
 from beanie.odm.fields import ExpressionField
 from pymongo.errors import PyMongoError
 
-import cogs.match_commands as commands
-from cogs.live_hosting import helper_live, live_start
-from cogs.self_commands import SelfCommands
-from cogs.war_hosting import helper_base_store_availability, helper_host, war_start
-from common.base_store.start import held_store, ready_store, shared_store_clan
-from common.constants import BOT_ID
+from elo_bot.features.hosting.live import live_start
+from elo_bot.features.hosting.live import helper_live
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.features.hosting.war import war_start
+from elo_bot.features.hosting.war import helper_host
+from elo_bot.features.hosting.war import helper_base_store_availability
+from elo_bot.features.base_store.start import held_store, ready_store, shared_store_clan
+from elo_bot.config.ids import BOT_ID
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
+from tests._patch_sites import patch_sites
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.hosting as match_hosting_module
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 
 class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
@@ -21,10 +27,10 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         self.f = LiveBaseFixture()
         await self.f.setup(self)
         for field in ("thread", "token"):
-            self.enterContext(patch.object(commands.Match, field, ExpressionField(field), create=True))
+            self.enterContext(patch.object(match_adapters_module.Match, field, ExpressionField(field), create=True))
         async def find(query):
             return await self.f.find({str(key): value for key, value in query.items()})
-        commands.Match.find_one.side_effect = find
+        match_adapters_module.Match.find_one.side_effect = find
         self.f.bot.user.id = BOT_ID
         self.f.ctx.author = MagicMock(id=333, mention="<@333>")
         original_message = self.f.message
@@ -44,31 +50,30 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         public.embeds = [ipy.Embed(fields=[ipy.EmbedField("Players", "111 vs 222"), ipy.EmbedField("Time", "Pending")])]
         self.f.document["msg"] = str(public.id)
         self.f.document["persistent_host_clans"] = [None, None]
-        self.enterContext(patch.object(commands, "is_raid_weekend", return_value=True))
-        self.enterContext(patch("cogs.self_commands.is_raid_weekend", return_value=True))
-        self.enterContext(patch.object(commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
-        self.enterContext(patch("cogs.self_commands.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
+        self.enterContext(patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=True))
+        self.enterContext(patch("elo_bot.extensions.self_service.is_raid_weekend", return_value=True))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.base_store.confirm_pending_opponent_bases', 'elo_bot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)))
+        self.enterContext(patch("elo_bot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
         clan_stub = SimpleNamespace(tag=CLAN, name="Helper Clan", availability_str="Available")
-        self.enterContext(patch.object(commands, "Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
-        self.enterContext(patch("cogs.self_commands.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
-        self.enterContext(patch.object(commands, "occupy_clan", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "free_clan", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "available_resource_clans_text", new=AsyncMock(return_value="Available")))
-        self.enterContext(patch.object(commands, "send_bases", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "remove_helper_task", new_callable=AsyncMock))
-        self.enterContext(patch.object(commands, "choose_tip", new=AsyncMock(return_value="tip")))
-        self.enterContext(patch.object(commands, "get_start_base_store_slot_availability",
-                                      new=AsyncMock(return_value=(["Slot 1", "Slot 2"], {}))))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan'), new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
+        self.enterContext(patch("elo_bot.extensions.self_service.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
+        self.enterContext(patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.hosting.available_resource_clans_text', 'elo_bot.extensions.match.settings.available_resource_clans_text', 'elo_bot.features.matches.resources.available_resource_clans_text'), new=AsyncMock(return_value="Available")))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
+        self.enterContext(patch('elo_bot.extensions.match.hosting.get_start_base_store_slot_availability', new=AsyncMock(return_value=(["Slot 1", "Slot 2"], {}))))
         self.enterContext(patch.object(live_start, "schedule_channel_name_edit"))
         self.enterContext(patch.object(war_start, "schedule_channel_name_edit"))
         player_model = MagicMock(find_one=AsyncMock(return_value=SimpleNamespace(tag="#PLAYER", elo=1000)))
-        self.enterContext(patch.object(commands, "Player", new=player_model))
+        self.enterContext(patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'), new=player_model))
         self.enterContext(patch.object(helper_host, "Player", new=player_model))
-        self.enterContext(patch("cogs.base_store.controls.Player", new=player_model))
+        self.enterContext(patch("elo_bot.features.base_store.controls.Player", new=player_model))
         self.f.runtime.coc_client.get_player = AsyncMock(return_value=SimpleNamespace(
             tag="#PLAYER", town_hall=3, share_link="https://player.example",
         ))
-        self.choose = self.enterContext(patch.object(commands, "choose_bases", new_callable=AsyncMock))
+        self.choose = self.enterContext(patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock))
         self.empty_slot = self.enterContext(patch.object(helper_host, "get_available_helper_slot", new_callable=AsyncMock))
         self.enterContext(patch.object(helper_host, "confirm_helper_availability", new=AsyncMock(return_value=True)))
         self.enterContext(patch.object(helper_base_store_availability,
@@ -216,7 +221,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         for participant in self.f.document["participants"]:
             participant["base_store"] = None
             participant["opponent_bases_stored"] = False
-        await self.f.runtime._start_live(self.f.ctx, commands.LivePreflight(
+        await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
             clan=CLAN, host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
         ))
         self.assertIn("cannot start a live match", self.replies())
@@ -233,7 +238,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
                 kwargs["components"] = [components]
             return await self.f.send_public(*args, **kwargs)
         self.f.channel.send.side_effect = send_public
-        await self.f.runtime._start_live(self.f.ctx, commands.LivePreflight(
+        await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
             clan=CLAN, host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
         ))
         self.assertEqual(self.f.http.create_payloads, [{
@@ -247,7 +252,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         self.choose.assert_not_awaited()
 
     async def test_stale_automatic_reservation_id_does_not_use_current_pair(self) -> None:
-        await self.f.runtime._start_live(self.f.ctx, commands.LivePreflight(
+        await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
             clan=CLAN, host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
             stored_reservation_id="a" * 16,
         ))
@@ -257,7 +262,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(p["base_store"] for p in self.f.document["participants"]))
 
     async def test_automatic_live_rejects_wrong_clan_when_stored_pair_is_ready(self) -> None:
-        await self.f.runtime._start_live(self.f.ctx, commands.LivePreflight(
+        await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
             clan="#OTHER", host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
         ))
         self.assertIn("Start the match in that clan", self.replies())
@@ -369,7 +374,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
     async def test_live_commit_rejects_opponent_slot_removed_by_cleanup(self) -> None:
         async def remove_before_write(query, operation):
             if "times.0" in operation["$set"]:
-                self.assertTrue(commands.BASE_STORE_RESERVATION_LOCK.locked())
+                self.assertTrue(match_lifecycle_module.BASE_STORE_RESERVATION_LOCK.locked())
                 self.f.document["participants"][1]["base_store"] = None
             return await self.f.update(query, operation)
         self.f.write.side_effect = remove_before_write

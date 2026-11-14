@@ -13,12 +13,16 @@ import interactions as ipy
 from PIL import Image
 from pymongo.errors import OperationFailure
 
-import cogs._base_screenshots as screenshots
-import cogs.base_commands as commands
-import cogs.preset_commands as presets
-from cogs.war_hosting import helper_api
-from common.base_fingerprints import images
-from common.constants import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI, UNAVAILABLE_IMAGE
+import elo_bot.features.bases.screenshots as screenshots
+import elo_bot.extensions.preset as presets
+from elo_bot.integrations import helper_api
+from elo_bot.features.bases.fingerprints import images
+from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.presentation import UNAVAILABLE_IMAGE
+import elo_bot.extensions.base as base_module
+from tests._patch_sites import patch_sites
+import elo_bot.extensions.base.submissions as base_submissions_module
+from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -42,7 +46,7 @@ class TestOptionalBaseScreenshots(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         Path("temp").mkdir(exist_ok=True)
         self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(dir="temp")))
-        self.enterContext(patch.object(commands.secrets, "token_hex", return_value=f"{self.directory.name}/image"))
+        self.enterContext(patch.object(base_submissions_module.secrets, "token_hex", return_value=f"{self.directory.name}/image"))
         buffer = io.BytesIO()
         with Image.new("RGB", (100, 100), "red") as image:
             image.save(buffer, "WEBP")
@@ -56,7 +60,7 @@ class TestOptionalBaseScreenshots(unittest.IsolatedAsyncioTestCase):
         self.review.edit = AsyncMock(side_effect=lambda **kwargs: SimpleNamespace(components=[kwargs["components"]]))
         self.review_channel = MagicMock(send=AsyncMock(return_value=self.review))
         self.bot.fetch_channel = AsyncMock(return_value=self.review_channel)
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.preset = presets.PresetCommands(self.bot)
         self.ctx = MagicMock(
             spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock(side_effect=self.respond),
@@ -70,12 +74,15 @@ class TestOptionalBaseScreenshots(unittest.IsolatedAsyncioTestCase):
         self.bases.find.return_value.count = AsyncMock(return_value=0)
         self.pending = MagicMock(side_effect=self.construct_review)
         self.player = SimpleNamespace(elo=1000, base_presets={}, save_changes=AsyncMock(side_effect=self.save_presets))
-        for module in (commands, presets):
-            self.enterContext(patch.object(module, "BaseLayout", self.bases))
-            self.enterContext(patch.object(module, "Player", SimpleNamespace(
-                user_id="user_id", find_one=AsyncMock(return_value=self.player),
-            )))
-        self.enterContext(patch.object(commands, "PendingBaseSubmission", self.pending))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "BaseLayout", self.bases))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=self.player),
+        )))
+        self.enterContext(patch.object(presets, "BaseLayout", self.bases))
+        self.enterContext(patch.object(presets, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=self.player),
+        )))
+        self.enterContext(patch_sites(('elo_bot.extensions.base.search.PendingBaseSubmission', 'elo_bot.extensions.base.submissions.PendingBaseSubmission'), self.pending))
         self.session = MagicMock()
         self.session.__aenter__ = AsyncMock(return_value=self.session)
         self.session.post.side_effect = self.post

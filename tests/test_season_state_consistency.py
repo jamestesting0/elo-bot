@@ -7,8 +7,8 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-import cogs.season_commands as commands
-from database_models import BaseLayout, Player, Season
+import elo_bot.extensions.season as commands
+from elo_bot.db import BaseLayout, Player, Season
 
 
 def apply_set(row, update):

@@ -4,13 +4,12 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.results import UpdateResult
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
-from cogs.war_hosting import result_store
-from common.constants import MATCH_CHANNEL
-from database_models import BaseStore, Match, Participant
-from database_models.player_models import MatchPlayerStats
-from database_models.result_models import ResultRecordSnapshot
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.hosting.war import result_store
+from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.db import BaseStore, Match, Participant
+from elo_bot.db.player_models import MatchPlayerStats
+from elo_bot.db.result_models import ResultRecordSnapshot
 
 
 
@@ -112,9 +111,9 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
         self._async_boundary("fetch_user_match_id_choices")
         self._async_boundary("choose_tip").return_value = "tip"
         self.match = make_result_match(stored_bases=True)
-        self.match_model = self.enterContext(patch.object(match_commands, "Match"))
+        self.match_model = self.enterContext(patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')))
         self.match_model.find_one = AsyncMock(side_effect=lambda _query: self.match)
-        self.player_model = self.enterContext(patch.object(match_commands, "Player"))
+        self.player_model = self.enterContext(patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')))
         self.record = self._async_boundary("record_match")
 
         def record(*_args: RecordArgument) -> tuple[str, str]:
@@ -127,7 +126,7 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
         self.lifecycle.attach_mock(self.operation_collection.update_one, "checkpoint")
 
     def _async_boundary(self, name: str) -> AsyncMock:
-        return self.enterContext(patch.object(match_commands, name, new_callable=AsyncMock))
+        return self.enterContext(patch_family(MATCH_MODULE_FAMILY, name, new_callable=AsyncMock))
 
     async def _finish_thread(self, *, name: str) -> None:
         self.thread.name = name
@@ -156,14 +155,16 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
 
 from copy import deepcopy
 from pymongo.results import DeleteResult, InsertOneResult
-from cogs import data_commands
-from common.constants import SUCCESS_EMOJI
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
-from common.results.manual import manual_result_key
-from database_models import Player, RecordedMatch
+from elo_bot.extensions import data as data_commands
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elo_bot.features.results.manual import manual_result_key
+from elo_bot.db import Player, RecordedMatch
 from tests._result_retry_store import apply_operations, matches
 from tests._result_retry_store import apply_update
 from tests import _result_retry_store as result_fixture
+from tests._patch_sites import patch_sites
+from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 
 RESULTS = result_fixture.RESULTS

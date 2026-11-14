@@ -7,8 +7,9 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
-from cogs.match_commands import MatchCommands
-from database_models import BaseLink, Match, Participant
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.db import BaseLink, Match, Participant
+from tests._patch_sites import patch_sites
 
 
 class TestMatchSlotUpdates(unittest.IsolatedAsyncioTestCase):
@@ -72,7 +73,7 @@ class TestMatchSlotUpdates(unittest.IsolatedAsyncioTestCase):
 
         # When: the second save finishes before the first save reaches Mongo.
         with (
-            patch("cogs.match_commands.Match") as match_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
             patch.object(Match, "set", new=persist),
         ):
             match_model.find_one = AsyncMock(side_effect=lambda *_args: self.match.model_copy(deep=True))

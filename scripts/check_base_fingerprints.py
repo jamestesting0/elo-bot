@@ -13,12 +13,12 @@ from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from common.base_fingerprints.artifacts import MANIFEST, MANIFEST_SHA256, SCRATCH
-from common.base_fingerprints.evaluation import PairEvaluation, legacy_score, load_fixtures, quality_report
-from common.base_fingerprints.runtime import InferenceWorker, selected_device
-from common.base_fingerprints.types import (
-    BaseFingerprint, DISTRICTS, ExtractionResult, FingerprintError, ImageInput, LayoutMatch,
-    MODEL_SHA256, PIPELINE_ID, utcnow,
+from elo_bot.features.bases.fingerprints.artifacts import MANIFEST, MANIFEST_SHA256, SCRATCH
+from elo_bot.features.bases.fingerprints.evaluation import PairEvaluation, legacy_score, load_fixtures, quality_report
+from elo_bot.features.bases.fingerprints.runtime import InferenceWorker, selected_device
+from elo_bot.db.fingerprint_types import BaseFingerprint, MODEL_SHA256, PIPELINE_ID, utcnow
+from elo_bot.features.bases.fingerprints.types import (
+    DISTRICTS, ExtractionResult, FingerprintError, ImageInput, LayoutMatch,
 )
 
 

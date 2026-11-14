@@ -16,10 +16,11 @@ from beanie.odm.settings.document import DocumentSettings
 import interactions as ipy
 from pymongo.results import InsertOneResult, UpdateResult
 
-import cogs.base_commands as commands
-import cogs.preset_commands as presets
-from common.constants import SUCCESS_EMOJI
-from database_models import BaseLayout, PendingBaseSubmission
+import elo_bot.extensions.preset as presets
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import BaseLayout, PendingBaseSubmission
+from tests._patch_sites import patch_sites
+import elo_bot.extensions.base as base_module
 
 
 BASE_LINK: Final = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -33,7 +34,7 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
         root = self.enterContext(TemporaryDirectory(prefix="issue25-creation-"))
         self.enterContext(chdir(root))
         Path("temp").mkdir()
-        clock = self.enterContext(patch.object(commands, "datetime"))
+        clock = self.enterContext(patch_sites(('elo_bot.extensions.base.submissions.datetime', 'elo_bot.extensions.base.manage.datetime', 'elo_bot.extensions.base.private.datetime')))
         clock.now.return_value = NOW
         preset_clock = self.enterContext(patch.object(presets, "datetime"))
         preset_clock.now.return_value = NOW
@@ -100,7 +101,7 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
             id=100, channel=SimpleNamespace(id=200),
             attachments=[SimpleNamespace(id=300, url="https://cdn.example/base.webp")],
         ))
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.ctx = MagicMock(spec=ipy.ModalContext, defer=AsyncMock(), send=AsyncMock())
         self.ctx.author = SimpleNamespace(id=789)
         self.ctx.guild.id = 456
@@ -113,10 +114,8 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
             Path(path).write_bytes(b"offline screenshot")
             return True
 
-        self.enterContext(patch.object(commands, "download_base_screenshot", new=AsyncMock(side_effect=download)))
-        self.enterContext(patch.object(
-            commands, "capture_base_screenshot", new=AsyncMock(side_effect=AssertionError("Unexpected capture")),
-        ))
+        self.enterContext(patch_sites(('elo_bot.extensions.base.submissions.download_base_screenshot', 'elo_bot.extensions.base.manage.download_base_screenshot', 'elo_bot.extensions.base.private.download_base_screenshot'), new=AsyncMock(side_effect=download)))
+        self.enterContext(patch_sites(('elo_bot.extensions.base.submissions.capture_base_screenshot', 'elo_bot.extensions.base.manage.capture_base_screenshot', 'elo_bot.extensions.base.private.capture_base_screenshot'), new=AsyncMock(side_effect=AssertionError("Unexpected capture"))))
         self.enterContext(patch.object(presets, "download_base_screenshot", new=AsyncMock(side_effect=download)))
         self.enterContext(patch.object(
             presets, "capture_base_screenshot", new=AsyncMock(side_effect=AssertionError("Unexpected capture")),
@@ -157,7 +156,7 @@ class TestIssue25BaseCreation(unittest.IsolatedAsyncioTestCase):
         )
         query = MagicMock(count=AsyncMock(return_value=0))
         with (
-            patch.object(commands, "Player", player),
+            patch_sites(('elo_bot.extensions.base.private.Player', 'elo_bot.features.bases.layouts.private.Player'), player),
             patch.object(BaseLayout, "find", return_value=query),
         ):
             await self.cog.base_private_add.callback.func(

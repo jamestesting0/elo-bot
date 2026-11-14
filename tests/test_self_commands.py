@@ -8,9 +8,13 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from cogs.war_hosting.helper_api import HelperTrackingFailure
-from cogs.self_commands import SelfCommands
-from common.constants import BASE_STORE_SLOTS, BOT_ID, COLOR, ERROR_EMOJI, LOADING_EMOJI, TICK_EMOJI
+from elo_bot.integrations.helper_api import HelperTrackingFailure
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.config.game import BASE_STORE_SLOTS
+from elo_bot.config.ids import BOT_ID
+from elo_bot.config.presentation import COLOR
+from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, TICK_EMOJI
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -41,7 +45,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.status_job_type = "host_live_match"
         self.stop_after_eta = False
         self.abort_war_start = AsyncMock(return_value=True)
-        self.enterContext(patch("cogs.war_hosting.helper_api.anyio.sleep", new_callable=AsyncMock))
+        self.enterContext(patch("elo_bot.integrations.helper_api.anyio.sleep", new_callable=AsyncMock))
         app = web.Application()
         app.router.add_get("/v1/eta", self.handle_eta)
         app.router.add_post("/v1/jobs", self.handle_job)
@@ -63,7 +67,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.clan = MagicMock(tag="#2RY0QP8GY", name="Helper Clan", share_link="https://clan.example")
         self.bot.coc_client.get_clan = AsyncMock(return_value=self.clan)
         self.bot.coc_client.get_player = AsyncMock(return_value=MagicMock(clan=None))
-        self.self_commands_player_patcher = patch("cogs.self_hosting.hosting.Player")
+        self.self_commands_player_patcher = patch("elo_bot.features.hosting.self_hosted.hosting.Player")
         self.self_commands_player_model = self.self_commands_player_patcher.start()
         self.addCleanup(self.self_commands_player_patcher.stop)
         self.self_commands_player_model.find_one = AsyncMock(return_value=MagicMock(tag="#PLAYER"))
@@ -158,7 +162,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
     @staticmethod
     def make_live_request_message(identity, *, opponent_id: str = "200") -> MagicMock:
-        from cogs.live_hosting.request import build_live_request_components
+        from elo_bot.features.hosting.live.request import build_live_request_components
 
         message = MagicMock(spec=ipy.Message)
         message.id = 777
@@ -182,9 +186,9 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         return ctx
 
     async def invoke_live_accept(self, *, poll_statuses: list[str] | None = None):
-        from cogs.live_hosting import live_start
-        from cogs.live_hosting.request import LiveRequestIdentity
-        from cogs.match_commands import MatchCommands
+        from elo_bot.features.hosting.live import live_start
+        from elo_bot.features.hosting.live.request import LiveRequestIdentity
+        from elo_bot.extensions.match import MatchCommands
 
         self.poll_statuses = poll_statuses or ["running", "succeeded"]
         self.response_body = {
@@ -245,27 +249,27 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         match_commands.helper_api_key = self.cog.helper_api_key
         self.bot.get_ext.return_value = match_commands
         abort = AsyncMock(return_value=True)
-        with patch("cogs.live_hosting.request.Match") as request_match, \
-                patch("cogs.live_hosting.request.time.time", return_value=1001), \
-                patch("cogs.self_hosting.hosting.Clan") as clan_model, \
-                patch("cogs.self_hosting.hosting.Player") as player_model, \
-                patch("cogs.self_hosting.hosting.random.shuffle"), \
-                patch("cogs.match_commands.Match") as preflight_match, \
-                patch("cogs.match_commands.Player") as preflight_player, \
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)), \
-                patch("cogs.match_commands.is_raid_weekend", return_value=False), \
-                patch("cogs.live_hosting.helper_live.Match") as helper_match, \
+        with patch("elo_bot.features.hosting.live.request.Match") as request_match, \
+                patch("elo_bot.features.hosting.live.request.time.time", return_value=1001), \
+                patch("elo_bot.features.hosting.self_hosted.hosting.Clan") as clan_model, \
+                patch("elo_bot.features.hosting.self_hosted.hosting.Player") as player_model, \
+                patch("elo_bot.features.hosting.self_hosted.hosting.random.shuffle"), \
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as preflight_match, \
+                patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as preflight_player, \
+                patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)), \
+                patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                patch("elo_bot.features.hosting.live.helper_live.Match") as helper_match, \
                 patch(
-                    "cogs.live_hosting.helper_live.live_eligibility.clan_has_all_base_store_slots",
+                    "elo_bot.features.hosting.live.helper_live.live_eligibility.clan_has_all_base_store_slots",
                     new=AsyncMock(return_value=True),
                 ), \
-                patch("cogs.live_hosting.helper_live.match_commands.choose_bases", new=choose), \
-                patch("cogs.live_hosting.helper_live.live_start.start_live_match", new=start), \
-                patch("cogs.live_hosting.helper_live.live_start.abort_live_start", new=abort), \
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new=choose), \
+                patch("elo_bot.features.hosting.live.helper_live.live_start.start_live_match", new=start), \
+                patch("elo_bot.features.hosting.live.helper_live.live_start.abort_live_start", new=abort), \
                 patch(
-                    "cogs.live_hosting.helper_live.confirm_helper_availability",
+                    "elo_bot.features.hosting.live.helper_live.confirm_helper_availability",
                     wraps=__import__(
-                        "cogs.live_hosting.helper_live",
+                        "elo_bot.features.hosting.live.helper_live",
                         fromlist=["confirm_helper_availability"],
                     ).confirm_helper_availability,
                 ) as eta:
@@ -279,7 +283,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         return ctx, match, request_message, progress_message, abort, eta
 
     async def test_self_host_live_posts_public_opponent_request(self) -> None:
-        from cogs.live_hosting.request import parse_live_request_id
+        from elo_bot.features.hosting.live.request import parse_live_request_id
 
         ctx = self.make_context()
         match = self.make_match()
@@ -291,7 +295,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         public.created_at = datetime.fromtimestamp(1000.9, timezone.utc)
         public.edit = AsyncMock()
         ctx.channel.send.return_value = public
-        with patch("cogs.self_hosting.hosting.Match") as match_model, \
+        with patch("elo_bot.features.hosting.self_hosted.hosting.Match") as match_model, \
                 patch.object(self.cog.live_requests, "schedule_expiry") as schedule:
             match_model.find_one = AsyncMock(return_value=match)
             await self.cog.self_host_live.callback.func(self.cog, ctx)
@@ -325,7 +329,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
     async def test_live_request_expiry_uses_visible_millisecond_boundary(self) -> None:
-        from cogs.live_hosting.request import LiveRequestCoordinator, LiveRequestIdentity
+        from elo_bot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
 
         match = self.make_match()
         match.is_war = False
@@ -336,8 +340,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
         pending = self.make_live_request_message(identity)
         pending_ctx = self.make_component_context(pending, identity.custom_id("accept"))
-        with patch("cogs.live_hosting.request.Match") as match_model, \
-                patch("cogs.live_hosting.request.time.time", return_value=1300.899):
+        with patch("elo_bot.features.hosting.live.request.Match") as match_model, \
+                patch("elo_bot.features.hosting.live.request.time.time", return_value=1300.899):
             match_model.find_one = AsyncMock(return_value=match)
             await coordinator.resolve(pending_ctx)
         accept.assert_awaited_once()
@@ -345,15 +349,15 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         expired = self.make_live_request_message(identity)
         expired_ctx = self.make_component_context(expired, identity.custom_id("accept"))
         accept.reset_mock()
-        with patch("cogs.live_hosting.request.Match") as match_model, \
-                patch("cogs.live_hosting.request.time.time", return_value=1300.9):
+        with patch("elo_bot.features.hosting.live.request.Match") as match_model, \
+                patch("elo_bot.features.hosting.live.request.time.time", return_value=1300.9):
             match_model.find_one = AsyncMock(return_value=match)
             await coordinator.resolve(expired_ctx)
         accept.assert_not_awaited()
         expired.edit.assert_awaited_once()
 
     async def test_self_host_live_only_opponent_can_accept_or_reject(self) -> None:
-        from cogs.live_hosting.request import LiveRequestCoordinator, LiveRequestIdentity
+        from elo_bot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
 
         match = self.make_match()
         match.is_war = False
@@ -370,8 +374,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 coordinator = LiveRequestCoordinator(self.cog, accept)
                 message = self.make_live_request_message(identity)
                 ctx = self.make_component_context(message, identity.custom_id(action), actor)
-                with patch("cogs.live_hosting.request.Match") as match_model, \
-                        patch("cogs.live_hosting.request.time.time", return_value=1001):
+                with patch("elo_bot.features.hosting.live.request.Match") as match_model, \
+                        patch("elo_bot.features.hosting.live.request.time.time", return_value=1001):
                     match_model.find_one = AsyncMock(return_value=match)
                     await coordinator.resolve(ctx)
                 self.assertEqual(accept.await_count, expected_accepts)
@@ -379,7 +383,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                     message.edit.assert_not_awaited()
 
     async def test_self_host_live_accept_completes_deferred_interaction_before_start(self) -> None:
-        from cogs.live_hosting.request import LiveRequestCoordinator, LiveRequestIdentity
+        from elo_bot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
 
         # Given an unresolved live request accepted by the opponent.
         match = self.make_match()
@@ -400,8 +404,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         coordinator = LiveRequestCoordinator(self.cog, accept_after_response)
 
         # When the opponent accepts it.
-        with patch("cogs.live_hosting.request.Match") as match_model, \
-                patch("cogs.live_hosting.request.time.time", return_value=1001):
+        with patch("elo_bot.features.hosting.live.request.Match") as match_model, \
+                patch("elo_bot.features.hosting.live.request.time.time", return_value=1001):
             match_model.find_one = AsyncMock(return_value=match)
             await coordinator.resolve(ctx)
 
@@ -412,7 +416,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
     async def test_self_host_live_selects_only_clan_with_both_slots_available(self) -> None:
-        from cogs.live_hosting.request import LiveRequestIdentity
+        from elo_bot.features.hosting.live.request import LiveRequestIdentity
 
         match = self.make_match()
         match.thread = "900"
@@ -436,8 +440,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
             return clans
 
         with (
-                patch("cogs.self_hosting.hosting.Clan") as clan_model,
-                patch("cogs.self_hosting.hosting.order_self_host_clans", new=preserve_order),
+                patch("elo_bot.features.hosting.self_hosted.hosting.Clan") as clan_model,
+                patch("elo_bot.features.hosting.self_hosted.hosting.order_self_host_clans", new=preserve_order),
         ):
             clan_model.find_all.return_value.to_list = AsyncMock(
                 return_value=[partially_available, fully_available],
@@ -492,7 +496,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
         self.bot.wait_for_component.side_effect = opponent_click
         with patch(
-                "cogs.war_hosting.helper_host_job.HelperJobPoller.wait",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait",
                 new=AsyncMock(side_effect=self.wait_for_component_forever),
         ):
             _ctx, _match, _request_message, progress_message, abort, _eta = await self.invoke_live_accept(
@@ -505,7 +509,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(progress_message.edit.await_args.kwargs["components"])
 
     async def test_self_host_live_reject_and_timeout_do_not_mutate(self) -> None:
-        from cogs.live_hosting.request import LiveRequestCoordinator, LiveRequestIdentity
+        from elo_bot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
 
         match = self.make_match()
         match.is_war = False
@@ -515,14 +519,14 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         coordinator = LiveRequestCoordinator(self.cog, accept)
         rejected = self.make_live_request_message(identity)
         reject_ctx = self.make_component_context(rejected, identity.custom_id("reject"))
-        with patch("cogs.live_hosting.request.Match") as match_model, \
-                patch("cogs.live_hosting.request.time.time", return_value=1299):
+        with patch("elo_bot.features.hosting.live.request.Match") as match_model, \
+                patch("elo_bot.features.hosting.live.request.time.time", return_value=1299):
             match_model.find_one = AsyncMock(return_value=match)
             await coordinator.resolve(reject_ctx)
         expired = self.make_live_request_message(identity)
         channel = MagicMock(fetch_message=AsyncMock(return_value=expired))
-        with patch("cogs.live_hosting.request.asyncio.sleep", new=AsyncMock()), \
-                patch("cogs.live_hosting.request.time.time", return_value=1300):
+        with patch("elo_bot.features.hosting.live.request.asyncio.sleep", new=AsyncMock()), \
+                patch("elo_bot.features.hosting.live.request.time.time", return_value=1300):
             await coordinator.expire(channel, 778, identity)
         unavailable = self.make_live_request_message(identity)
         unavailable.edit.side_effect = ipy.errors.NotFound(
@@ -530,8 +534,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
             text="not found",
         )
         unavailable_channel = MagicMock(fetch_message=AsyncMock(return_value=unavailable))
-        with patch("cogs.live_hosting.request.asyncio.sleep", new=AsyncMock()), \
-                patch("cogs.live_hosting.request.time.time", return_value=1300):
+        with patch("elo_bot.features.hosting.live.request.asyncio.sleep", new=AsyncMock()), \
+                patch("elo_bot.features.hosting.live.request.time.time", return_value=1300):
             await coordinator.expire(unavailable_channel, 779, identity)
         accept.assert_not_awaited()
         match.set.assert_not_awaited()
@@ -541,7 +545,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         expired.edit.assert_awaited_once()
 
     async def test_self_host_live_stale_click_does_not_mutate(self) -> None:
-        from cogs.live_hosting.request import LiveRequestCoordinator, LiveRequestIdentity
+        from elo_bot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
 
         identity = LiveRequestIdentity("match-token", REQUESTER_ID, 1_000_000)
         stale_cases = []
@@ -559,8 +563,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
             with self.subTest(match=match):
                 accept = AsyncMock()
                 ctx = self.make_component_context(message, identity.custom_id("accept"))
-                with patch("cogs.live_hosting.request.Match") as match_model, \
-                        patch("cogs.live_hosting.request.time.time", return_value=1001):
+                with patch("elo_bot.features.hosting.live.request.Match") as match_model, \
+                        patch("elo_bot.features.hosting.live.request.time.time", return_value=1001):
                     match_model.find_one = AsyncMock(return_value=match)
                     await LiveRequestCoordinator(self.cog, accept).resolve(ctx)
                 accept.assert_not_awaited()
@@ -580,7 +584,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         missing_ctx.send.assert_awaited_once()
 
     async def test_self_host_live_double_resolution_starts_once(self) -> None:
-        from cogs.live_hosting.request import LiveRequestCoordinator, LiveRequestIdentity
+        from elo_bot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
 
         identity = LiveRequestIdentity("match-token", REQUESTER_ID, 1_000_000)
         for losing_action in ("reject", "accept"):
@@ -603,8 +607,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 coordinator = LiveRequestCoordinator(self.cog, accept)
                 first = self.make_component_context(message, identity.custom_id("accept"))
                 second = self.make_component_context(message, identity.custom_id(losing_action))
-                with patch("cogs.live_hosting.request.Match") as match_model, \
-                        patch("cogs.live_hosting.request.time.time", return_value=1001):
+                with patch("elo_bot.features.hosting.live.request.Match") as match_model, \
+                        patch("elo_bot.features.hosting.live.request.time.time", return_value=1001):
                     match_model.find_one = AsyncMock(return_value=match)
                     async with anyio.create_task_group() as task_group:
                         task_group.start_soon(coordinator.resolve, first)
@@ -619,8 +623,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(coordinator._locks)
 
     async def test_self_host_live_accept_rechecks_both_sides_unstarted(self) -> None:
-        from cogs.live_hosting.request import LiveRequestCoordinator, LiveRequestIdentity
-        from cogs.match_commands import MatchCommands
+        from elo_bot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
+        from elo_bot.extensions.match import MatchCommands
 
         identity = LiveRequestIdentity("match-token", REQUESTER_ID, 1_000_000)
         for field in ("times", "hosts"):
@@ -631,14 +635,14 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                     getattr(match, field)[index] = 1 if field == "times" else "host"
                     slash = self.make_context()
                     accept = AsyncMock()
-                    with patch("cogs.self_hosting.hosting.Match") as command_model:
+                    with patch("elo_bot.features.hosting.self_hosted.hosting.Match") as command_model:
                         command_model.find_one = AsyncMock(return_value=match)
                         await self.cog.self_host_live.callback.func(self.cog, slash)
                     slash.channel.send.assert_not_awaited()
                     message = self.make_live_request_message(identity)
                     component = self.make_component_context(message, identity.custom_id("accept"))
-                    with patch("cogs.live_hosting.request.Match") as request_model, \
-                            patch("cogs.live_hosting.request.time.time", return_value=1001):
+                    with patch("elo_bot.features.hosting.live.request.Match") as request_model, \
+                            patch("elo_bot.features.hosting.live.request.time.time", return_value=1001):
                         request_model.find_one = AsyncMock(return_value=match)
                         await LiveRequestCoordinator(self.cog, accept).resolve(component)
                     accept.assert_not_awaited()
@@ -666,39 +670,39 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 match_commands = MatchCommands(self.bot)
                 self.bot.get_ext.return_value = match_commands
                 ctx = self.make_component_context(MagicMock(id=777), "unused")
-                with patch("cogs.self_hosting.hosting.Clan") as clan_model, \
-                        patch("cogs.self_hosting.hosting.Player") as player_model, \
-                        patch("cogs.self_hosting.hosting.random.shuffle"), \
-                        patch("cogs.match_commands.Match") as preflight_match, \
-                        patch("cogs.match_commands.Player") as preflight_player, \
-                        patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)), \
-                        patch("cogs.match_commands.is_raid_weekend", return_value=eligibility == "raid-weekend"), \
+                with patch("elo_bot.features.hosting.self_hosted.hosting.Clan") as clan_model, \
+                        patch("elo_bot.features.hosting.self_hosted.hosting.Player") as player_model, \
+                        patch("elo_bot.features.hosting.self_hosted.hosting.random.shuffle"), \
+                        patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as preflight_match, \
+                        patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as preflight_player, \
+                        patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)), \
+                        patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=eligibility == "raid-weekend"), \
                         patch(
-                            "cogs.match_commands.helper_live.host_live_automatically",
+                            'elo_bot.extensions.match.hosting.helper_live.host_live_automatically',
                             new_callable=AsyncMock,
                         ) as host_live, \
-                        patch(
-                            "cogs.live_hosting.helper_live.match_commands.choose_bases",
+                        patch_sites(
+                            ('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'),
                             new_callable=AsyncMock,
                         ) as choose_bases, \
                         patch(
-                            "cogs.live_hosting.helper_live.confirm_helper_availability",
+                            "elo_bot.features.hosting.live.helper_live.confirm_helper_availability",
                             new_callable=AsyncMock,
                         ) as eta, \
                         patch(
-                            "cogs.live_hosting.helper_live.live_start.start_live_match",
+                            "elo_bot.features.hosting.live.helper_live.live_start.start_live_match",
                             new_callable=AsyncMock,
                         ) as start, \
-                        patch(
-                            "cogs.live_hosting.live_start.match_commands.try_reserve_resource_match_side",
+                        patch_sites(
+                            ('elo_bot.extensions.match.base_store.try_reserve_resource_match_side', 'elo_bot.extensions.match.hosting.try_reserve_resource_match_side', 'elo_bot.features.matches.resources.try_reserve_resource_match_side'),
                             new_callable=AsyncMock,
                         ) as reserve_side, \
-                        patch(
-                            "cogs.live_hosting.live_start.match_commands.try_reserve_resource_clan",
+                        patch_sites(
+                            ('elo_bot.extensions.match.base_store.try_reserve_resource_clan', 'elo_bot.extensions.match.hosting.try_reserve_resource_clan', 'elo_bot.extensions.match.settings.try_reserve_resource_clan', 'elo_bot.features.matches.resources.try_reserve_resource_clan'),
                             new_callable=AsyncMock,
                         ) as reserve_clan, \
                         patch(
-                            "cogs.live_hosting.helper_live.live_start.abort_live_start",
+                            "elo_bot.features.hosting.live.helper_live.live_start.abort_live_start",
                             new_callable=AsyncMock,
                         ) as abort:
                     clan_model.find_all.return_value.to_list = AsyncMock(return_value=[self.clan_record])
@@ -734,15 +738,15 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user = AsyncMock(return_value=MagicMock(id=200))
         outcome = HelperTrackingFailure(job_id=JOB_ID, reason="test monitoring stop")
         selected_clan = self.clan_record if clan_record is None else clan_record
-        with patch("cogs.self_commands.Match") as match_model, \
-                patch("cogs.self_commands.Clan") as clan_model, \
-                patch("cogs.war_hosting.helper_host.Player") as player_model, \
-                patch("cogs.match_commands.choose_bases", new=AsyncMock(return_value=match)), \
-                patch("cogs.war_hosting.helper_host.get_available_helper_slot",
+        with patch("elo_bot.extensions.self_service.Match") as match_model, \
+                patch("elo_bot.extensions.self_service.Clan") as clan_model, \
+                patch("elo_bot.features.hosting.war.helper_host.Player") as player_model, \
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
+                patch("elo_bot.features.hosting.war.helper_host.get_available_helper_slot",
                       new=AsyncMock(return_value=1), create=True), \
-                patch("cogs.war_hosting.war_start.start_war", new_callable=AsyncMock) as start, \
-                patch("cogs.war_hosting.war_start.abort_war_start", new=self.abort_war_start), \
-                patch("cogs.war_hosting.helper_host_job.HelperJobPoller.wait", new=AsyncMock(return_value=outcome)):
+                patch("elo_bot.features.hosting.war.war_start.start_war", new_callable=AsyncMock) as start, \
+                patch("elo_bot.features.hosting.war.war_start.abort_war_start", new=self.abort_war_start), \
+                patch("elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait", new=AsyncMock(return_value=outcome)):
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(
                 return_value=[] if not selected_clan else [selected_clan],
@@ -778,7 +782,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
         # When both Helper HTTP sessions are opened.
         with patch(
-                "cogs.war_hosting.helper_host_job.aiohttp.ClientTimeout",
+                "elo_bot.features.hosting.war.helper_host_job.aiohttp.ClientTimeout",
                 wraps=aiohttp.ClientTimeout,
         ) as client_timeout:
             await self.invoke(ctx, match)
@@ -788,7 +792,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
     def test_host_live_contract_serializes_paired_payload_and_accepts_null_result(self) -> None:
         # Given a paired live-match hosting request and a successful Helper response.
-        from cogs.war_hosting.helper_api import (
+        from elo_bot.integrations.helper_api import (
             HelperContractMismatchError,
             HelperHostLiveMatchPayload,
             HelperHostWarMatchPayload,
@@ -851,7 +855,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
     async def test_shared_host_job_runner_preserves_ambiguous_and_terminal_compensation(self) -> None:
         # Given accepted-but-unconfirmed, failed, and successful shared job outcomes.
-        from cogs.war_hosting.helper_api import (
+        from elo_bot.integrations.helper_api import (
             HelperHostWarMatchPayload,
             HelperJob,
             HelperJobCreateAcceptedInvalid,
@@ -861,7 +865,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
             HelperJobCreated,
             HelperTrackingFailure,
         )
-        from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
+        from elo_bot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
 
         create_request = HelperJobCreateRequest(
             job_type="host_war_match",
@@ -904,10 +908,10 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                 abort_started = AsyncMock(return_value=True)
                 success = MagicMock()
                 with patch(
-                        "cogs.war_hosting.helper_host_job.HelperJobCreator.create",
+                        "elo_bot.features.hosting.war.helper_host_job.HelperJobCreator.create",
                         new=AsyncMock(return_value=create_outcome),
                 ), patch(
-                        "cogs.war_hosting.helper_host_job.HelperJobPoller.wait",
+                        "elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait",
                         new=AsyncMock(return_value=poll_outcome),
                 ):
                     # When the shared runner resolves the Helper create/poll lifecycle.
@@ -930,8 +934,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
     async def test_failed_job_aborts_when_progress_publication_fails(self) -> None:
         import json
 
-        from cogs.war_hosting.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest, HelperJobCreated
-        from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
+        from elo_bot.integrations.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest, HelperJobCreated
+        from elo_bot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
 
         failed_job = {
             "id": JOB_ID,
@@ -972,10 +976,10 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         started_message = MagicMock(id=777)
         abort_started = AsyncMock(return_value=True)
         with patch(
-                "cogs.war_hosting.helper_host_job.aiohttp.ClientSession",
+                "elo_bot.features.hosting.war.helper_host_job.aiohttp.ClientSession",
                 return_value=FailedJobSession(),
         ), patch(
-                "cogs.war_hosting.helper_host_job.HelperJobCreator.create",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobCreator.create",
                 new=AsyncMock(return_value=HelperJobCreated(id=JOB_ID)),
         ):
             await run_helper_host_job(
@@ -1001,14 +1005,14 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         abort_started.assert_awaited_once_with(started_message)
 
     async def test_stored_message_conflict_after_abort_still_reports_the_abort(self) -> None:
-        from cogs.base_store.publication import BaseStoreMessageConflict
-        from cogs.war_hosting.helper_api import (
+        from elo_bot.features.base_store.publication import BaseStoreMessageConflict
+        from elo_bot.integrations.helper_api import (
             HelperHostWarMatchPayload,
             HelperJob,
             HelperJobCreateRequest,
             HelperJobCreated,
         )
-        from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
+        from elo_bot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
 
         ctx = self.make_context()
         abort_started = AsyncMock(side_effect=BaseStoreMessageConflict(
@@ -1026,10 +1030,10 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
             "error": "hosting failed",
         })
         with patch(
-                "cogs.war_hosting.helper_host_job.HelperJobCreator.create",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobCreator.create",
                 new=AsyncMock(return_value=HelperJobCreated(id=JOB_ID)),
         ), patch(
-                "cogs.war_hosting.helper_host_job.HelperJobPoller.wait",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait",
                 new=AsyncMock(return_value=failed_job),
         ):
             await run_helper_host_job(
@@ -1057,8 +1061,8 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("could not be aborted safely", ctx.edit.await_args.kwargs["content"])
 
     async def test_same_type_conflict_adopts_the_open_host_job(self) -> None:
-        from cogs.war_hosting.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest
-        from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
+        from elo_bot.integrations.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest
+        from elo_bot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
 
         self.response_status = 409
         self.response_body = {
@@ -1112,7 +1116,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.request_payload["type"], "host_war_match")
 
     async def test_war_start_commits_type_with_start_state_and_rolls_back_failed_occupancy(self) -> None:
-        from cogs.war_hosting import war_start
+        from elo_bot.features.hosting.war import war_start
 
         for occupancy_fails in (False, True):
             with self.subTest(occupancy_fails=occupancy_fails):
@@ -1144,10 +1148,10 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
                     coc_client=self.bot.coc_client, reply=war_start.SelfHostedWarStartReply(),
                 )
                 occupy = AsyncMock(side_effect=RuntimeError("occupancy failed") if occupancy_fails else None)
-                with patch("cogs.match_commands.Match") as match_model, \
-                        patch("cogs.match_commands.Clan") as clan_model, \
-                        patch("cogs.match_commands.occupy_clan", new=occupy), \
-                        patch("cogs.match_commands.free_clan", new=AsyncMock()), \
+                with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                        patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model, \
+                        patch('elo_bot.features.matches.resources.occupy_clan', new=occupy), \
+                        patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()), \
                         patch.object(war_start, "complete_war_start", new=AsyncMock(side_effect=publish)) as complete:
                     match_model.find_one = AsyncMock(return_value=match)
                     clan_model.find_one = AsyncMock(return_value=self.clan_record)
@@ -1241,14 +1245,14 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
             async def find_selected_clan(*_args, **_kwargs) -> MagicMock:
                 return next(record for record in records if record.tag == selected_tag)
 
-            with patch("cogs.self_commands.Match") as match_model, \
-                    patch("cogs.self_commands.Clan") as clan_model, \
-                    patch("cogs.self_commands.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
-                    patch("cogs.self_hosting.hosting.random.shuffle"), \
-                    patch("cogs.self_commands.try_reserve_resource_clan", new=AsyncMock(side_effect=reserve_clan)), \
-                    patch("cogs.self_commands.try_reserve_resource_match_side", new=AsyncMock(
+            with patch("elo_bot.extensions.self_service.Match") as match_model, \
+                    patch("elo_bot.extensions.self_service.Clan") as clan_model, \
+                    patch("elo_bot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
+                    patch("elo_bot.features.hosting.self_hosted.hosting.random.shuffle"), \
+                    patch("elo_bot.extensions.self_service.try_reserve_resource_clan", new=AsyncMock(side_effect=reserve_clan)), \
+                    patch("elo_bot.extensions.self_service.try_reserve_resource_match_side", new=AsyncMock(
                         return_value=MagicMock(key=("match-token", 0)))), \
-                    patch("cogs.self_commands.host_war_automatically", new_callable=AsyncMock) as automatic_host:
+                    patch("elo_bot.extensions.self_service.host_war_automatically", new_callable=AsyncMock) as automatic_host:
                 match_model.find_one = AsyncMock(return_value=match)
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=records)
                 clan_model.find_one = AsyncMock(side_effect=find_selected_clan)
@@ -1291,11 +1295,11 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
             MagicMock(clan=MagicMock(tag="#SHARED")),
         ])
 
-        with patch("cogs.self_commands.Match") as match_model, \
-                patch("cogs.self_commands.Clan") as clan_model, \
-                patch("cogs.self_commands.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
-                patch("cogs.self_hosting.hosting.random.shuffle"), \
-                patch("cogs.self_commands.host_war_automatically", new_callable=AsyncMock) as automatic_host:
+        with patch("elo_bot.extensions.self_service.Match") as match_model, \
+                patch("elo_bot.extensions.self_service.Clan") as clan_model, \
+                patch("elo_bot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
+                patch("elo_bot.features.hosting.self_hosted.hosting.random.shuffle"), \
+                patch("elo_bot.extensions.self_service.host_war_automatically", new_callable=AsyncMock) as automatic_host:
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=records)
             clan_model.find_one = AsyncMock(return_value=fallback)
@@ -1332,7 +1336,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         for match, author in ((None, REQUESTER_ID), (self.make_match(), "300")):
             with self.subTest(author=author):
                 ctx = self.make_context(author)
-                with patch("cogs.self_commands.Match") as match_model:
+                with patch("elo_bot.extensions.self_service.Match") as match_model:
                     match_model.find_one = AsyncMock(return_value=match)
                     await self.cog.self_host_war.callback.func(self.cog, ctx)
                 self.assertIsNone(self.request_payload)
@@ -1344,7 +1348,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
         match.times[0] = 1
-        with patch("cogs.self_commands.Match") as match_model:
+        with patch("elo_bot.extensions.self_service.Match") as match_model:
             match_model.find_one = AsyncMock(return_value=match)
             await self.cog.self_host_war.callback.func(self.cog, ctx)
         ctx.send.assert_awaited_once()
@@ -1356,9 +1360,9 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
         choose = AsyncMock(return_value=match)
-        with patch("cogs.self_commands.Match") as match_model, \
-                patch("cogs.self_commands.Clan") as clan_model, \
-                patch("cogs.match_commands.choose_bases", new=choose):
+        with patch("elo_bot.extensions.self_service.Match") as match_model, \
+                patch("elo_bot.extensions.self_service.Clan") as clan_model, \
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new=choose):
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=[])
             await self.cog.self_host_war.callback.func(self.cog, ctx)
@@ -1375,12 +1379,12 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         choose = AsyncMock(return_value=match)
         self.bot.fetch_user = AsyncMock(return_value=MagicMock(id=200))
 
-        with patch("cogs.self_commands.Match") as match_model, \
-                patch("cogs.self_commands.Clan") as clan_model, \
-                patch("cogs.war_hosting.helper_host.Player") as player_model, \
-                patch("cogs.war_hosting.helper_host.get_available_helper_slot",
+        with patch("elo_bot.extensions.self_service.Match") as match_model, \
+                patch("elo_bot.extensions.self_service.Clan") as clan_model, \
+                patch("elo_bot.features.hosting.war.helper_host.Player") as player_model, \
+                patch("elo_bot.features.hosting.war.helper_host.get_available_helper_slot",
                       new=AsyncMock(return_value=1)), \
-                patch("cogs.match_commands.choose_bases", new=choose):
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new=choose):
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=[self.clan_record])
             clan_model.find_one = AsyncMock(return_value=self.clan_record)

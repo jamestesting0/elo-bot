@@ -7,9 +7,10 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
-from cogs.match_commands import MatchCommands
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
-from database_models import BaseStore, Match, Participant
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.db import BaseStore, Match, Participant
+from tests._patch_sites import patch_sites
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ASUBMITTED"
 
@@ -32,10 +33,10 @@ class TestMatchBaseSubmissionMessages(unittest.IsolatedAsyncioTestCase):
         database_set = patch.object(Match, "set", new=AsyncMock(return_value=self.match))
         self.database_set = database_set.start()
         self.addCleanup(database_set.stop)
-        match_model = patch("cogs.match_commands.Match")
+        match_model = patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
         match_model.start().find_one = AsyncMock(return_value=self.match)
         self.addCleanup(match_model.stop)
-        base_model = patch("cogs.match_commands.BaseLayout")
+        base_model = patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout'))
         base_model.start().find_one = AsyncMock(return_value=None)
         self.addCleanup(base_model.stop)
         self.thread = MagicMock(id=123)

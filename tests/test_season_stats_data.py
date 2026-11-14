@@ -2,7 +2,7 @@ import unittest
 from datetime import date
 from types import SimpleNamespace
 
-from common.matches.season_stats import (
+from elo_bot.features.seasons.stats import (
     SeasonStatsError,
     SeasonWindow,
     StatsAccumulator,

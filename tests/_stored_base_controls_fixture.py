@@ -4,10 +4,10 @@ from beanie import PydanticObjectId
 from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import UpdateResult
-import cogs.match_commands as match_commands
-from cogs.war_hosting import helper_base_store_availability
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
-from database_models import BaseStore, Match, Participant
+from elo_bot.features.hosting.war import helper_base_store_availability
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.db import BaseStore, Match, Participant
+import elo_bot.extensions.match as match_module
 
 
 class StoredBaseControlsStateMixin:
@@ -31,7 +31,7 @@ class StoredBaseControlsStateMixin:
         )
         self.bot = MagicMock()
         self.bot.user = MagicMock(id=999)
-        self.cog = match_commands.MatchCommands(self.bot)
+        self.cog = match_module.MatchCommands(self.bot)
         self.cog._base_store_try_reserve_side = AsyncMock(return_value=MagicMock())
         self.ctx = MagicMock(spec=ipy.ComponentContext)
         self.ctx.author = MagicMock(id=111)

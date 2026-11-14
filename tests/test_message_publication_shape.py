@@ -4,7 +4,7 @@ from unittest.mock import patch
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import ValidationError
 
-from database_models import Match
+from elo_bot.db import Match
 
 
 class TestMessagePublicationShape(unittest.TestCase):

@@ -1,10 +1,10 @@
 import unittest
 
-from common.finals.bracket import automatic_pairs, build_bracket
-from common.finals.prediction_ui import prediction_view
-from common.finals.types import NODE_IDS
-from database_models import EloFinal
-from database_models.final_models import FinalPrediction
+from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
+from elo_bot.features.finals.prediction_ui import prediction_view
+from elo_bot.core.finals import NODE_IDS
+from elo_bot.db import EloFinal
+from elo_bot.db.final_models import FinalPrediction
 
 
 class TestFinalPredictionNavigation(unittest.TestCase):

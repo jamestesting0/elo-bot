@@ -4,9 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie import PydanticObjectId
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
-from database_models import Match, Participant
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.db import Match, Participant
+from tests._patch_sites import patch_sites
+import elo_bot.features.matches.resources as resources_module
 
 
 class TestWarAbort(unittest.IsolatedAsyncioTestCase):
@@ -49,7 +50,7 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(match.persistent_host_clans, ["#PREFERRED", "#SECOND"])
 
     async def test_abort_war_start_cas_miss_has_no_destructive_side_effects(self) -> None:
-        from cogs.war_hosting.war_start import WarAbort, abort_war_start
+        from elo_bot.features.hosting.war.war_start import WarAbort, abort_war_start
 
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.channel.edit = AsyncMock()
@@ -62,8 +63,8 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         )
         match.abort_started_war_side = AsyncMock(return_value=False)
 
-        with patch("cogs.base_store.storage.clear_participant_base_store", new_callable=AsyncMock) as clear, \
-                patch("cogs.war_hosting.war_start.match_commands.free_clan", new_callable=AsyncMock) as free:
+        with patch("elo_bot.features.base_store.storage.clear_participant_base_store", new_callable=AsyncMock) as clear, \
+                patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free:
             aborted = await abort_war_start(ctx, WarAbort(match=match, player=0, message=message))
 
         self.assertFalse(aborted)
@@ -74,7 +75,7 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         free.assert_not_awaited()
 
     async def test_start_war_persists_real_state_before_finalizer(self) -> None:
-        from cogs.war_hosting.war_start import SelfHostedWarStartReply, WarStart, start_war
+        from elo_bot.features.hosting.war.war_start import SelfHostedWarStartReply, WarStart, start_war
 
         # Given an unstarted war side with an old clan assignment.
         events: list[tuple[str, str | None, str | None]] = []
@@ -105,15 +106,15 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
             return message
 
         with (
-                patch("cogs.war_hosting.war_start.match_commands.Match.find_one", new=AsyncMock(
+                patch_sites(('elo_bot.features.base_store.match_adapters.Match.find_one', 'elo_bot.extensions.match.lifecycle.Match.find_one', 'elo_bot.extensions.match.bases.Match.find_one', 'elo_bot.extensions.match.base_store.Match.find_one', 'elo_bot.extensions.match.results.Match.find_one', 'elo_bot.extensions.match.result_store.Match.find_one', 'elo_bot.extensions.match.hosting.Match.find_one', 'elo_bot.extensions.match.settings.Match.find_one', 'elo_bot.extensions.match.dashboards.Match.find_one', 'elo_bot.features.queue.state.Match.find_one', 'elo_bot.features.matches.occupancy.Match.find_one', 'elo_bot.features.matches.resources.Match.find_one', 'elo_bot.features.matches.lifecycle.Match.find_one', 'elo_bot.features.matches.attack_bases.Match.find_one', 'elo_bot.features.results.recording.Match.find_one'), new=AsyncMock(
                     return_value=match,
                 )),
-                patch("cogs.war_hosting.war_start.match_commands.Clan.find_one", new=AsyncMock(
+                patch_sites(('elo_bot.extensions.match.dashboards.Clan.find_one', 'elo_bot.features.matches.resources.Clan.find_one'), new=AsyncMock(
                     return_value=MagicMock(availability_str="Available"),
                 )),
-                patch("cogs.war_hosting.war_start.match_commands.free_clan", new_callable=AsyncMock) as free,
-                patch("cogs.war_hosting.war_start.match_commands.occupy_clan", new_callable=AsyncMock) as occupy,
-                patch("cogs.war_hosting.war_start.complete_war_start", new=AsyncMock(side_effect=record_finalize)) as finalize,
+                patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free,
+                patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy,
+                patch("elo_bot.features.hosting.war.war_start.complete_war_start", new=AsyncMock(side_effect=record_finalize)) as finalize,
         ):
             # When the war side starts.
             result = await start_war(
@@ -151,7 +152,7 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(finalize.await_args.args[2].clan.tag, "#AVAILABLE")
 
     async def test_start_war_persistence_failure_skips_occupancy_and_finalizer(self) -> None:
-        from cogs.war_hosting.war_start import SelfHostedWarStartReply, WarStart, start_war
+        from elo_bot.features.hosting.war.war_start import SelfHostedWarStartReply, WarStart, start_war
 
         # Given an unstarted war side whose durable state write fails.
         match = MagicMock(
@@ -176,15 +177,15 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         )
 
         with (
-                patch("cogs.war_hosting.war_start.match_commands.Match.find_one", new=AsyncMock(
+                patch_sites(('elo_bot.features.base_store.match_adapters.Match.find_one', 'elo_bot.extensions.match.lifecycle.Match.find_one', 'elo_bot.extensions.match.bases.Match.find_one', 'elo_bot.extensions.match.base_store.Match.find_one', 'elo_bot.extensions.match.results.Match.find_one', 'elo_bot.extensions.match.result_store.Match.find_one', 'elo_bot.extensions.match.hosting.Match.find_one', 'elo_bot.extensions.match.settings.Match.find_one', 'elo_bot.extensions.match.dashboards.Match.find_one', 'elo_bot.features.queue.state.Match.find_one', 'elo_bot.features.matches.occupancy.Match.find_one', 'elo_bot.features.matches.resources.Match.find_one', 'elo_bot.features.matches.lifecycle.Match.find_one', 'elo_bot.features.matches.attack_bases.Match.find_one', 'elo_bot.features.results.recording.Match.find_one'), new=AsyncMock(
                     return_value=match,
                 )),
-                patch("cogs.war_hosting.war_start.match_commands.Clan.find_one", new=AsyncMock(
+                patch_sites(('elo_bot.extensions.match.dashboards.Clan.find_one', 'elo_bot.features.matches.resources.Clan.find_one'), new=AsyncMock(
                     return_value=MagicMock(availability_str="Available"),
                 )),
-                patch("cogs.war_hosting.war_start.match_commands.free_clan", new_callable=AsyncMock) as free,
-                patch("cogs.war_hosting.war_start.match_commands.occupy_clan", new_callable=AsyncMock) as occupy,
-                patch("cogs.war_hosting.war_start.complete_war_start", new_callable=AsyncMock) as finalize,
+                patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free,
+                patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy,
+                patch("elo_bot.features.hosting.war.war_start.complete_war_start", new_callable=AsyncMock) as finalize,
         ):
             # When the initial match write fails, then no occupancy or finalization follows.
             with self.assertRaisesRegex(RuntimeError, "match write failed"):
@@ -201,7 +202,7 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         finalize.assert_not_awaited()
 
     async def test_start_war_returns_none_when_resource_clan_claim_is_unavailable(self) -> None:
-        from cogs.war_hosting.war_start import SelfHostedWarStartReply, WarStart, start_war
+        from elo_bot.features.hosting.war.war_start import SelfHostedWarStartReply, WarStart, start_war
 
         # Given a war start whose selected clan became unavailable before its claim.
         match = MagicMock(
@@ -227,13 +228,13 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         )
 
         with (
-                patch("cogs.war_hosting.war_start.match_commands.Match.find_one", new=AsyncMock(
+                patch_sites(('elo_bot.features.base_store.match_adapters.Match.find_one', 'elo_bot.extensions.match.lifecycle.Match.find_one', 'elo_bot.extensions.match.bases.Match.find_one', 'elo_bot.extensions.match.base_store.Match.find_one', 'elo_bot.extensions.match.results.Match.find_one', 'elo_bot.extensions.match.result_store.Match.find_one', 'elo_bot.extensions.match.hosting.Match.find_one', 'elo_bot.extensions.match.settings.Match.find_one', 'elo_bot.extensions.match.dashboards.Match.find_one', 'elo_bot.features.queue.state.Match.find_one', 'elo_bot.features.matches.occupancy.Match.find_one', 'elo_bot.features.matches.resources.Match.find_one', 'elo_bot.features.matches.lifecycle.Match.find_one', 'elo_bot.features.matches.attack_bases.Match.find_one', 'elo_bot.features.results.recording.Match.find_one'), new=AsyncMock(
                     return_value=match,
                 )),
-                patch("cogs.war_hosting.war_start.match_commands.Clan.find_one", new=AsyncMock(
+                patch_sites(('elo_bot.extensions.match.dashboards.Clan.find_one', 'elo_bot.features.matches.resources.Clan.find_one'), new=AsyncMock(
                     return_value=MagicMock(availability_str="Occupied"),
                 )),
-                patch("cogs.war_hosting.war_start.complete_war_start", new_callable=AsyncMock) as finalize,
+                patch("elo_bot.features.hosting.war.war_start.complete_war_start", new_callable=AsyncMock) as finalize,
         ):
             # When the start reaches the ordinary claim-failure outcome.
             result = await start_war(MagicMock(), MagicMock(spec=ipy.SlashContext), start)
@@ -242,11 +243,11 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result)
         match.set.assert_not_awaited()
         finalize.assert_not_awaited()
-        self.assertFalse(match_commands.RESOURCE_CLAN_LOCKS["#BUSY"].locked())
-        self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[("TOKEN", 0)].locked())
+        self.assertFalse(resources_module.RESOURCE_CLAN_LOCKS["#BUSY"].locked())
+        self.assertFalse(resources_module.RESOURCE_MATCH_SIDE_LOCKS[("TOKEN", 0)].locked())
 
-    @patch("cogs.war_hosting.war_start.abort_war_start", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elo_bot.features.hosting.war.war_start.abort_war_start", new_callable=AsyncMock)
+    @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_abort_match_button_delegates_to_shared_war_abort(self, mock_match, abort) -> None:
         bot = MagicMock()
         cog = MatchCommands(bot)

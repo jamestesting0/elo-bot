@@ -6,11 +6,12 @@ import anyio
 from beanie import PydanticObjectId
 from pymongo.errors import PyMongoError
 
-from cogs.live_hosting import result_store as live_store
-from cogs.match_commands import MatchCommands
-from cogs.self_commands import SelfCommands
-from cogs.war_hosting import helper_store, result_store
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.features.hosting.live import result_store as live_store
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.features.hosting.war import result_store
+from elo_bot.features.hosting.war import helper_store
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests import _helper_score_fixture as helper_tests
 
 
@@ -69,7 +70,7 @@ class TestLiveResultStorage(unittest.IsolatedAsyncioTestCase):
 
     async def invoke(self) -> None:
         with (
-            patch("cogs.self_commands.Match") as command_model,
+            patch("elo_bot.extensions.self_service.Match") as command_model,
             patch.object(live_store, "Match") as model,
             patch.object(helper_store, "Player") as players,
             patch.object(helper_store.time, "time", return_value=200),
@@ -282,7 +283,7 @@ class TestLiveResultStorage(unittest.IsolatedAsyncioTestCase):
         self.assertIs(self.ctx.send.await_args.kwargs['ephemeral'], False)
 
     async def test_public_queue_prompt_only_accepts_requester(self) -> None:
-        from cogs.war_hosting.confirmation import HelperQueueDecision
+        from elo_bot.features.hosting.war.confirmation import HelperQueueDecision
 
         self.http.eta_start = 400
         component = MagicMock(custom_id=HelperQueueDecision.CONTINUE, edit_origin=AsyncMock())

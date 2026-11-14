@@ -8,11 +8,11 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 from pymongo.results import InsertOneResult
 
-from cogs import season_commands
-from cogs.war_hosting import result_store
-from common.constants import SUCCESS_EMOJI
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
-from database_models import Player, Season
+from elo_bot.extensions import season as season_commands
+from elo_bot.features.hosting.war import result_store
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elo_bot.db import Player, Season
 from tests import _autowin_fixture as autowin_fixture
 from tests import _result_finalization_fixture as result_fixture
 

@@ -3,18 +3,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from cogs import match_commands
-from cogs.base_store.controls import start_stored_bases
-from cogs.base_store.models import StoredBaseActionRequest
-from cogs.live_hosting.live_start import LiveStart, ManualLiveStartReply, start_live_match
-from cogs.war_hosting.war_start import SelfHostedWarStartReply, WarStart, start_war
-from cogs.war_hosting.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import bind_thread, prepare_match
-from common.finals.types import FINAL_DISTRICTS
-from common.tokens.bets import open_market
-from database_models import BaseStore, Clan, Match
-from database_models.token_models import FinalBettingMarket
+from elo_bot.features.base_store.controls import start_stored_bases
+from elo_bot.features.base_store.models import StoredBaseActionRequest
+from elo_bot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
+from elo_bot.features.hosting.war.war_start import SelfHostedWarStartReply, WarStart, start_war
+from elo_bot.integrations.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import bind_thread
+from elo_bot.core.finals import FINAL_DISTRICTS
+from elo_bot.features.tokens.bets import open_market
+from elo_bot.db import BaseStore, Clan, Match
+from elo_bot.db.token_models import FinalBettingMarket
+import elo_bot.extensions.match as match_module
 
 
 class TestFinalStartRoutes(FinalScenarioCase):
@@ -76,7 +76,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
     async def test_stored_helper_request_receives_seven_districts_after_market_closure(self):
         final, source, market = await self.pairing()
         bot, ctx = self.transport(ipy.ComponentContext)
-        runtime = match_commands.MatchCommands(bot)
+        runtime = match_module.MatchCommands(bot)
         runtime.helper_api_base_url = "http://127.0.0.1:1"
         runtime.helper_api_key = "test-only"
         async def reject(session, request):
@@ -97,7 +97,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
         final, source, market = await self.pairing()
         await final.set({"prediction_state": "OPEN"})
         bot, ctx = self.transport(ipy.ComponentContext)
-        runtime = match_commands.MatchCommands(bot)
+        runtime = match_module.MatchCommands(bot)
         runtime.helper_api_base_url = "http://127.0.0.1:1"
         runtime.helper_api_key = "test-only"
         with patch.object(HelperEtaReader, "read", new=AsyncMock(return_value=HelperEta(

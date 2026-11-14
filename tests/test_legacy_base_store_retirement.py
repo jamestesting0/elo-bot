@@ -6,9 +6,10 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.base_store import repository, storage
-from common.utils import clear_all_base_store_slots
-from database_models import BaseStore, Match, Participant
+from elo_bot.features.base_store import storage
+from elo_bot.features.base_store import repository
+from elo_bot.features.base_store.slots import clear_all_base_store_slots
+from elo_bot.db import BaseStore, Match, Participant
 
 
 class TestLegacyBaseStoreRetirement(unittest.IsolatedAsyncioTestCase):
@@ -89,7 +90,7 @@ class TestLegacyBaseStoreRetirement(unittest.IsolatedAsyncioTestCase):
         # Given: the legacy manual message identifies the exact player, clan and slot.
         self.messages[43] = self._message(43, ["start_match|0|#CLAN|Slot 1", "undo_base_storage|TOKEN|0"])
         clan = MagicMock(tag="#CLAN", available_slots=[], save_changes=AsyncMock())
-        with (patch("common.utils.Match") as matches, patch("common.utils.Clan") as clans):
+        with (patch("elo_bot.features.base_store.slots.Match") as matches, patch("elo_bot.features.base_store.slots.Clan") as clans):
             matches.find.return_value.to_list = AsyncMock(return_value=[self.match])
             clans.find_all.return_value.to_list = AsyncMock(return_value=[clan])
 

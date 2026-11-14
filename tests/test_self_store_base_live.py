@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.self_commands import SelfCommands
-from common.constants import BOT_ID
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.config.ids import BOT_ID
 
 
 class TestSelfStoreBaseLive(unittest.IsolatedAsyncioTestCase):
@@ -23,8 +23,8 @@ class TestSelfStoreBaseLive(unittest.IsolatedAsyncioTestCase):
         self.match = SimpleNamespace(participants=[SimpleNamespace(user_id="111"), SimpleNamespace(user_id="222")])
 
     async def invoke(self, available=True) -> None:
-        with patch("cogs.self_commands.Match") as model, patch(
-            "cogs.self_commands.is_self_store_available", return_value=available,
+        with patch("elo_bot.extensions.self_service.Match") as model, patch(
+            "elo_bot.extensions.self_service.is_self_store_available", return_value=available,
         ):
             model.find_one = AsyncMock(return_value=self.match)
             await self.cog.self_store_base_live.callback.func(self.cog, self.ctx)

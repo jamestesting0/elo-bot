@@ -9,9 +9,10 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
-import cogs.helper_commands as helper_commands
-from common.constants import ERROR_EMOJI, STAFF_ROLE, SUCCESS_EMOJI
-from database_models import Helper
+import elo_bot.extensions.helper as helper_commands
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.ids import STAFF_ROLE
+from elo_bot.db import Helper
 
 
 class TestHelperMutationState(unittest.IsolatedAsyncioTestCase):

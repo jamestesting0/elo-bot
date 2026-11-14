@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import cogs.auditlog_commands as auditlog_module
-from cogs.auditlog_commands import AuditlogCommands, _load_auditlog_page
+import elo_bot.extensions.auditlog as auditlog_module
+from elo_bot.extensions.auditlog import AuditlogCommands, _load_auditlog_page
 
 
 def audit_entry(index: int) -> SimpleNamespace:
@@ -56,9 +56,9 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         ctx.kwargs = {"user": user, "attachment": attachment, "visible": True, "count": 2}
 
         # When: command completion is audited
-        with (patch("cogs.auditlog_commands.time.time_ns", return_value=123456789),
-              patch("cogs.auditlog_commands.AuditLogEntry.get_pymongo_collection"),
-              patch("cogs.auditlog_commands.AuditLogEntry.insert", new_callable=AsyncMock) as insert):
+        with (patch("elo_bot.extensions.auditlog.time.time_ns", return_value=123456789),
+              patch("elo_bot.extensions.auditlog.AuditLogEntry.get_pymongo_collection"),
+              patch("elo_bot.extensions.auditlog.AuditLogEntry.insert", new_callable=AsyncMock) as insert):
             await cog.on_command_completion.callback(cog, SimpleNamespace(ctx=ctx))
 
         # Then: the typed document is inserted once without mutating command arguments
@@ -82,9 +82,9 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         ctx.channel.name = "audit-channel"
 
         # When: component completion is audited
-        with (patch("cogs.auditlog_commands.time.time_ns", return_value=987654321),
-              patch("cogs.auditlog_commands.AuditLogEntry.get_pymongo_collection"),
-              patch("cogs.auditlog_commands.AuditLogEntry.insert", new_callable=AsyncMock) as insert):
+        with (patch("elo_bot.extensions.auditlog.time.time_ns", return_value=987654321),
+              patch("elo_bot.extensions.auditlog.AuditLogEntry.get_pymongo_collection"),
+              patch("elo_bot.extensions.auditlog.AuditLogEntry.insert", new_callable=AsyncMock) as insert):
             await cog.on_component_completion.callback(cog, SimpleNamespace(ctx=ctx))
 
         # Then: Mongo receives the component and typed channel data
@@ -103,7 +103,7 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         ))
 
         # When: each audit page is loaded on its own
-        with patch("cogs.auditlog_commands.AuditLogEntry.find_all", return_value=query):
+        with patch("elo_bot.extensions.auditlog.AuditLogEntry.find_all", return_value=query):
             pages = []
             for position in range(3):
                 embed, total_pages = await _load_auditlog_page(position, guild)
@@ -128,7 +128,7 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
 
-        with patch("cogs.auditlog_commands.AuditLogEntry.find_all", return_value=query):
+        with patch("elo_bot.extensions.auditlog.AuditLogEntry.find_all", return_value=query):
             await cog.auditlog_view.callback.func(cog, ctx, hidden=True)
 
         action_row = ctx.send.await_args.kwargs["components"][0]
@@ -150,7 +150,7 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit = AsyncMock()
         ctx.send = AsyncMock()
 
-        with patch("cogs.auditlog_commands.AuditLogEntry.find_all", return_value=query):
+        with patch("elo_bot.extensions.auditlog.AuditLogEntry.find_all", return_value=query):
             await cog.auditlog_page_modal.callback(ctx, page="3")
 
         ctx.edit.assert_awaited_once()
@@ -170,7 +170,7 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit = AsyncMock()
         ctx.send = AsyncMock()
 
-        with patch("cogs.auditlog_commands.AuditLogEntry.find_all", return_value=query):
+        with patch("elo_bot.extensions.auditlog.AuditLogEntry.find_all", return_value=query):
             await cog.auditlog_page_modal.callback(ctx, page="4")
 
         ctx.send.assert_awaited_once_with("Page must be between 1 and 3.", ephemeral=True)
@@ -193,7 +193,7 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         right_ctx.edit_origin = AsyncMock()
         right_ctx.send = AsyncMock()
 
-        with patch("cogs.auditlog_commands.AuditLogEntry.find_all", return_value=query):
+        with patch("elo_bot.extensions.auditlog.AuditLogEntry.find_all", return_value=query):
             await cog.auditlog_arrow_button.callback(right_ctx)
 
         page_ctx.send_modal.assert_awaited_once()
@@ -211,7 +211,7 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.send = AsyncMock()
 
-        with patch("cogs.auditlog_commands.AuditLogEntry.delete_all", new_callable=AsyncMock) as delete_all:
+        with patch("elo_bot.extensions.auditlog.AuditLogEntry.delete_all", new_callable=AsyncMock) as delete_all:
             await cog.auditlog_clear.callback.func(cog, ctx)
 
         delete_all.assert_awaited_once_with()

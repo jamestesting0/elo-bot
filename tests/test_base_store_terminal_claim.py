@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import AsyncMock
 
-from cogs.base_store.models import BaseStorePreparationFailure
-from common.results.autowin import claim_autowin, mark_autowin
-from database_models import Match
-from database_models.result_models import MatchResultOperation
+from elo_bot.features.base_store.models import BaseStorePreparationFailure
+from elo_bot.features.results.autowin import claim_autowin, mark_autowin
+from elo_bot.db import Match
+from elo_bot.db.result_models import MatchResultOperation
 from tests import _match_cleanup_fixture as fixtures
 
 

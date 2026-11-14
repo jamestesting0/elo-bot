@@ -4,8 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.helper_commands import HelperCommands
-from common.constants import LB_ENTRIES_PER_PAGE, STAFF_ROLE, SUCCESS_EMOJI
+from elo_bot.extensions.helper import HelperCommands
+from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
+from elo_bot.config.ids import STAFF_ROLE
+from elo_bot.config.emojis import SUCCESS_EMOJI
 
 
 class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
@@ -14,8 +16,8 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         self.bot.ext = {}
         self.cog = HelperCommands(self.bot)
 
-    @patch("cogs.helper_commands.construct_helper_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.helper_commands.Helper")
+    @patch("elo_bot.extensions.helper.construct_helper_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.helper.Helper")
     async def test_initial_page_button_is_enabled(self, mock_helper, mock_construct_leaderboard):
         # Given: eleven helpers in the initial Points leaderboard
         helpers = [SimpleNamespace(user_id=str(index), points=index, history=[]) for index in range(11)]
@@ -35,8 +37,8 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(page_button.custom_id, "helper_lb_page")
         self.assertFalse(page_button.disabled)
 
-    @patch("cogs.helper_commands.construct_helper_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.helper_commands.Helper")
+    @patch("elo_bot.extensions.helper.construct_helper_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.helper.Helper")
     async def test_right_navigation_keeps_enabled_page_button(self, mock_helper, mock_construct_leaderboard):
         # Given: eleven helpers and an owner navigating to the second page
         helpers = [SimpleNamespace(user_id=str(index), points=index, history=[]) for index in range(11)]
@@ -77,8 +79,8 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(modal.custom_id, "helper_lb_page_modal")
         self.assertEqual(modal.components[0].custom_id, "page")
 
-    @patch("cogs.helper_commands.construct_helper_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.helper_commands.Helper")
+    @patch("elo_bot.extensions.helper.construct_helper_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.helper.Helper")
     async def test_page_modal_jumps_to_last_page(self, mock_helper, mock_construct_leaderboard):
         # Given: eleven helpers freshly loaded when the modal is submitted
         helpers = [SimpleNamespace(user_id=str(index), points=index, history=[]) for index in range(11)]
@@ -109,7 +111,7 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         ctx.defer.assert_not_awaited()
         ctx.send.assert_not_awaited()
 
-    @patch("cogs.helper_commands.Helper")
+    @patch("elo_bot.extensions.helper.Helper")
     async def test_page_modal_rejects_stale_total(self, mock_helper):
         # Given: a page-two modal after only one helper page remains
         mock_helper.find_all.return_value.to_list = AsyncMock(
@@ -146,7 +148,7 @@ class TestHelperRemove(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(option_names, ["user"])
 
-    @patch("cogs.helper_commands.Helper")
+    @patch("elo_bot.extensions.helper.Helper")
     async def test_plain_user_deletes_helper_without_removing_role(self, mock_helper):
         helper_doc = MagicMock()
         helper_doc.delete = AsyncMock()
@@ -176,7 +178,7 @@ class TestHelperRemove(unittest.IsolatedAsyncioTestCase):
             ephemeral=True,
         )
 
-    @patch("cogs.helper_commands.Helper")
+    @patch("elo_bot.extensions.helper.Helper")
     async def test_member_with_helper_role_still_has_role_removed(self, mock_helper):
         helper_doc = MagicMock()
         helper_doc.delete = AsyncMock()

@@ -1,12 +1,13 @@
 import unittest
 from functools import partial
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-import cogs.base_commands as base_commands
-from common.utils import ComponentsV2ModalContext
+import elo_bot.extensions.base as base_commands
+from elo_bot.discord.contexts import ComponentsV2ModalContext
 from tests._base_submission_fixtures import configure_pending_resolution
+from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -51,8 +52,8 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
         )
         self.pending.delete = AsyncMock()
         configure_pending_resolution(self.pending)
-        self.enterContext(patch.object(
-            self.module, "BaseLayout", MagicMock(find_one=AsyncMock(return_value=None)),
+        self.enterContext(patch_family(
+            BASE_MODULE_FAMILY, "BaseLayout", MagicMock(find_one=AsyncMock(return_value=None)),
         ))
 
     def _modal_context(self, custom_id: str, components: list[dict]) -> ComponentsV2ModalContext:
@@ -104,7 +105,7 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
 
     async def test_accept_button_posts_components_v2_modal_payload(self) -> None:
         ctx = self._component_context("base_submission_accept")
-        with patch.object(self.module, "PendingBaseSubmission") as pending_model:
+        with patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission") as pending_model:
             pending_model.get = AsyncMock(return_value=self.pending)
             await self.cog.accept_submission_button.call_callback(
                 partial(self.cog.accept_submission_button.callback.func, self.cog),
@@ -131,7 +132,7 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
 
     async def test_reject_button_posts_required_reason_modal_payload(self) -> None:
         ctx = self._component_context("base_submission_reject")
-        with patch.object(self.module, "PendingBaseSubmission") as pending_model:
+        with patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission") as pending_model:
             pending_model.get = AsyncMock(return_value=self.pending)
             await self.cog.reject_submission_button.call_callback(
                 partial(self.cog.reject_submission_button.callback.func, self.cog),
@@ -180,8 +181,8 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user.return_value = submitter
 
         with (
-            patch.object(self.module, "PendingBaseSubmission") as pending_model,
-            patch.object(self.module, "BaseLayout") as base_layout,
+            patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission") as pending_model,
+            patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout,
         ):
             pending_model.get = AsyncMock(return_value=self.pending)
             base_layout.find_one = AsyncMock(return_value=None)
@@ -233,8 +234,8 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user.return_value = submitter
 
         with (
-            patch.object(self.module, "PendingBaseSubmission") as pending_model,
-            patch.object(self.module, "BaseLayout") as base_layout,
+            patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission") as pending_model,
+            patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout,
         ):
             pending_model.get = AsyncMock(return_value=self.pending)
 

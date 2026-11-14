@@ -5,14 +5,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import cogs.match_commands as match_commands
-from cogs.embed_commands import EmbedCommands
-from database_models import BaseStore, ServerState
+from elo_bot.extensions.embed import EmbedCommands
+from elo_bot.db import BaseStore, ServerState
+import elo_bot.features.matches.resources as resources_module
+import elo_bot.extensions.match.base_store as match_base_store_module
+import elo_bot.extensions.match.dashboards as match_dashboards_module
 
 
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
-        match_commands.RESOURCE_CLAN_LOCKS.clear()
+        resources_module.RESOURCE_CLAN_LOCKS.clear()
 
     async def test_clan_availability_embed_shows_slot_thread_mentions(self):
         bot = MagicMock()
@@ -49,8 +51,8 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         ]
 
         with (
-                patch("cogs.embed_commands.Clan") as mock_clan,
-                patch("cogs.embed_commands.Match") as mock_match,
+                patch("elo_bot.extensions.embed.Clan") as mock_clan,
+                patch("elo_bot.extensions.embed.Match") as mock_match,
                 patch.object(
                     ServerState,
                     "update_fields",
@@ -83,11 +85,11 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         clan_a = MagicMock(tag="#A", name="Alpha", availability_str="<#101> occupied")
         clan_b = MagicMock(tag="#B", availability_str="Available")
         clan_b.name = "Bravo"
-        reservation = await match_commands.try_reserve_resource_clan("#A")
+        reservation = await match_base_store_module.try_reserve_resource_clan("#A")
 
         try:
-            with patch("cogs.embed_commands.Clan") as clan_model, \
-                    patch.object(match_commands.Clan, "find_all") as find_all:
+            with patch("elo_bot.extensions.embed.Clan") as clan_model, \
+                    patch.object(match_dashboards_module.Clan, "find_all") as find_all:
                 clan_model.find_one = AsyncMock(return_value=clan_a)
                 find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])
 

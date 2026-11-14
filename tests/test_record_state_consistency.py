@@ -3,14 +3,14 @@ from unittest.mock import call
 
 from bson import DBRef
 
-from cogs import match_commands
-from database_models import Player
+from elo_bot.db import Player
 
 
 from tests._result_retry_store import RecordStateMixin
 
 
 from tests._result_retry_store import apply_update
+import elo_bot.features.results.recording as recording_module
 
 class TestRecordStateConsistency(RecordStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_record_refreshes_autocomplete_after_the_match_is_stored(self) -> None:
@@ -81,9 +81,9 @@ class TestRecordStateConsistency(RecordStateMixin, unittest.IsolatedAsyncioTestC
         # Given: the same new record was already applied from this stale player snapshot.
         self.records["11"] = self.make_record("11")
         stale = await self.find_player({"user_id": "111"})
-        await match_commands.add_recorded_match(stale, self.records["11"])
+        await recording_module.add_recorded_match(stale, self.records["11"])
         # When
-        await match_commands.add_recorded_match(stale, self.records["11"])
+        await recording_module.add_recorded_match(stale, self.records["11"])
         # Then: match membership and both increments are applied once.
         self.assertEqual((self.players["111"]["elo"], self.players["111"]["wins"]), (1020, 2))
         self.assertEqual(self.players["111"]["matches"], [self.records["10"].to_ref(), self.records["11"].to_ref()])

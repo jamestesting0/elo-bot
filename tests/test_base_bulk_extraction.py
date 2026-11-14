@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from bson import ObjectId
 
-from common.base_fingerprints import jobs
-from common.base_fingerprints.types import ExtractionState, PIPELINE_ID
-from database_models import BaseFingerprintTask, BaseLayout
+from elo_bot.features.bases.fingerprints import jobs
+from elo_bot.db.fingerprint_types import ExtractionState, PIPELINE_ID
+from elo_bot.db import BaseFingerprintTask, BaseLayout
 
 
 class TestBaseBulkExtraction(unittest.IsolatedAsyncioTestCase):

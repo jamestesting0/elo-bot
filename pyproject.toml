@@ -1,0 +1,42 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["venv", "temp", "data", "models", "assets"]
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["F", "PLC0415"]
+# Unused locals that still perform reads are kept on purpose: removing them would change the
+# observable call sequence.
+ignore = ["F841"]
+
+[tool.ruff.format]
+# The project has no formatter; keep the existing layout so diffs stay reviewable.
+exclude = ["**/*.py"]
+
+[tool.ruff.lint.per-file-ignores]
+# Deferred imports keep the heavy ML stack (numpy, scipy, ultralytics, sahi) out of bot startup.
+"elo_bot/features/bases/fingerprints/*" = ["PLC0415"]
+"scripts/*" = ["PLC0415"]
+"tests/**" = ["PLC0415"]
+
+[tool.importlinter]
+root_package = "elo_bot"
+exclude_type_checking_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Layers: app > extensions > features > db | discord | integrations > core > config"
+type = "layers"
+layers = [
+    "elo_bot.app",
+    "elo_bot.extensions",
+    "elo_bot.features",
+    "elo_bot.db | elo_bot.discord | elo_bot.integrations",
+    "elo_bot.core",
+    "elo_bot.config",
+]
+
+[[tool.importlinter.contracts]]
+name = "Extensions do not import each other"
+type = "independence"
+modules = ["elo_bot.extensions.*"]

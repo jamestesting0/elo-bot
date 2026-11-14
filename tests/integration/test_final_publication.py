@@ -3,22 +3,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import bind_thread
-from common.finals.publication import publish_bracket
-from common.finals.types import FinalError
-from database_models import EloFinal
-from common.tokens.bets import close_market, open_market
-from common.tokens.presentation import publish_market, market_signature
-from common.finals.recovery import recover_final
-from common.finals.results import FinalResultSubmission, submit_result
-from database_models.token_models import FinalBettingMarket
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import bind_thread
+from elo_bot.features.finals.publication import publish_bracket
+from elo_bot.core.finals import FinalError
+from elo_bot.db import EloFinal
+from elo_bot.features.tokens.bets import close_market, open_market
+from elo_bot.features.tokens.presentation import publish_market, market_signature
+from elo_bot.features.finals.recovery import recover_final
+from elo_bot.features.finals.results import FinalResultSubmission, submit_result
+from elo_bot.db.token_models import FinalBettingMarket
 
 
 class TestFinalPublication(FinalScenarioCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
-        rendering = patch("common.finals.publication.render_bracket", return_value=b"bracket-image")
+        rendering = patch("elo_bot.features.finals.publication.render_bracket", return_value=b"bracket-image")
         rendering.start()
         self.addCleanup(rendering.stop)
         self.final = await confirm_bracket(await self.roster(8), "manager")

@@ -3,19 +3,15 @@ import unittest
 
 from pydantic import ValidationError
 
-from common.base_fingerprints.matcher import align_layout
-from common.base_fingerprints.types import (
-    BaseFingerprint,
-    ComparisonFingerprint,
-    ComparisonSummary,
-    LayoutMatch,
-)
+from elo_bot.features.bases.fingerprints.matcher import align_layout
+from elo_bot.db.fingerprint_types import BaseFingerprint
+from elo_bot.features.bases.fingerprints.types import ComparisonFingerprint, ComparisonSummary, LayoutMatch
 from tests._relative_geometry_fixture import layout, points
 
 
 class TestComparisonAlignment(unittest.TestCase):
     def compare(self, query: BaseFingerprint, candidate: BaseFingerprint, fuzzy: bool = False):
-        from common.base_fingerprints.comparison_matcher import align_comparison
+        from elo_bot.features.bases.fingerprints.comparison_matcher import align_comparison
 
         return align_comparison(query, candidate, fuzzy)
 

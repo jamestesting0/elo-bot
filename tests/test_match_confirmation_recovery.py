@@ -9,9 +9,12 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
-from cogs import match_commands
-from common.constants import MATCH_CHANNEL, STAFF_ROLE
-from database_models import BaseLink, BaseStore, Match, Participant
+from elo_bot.config.ids import MATCH_CHANNEL, STAFF_ROLE
+from elo_bot.db import BaseLink, BaseStore, Match, Participant
+from tests._patch_sites import patch_sites
+import elo_bot.features.matches.lifecycle as lifecycle_module
+import elo_bot.extensions.match as match_module
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 
 class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
@@ -56,11 +59,11 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         mongo = patch.object(Match, "get_pymongo_collection", return_value=collection)
         mongo.start()
         self.addCleanup(mongo.stop)
-        model = patch.object(match_commands, "Match")
+        model = patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
         self.model = model.start()
         self.addCleanup(model.stop)
         self.model.find_one = AsyncMock(side_effect=lambda *_args: self.persisted.model_copy(deep=True))
-        players = patch.object(match_commands, "Player")
+        players = patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
         self.players = players.start()
         self.addCleanup(players.stop)
         self.players.find_one = AsyncMock(return_value=SimpleNamespace(base_presets={}))
@@ -118,7 +121,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
                 self.persisted._save_state()
                 self.messages.clear()
 
-                await match_commands.confirm_match(self.bot, "TOKEN")
+                await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
                 description = self.messages[0].embeds[0].description
                 self.assertEqual("</match base submit:1288780187042971700>" in description, enabled)
@@ -127,7 +130,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         # Given: Discord fails the announcement after the thread identity is saved.
         self.thread.send.side_effect = self.unavailable()
         with self.assertRaises(ipy.errors.DiscordError):
-            await match_commands.confirm_match(self.bot, "TOKEN")
+            await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
         self.assertEqual(self.persisted.thread, "123")
         districts = list(self.persisted.final_districts)
         base = BaseLink(link="submitted-after-failure", image="image")
@@ -138,7 +141,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.thread.send.side_effect = self.send_message
 
         # When: confirmation is retried from the persisted match.
-        thread_id = await match_commands.confirm_match(self.bot, "TOKEN")
+        thread_id = await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # Then: recovery publishes in the same thread without rerolling or overwriting bases/storage.
         self.assertEqual(thread_id, "123")
@@ -161,10 +164,10 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
 
         self.thread.send.side_effect = lost_response
         with self.assertRaises(ipy.errors.DiscordError):
-            await match_commands.confirm_match(self.bot, "TOKEN")
+            await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # When: confirmation is retried.
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # Then: the existing message is finalized and pinned instead of duplicated.
         self.thread.send.assert_awaited_once()
@@ -181,10 +184,10 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
 
         self.thread.send.side_effect = failed_pin
         with self.assertRaises(ipy.errors.DiscordError):
-            await match_commands.confirm_match(self.bot, "TOKEN")
+            await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # When: confirmation is retried.
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # Then: only the failed pin is repeated.
         self.thread.send.assert_awaited_once()
@@ -193,10 +196,10 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
 
     async def test_confirmation_does_not_duplicate_a_ready_announcement(self) -> None:
         # Given: the first confirmation completed normally.
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # When: the periodic recovery revisits the match.
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # Then: no additional thread, message, edit, or pin is produced.
         self.channel.create_private_thread.assert_awaited_once()
@@ -213,7 +216,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.messages.append(other)
 
         # When: incomplete setup is recovered.
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         # Then: a match-owned announcement is created and the unrelated pin is preserved.
         self.assertEqual(len(self.messages), 2)
@@ -226,8 +229,8 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         first, second = [self.persisted.model_copy(update={"token": token, "thread": "123"})
                          for token in ("FIRST", "SECOND")]
         self.model.find.return_value.to_list = AsyncMock(return_value=[first, second])
-        cog = match_commands.MatchCommands(self.bot)
-        with patch.object(match_commands, "confirm_match", new_callable=AsyncMock) as confirm:
+        cog = match_module.MatchCommands(self.bot)
+        with patch_sites(('elo_bot.extensions.match.lifecycle.confirm_match', 'elo_bot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock) as confirm:
             confirm.side_effect = [self.unavailable(), "123"]
             # When: the scheduled recovery runs.
             with self.assertLogs(level="ERROR"):
@@ -251,7 +254,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.model.find.return_value.to_list = AsyncMock(return_value=[first, second])
         self.model.find_one.side_effect = [first.model_copy(deep=True), second.model_copy(deep=True)]
         self.bot.fetch_channel.side_effect = [None, self.thread]
-        cog = match_commands.MatchCommands(self.bot)
+        cog = match_module.MatchCommands(self.bot)
 
         with self.assertLogs(level="ERROR"):
             await cog.auto_match_confirm.callback.func(cog)
@@ -272,9 +275,9 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.model.find.return_value.to_list = AsyncMock(return_value=[first, second])
         self.model.find_one.side_effect = None
         self.model.find_one.return_value = first.model_copy(deep=True)
-        cog = match_commands.MatchCommands(self.bot)
+        cog = match_module.MatchCommands(self.bot)
         with patch.object(Match, "save_changes", new_callable=AsyncMock, side_effect=PyMongoError("write failed")):
-            with patch.object(match_commands, "confirm_match", new_callable=AsyncMock) as confirm:
+            with patch_sites(('elo_bot.extensions.match.lifecycle.confirm_match', 'elo_bot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock) as confirm:
                 with self.assertLogs(level="ERROR"):
                     await cog.auto_match_confirm.callback.func(cog)
         self.assertEqual([call.args[1] for call in confirm.await_args_list], ["SECOND"])
@@ -284,10 +287,10 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.persisted.participants[0].confirmed = False
         self.persisted.participants[1].confirmed = False
         self.persisted._save_state()
-        cog = match_commands.MatchCommands(self.bot)
+        cog = match_module.MatchCommands(self.bot)
         ctx = SimpleNamespace(send=AsyncMock())
         match = self.persisted.model_copy(deep=True)
-        with patch.object(match_commands, "datetime") as clock:
+        with patch_sites(('elo_bot.extensions.match.datetime', 'elo_bot.extensions.match.queue.datetime', 'elo_bot.extensions.match.lifecycle.datetime', 'elo_bot.extensions.match.bases.datetime', 'elo_bot.extensions.match.hosting.datetime', 'elo_bot.features.queue.state.datetime', 'elo_bot.features.queue.matching.datetime', 'elo_bot.features.matches.resources.datetime', 'elo_bot.features.matches.lifecycle.datetime', 'elo_bot.features.matches.attack_bases.datetime', 'elo_bot.features.results.recording.datetime')) as clock:
             clock.now.return_value.timestamp.return_value = 1500.0
             await cog._confirm_match_participant(ctx, match, match.participants[0], match.participants[1], "TOKEN")
             clock.now.return_value.timestamp.return_value = 1600.0
@@ -302,7 +305,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.persisted.participants[1].confirmed = False
         self.persisted._save_state()
         match = self.persisted.model_copy(deep=True)
-        cog = match_commands.MatchCommands(self.bot)
+        cog = match_module.MatchCommands(self.bot)
         await cog._confirm_match_participant(
             SimpleNamespace(send=AsyncMock()), match, match.participants[0], match.participants[1], "TOKEN",
         )
@@ -319,9 +322,9 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.model.find.return_value.to_list = AsyncMock(
             side_effect=lambda: [self.persisted.model_copy(deep=True)],
         )
-        cog = match_commands.MatchCommands(self.bot)
-        with patch.object(match_commands, "datetime") as clock, \
-                patch.object(match_commands, "confirm_match", new_callable=AsyncMock):
+        cog = match_module.MatchCommands(self.bot)
+        with patch_sites(('elo_bot.extensions.match.datetime', 'elo_bot.extensions.match.queue.datetime', 'elo_bot.extensions.match.lifecycle.datetime', 'elo_bot.extensions.match.bases.datetime', 'elo_bot.extensions.match.hosting.datetime', 'elo_bot.features.queue.state.datetime', 'elo_bot.features.queue.matching.datetime', 'elo_bot.features.matches.resources.datetime', 'elo_bot.features.matches.lifecycle.datetime', 'elo_bot.features.matches.attack_bases.datetime', 'elo_bot.features.results.recording.datetime')) as clock, \
+                patch_sites(('elo_bot.extensions.match.lifecycle.confirm_match', 'elo_bot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock):
             clock.now.return_value.timestamp.return_value = 44199.0
             await cog.auto_match_confirm.callback.func(cog)
             self.assertFalse(self.persisted.participants[1].confirmed)
@@ -343,8 +346,8 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.persisted.participants[1].confirmed_at = 44000.0
         self.persisted.participants[1].confirmation_method = "manual"
         self.persisted._save_state()
-        cog = match_commands.MatchCommands(self.bot)
-        with patch.object(match_commands, "datetime") as clock:
+        cog = match_module.MatchCommands(self.bot)
+        with patch_sites(('elo_bot.extensions.match.datetime', 'elo_bot.extensions.match.queue.datetime', 'elo_bot.extensions.match.lifecycle.datetime', 'elo_bot.extensions.match.bases.datetime', 'elo_bot.extensions.match.hosting.datetime', 'elo_bot.features.queue.state.datetime', 'elo_bot.features.queue.matching.datetime', 'elo_bot.features.matches.resources.datetime', 'elo_bot.features.matches.lifecycle.datetime', 'elo_bot.features.matches.attack_bases.datetime', 'elo_bot.features.results.recording.datetime')) as clock:
             clock.now.return_value.timestamp.return_value = 44200.0
             await cog.auto_match_confirm.callback.func(cog)
 
@@ -356,9 +359,9 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         for participant in self.persisted.participants:
             participant.confirmed = False
         self.model.find.return_value.to_list = AsyncMock(return_value=[self.persisted])
-        cog = match_commands.MatchCommands(self.bot)
-        with patch.object(match_commands, "datetime") as clock, \
-                patch.object(match_commands, "cancel_match", new_callable=AsyncMock) as cancel:
+        cog = match_module.MatchCommands(self.bot)
+        with patch_sites(('elo_bot.extensions.match.datetime', 'elo_bot.extensions.match.queue.datetime', 'elo_bot.extensions.match.lifecycle.datetime', 'elo_bot.extensions.match.bases.datetime', 'elo_bot.extensions.match.hosting.datetime', 'elo_bot.features.queue.state.datetime', 'elo_bot.features.queue.matching.datetime', 'elo_bot.features.matches.resources.datetime', 'elo_bot.features.matches.lifecycle.datetime', 'elo_bot.features.matches.attack_bases.datetime', 'elo_bot.features.results.recording.datetime')) as clock, \
+                patch('elo_bot.extensions.match.lifecycle.cancel_match', new_callable=AsyncMock) as cancel:
             clock.now.return_value.timestamp.return_value = 44199.0
             await cog.auto_match_cancel.callback.func(cog)
             cancel.assert_not_awaited()
@@ -369,24 +372,24 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
     async def test_failed_message_id_write_is_recovered_without_resending(self) -> None:
         self.collection.update_one.side_effect = PyMongoError("write failed")
         with self.assertRaises(PyMongoError):
-            await match_commands.confirm_match(self.bot, "TOKEN")
+            await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
         self.assertIsNone(self.persisted.thread_message_id)
         self.messages[0].pin.assert_not_awaited()
         self.collection.update_one.side_effect = self.bind
 
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         self.thread.send.assert_awaited_once()
         self.messages[0].pin.assert_awaited_once()
         self.assertEqual(self.persisted.thread_message_id, 456)
 
     async def test_recovery_skips_a_match_scheduled_while_waiting_for_the_shared_lock(self) -> None:
-        from common.matches.message_lock import match_message_lock
+        from elo_bot.features.matches.message_lock import match_message_lock
 
         self.persisted.thread = "123"
         self.persisted._save_state()
         self.model.find.return_value.to_list = AsyncMock(return_value=[self.persisted.model_copy(deep=True)])
-        cog = match_commands.MatchCommands(self.bot)
+        cog = match_module.MatchCommands(self.bot)
         started = anyio.Event()
 
         async def recover():
@@ -412,12 +415,12 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
 
         async def retry():
             retrying.set()
-            await match_commands.confirm_match(self.bot, "TOKEN")
+            await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         self.thread.send.side_effect = send
         with anyio.fail_after(2):
             async with anyio.create_task_group() as tasks:
-                tasks.start_soon(match_commands.confirm_match, self.bot, "TOKEN")
+                tasks.start_soon(match_lifecycle_module.confirm_match, self.bot, "TOKEN")
                 await entered.wait()
                 tasks.start_soon(retry)
                 await retrying.wait()
@@ -431,19 +434,19 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.persisted.thread = "321"
         self.persisted.thread_message_id = 789
 
-        bound = await match_commands.attach_thread_message(stale, 456)
+        bound = await lifecycle_module.attach_thread_message(stale, 456)
 
         self.assertFalse(bound)
         self.assertEqual(self.persisted.thread_message_id, 789)
         self.assertIsNone(stale.thread_message_id)
 
     async def test_legacy_pin_is_adopted_without_resending(self) -> None:
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
         self.persisted.thread_message_id = None
         self.persisted._save_state()
         self.thread.send.reset_mock()
 
-        await match_commands.confirm_match(self.bot, "TOKEN")
+        await match_lifecycle_module.confirm_match(self.bot, "TOKEN")
 
         self.assertEqual(self.persisted.thread_message_id, 456)
         self.thread.send.assert_not_awaited()

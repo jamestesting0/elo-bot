@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import AsyncMock
 
-from cogs.base_store import live_service
+from elo_bot.features.base_store import live_service
 from tests._live_base_fixture import CLAN, LiveBaseFixture
 
 

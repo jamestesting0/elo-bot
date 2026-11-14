@@ -27,14 +27,16 @@ Watch Elo matches on our collaboration YouTube channel, [SenFGr](https://www.you
 
 ## How it works
 
-The bot uses `interactions.py` for Discord interactions and `coc.py` for Clash of Clans data. MongoDB stores the application state through Beanie models. The entry points initialize the services and load the feature extensions in `cogs/`.
+The bot uses `interactions.py` for Discord interactions and `coc.py` for Clash of Clans data. MongoDB stores the application state through Beanie models. The entry points initialize the services and load the extensions in `elo_bot/extensions/`. [docs/architecture.md](docs/architecture.md) describes the layers and where code goes; [docs/commands.md](docs/commands.md) maps every command to its handler.
 
 | Path | Purpose |
 | --- | --- |
-| `main.py`, `beta.py` | Production and beta entry points |
-| `cogs/` | Discord commands and background workflows |
-| `common/` | Shared configuration, calculations, integrations, and base search |
-| `database_models/` | Beanie documents and persistence models |
+| `main.py`, `beta.py` | Production and beta entry points (identical launchers) |
+| `elo_bot/extensions/` | Discord commands and background workflows |
+| `elo_bot/features/` | Domain logic: matchmaking, results, stored bases, hosting, base search, finals |
+| `elo_bot/app/`, `elo_bot/config/`, `elo_bot/core/` | Startup, configuration and pure calculations |
+| `elo_bot/db/` | Beanie documents and persistence models |
+| `elo_bot/discord/`, `elo_bot/integrations/` | Discord helpers, Helper API, downloads |
 | `scripts/` | Base-finder setup and diagnostic utilities |
 | `tests/` | Automated regression tests |
 | `watchdog.py` | Optional supervisor for the production process |
@@ -64,7 +66,7 @@ This is a deployment-specific bot, not a turnkey Discord application. Running it
 
    Use `BOT_MAIN_TOKEN` for the production entry point or `BOT_BETA_TOKEN` for beta. Both use `COC_API_EMAIL`, `COC_API_PASSWORD`, and `MONGO_DB_URL`. Set `HELPER_API_BASE_URL` and `HELPER_API_KEY` for Helper-backed features. Keep `.env` private.
 
-3. Review `common/constants.py` and the command extensions for the existing server's guild, channel, role, emoji, and other deployment-specific IDs. Configure your Discord bot's permissions and intents for your server before starting it.
+3. Review `elo_bot/config/` (`ids.py`, `emojis.py`) and the command extensions for the existing server's guild, channel, role, emoji, and other deployment-specific IDs. Configure your Discord bot's permissions and intents for your server before starting it.
 
 4. Start the desired deployment:
 
@@ -76,7 +78,7 @@ This is a deployment-specific bot, not a turnkey Discord application. Running it
 
    Production uses the `elo_bot` database and beta uses `elo_beta`. Both entry points connect to external services; they do not provide an offline mode.
 
-For base-image search, `scripts/setup_base_finder.py` can download and verify the model specified in `common/base_fingerprints/model_manifest.json`. Check the model's permission status before using or redistributing it.
+For base-image search, `scripts/setup_base_finder.py` can download and verify the model specified in `elo_bot/features/bases/fingerprints/model_manifest.json`. Check the model's permission status before using or redistributing it.
 
 ## Tests
 

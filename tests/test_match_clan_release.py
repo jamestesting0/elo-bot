@@ -3,9 +3,10 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import interactions as ipy
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
-from database_models import Match
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.db import Match
+from tests._patch_sites import patch_sites
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 
 class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
@@ -49,14 +50,10 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(Match, "save_changes", new_callable=AsyncMock) as save_changes,
                 patch.object(Match, "get_pymongo_collection", return_value=collection),
-                patch.object(match_commands, "Match") as match_model,
-                patch.object(match_commands, "clear_match_base_stores", new_callable=AsyncMock) as clear_stores,
-                patch.object(match_commands, "free_clan", new_callable=AsyncMock) as free_clan,
-                patch.object(
-                    match_commands,
-                    "record_base_stats",
-                    new=AsyncMock(side_effect=RuntimeError("later result work failed")),
-                ),
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock) as clear_stores,
+                patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan,
+                patch('elo_bot.extensions.match.results.record_base_stats', new=AsyncMock(side_effect=RuntimeError("later result work failed"))),
         ):
             match_model.find_one = AsyncMock(return_value=match)
             # When durable result storage succeeds but later result work fails.
@@ -87,7 +84,7 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
     async def test_autowin_releases_both_war_clans_before_notifications(self) -> None:
         from tests._autowin_fixture import AutowinState
 
-        release_clans = match_commands.free_match_clans
+        release_clans = match_lifecycle_module.free_match_clans
         fixture = AutowinState(self)
         fixture.enterContext = self.enterContext
         fixture.addCleanup = self.addCleanup
@@ -96,7 +93,7 @@ class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):
         fixture.free_clans.side_effect = release_clans
         fixture.users["111"].send.side_effect = RuntimeError("winner DM failed")
 
-        with patch.object(match_commands, "free_clan", new_callable=AsyncMock) as free_clan:
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             with self.assertRaisesRegex(RuntimeError, "winner DM failed"):
                 await fixture.invoke(fixture.context())
 

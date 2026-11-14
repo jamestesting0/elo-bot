@@ -1,10 +1,10 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.leaderboards import final_board_rows
-from common.finals.types import FinalError
-from common.tokens.wallets import ensure_wallet
-from database_models import EloFinal, Season
-from database_models.final_models import FinalPrediction
-from database_models.token_models import TokenLedgerEntry, TokenWallet
+from elo_bot.features.finals.leaderboards import final_board_rows
+from elo_bot.core.finals import FinalError
+from elo_bot.features.tokens.wallets import ensure_wallet
+from elo_bot.db import EloFinal, Season
+from elo_bot.db.final_models import FinalPrediction
+from elo_bot.db.token_models import TokenLedgerEntry, TokenWallet
 
 
 class TestFinalLeaderboardReads(FinalScenarioCase):

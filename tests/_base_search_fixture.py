@@ -2,11 +2,11 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
-import cogs.base_commands as commands
-from common.base_fingerprints.types import MatchScore
-from common.constants import BASE_SUBMISSION_CHANNEL
-from database_models import BaseLayout, PendingBaseSubmission
+from elo_bot.features.bases.fingerprints.types import MatchScore
+from elo_bot.config.ids import BASE_SUBMISSION_CHANNEL
+from elo_bot.db import BaseLayout, PendingBaseSubmission
 from tests._base_fingerprint_fixture import fingerprint
+import elo_bot.extensions.base as base_module
 
 
 class FingerprintSearchStateMixin:
@@ -15,7 +15,7 @@ class FingerprintSearchStateMixin:
         self.bot.ext = {}
         self.bot.user = SimpleNamespace(id=1234)
         self.bot.base_fingerprints = SimpleNamespace(query=AsyncMock(return_value=fingerprint()))
-        self.cog = commands.BaseCommands(self.bot)
+        self.cog = base_module.BaseCommands(self.bot)
         self.bases = [BaseLayout.model_construct(
             id=ObjectId(), district="Barbarian Camp", link=f"https://base/{index}",
             image_url=f"https://image/{index}", quality="Good", expiration_date=0,
@@ -33,7 +33,7 @@ class FingerprintSearchStateMixin:
             return next((base for base in self.bases if base.id == query["_id"] and base.quality != "Private"), None)
 
         self.enterContext(patch.object(BaseLayout, "find_one", new=AsyncMock(side_effect=visible)))
-        self.find = self.enterContext(patch.object(commands, "find_matches", new=AsyncMock(
+        self.find = self.enterContext(patch('elo_bot.extensions.base.search.find_matches', new=AsyncMock(
             return_value=(self.scores, 3, 3))))
 
     def context(self, owner=123, message=9001):

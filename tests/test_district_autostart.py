@@ -5,16 +5,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.live_hosting import helper_live
-from cogs.match_commands import MatchCommands
-from cogs.self_commands import SelfCommands
-from cogs.war_hosting import helper_host
-from cogs.war_hosting.helper_api import (
+from elo_bot.features.hosting.live import helper_live
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.features.hosting.war import helper_host
+from elo_bot.integrations.helper_api import (
     HelperHostWarMatchPayload,
     HelperJobCreateRejected,
     HelperJobCreateRequest,
 )
-from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
+from elo_bot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
+from tests._patch_sites import patch_sites
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]
@@ -62,9 +63,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=True, started=False)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_host.host_war_district_automatically",
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch('elo_bot.extensions.match.hosting.helper_host.host_war_district_automatically',
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -84,9 +85,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=True)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_host.host_war_district_automatically",
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch('elo_bot.extensions.match.hosting.helper_host.host_war_district_automatically',
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -107,15 +108,15 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         clan = self.bot.coc_client.get_clan.return_value
         side = MagicMock()
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.try_reserve_resource_match_side",
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elo_bot.extensions.match.base_store.try_reserve_resource_match_side', 'elo_bot.extensions.match.hosting.try_reserve_resource_match_side', 'elo_bot.features.matches.resources.try_reserve_resource_match_side'),
                       new=AsyncMock(return_value=side)),
-                patch("cogs.match_commands.try_reserve_resource_clan",
+                patch_sites(('elo_bot.extensions.match.base_store.try_reserve_resource_clan', 'elo_bot.extensions.match.hosting.try_reserve_resource_clan', 'elo_bot.extensions.match.settings.try_reserve_resource_clan', 'elo_bot.features.matches.resources.try_reserve_resource_clan'),
                       new_callable=AsyncMock) as reserve_clan,
-                patch("cogs.match_commands.confirm_pending_opponent_bases",
+                patch_sites(('elo_bot.extensions.match.base_store.confirm_pending_opponent_bases', 'elo_bot.extensions.match.hosting.confirm_pending_opponent_bases'),
                       new_callable=AsyncMock) as confirm_bases,
-                patch("cogs.match_commands.helper_host.host_war_district_automatically",
+                patch('elo_bot.extensions.match.hosting.helper_host.host_war_district_automatically',
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -141,9 +142,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=False, started=False)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_live.host_live_district_automatically",
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch('elo_bot.extensions.match.hosting.helper_live.host_live_district_automatically',
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -162,9 +163,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=False)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_live.host_live_district_automatically",
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch('elo_bot.extensions.match.hosting.helper_live.host_live_district_automatically',
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -195,8 +196,8 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
                 ctx = self.context()
                 match = self.match(is_war=is_war)
                 with (
-                        patch("cogs.match_commands.Match") as match_model,
-                        patch("cogs.match_commands.is_match_finished", return_value=False),
+                        patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                        patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
                 ):
                     match_model.find_one = AsyncMock(return_value=match)
                     if is_war:
@@ -224,16 +225,16 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         side0 = MagicMock()
         side1 = MagicMock()
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.Player") as player_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.try_reserve_resource_match_side",
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model,
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elo_bot.extensions.match.base_store.try_reserve_resource_match_side', 'elo_bot.extensions.match.hosting.try_reserve_resource_match_side', 'elo_bot.features.matches.resources.try_reserve_resource_match_side'),
                       new=AsyncMock(side_effect=[side0, side1])),
-                patch("cogs.match_commands.try_reserve_resource_clan",
+                patch_sites(('elo_bot.extensions.match.base_store.try_reserve_resource_clan', 'elo_bot.extensions.match.hosting.try_reserve_resource_clan', 'elo_bot.extensions.match.settings.try_reserve_resource_clan', 'elo_bot.features.matches.resources.try_reserve_resource_clan'),
                       new_callable=AsyncMock) as reserve_clan,
-                patch("cogs.match_commands.live_start.start_live_match",
+                patch('elo_bot.extensions.match.hosting.live_start.start_live_match',
                       new_callable=AsyncMock) as start_live,
-                patch("cogs.match_commands.helper_live.host_live_district_automatically",
+                patch('elo_bot.extensions.match.hosting.helper_live.host_live_district_automatically',
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -323,13 +324,13 @@ class TestDistrictHelperPayloads(unittest.IsolatedAsyncioTestCase):
             requested_by="777",
         )
         with (
-                patch("cogs.war_hosting.helper_host.Match") as match_model,
-                patch("cogs.war_hosting.helper_host.Player") as player_model,
-                patch("cogs.war_hosting.helper_host.get_available_helper_slot",
+                patch("elo_bot.features.hosting.war.helper_host.Match") as match_model,
+                patch("elo_bot.features.hosting.war.helper_host.Player") as player_model,
+                patch("elo_bot.features.hosting.war.helper_host.get_available_helper_slot",
                       new=AsyncMock(return_value=2), create=True) as available_slot,
-                patch("cogs.war_hosting.helper_host.confirm_helper_availability",
+                patch("elo_bot.features.hosting.war.helper_host.confirm_helper_availability",
                       new=AsyncMock(return_value=True)),
-                patch("cogs.war_hosting.helper_host.run_helper_host_job",
+                patch("elo_bot.features.hosting.war.helper_host.run_helper_host_job",
                       new_callable=AsyncMock) as run_job,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -366,10 +367,10 @@ class TestDistrictHelperPayloads(unittest.IsolatedAsyncioTestCase):
             allow_opponent_cancel=True,
         )
         with (
-                patch("cogs.live_hosting.helper_live.Match") as match_model,
-                patch("cogs.live_hosting.helper_live.confirm_helper_availability",
+                patch("elo_bot.features.hosting.live.helper_live.Match") as match_model,
+                patch("elo_bot.features.hosting.live.helper_live.confirm_helper_availability",
                       new=AsyncMock(return_value=True)),
-                patch("cogs.live_hosting.helper_live.run_helper_host_job",
+                patch("elo_bot.features.hosting.live.helper_live.run_helper_host_job",
                       new_callable=AsyncMock) as run_job,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -412,7 +413,7 @@ class TestDistrictHelperPayloads(unittest.IsolatedAsyncioTestCase):
         runtime = MagicMock(helper_api_base_url="https://helper.invalid", helper_api_key="key")
         ctx = self.context()
         with patch(
-                "cogs.war_hosting.helper_host_job.HelperJobCreator.create",
+                "elo_bot.features.hosting.war.helper_host_job.HelperJobCreator.create",
                 new=AsyncMock(return_value=HelperJobCreateRejected(error="rejected")),
         ):
             await run_helper_host_job(

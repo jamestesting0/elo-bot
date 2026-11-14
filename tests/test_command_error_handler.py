@@ -3,13 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import beta
-import main
-from common.constants import ERROR_EMOJI
+from elo_bot.app import errors
+from elo_bot.config.emojis import ERROR_EMOJI
 
 
 class TestCommandErrorHandler(unittest.IsolatedAsyncioTestCase):
-    handlers = ((main.on_command_error, main), (beta.on_command_error, beta))
+    handlers = ((errors.on_command_error, errors),)
 
     async def test_max_concurrency_message_describes_limit_and_bucket(self) -> None:
         for handler, module in self.handlers:

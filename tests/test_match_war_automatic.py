@@ -4,9 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.match_commands import MatchCommands
-from cogs.war_hosting import war_start
-from common.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.hosting.war import war_start
+from elo_bot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from tests._patch_sites import patch_sites
 
 
 class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
@@ -76,16 +77,16 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_raid_weekend", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)), \
+        with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False), \
+                patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)), \
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    'elo_bot.extensions.match.hosting.get_start_base_store_slot_availability',
                     new=AsyncMock(return_value=([], {"Slot 1": ("111", "222")})),
                 ) as available_slots, \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elo_bot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:
@@ -108,21 +109,21 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         match = self.make_match()
         clan = self.bot.coc_client.get_clan.return_value
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_raid_weekend", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)), \
+        with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False), \
+                patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)), \
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    'elo_bot.extensions.match.hosting.get_start_base_store_slot_availability',
                     new=AsyncMock(return_value=(["Slot 1"], {})),
                 ) as available_slots, \
-                patch(
-                    "cogs.match_commands.confirm_pending_opponent_bases",
+                patch_sites(
+                    ('elo_bot.extensions.match.base_store.confirm_pending_opponent_bases', 'elo_bot.extensions.match.hosting.confirm_pending_opponent_bases'),
                     new=AsyncMock(return_value=True),
                 ), \
-                patch("cogs.match_commands.war_start.start_war", new_callable=AsyncMock) as start_war, \
+                patch_sites(('elo_bot.extensions.match.base_store.war_start.start_war', 'elo_bot.extensions.match.hosting.war_start.start_war'), new_callable=AsyncMock) as start_war, \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elo_bot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:
@@ -153,11 +154,11 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         match = self.make_match()
         match.times[0] = 1000
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock) as clan_available, \
+        with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False), \
+                patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock) as clan_available, \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elo_bot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:
@@ -179,13 +180,13 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.Clan") as clan_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_raid_weekend", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=False)), \
+        with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model, \
+                patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False), \
+                patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=False)), \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elo_bot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:

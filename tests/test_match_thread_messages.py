@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from common.matches.thread_messages import find_match_thread_announcement
-from database_models import Match
+from elo_bot.features.matches.thread_messages import find_match_thread_announcement
+from elo_bot.db import Match
 
 
 class TestMatchThreadMessages(unittest.IsolatedAsyncioTestCase):

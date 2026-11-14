@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 from interactions.models.discord.message import process_message_payload
 
-from common.matches.messages import MatchMessageState, publish_match_message
-from common.matches.recovery import _attempt_repair_message, _repair_message
+from elo_bot.features.matches.messages import MatchMessageState, publish_match_message
+from elo_bot.features.matches.recovery import _attempt_repair_message, _repair_message
 from tests import _match_publication_fixture as publication_tests
 
 

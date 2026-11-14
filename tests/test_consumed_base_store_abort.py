@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from database_models import BaseStore, Match, Participant
-from database_models.match_models import ExpectedLiveStartState
+from elo_bot.db import BaseStore, Match, Participant
+from elo_bot.db.match_models import ExpectedLiveStartState
 
 
 class TestConsumedBaseStoreAbort(unittest.IsolatedAsyncioTestCase):

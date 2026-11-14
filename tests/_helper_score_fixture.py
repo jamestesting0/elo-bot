@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aiohttp import web
 import anyio
 import interactions as ipy
-from cogs.war_hosting.helper_api import HelperScoreAttackLimit
-from cogs.war_hosting.helper_store import (
+from elo_bot.integrations.helper_api import HelperScoreAttackLimit
+from elo_bot.features.hosting.war.helper_store import (
     HelperScoreStoreContext,
     HelperScoreStoreOutcome,
     HelperScoreStoreRequest,
@@ -172,8 +172,8 @@ class HelperScoreStateMixin:
             allow_cancellation: bool = True,
             max_allowed_attacks: HelperScoreAttackLimit = 2,
     ) -> HelperScoreStoreOutcome:
-        with patch("cogs.war_hosting.helper_store.Player") as player_model, \
-                patch("cogs.war_hosting.helper_store.time", new=MagicMock(time=MagicMock(return_value=now))):
+        with patch("elo_bot.features.hosting.war.helper_store.Player") as player_model, \
+                patch("elo_bot.features.hosting.war.helper_store.time", new=MagicMock(time=MagicMock(return_value=now))):
             player_model.find_one = AsyncMock(return_value=MagicMock(tag="#PLAYER"))
             return await store_helper_score(
                 self.runtime,

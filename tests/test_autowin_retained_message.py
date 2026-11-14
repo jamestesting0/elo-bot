@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from cogs.base_store.models import BaseStorePresentationRequest
-from cogs.base_store.presentation import build_helper_store_components
-from common.constants import SUCCESS_EMOJI
-from database_models import BaseStore, Match
+from elo_bot.features.base_store.models import BaseStorePresentationRequest
+from elo_bot.features.base_store.presentation import build_helper_store_components
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import BaseStore, Match
 from tests import _autowin_fixture as autowin_fixture
 
 

@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-import cogs.help_commands as help_module
-from cogs.help_commands import HelpCommands
-from cogs.raid_commands import RaidCommands
+import elo_bot.extensions.help as help_module
+from elo_bot.extensions.help import HelpCommands
+from elo_bot.extensions.raid import RaidCommands
 
 
 def slash_command(

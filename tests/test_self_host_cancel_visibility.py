@@ -7,9 +7,10 @@ import aiohttp
 import anyio
 import interactions as ipy
 
-import cogs.war_hosting.helper_host as helper_host
-import cogs.war_hosting.helper_host_job as helper_host_job
-from cogs.war_hosting.helper_api import HelperJob, HelperJobCreated, HelperJobEvent
+import elo_bot.features.hosting.war.helper_host as helper_host
+import elo_bot.features.hosting.war.helper_host_job as helper_host_job
+from elo_bot.integrations.helper_api import HelperJob, HelperJobCreated, HelperJobEvent
+from tests._patch_sites import patch_sites
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -99,11 +100,7 @@ class TestSelfHostCancelVisibility(unittest.IsolatedAsyncioTestCase):
         with patch.object(helper_host, "confirm_helper_availability", new=AsyncMock(return_value=True)), \
                 patch.object(helper_host, "get_available_helper_slot", new=AsyncMock(return_value=1)), \
                 patch.object(helper_host, "Player") as player_model, \
-                patch.object(
-                    helper_host.match_commands,
-                    "choose_bases",
-                    new=AsyncMock(return_value=self.match),
-                ), \
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=self.match)), \
                 patch.object(
                     helper_host_job.HelperJobCreator,
                     "create",

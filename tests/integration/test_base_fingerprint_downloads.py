@@ -13,12 +13,13 @@ from bson import ObjectId
 from PIL import Image
 from pymongo import AsyncMongoClient
 
-from common.base_fingerprints import images, service
-from common.base_fingerprints.ingestion import replace_source
-from common.base_fingerprints.jobs import claim_tasks, enroll_batch, materialize_outbox, run_counts
-from common.base_fingerprints.search import eligible
-from common.base_fingerprints.types import ExtractionResult, ExtractionState, utcnow
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elo_bot.features.bases.fingerprints import images, service
+from elo_bot.features.bases.fingerprints.ingestion import replace_source
+from elo_bot.features.bases.fingerprints.jobs import claim_tasks, enroll_batch, materialize_outbox, run_counts
+from elo_bot.features.bases.fingerprints.search import eligible
+from elo_bot.features.bases.fingerprints.types import ExtractionResult
+from elo_bot.db.fingerprint_types import ExtractionState, utcnow
+from elo_bot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
 from tests._base_image_fixture import FRESH_URL, OLD_URL, image_response

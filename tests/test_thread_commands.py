@@ -7,11 +7,13 @@ import interactions as ipy
 
 sys.path.append(os.getcwd())
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands, confirm_match
-from cogs.thread_commands import ThreadCommands
-from common.constants import LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
-from database_models import BaseStore, Participant
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.matches.lifecycle import confirm_match
+from elo_bot.extensions.thread import ThreadCommands
+from elo_bot.config.ids import LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
+from elo_bot.db import BaseStore, Participant
+from tests._patch_sites import patch_sites
+import elo_bot.features.matches.lifecycle as lifecycle_module
 
 
 class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
@@ -50,8 +52,8 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
 
         # When the match thread and its initial message are created.
         with (
-                patch.object(match_commands, "Match") as match_model,
-                patch.object(match_commands.random, "choice", return_value=[0, 1, 0]),
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch.object(lifecycle_module.random, "choice", return_value=[0, 1, 0]),
         ):
             match_model.find_one = AsyncMock(return_value=match)
             await confirm_match(self.bot, "TOKEN")
@@ -109,9 +111,9 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
 
         # When the match thread and its initial embed are created.
         with (
-                patch.object(match_commands, "Match") as match_model,
-                patch.object(match_commands, "Player") as player_model,
-                patch.object(match_commands.random, "choice", return_value=[0, 1, 0]),
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+                patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model,
+                patch.object(lifecycle_module.random, "choice", return_value=[0, 1, 0]),
         ):
             match_model.find_one = AsyncMock(return_value=match)
             player_model.find_one = AsyncMock(side_effect=preset_players)
@@ -173,10 +175,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.wait_for_component.assert_awaited_once()
         response.edit_origin.assert_awaited_once()
 
-    @patch("cogs.thread_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.base_store.storage.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.free_match_clans", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.Match")
+    @patch("elo_bot.extensions.thread.remove_helper_task", new_callable=AsyncMock)
+    @patch("elo_bot.features.base_store.storage.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.free_match_clans", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.Match")
     async def test_thread_delete_cleans_up_an_unreserved_match_without_releasing_slots(
             self, mock_match, mock_free_match_clans, mock_clear_base_stores, mock_remove_helper_task):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -202,7 +204,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         collection.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
         mock_match.find_one = AsyncMock(return_value=match)
 
-        with patch("cogs.thread_commands.asyncio.sleep", new=AsyncMock()):
+        with patch("elo_bot.extensions.thread.asyncio.sleep", new=AsyncMock()):
             await self.cog.thread_delete.callback.func(self.cog, ctx)
 
         mock_clear_base_stores.assert_not_awaited()
@@ -212,10 +214,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         ctx.channel.delete.assert_awaited_once()
         self.assertEqual(mock_remove_helper_task.await_count, 2)
 
-    @patch("cogs.thread_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.free_match_clans", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.Match")
+    @patch("elo_bot.extensions.thread.remove_helper_task", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.free_match_clans", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.Match")
     async def test_on_thread_delete_releases_reservations_before_cleanup(
             self, mock_match, mock_clear_base_stores, mock_free_match_clans, _mock_remove_helper_task):
         thread = MagicMock()
@@ -253,10 +255,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(match.participants[0].base_store)
         self.assertFalse(match.participants[0].opponent_bases_stored)
 
-    @patch("cogs.thread_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.free_match_clans", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.Match")
+    @patch("elo_bot.extensions.thread.remove_helper_task", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.free_match_clans", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.thread.Match")
     async def test_on_thread_delete_accepts_uncached_thread_id(
             self, mock_match, mock_clear_base_stores, mock_free_match_clans, _mock_remove_helper_task):
         event = MagicMock(thread="987")

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import interactions as ipy
 
-from common.matches.recovery import _repair_match, _repair_message
-from database_models import Match, Participant
+from elo_bot.features.matches.recovery import _repair_match, _repair_message
+from elo_bot.db import Match, Participant
 
 
 class TestEndedMatchControls(unittest.IsolatedAsyncioTestCase):

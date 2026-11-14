@@ -6,10 +6,10 @@ import anyio
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from common.constants import MATCH_CHANNEL
-from common.matches.messages import MatchMessagePublicationError, MatchMessageState, publish_match_message
-from common.matches.publication_state import restore_match_publication
-from common.matches.recovery import _attempt_repair_message
+from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.features.matches.messages import MatchMessagePublicationError, MatchMessageState, publish_match_message
+from elo_bot.features.matches.publication_state import restore_match_publication
+from elo_bot.features.matches.recovery import _attempt_repair_message
 from tests import _match_publication_fixture as publication_tests
 
 

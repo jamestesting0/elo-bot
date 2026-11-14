@@ -8,17 +8,19 @@ import interactions as ipy
 # Add project root to sys.path
 sys.path.append(os.getcwd())
 
-from cogs.player_commands import PlayerCommands
-from common.constants import ERROR_EMOJI, PLAYER_ROLE, TOKEN_EMOJI
+from elo_bot.extensions.player import PlayerCommands
+from elo_bot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
+from elo_bot.config.ids import PLAYER_ROLE
+from tests._patch_sites import patch_sites
 
 class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         from tests._final_empty_storage import empty_final_storage
         empty_final_storage(self)
         wallet = SimpleNamespace(id="123", balance=5000, user_id="123", identity_claims=["123"])
-        self.wallet_grant = self.enterContext(patch("common.tokens.wallets.ensure_wallet", new=AsyncMock(return_value=wallet)))
-        self.deregister_write = self.enterContext(patch("common.finals.administration.deregister_player", new=AsyncMock()))
-        self.enterContext(patch("common.tokens.wallets.wallet_summary", new=AsyncMock(return_value=(5000, 0, 0))))
+        self.wallet_grant = self.enterContext(patch_sites(('elo_bot.features.tokens.wallets.ensure_wallet', 'elo_bot.extensions.final.ensure_wallet', 'elo_bot.extensions.player.ensure_wallet'), new=AsyncMock(return_value=wallet)))
+        self.deregister_write = self.enterContext(patch('elo_bot.extensions.player.deregister_player', new=AsyncMock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.final.wallet_summary', 'elo_bot.extensions.player.wallet_summary'), new=AsyncMock(return_value=(5000, 0, 0))))
         self.bot = MagicMock()
         self.bot.ext = {}
         self.bot.coc_client = MagicMock()
@@ -26,10 +28,10 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.owner = MagicMock()
         self.bot.owner.id = 999
         self.bot.match_id_choices = {}
-        
+
         self.cog = PlayerCommands(self.bot)
 
-    @patch("cogs.player_commands.Player")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     async def test_player_capital_peak_persists_preference(self, mock_player):
         # Given: a registered player invoking /player capital-peak
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -47,7 +49,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         player.save_changes.assert_awaited_once()
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
-    @patch("cogs.player_commands.Player")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     async def test_player_capital_peak_rejects_unregistered_user(self, mock_player):
         # Given: an unregistered user invoking /player capital-peak
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -62,7 +64,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("not registered", ctx.send.await_args.args[0].lower())
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
-    @patch("cogs.player_commands.Player")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     async def test_player_register_success(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -70,16 +72,16 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.author = MagicMock(spec=ipy.Member)
         ctx.author.add_role = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         # Mock player not registered
         mock_player.find_one = AsyncMock(return_value=None)
         mock_player.return_value.insert = AsyncMock()
-        
+
         # Mock coc player
         mock_coc_player = MagicMock()
         mock_coc_player.tag = "#TAG"
         self.bot.coc_client.get_player.return_value = mock_coc_player
-        
+
         # Execute
         await self.cog.player_register.callback(ctx, player_tag="#TAG")
 
@@ -90,22 +92,22 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("registered", ctx.send.call_args[0][0])
 
-    @patch("cogs.player_commands.Player")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     async def test_player_deregister_success(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.has_any_role.return_value = True
         ctx.send = AsyncMock()
-        
+
         target_user = MagicMock(spec=ipy.User)
         target_user.id = 123
         target_user.mention = "@User"
-        
+
         # Mock player found
         mock_player_doc = MagicMock()
         mock_player_doc.delete = AsyncMock()
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
-        
+
         # Execute
         await self.cog.player_deregister.callback(ctx, player=target_user)
 
@@ -114,15 +116,15 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("deregistered", ctx.send.call_args[0][0])
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.Season")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.Season")
     async def test_player_profile_success(self, mock_season, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 123
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         # Mock player found
         mock_player_doc = MagicMock()
         mock_player_doc.elo = 1000
@@ -136,17 +138,17 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         mock_player_doc.opponent_avg_destruction = 70.0
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
         mock_player.find.return_value.count = AsyncMock(return_value=5) # Rank
-        
+
         # Mock Player.elo > elo comparison
         mock_player.elo = MagicMock()
         mock_player.elo.__gt__ = MagicMock(return_value=True)
-        
+
         # Mock coc player
         mock_coc_player = MagicMock()
         mock_coc_player.name = "TestPlayer"
         mock_coc_player.tag = "#TAG"
         mock_coc_player.share_link = "http://link"
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[
             SimpleNamespace(season_number=3, start=300, end=400),
@@ -154,7 +156,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ])
 
         # Execute
-        with patch("cogs.player_commands.PlayerCommands.coc_client", new_callable=PropertyMock) as mock_coc_client_prop:
+        with patch("elo_bot.extensions.player.PlayerCommands.coc_client", new_callable=PropertyMock) as mock_coc_client_prop:
             mock_coc_client_prop.return_value.get_player = AsyncMock(return_value=mock_coc_player)
             await self.cog.player_profile.callback(ctx, user=None, hidden=False)
 
@@ -171,8 +173,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
              ("Season 7", "7")],
         )
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.Season")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.Season")
     async def test_player_profile_in_dm_names_recent_opponents_from_main_server(self, mock_season, mock_player):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 123
@@ -196,7 +198,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         coc_player = MagicMock(tag="#TAG", share_link="http://link")
         coc_player.name = "TestPlayer"
 
-        with patch("cogs.player_commands.PlayerCommands.coc_client", new_callable=PropertyMock) as coc_client:
+        with patch("elo_bot.extensions.player.PlayerCommands.coc_client", new_callable=PropertyMock) as coc_client:
             coc_client.return_value.get_player = AsyncMock(return_value=coc_player)
             await self.cog.player_profile.callback.func(self.cog, ctx, user=None, hidden=False)
 
@@ -206,27 +208,27 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(recent.startswith("vs. **[Kelly](<https://discordapp.com/users/55>)** ("))
         self.assertIn("<t:1761900000:R>", recent)
 
-    @patch("cogs.player_commands.Player")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     async def test_player_h2h_success(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         player1 = MagicMock(spec=ipy.User)
         player1.id = 123
         player1.avatar.url = "http://avatar1"
         player1.__str__.return_value = "Player1"
-        
+
         player2 = MagicMock(spec=ipy.User)
         player2.id = 456
         player2.__str__.return_value = "Player2"
-        
+
         # Mock players found
         mock_p1_doc = MagicMock()
         mock_p1_doc.matches = []
         mock_player.find_one = AsyncMock(side_effect=[mock_p1_doc, MagicMock()]) # p1 found, p2 found
-        
+
         # Mock match against player2
         mock_match = MagicMock()
         mock_match.players = {
@@ -246,24 +248,24 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Player1's Record Against Player2", embed.title)
         self.assertIn("1 - 0", embed.description)
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.construct_match_embed")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.construct_match_embed")
     async def test_player_matches_view_success(self, mock_construct_match_embed, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.guild = MagicMock()
         ctx.send = AsyncMock()
-        
+
         user = MagicMock(spec=ipy.User)
         user.id = 123
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match = MagicMock()
         mock_match.id = "1"
         mock_p_doc.matches = [mock_match]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock construct_match_embed
         mock_embed = MagicMock(spec=ipy.Embed)
         mock_construct_match_embed.return_value = mock_embed
@@ -276,7 +278,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertEqual(ctx.send.call_args[1]['embed'], mock_embed)
 
-    @patch("cogs.player_commands.construct_match_embed", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.player.construct_match_embed", new_callable=AsyncMock)
     async def test_player_matches_search_uses_requested_visibility_and_hides_inconsistent_data(self, construct):
         user = MagicMock(spec=ipy.User)
         user.id = 123
@@ -305,18 +307,18 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("embed", ctx.send.await_args.kwargs)
         self.assertIn(str(ERROR_EMOJI), ctx.send.await_args.args[0])
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.Season")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.Season")
     async def test_player_hitrates_success(self, mock_season, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         user = MagicMock(spec=ipy.User)
         user.id = 123
         user.__str__.return_value = "Player1"
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match = MagicMock()
@@ -329,7 +331,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         }
         mock_p_doc.matches = [mock_match]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[
             SimpleNamespace(season_number=3, start=300, end=400),
@@ -352,19 +354,19 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
              ("Season 7", "7")],
         )
 
-    @patch("cogs.player_commands.Queue")
-    @patch("cogs.player_commands.Match")
-    @patch("cogs.player_commands.Player")
+    @patch("elo_bot.extensions.player.Queue")
+    @patch("elo_bot.extensions.player.Match")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     async def test_elo_select_success(self, mock_player, mock_match, mock_queue):
         # Setup
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.author.id = 123
         ctx.values = ["1050"]
         ctx.send = AsyncMock()
-        
+
         # Mock queue (empty)
         mock_queue.find_all.return_value.to_list = AsyncMock(return_value=[])
-        
+
         # Mock mixed_queue (empty)
         self.cog.bot.ext = {} # Reset ext
         # Mock match (not in match)
@@ -386,8 +388,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("1050", ctx.send.call_args[0][0])
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.Season")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.Season")
     async def test_stats_select_success(self, mock_season, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.ComponentContext)
@@ -398,12 +400,12 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit_origin = AsyncMock()
         ctx.message.embeds = [MagicMock()]
         ctx.message.embeds[0].fields = [MagicMock()]
-        
+
         # Mock player found
         mock_p_doc = MagicMock()
         mock_p_doc.matches = []
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
 
@@ -414,8 +416,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit_origin.assert_called()
         self.assertIn("Statistics (All Seasons)", ctx.message.embeds[0].fields[0].name)
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.construct_match_embed")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.construct_match_embed")
     async def test_match_right_button_success(self, mock_construct_match_embed, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.ComponentContext)
@@ -423,7 +425,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.interaction.user = 123
         ctx.custom_id = "match_right|123|0"
         ctx.edit_origin = AsyncMock()
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match1 = MagicMock()
@@ -435,7 +437,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         # Index 1 is match1 (ID "1")
         mock_p_doc.matches = [mock_match1, mock_match2]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock construct_match_embed
         mock_embed = MagicMock(spec=ipy.Embed)
         mock_construct_match_embed.return_value = mock_embed
@@ -448,8 +450,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         mock_construct_match_embed.assert_called_with(unittest.mock.ANY, ctx.guild, "1", "123")
         ctx.edit_origin.assert_called()
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.construct_match_embed")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.construct_match_embed")
     async def test_match_left_button_success(self, mock_construct_match_embed, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.ComponentContext)
@@ -457,7 +459,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.interaction.user = 123
         ctx.custom_id = "match_left|123|1"
         ctx.edit_origin = AsyncMock()
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match1 = MagicMock()
@@ -469,7 +471,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         # Index 1 is match1 (ID "1")
         mock_p_doc.matches = [mock_match1, mock_match2]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock construct_match_embed
         mock_embed = MagicMock(spec=ipy.Embed)
         mock_construct_match_embed.return_value = mock_embed
@@ -482,8 +484,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         mock_construct_match_embed.assert_called_with(unittest.mock.ANY, ctx.guild, "2", "123")
         ctx.edit_origin.assert_called()
 
-    @patch("cogs.player_commands.Player")
-    @patch("cogs.player_commands.Season")
+    @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
+    @patch("elo_bot.extensions.player.Season")
     async def test_hitrates_select_success(self, mock_season, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.ComponentContext)
@@ -494,12 +496,12 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit_origin = AsyncMock()
         ctx.message.embeds = [MagicMock()]
         ctx.message.embeds[0].fields = [MagicMock()]
-        
+
         # Mock player found
         mock_p_doc = MagicMock()
         mock_p_doc.matches = []
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
 

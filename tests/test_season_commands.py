@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.season_commands import SeasonCommands
-from common.constants import LB_ENTRIES_PER_PAGE
+from elo_bot.extensions.season import SeasonCommands
+from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
 
 
 class TestSeasonPagination(unittest.IsolatedAsyncioTestCase):
@@ -14,8 +14,8 @@ class TestSeasonPagination(unittest.IsolatedAsyncioTestCase):
         self.bot.ext = {}
         self.cog = SeasonCommands(self.bot)
 
-    @patch("cogs.season_commands.construct_season_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.season_commands.Season")
+    @patch("elo_bot.extensions.season.construct_season_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.season.Season")
     async def test_initial_page_button_is_enabled(self, mock_season, mock_construct_leaderboard):
         # Given: an eleven-entry recorded district leaderboard
         season_doc = SimpleNamespace(
@@ -41,8 +41,8 @@ class TestSeasonPagination(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(page_button.custom_id, "season_lb_page")
         self.assertFalse(page_button.disabled)
 
-    @patch("cogs.season_commands.construct_season_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.season_commands.Season")
+    @patch("elo_bot.extensions.season.construct_season_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.season.Season")
     async def test_right_navigation_keeps_enabled_page_button(self, mock_season, mock_construct_leaderboard):
         # Given: an owner navigating to the second recorded-season page
         season_doc = SimpleNamespace(districts={"Barbarian Camp": [MagicMock() for _ in range(11)]})
@@ -85,8 +85,8 @@ class TestSeasonPagination(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(modal.custom_id, "season_lb_page_modal")
         self.assertEqual(modal.components[0].custom_id, "page")
 
-    @patch("cogs.season_commands.construct_season_leaderboard_string", new_callable=AsyncMock)
-    @patch("cogs.season_commands.Season")
+    @patch("elo_bot.extensions.season.construct_season_leaderboard_string", new_callable=AsyncMock)
+    @patch("elo_bot.extensions.season.Season")
     async def test_page_modal_jumps_and_preserves_header(self, mock_season, mock_construct_leaderboard):
         # Given: eleven fresh records and an existing date header
         district_data = [MagicMock() for _ in range(LB_ENTRIES_PER_PAGE + 1)]
@@ -123,7 +123,7 @@ class TestSeasonPagination(unittest.IsolatedAsyncioTestCase):
         ctx.defer.assert_not_awaited()
         ctx.send.assert_not_awaited()
 
-    @patch("cogs.season_commands.Season")
+    @patch("elo_bot.extensions.season.Season")
     async def test_page_modal_rejects_stale_total(self, mock_season):
         # Given: a page-two modal after only one season page remains
         mock_season.find_one = AsyncMock(

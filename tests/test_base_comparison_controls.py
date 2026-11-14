@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import AutoReconnect
 
-from common.base_fingerprints.types import FingerprintError
-from common.constants import ERROR_EMOJI
-from database_models import BaseLayout
+from elo_bot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.db import BaseLayout
 from tests import _base_search_fixture as fixture
 from tests._relative_geometry_fixture import summary
 
@@ -233,7 +233,7 @@ class TestComparisonControls(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(set(ctx.send.await_args.kwargs), {"file", "ephemeral"})
         self.assertEqual(self.pending.resolution.phase, "rejected")
         self.session.review_id = None
-        from common.constants import LVL3_ROLES
+        from elo_bot.config.ids import LVL3_ROLES
         ctx = self.click()
         ctx.author.has_any_role = lambda roles: roles == LVL3_ROLES
         await self.invoke(ctx)

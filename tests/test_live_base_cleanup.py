@@ -5,9 +5,10 @@ import anyio
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from cogs.base_store import repository, storage
-from common import utils
-from database_models import Clan, Match
+from elo_bot.features.base_store import storage
+from elo_bot.features.base_store import repository
+from elo_bot.features.base_store import slots
+from elo_bot.db import Clan, Match
 from tests._live_base_fixture import LiveBaseFixture
 
 
@@ -42,11 +43,11 @@ class TestLiveBaseCleanup(unittest.IsolatedAsyncioTestCase):
         async def matches():
             return [await self.f.find({})]
         with (
-            patch.object(utils, "latest_completed_raid_weekend_end_timestamp", return_value=1000),
+            patch.object(slots, "latest_completed_raid_weekend_end_timestamp", return_value=1000),
             patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(side_effect=matches))),
             patch.object(Clan, "find_all", return_value=MagicMock(to_list=AsyncMock(return_value=[]))),
         ):
-            await utils.clear_all_base_store_slots(bot=self.f.bot)
+            await slots.clear_all_base_store_slots(bot=self.f.bot)
         self.assert_only_older_slot_released("❌Invalid Player")
 
     async def test_confirmed_thread_deletion_releases_pair_without_helper_or_message_edits(self):

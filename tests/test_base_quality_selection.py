@@ -6,9 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs import match_commands
-from common.matches import base_selection
-from database_models import BaseLink, Match, Participant
+from elo_bot.features.matches import base_selection
+from elo_bot.db import BaseLink, Match, Participant
+from tests._patch_sites import patch_sites
+import elo_bot.features.matches.lifecycle as lifecycle_module
+import elo_bot.extensions.match.base_store as match_base_store_module
 
 
 DISTRICTS = ['Barbarian Camp', 'Balloon Lagoon', 'Dragon Cliffs']
@@ -36,18 +38,18 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
         async def save_match(match, *args, **kwargs):
             return await self.save(match, *args, **kwargs)
         self.enterContext(patch.object(Match, 'save_changes', new=save_match))
-        self.match_model = self.enterContext(patch.object(match_commands, 'Match'))
+        self.match_model = self.enterContext(patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')))
         self.match_model.find_one = AsyncMock(side_effect=self.load)
         self.match_model.find.return_value.to_list = AsyncMock(side_effect=self.all_matches)
-        self.base_model = self.enterContext(patch.object(match_commands, 'BaseLayout'))
+        self.base_model = self.enterContext(patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')))
         self.base_model.district.__eq__.side_effect = lambda v: {'district': v}
         self.base_model.quality.__eq__.side_effect = lambda v: {'quality': v}
         self.base_model.builder_id.__ne__.side_effect = lambda v: {'builder_id': {'$ne': v}}
         self.base_model.expiration_date.__gt__.side_effect = lambda v: {'expiration_date': {'$gt': v}}
         self.base_model.find.side_effect = self.find_layouts
         self.enterContext(patch.object(base_selection, 'BaseLayout', self.base_model))
-        self.enterContext(patch.object(match_commands, 'NotIn', side_effect=lambda _, links: {'link': {'$nin': links}}))
-        self.enterContext(patch.object(match_commands, 'Player')).find_one = AsyncMock(return_value=None)
+        self.enterContext(patch('elo_bot.features.matches.attack_bases.NotIn', side_effect=lambda _, links: {'link': {'$nin': links}}))
+        self.enterContext(patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))).find_one = AsyncMock(return_value=None)
         self.requests = []
 
     def get(self, key):
@@ -104,13 +106,13 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
         return SimpleNamespace(to_list=AsyncMock(return_value=layouts))
 
     async def choose(self):
-        return await match_commands.choose_bases(
+        return await match_base_store_module.choose_bases(
             'QUALITY', SimpleNamespace(id=111), SimpleNamespace(id=222), True,
         )
 
     async def test_retry_does_not_upgrade_missing_secondary_base(self):
         self.layouts = [b for b in self.layouts if b.link != 'Barbarian Camp/Great']
-        with patch.object(match_commands.random, 'randint', side_effect=[0, 1]):
+        with patch.object(lifecycle_module.random, 'randint', side_effect=[0, 1]):
             first = await self.choose()
             second = await self.choose()
         self.assertIsNone(first.participants[1].bases[0])
@@ -120,7 +122,7 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
 
     async def test_retry_does_not_downgrade_missing_primary_base(self):
         self.layouts = [b for b in self.layouts if b.link != 'Balloon Lagoon/Excellent']
-        with patch.object(match_commands.random, 'randint', side_effect=[0, 1]) as roll:
+        with patch.object(lifecycle_module.random, 'randint', side_effect=[0, 1]) as roll:
             await self.choose()
             second = await self.choose()
         self.assertIsNone(second.participants[1].bases[1])
@@ -130,11 +132,11 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
     async def test_missing_secondary_is_filled_only_when_its_quality_becomes_available(self):
         missing = next(b for b in self.layouts if b.link == 'Barbarian Camp/Great')
         self.layouts.remove(missing)
-        with patch.object(match_commands.random, 'randint', return_value=0):
+        with patch.object(lifecycle_module.random, 'randint', return_value=0):
             first = await self.choose()
         self.assertEqual(first.participants[1].secondary_base_index, 0)
         self.layouts.append(missing)
-        with patch.object(match_commands.random, 'randint', side_effect=AssertionError('rerolled')):
+        with patch.object(lifecycle_module.random, 'randint', side_effect=AssertionError('rerolled')):
             result = await self.choose()
         self.assertEqual([b.link for b in result.participants[1].bases], [
             'Barbarian Camp/Great', 'Balloon Lagoon/Excellent', 'Dragon Cliffs/Excellent',

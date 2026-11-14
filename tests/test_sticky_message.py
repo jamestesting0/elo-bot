@@ -8,9 +8,9 @@ import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import ValidationError
 
-import beta
-import main
-from database_models.sticky_models import StickyMessage
+from elo_bot.discord import runtime
+from elo_bot.features.sticky import commands as sticky_commands
+from elo_bot.db.sticky_models import StickyMessage
 
 
 def guild_text(channel_id="10"):
@@ -117,7 +117,7 @@ class TestStickyMessageMove(unittest.IsolatedAsyncioTestCase):
 
 class TestStickyCommand(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.modules = (main, beta)
+        self.modules = (sticky_commands,)
 
     def context(self, channel):
         ctx = MagicMock()
@@ -286,7 +286,7 @@ def bulk_delete_event(channel_id, message_ids):
 
 class TestStickyListener(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        self.modules = (main, beta)
+        self.modules = (sticky_commands,)
         for module in self.modules:
             module._bot_sticky_deletes.clear()
 
@@ -623,7 +623,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
             )
 
     async def test_two_commands_keep_both_messages_and_records(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module) as state:
                 await module.sticky.callback(state.ctx, "first")
                 await module.sticky.callback(state.ctx, "second")
@@ -634,7 +634,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 state.channel.delete_message.assert_not_awaited()
 
     async def test_reposts_legacy_and_new_stickies_in_order(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 await module.sticky.callback(state.ctx, "second")
                 state.webhook.send.reset_mock()
@@ -647,7 +647,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(set(state.rows), {"10", "101"})
 
     async def test_deleting_one_sticky_keeps_the_other_across_a_repost(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 await module.sticky.callback(state.ctx, "second")
                 state.visible.pop("11")
@@ -660,7 +660,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(state.rows["101"]["message_id"], next(iter(state.visible)))
 
     async def test_failed_add_preserves_existing_sticky(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 state.collection.insert_one.side_effect = RuntimeError("db down")
                 state.collection.update_one.side_effect = RuntimeError("db down")
@@ -673,7 +673,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 state.ctx.send.assert_not_awaited()
 
     async def test_failed_confirmation_keeps_both_committed_stickies(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 state.ctx.send.side_effect = ipy.errors.HTTPException(MagicMock(status=500, reason="Unavailable"))
 
@@ -685,7 +685,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual({row["message_id"] for row in state.rows.values()}, set(state.visible))
 
     async def test_bulk_deleting_selected_stickies_keeps_the_remaining_message(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 await module.sticky.callback(state.ctx, "second")
                 await module.sticky.callback(state.ctx, "third")
@@ -698,7 +698,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(set(state.rows), {"102"})
 
     async def test_missing_first_sticky_does_not_prevent_reposting_the_second(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 await module.sticky.callback(state.ctx, "second")
                 state.visible.pop("11")
@@ -710,7 +710,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(state.rows["101"]["message_id"], "102")
 
     async def test_current_and_delayed_sticky_events_do_not_trigger_another_repost(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 await module.sticky.callback(state.ctx, "second")
                 await module.on_sticky_message.callback(message_event(state.channel, "200"))
@@ -729,7 +729,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(state.visible, {"102": "hello", "103": "second"})
 
     async def test_other_webhook_messages_still_repost_all_stickies(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 await module.sticky.callback(state.ctx, "second")
                 event = message_event(state.channel, "200")
@@ -741,7 +741,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual({row["message_id"] for row in state.rows.values()}, set(state.visible))
 
     async def test_channel_lookup_keeps_channels_separate_and_sorts_original_message_ids(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 state.rows["100"] = sticky_document(id="100", channel_id="10").model_dump(by_alias=True)
                 state.rows["99"] = sticky_document(id="99", channel_id="10").model_dump(by_alias=True)
@@ -753,7 +753,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual([message.id for message in messages], ["10", "99", "100"])
 
     async def test_overlapping_messages_repost_each_sticky_without_losing_records(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             with self.runtime(module, legacy=True) as state:
                 await module.sticky.callback(state.ctx, "second")
                 both_queried = asyncio.Event()
@@ -783,7 +783,7 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
 
 class TestStickyWebhook(unittest.IsolatedAsyncioTestCase):
     async def test_reuses_the_stored_webhook_then_the_named_webhook_then_creates_one(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             stored = MagicMock()
             stored.id = "5"
             stored.token = "stored"
@@ -817,7 +817,7 @@ class TestStickyWebhook(unittest.IsolatedAsyncioTestCase):
             channel.create_webhook.assert_awaited_once_with(module.STICKY_WEBHOOK_NAME)
 
     async def test_thread_uses_the_parent_webhook_and_thread_id(self):
-        for module in (main, beta):
+        for module in (sticky_commands,):
             parent = MagicMock()
             created = MagicMock(id="7", token="created", name=module.STICKY_WEBHOOK_NAME)
             parent.fetch_webhooks = AsyncMock(return_value=[])
@@ -827,7 +827,8 @@ class TestStickyWebhook(unittest.IsolatedAsyncioTestCase):
             channel.id = "9"
             channel.parent_id = "8"
             channel.parent_channel = None
-            with patch.object(module.bot, "fetch_channel", new_callable=AsyncMock, return_value=parent) as fetch:
+            fetch = AsyncMock(return_value=parent, name="fetch_channel")
+            with patch.object(runtime, "bot", MagicMock(fetch_channel=fetch), create=True):
                 webhook, thread_id = await module.sticky_webhook(channel, None)
 
             fetch.assert_awaited_once_with("8")

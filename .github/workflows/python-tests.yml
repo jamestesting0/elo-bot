@@ -32,6 +32,12 @@ jobs:
 
       - uses: ./.github/actions/setup-python-deps
 
+      - name: Lint (pyflakes rules, module-level imports)
+        run: uvx ruff@0.17.5 check .
+
+      - name: Check import layers
+        run: uvx --from import-linter==2.16 lint-imports
+
       - name: Run unit tests
         run: python -m unittest discover tests
 

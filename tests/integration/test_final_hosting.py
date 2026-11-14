@@ -3,14 +3,14 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.hosting import accept_final_start
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import prepare_match
-from common.finals.types import FINAL_DISTRICTS, FinalError
-from database_models import Match, Clan
-from database_models.token_models import FinalBettingMarket
-from cogs.war_hosting import result_store_task
-import cogs.match_commands as match_commands
+from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import prepare_match
+from elo_bot.core.finals import FINAL_DISTRICTS, FinalError
+from elo_bot.db import Match, Clan
+from elo_bot.db.token_models import FinalBettingMarket
+from elo_bot.features.hosting.war import result_store_task
+import elo_bot.extensions.match as match_module
 
 
 class TestFinalHosting(FinalScenarioCase):
@@ -64,7 +64,7 @@ class TestFinalHosting(FinalScenarioCase):
     async def test_final_base_controls_use_command_and_foreign_owner_is_rejected(self):
         final, source, _ = await self.pairing()
         bot = MagicMock(ext={})
-        cog = match_commands.MatchCommands(bot)
+        cog = match_module.MatchCommands(bot)
         ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), send_modal=AsyncMock())
         ctx.channel.id = 987
         ctx.guild_id = source.routing_guild_id

@@ -3,8 +3,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.base_commands import BaseCommands
-from common.constants import BASE_RENEWAL_LOGS_CHANNEL, COLOR
+from elo_bot.extensions.base import BaseCommands
+from elo_bot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
+from elo_bot.config.presentation import COLOR
+from tests._patch_sites import patch_sites
 
 
 BASE_RENEW_MODAL_CALLBACK = BaseCommands.base_renew_modal.callback
@@ -24,7 +26,8 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         # Given
         command_paths = {
             command.resolved_name
-            for command in vars(BaseCommands).values()
+            for klass in BaseCommands.__mro__[:BaseCommands.__mro__.index(ipy.Extension)]
+            for command in vars(klass).values()
             if isinstance(command, ipy.SlashCommand)
         }
 
@@ -42,8 +45,8 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("base autorenew", command_paths)
 
-    @patch("cogs.base_commands.utils.misc_utils.disable_components", return_value=[])
-    @patch("cogs.base_commands.BaseLayout")
+    @patch('elo_bot.extensions.base.manage.utils.misc_utils.disable_components', return_value=[])
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_renewal_modal_logs_success(self, mock_base_layout, _mock_disable_components) -> None:
         # Given
         old_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -61,7 +64,7 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         # When
         clock = MagicMock()
         clock.now.return_value.timestamp.return_value = 2_000_000_000
-        with patch("cogs.base_commands.datetime", clock):
+        with patch_sites(('elo_bot.extensions.base.submissions.datetime', 'elo_bot.extensions.base.manage.datetime', 'elo_bot.extensions.base.private.datetime'), clock):
             await BASE_RENEW_MODAL_CALLBACK(self.cog, ctx, renewed_link=new_link)
 
         # Then

@@ -6,8 +6,8 @@ from uuid import uuid4
 from beanie import init_beanie
 from pymongo import AsyncMongoClient
 
-from common.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes, require_transactions
-from database_models import BaseLayout, Clan, EloFinal, Helper, Match, Player, PlayerSeasonData, RecordedMatch, Season
+from elo_bot.features.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes, require_transactions
+from elo_bot.db import BaseLayout, Clan, EloFinal, Helper, Match, Player, PlayerSeasonData, RecordedMatch, Season
 
 
 class FinalMongoCase(unittest.IsolatedAsyncioTestCase):
@@ -44,15 +44,15 @@ class FinalScenarioCase(FinalMongoCase):
             await Player(id=str(user), user_id=str(user), tag=f"#P{user}", elo=2000, highest_elo=2100).insert()
 
     async def roster(self, count):
-        from common.finals.lifecycle import add_entrant, start_final
-        from common.constants import MAIN_GUILD, FINAL_CHANNEL
+        from elo_bot.features.finals.lifecycle import add_entrant, start_final
+        from elo_bot.config.ids import MAIN_GUILD, FINAL_CHANNEL
         final = await start_final(None, MAIN_GUILD, FINAL_CHANNEL)
         for user in range(1, count + 1):
             final = await add_entrant(final, str(user), f"Player {user}")
         return final
 
     async def scheduled_pairing(self, final, node_id, *, is_war=True):
-        from common.finals.matches import prepare_match, schedule_final_match
+        from elo_bot.features.finals.matches import prepare_match, schedule_final_match
         source = await prepare_match(final, node_id)
         if is_war:
             source = await schedule_final_match(source, 1700000000, player=0)

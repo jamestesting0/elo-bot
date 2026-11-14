@@ -7,8 +7,12 @@ import interactions as ipy
 
 sys.path.append(os.getcwd())
 
-import cogs.base_commands as base_commands
-from common.constants import CROSS_EMOJI, TICK_EMOJI
+import elo_bot.extensions.base as base_commands
+from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
+from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
+import validators
+from elo_bot.config.ids import BASE_SUBMISSION_CHANNEL
+from elo_bot.features.base_submission.presentation import build_review_components
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -22,8 +26,8 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel = AsyncMock()
         self.bot.fetch_user = AsyncMock()
         self.cog = self.module.BaseCommands(self.bot)
-        self.enterContext(patch.object(
-            self.module, "BaseLayout", MagicMock(find_one=AsyncMock(return_value=None)),
+        self.enterContext(patch_family(
+            BASE_MODULE_FAMILY, "BaseLayout", MagicMock(find_one=AsyncMock(return_value=None)),
         ))
 
     @staticmethod
@@ -57,12 +61,12 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         uploaded_image.attachments = [MagicMock(url="https://cdn.example/durable.webp")]
         self.bot.owner.send = AsyncMock(return_value=uploaded_image)
         with (
-            patch.object(self.module.validators, "url", return_value=True),
-            patch.object(self.module, "download_base_screenshot", new=AsyncMock(return_value=True)) as download,
-            patch.object(self.module, "delete_file", new=AsyncMock()) as cleanup,
-            patch.object(self.module.os.path, "exists", return_value=True),
-            patch.object(self.module, "BaseLayout") as base_layout,
-            patch.object(self.module, "PendingBaseSubmission", create=True) as pending_model,
+            patch.object(validators, "url", return_value=True),
+            patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock(return_value=True)) as download,
+            patch_family(BASE_MODULE_FAMILY, "delete_file", new=AsyncMock()) as cleanup,
+            patch.object(os.path, "exists", return_value=True),
+            patch_family(BASE_MODULE_FAMILY, "BaseLayout") as base_layout,
+            patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission", create=True) as pending_model,
         ):
             base_layout.find_one = AsyncMock(return_value=None)
             pending = MagicMock()
@@ -75,7 +79,7 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
             )
 
         # Then: the review post is complete after checking the bank without changing existing bases.
-        self.bot.fetch_channel.assert_awaited_once_with(self.module.BASE_SUBMISSION_CHANNEL)
+        self.bot.fetch_channel.assert_awaited_once_with(BASE_SUBMISSION_CHANNEL)
         download.assert_awaited_once()
         cleanup.assert_awaited_once()
         base_layout.assert_not_called()
@@ -123,11 +127,11 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         self.bot.owner.send = AsyncMock(return_value=uploaded_image)
 
         with (
-            patch.object(self.module.validators, "url", return_value=True),
-            patch.object(self.module, "download_base_screenshot", new=AsyncMock(return_value=True)),
-            patch.object(self.module, "delete_file", new=AsyncMock()),
-            patch.object(self.module.os.path, "exists", return_value=True),
-            patch.object(self.module, "PendingBaseSubmission", create=True) as pending_model,
+            patch.object(validators, "url", return_value=True),
+            patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock(return_value=True)),
+            patch_family(BASE_MODULE_FAMILY, "delete_file", new=AsyncMock()),
+            patch.object(os.path, "exists", return_value=True),
+            patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission", create=True) as pending_model,
         ):
             await self.cog.base_submit.callback.func(self.cog, ctx, BASE_LINK, screenshot, "Good")
 
@@ -144,9 +148,9 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         channel = MagicMock(send=AsyncMock(return_value=review_message))
         self.bot.fetch_channel.return_value = channel
         self.bot.owner.send = AsyncMock(return_value=MagicMock(attachments=[MagicMock(url="https://image/base")]))
-        with (patch.object(self.module, "download_base_screenshot", new=AsyncMock(return_value=True)),
-              patch.object(self.module.os.path, "exists", return_value=False),
-              patch.object(self.module, "PendingBaseSubmission") as model):
+        with (patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock(return_value=True)),
+              patch.object(os.path, "exists", return_value=False),
+              patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission") as model):
             pending = MagicMock(insert=AsyncMock(), delete=AsyncMock())
             model.return_value = pending
             await self.cog.base_submit.callback.func(
@@ -162,13 +166,13 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
     async def test_success_reply_requires_enabled_controls_in_discord_response(self):
         ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
         ctx.author = MagicMock(id=123, display_name="Submitter")
-        posted = MagicMock(id=9001, components=[self.module.build_review_components(disabled=True)])
+        posted = MagicMock(id=9001, components=[build_review_components(disabled=True)])
         posted.edit = AsyncMock(return_value=posted)
         self.bot.fetch_channel.return_value = MagicMock(send=AsyncMock(return_value=posted))
         self.bot.owner.send = AsyncMock(return_value=MagicMock(attachments=[MagicMock(url="https://image/base")]))
-        with (patch.object(self.module, "download_base_screenshot", new=AsyncMock(return_value=True)),
-              patch.object(self.module.os.path, "exists", return_value=False),
-              patch.object(self.module, "PendingBaseSubmission") as model):
+        with (patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock(return_value=True)),
+              patch.object(os.path, "exists", return_value=False),
+              patch_family(BASE_MODULE_FAMILY, "PendingBaseSubmission") as model):
             model.return_value = MagicMock(insert=AsyncMock())
             await self.cog.base_submit.callback.func(
                 self.cog, ctx, BASE_LINK, MagicMock(url="https://image/input"), "Good")
@@ -184,8 +188,8 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         ctx.send = AsyncMock()
         screenshot = MagicMock(spec=ipy.Attachment, url="https://cdn.example/source.png")
         with (
-            patch.object(self.module.validators, "url", return_value=True),
-            patch.object(self.module, "download_base_screenshot", new=AsyncMock()) as download,
+            patch.object(validators, "url", return_value=True),
+            patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock()) as download,
         ):
             # When: the malformed link is submitted.
             await self.cog.base_submit.callback.func(self.cog, ctx, "https://example.com/layout", screenshot, "Good")
@@ -201,8 +205,8 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         ctx.send = AsyncMock()
         screenshot = MagicMock(spec=ipy.Attachment, url="https://cdn.example/source.png")
         with (
-            patch.object(self.module.validators, "url", return_value=False),
-            patch.object(self.module, "download_base_screenshot", new=AsyncMock()) as download,
+            patch.object(validators, "url", return_value=False),
+            patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock()) as download,
         ):
             # When: the invalid URL is submitted.
             await self.cog.base_submit.callback.func(self.cog, ctx, "not a URL", screenshot, "Good")

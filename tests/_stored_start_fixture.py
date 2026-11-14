@@ -4,13 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import cogs.base_store.storage as base_store_storage
-import cogs.match_commands as match_commands
-import cogs.war_hosting.helper_base_store_availability as helper_base_store_availability
-from cogs.match_commands import MatchCommands
-from cogs.war_hosting import stored_bases
-from common.constants import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
-from database_models import BaseLink, BaseStore, Participant
+import elo_bot.features.base_store.storage as base_store_storage
+import elo_bot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.hosting.war import stored_bases
+from elo_bot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elo_bot.db import BaseLink, BaseStore, Participant
+import elo_bot.features.matches.resources as resources_module
 
 
 HUMAN_ID = "123456789012345678"
@@ -44,10 +44,10 @@ def terminal_job(job_type: str, status: str) -> stored_bases.HelperStoredBaseTer
 
 class StoredStartFixture(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        match_commands.RESOURCE_CLAN_LOCKS.clear()
-        match_commands.RESOURCE_MATCH_SIDE_LOCKS.clear()
-        match_commands._RESOURCE_CLAN_RESERVATIONS.set({})
-        match_commands._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
+        resources_module.RESOURCE_CLAN_LOCKS.clear()
+        resources_module.RESOURCE_MATCH_SIDE_LOCKS.clear()
+        resources_module._RESOURCE_CLAN_RESERVATIONS.set({})
+        resources_module._RESOURCE_MATCH_SIDE_RESERVATIONS.set({})
         self.bot = MagicMock()
         self.bot.user = MagicMock(id=9999, mention="<@9999>")
         self.bot.owner = MagicMock(id=9998)

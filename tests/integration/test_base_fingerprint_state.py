@@ -3,25 +3,28 @@ from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
+import interactions as ipy
 from bson import ObjectId
 from pymongo.errors import AutoReconnect
 
-from common.base_fingerprints.ingestion import replace_source
-from common.base_fingerprints.jobs import claim_tasks, commit_result, enroll_batch, materialize_outbox, run_counts
-from common.base_fingerprints.search import eligible, find_matches, visibility_filter
-from common.base_fingerprints.service import FingerprintService
-from common.base_fingerprints.types import ExtractionResult, ExtractionState, utcnow
-from common.base_fingerprints.types import FingerprintError
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elo_bot.features.bases.fingerprints.ingestion import replace_source
+from elo_bot.features.bases.fingerprints.jobs import claim_tasks, commit_result, enroll_batch, materialize_outbox, run_counts
+from elo_bot.features.bases.fingerprints.search import eligible, find_matches, visibility_filter
+from elo_bot.features.bases.fingerprints.service import FingerprintService
+from elo_bot.features.bases.fingerprints.types import ExtractionResult
+from elo_bot.db.fingerprint_types import ExtractionState, utcnow
+from elo_bot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
-from common.base_fingerprints.types import PIPELINE_ID
-import cogs.base_commands as base_commands
-import cogs.preset_commands as preset_commands
+from elo_bot.db.fingerprint_types import PIPELINE_ID
+from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
+import elo_bot.extensions.preset as preset_commands
 from unittest.mock import MagicMock
 
 
 from tests.integration._fingerprint_fixture import FingerprintPersistenceStateMixin
+import elo_bot.extensions.base as base_module
 
 class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_outbox_restart_duplicate_and_atomic_commit_preserve_metadata(self):
@@ -39,7 +42,7 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
 
     async def test_crash_after_base_commit_recovers_receipt(self):
         task = await self.claim()
-        with patch("common.base_fingerprints.jobs.finish_task", new=AsyncMock(side_effect=AutoReconnect("crash"))):
+        with patch("elo_bot.features.bases.fingerprints.jobs.finish_task", new=AsyncMock(side_effect=AutoReconnect("crash"))):
             with self.assertRaises(AutoReconnect):
                 await commit_result(task, ExtractionResult(fingerprint=fingerprint()))
         await BaseFingerprintTask.get_pymongo_collection().update_one({"_id": task.id},
@@ -144,16 +147,19 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
             id=101, channel=SimpleNamespace(id=102),
             attachments=[SimpleNamespace(id=103, url="https://cdn.example/upload.png")],
         ))
-        cog = base_commands.BaseCommands(bot)
+        cog = base_module.BaseCommands(bot)
         preset = preset_commands.PresetCommands(bot)
         player = SimpleNamespace(elo=1000, base_presets={}, save_changes=AsyncMock())
         ctx = SimpleNamespace(defer=AsyncMock(), send=AsyncMock(),
                               author=SimpleNamespace(id=123), guild=SimpleNamespace(id=456))
-        for module in (base_commands, preset_commands):
-            self.enterContext(patch.object(module, "download_base_screenshot", new=AsyncMock(return_value=True)))
-            self.enterContext(patch.object(module, "delete_file", new=AsyncMock()))
-            self.enterContext(patch.object(module, "Player", SimpleNamespace(
-                user_id="user_id", find_one=AsyncMock(return_value=player))))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "download_base_screenshot", new=AsyncMock(return_value=True)))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "delete_file", new=AsyncMock()))
+        self.enterContext(patch_family(BASE_MODULE_FAMILY, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=player))))
+        self.enterContext(patch.object(preset_commands, "download_base_screenshot", new=AsyncMock(return_value=True)))
+        self.enterContext(patch.object(preset_commands, "delete_file", new=AsyncMock()))
+        self.enterContext(patch.object(preset_commands, "Player", SimpleNamespace(
+            user_id="user_id", find_one=AsyncMock(return_value=player))))
         attachment = SimpleNamespace(url="https://cdn.example/input.png")
         for name, command in (("staff", cog.base_add), ("private", cog.base_private_add),
                               ("preset", preset.preset_base_add)):
@@ -189,7 +195,7 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
     async def test_bulk_mixed_counts_and_discord_failure_keep_committed_success(self):
         service = FingerprintService(SimpleNamespace(), "isolated")
         service.cpu.start = AsyncMock()
-        service.bot.fetch_channel = AsyncMock(side_effect=base_commands.ipy.errors.Forbidden(
+        service.bot.fetch_channel = AsyncMock(side_effect=ipy.errors.Forbidden(
             response=SimpleNamespace(status=403, reason="Forbidden"), response_data={}))
         run, _ = await service.begin_run("123", 1)
         await enroll_batch(run)

@@ -10,9 +10,17 @@ from beanie.odm.fields import ExpressionField, LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-from cogs import match_commands as commands
-from database_models import Match, Participant, Player, Queue, ServerState
-from database_models.player_models import QueueDistrictSelection
+from elo_bot.extensions import match as commands
+from elo_bot.db import Match, Participant, Player, Queue, ServerState
+from elo_bot.db.player_models import QueueDistrictSelection
+from tests._patch_sites import patch_sites
+import elo_bot.features.matches.lifecycle as lifecycle_module
+import elo_bot.extensions.match as match_module
+import elo_bot.features.queue.matching as matching_module
+import elo_bot.features.queue.state as state_module
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
+import elo_bot.extensions.match.queue as match_queue_module
+import elo_bot.extensions.match.results as match_results_module
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]
@@ -32,12 +40,12 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             "players": LinkInfo(field_name="players", lookup_field_name="players", document_class=Player,
                                 link_type=LinkTypes.LIST),
         }))
-        self.enterContext(patch.object(commands, "QUEUE_OPERATION_LOCK", anyio.Lock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.queue.QUEUE_OPERATION_LOCK', 'elo_bot.extensions.match.lifecycle.QUEUE_OPERATION_LOCK', 'elo_bot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elo_bot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elo_bot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), anyio.Lock()))
         self.players = {
             user_id: Player.model_construct(id=user_id, user_id=user_id, tag="#TAG", elo=1000, highest_elo=1000)
             for user_id in ("111", "222", "333", "444")
         }
-        self.queues = {tier: Queue.model_construct(id=PydanticObjectId(), tier=tier) for tier in commands.QUEUE_TIERS}
+        self.queues = {tier: Queue.model_construct(id=PydanticObjectId(), tier=tier) for tier in match_queue_module.QUEUE_TIERS}
         self.matches = {}
         self.events = []
         self.fail_queue = False
@@ -55,7 +63,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             side_effect=lambda uid: MagicMock(id=int(uid), display_name=f"Player {uid}"),
         ))
         self.bot.fetch_guild = AsyncMock(return_value=self.main_guild)
-        self.cog = commands.MatchCommands(self.bot)
+        self.cog = match_module.MatchCommands(self.bot)
         self.enterContext(patch.object(Queue, "find_one", new=AsyncMock(
             side_effect=lambda query, **kwargs: self.snapshot(self.queues[query["tier"]]),
         )))
@@ -65,8 +73,8 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(ServerState, "current", new=AsyncMock(
             return_value=SimpleNamespace(queue_disabled=False),
         )))
-        self.enterContext(patch.object(commands, "get_last_opponent", new=AsyncMock(return_value=None)))
-        self.enterContext(patch.object(commands, "get_base_quality", return_value=("Good", "Good")))
+        self.enterContext(patch('elo_bot.features.queue.matching.get_last_opponent', new=AsyncMock(return_value=None)))
+        self.enterContext(patch_sites(('elo_bot.features.matches.lifecycle.get_base_quality', 'elo_bot.features.matches.attack_bases.get_base_quality'), return_value=("Good", "Good")))
 
         async def persist_queue(document, updates, **kwargs):
             if self.fail_queue or document.tier == self.fail_queue_tier:
@@ -136,7 +144,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(Match, "set", new=persist_match))
         self.enterContext(patch.object(Match, "find_one", new=AsyncMock(side_effect=find_match)))
         self.enterContext(patch.object(Match, "find", side_effect=find_matches))
-        self.confirm_thread = self.enterContext(patch.object(commands, "confirm_match", new=AsyncMock(
+        self.confirm_thread = self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.confirm_match', 'elo_bot.features.matches.lifecycle.confirm_match'), new=AsyncMock(
             side_effect=confirm_match,
         )))
 
@@ -194,8 +202,8 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             message_id: {
                 "id": str(message_id), "channel_id": "1234", "flags": 64,
                 "content": "You are now added to the match-making queue.",
-                "components": [row.to_dict() for row in commands.queue_district_components(
-                    "111", selection, commands.get_district_options(True, True),
+                "components": [row.to_dict() for row in match_queue_module.queue_district_components(
+                    "111", selection, match_queue_module.get_district_options(True, True),
                 )],
             },
         }
@@ -235,8 +243,8 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         return ctx, payloads
 
     async def pair(self, tier=3):
-        async with commands.QUEUE_OPERATION_LOCK:
-            await commands.match_players(self.bot, tier, 250)
+        async with match_queue_module.QUEUE_OPERATION_LOCK:
+            await matching_module.match_players(self.bot, tier, 250)
         return next(reversed(self.matches.values()))
 
     async def test_unmatched_response_has_three_single_selects_and_familiar_buttons(self):
@@ -248,7 +256,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Optionally", payload["embed"].description)
         self.assertEqual([row.components[0].max_values for row in rows[:3]], [1, 1, 1])
         self.assertEqual([[option.value for option in row.components[0].options] for row in rows[:3]],
-                         commands.get_district_options(True, True))
+                         match_queue_module.get_district_options(True, True))
         self.assertEqual([button.label for button in rows[3].components], ["Cancel", "Confirm"])
         self.assertEqual([button.style for button in rows[3].components],
                          [ipy.ButtonStyle.DANGER, ipy.ButtonStyle.SUCCESS])
@@ -309,7 +317,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
 
     async def test_dequeue_removes_registered_discord_user_from_every_queue_tier(self):
         self.players["111"].id = "registration-id"
-        for tier in commands.QUEUE_TIERS:
+        for tier in match_queue_module.QUEUE_TIERS:
             self.seed(tier=tier)
         ctx = self.context()
         await self.invoke("match_dequeue", ctx)
@@ -339,7 +347,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
                     return True
 
                 self.bot.wait_for_component = AsyncMock(side_effect=reply)
-                with patch.object(commands, "delete_unreserved_match", new=AsyncMock(side_effect=delete)), \
+                with patch_sites(('elo_bot.extensions.match.lifecycle.delete_unreserved_match', 'elo_bot.features.matches.lifecycle.delete_unreserved_match'), new=AsyncMock(side_effect=delete)), \
                         patch.object(Player, "set", new=AsyncMock()):
                     await self.invoke("queued_district_action", ctx)
                 self.bot.http.edit_message.assert_not_awaited()
@@ -514,10 +522,10 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
 
     async def test_choices_survive_reload_promotion_and_interrupted_transfer(self):
         selection = self.seed(districts=DISTRICTS, confirmed=True)
-        async with commands.QUEUE_OPERATION_LOCK:
-            await commands.move_queue_tier(3, 2, 3_000_000_001.0)
-            await commands.move_queue_tier(2, 1, 3_000_000_002.0)
-            await commands.promote_tier1_aged_players(self.snapshot(self.queues[0]), self.snapshot(self.queues[1]),
+        async with match_queue_module.QUEUE_OPERATION_LOCK:
+            await state_module.move_queue_tier(3, 2, 3_000_000_001.0)
+            await state_module.move_queue_tier(2, 1, 3_000_000_002.0)
+            await state_module.promote_tier1_aged_players(self.snapshot(self.queues[0]), self.snapshot(self.queues[1]),
                                                      3_000_000_002.0 + 86401)
         restored = QueueDistrictSelection.model_validate(self.queues[0].district_selections["111"].model_dump())
         self.assertEqual(restored, selection)
@@ -555,7 +563,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.players["222"].capital_peak_enabled = False
         self.seed(districts=["Wizard Valley", "Golem Quarry", "Capital Peak"], confirmed=True)
         self.seed("222")
-        with patch.object(commands.random, "choice", side_effect=["Skeleton Park", "Goblin Mines"]) as random_choice:
+        with patch.object(lifecycle_module.random, "choice", side_effect=["Skeleton Park", "Goblin Mines"]) as random_choice:
             match = await self.pair()
         self.assertEqual(match.participants[0].districts, ["Skeleton Park", "Golem Quarry", "Goblin Mines"])
         self.assertEqual([call.args[0] for call in random_choice.call_args_list],
@@ -565,7 +573,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
     async def test_eligible_locked_districts_are_preserved(self):
         self.seed(districts=["Wizard Valley", "Golem Quarry", "Capital Peak"], confirmed=True)
         self.seed("222")
-        with patch.object(commands.random, "choice") as random_choice:
+        with patch.object(lifecycle_module.random, "choice") as random_choice:
             match = await self.pair()
         self.assertEqual(match.participants[0].districts, ["Wizard Valley", "Golem Quarry", "Capital Peak"])
         random_choice.assert_not_called()
@@ -643,8 +651,8 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(ctx.send.await_args.kwargs["components"]), 4)
         self.assertIn("111", self.queues[1].district_selections)
         self.players["222"].elo = 2000
-        outcome = await commands.queue_player(self.bot, self.context("222").author)
-        self.assertEqual(outcome.status, commands.QueueOutcomeStatus.BETA_QUEUED)
+        outcome = await match_queue_module.queue_player(self.bot, self.context("222").author)
+        self.assertEqual(outcome.status, match_queue_module.QueueOutcomeStatus.BETA_QUEUED)
         self.assertIsNone(outcome.selection)
         self.assertNotIn("222", self.queues[1].district_selections)
 
@@ -784,7 +792,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             self.events.append("player-write")
             return document
 
-        with patch.object(commands, "delete_unreserved_match", new=AsyncMock(side_effect=delete)), \
+        with patch_sites(('elo_bot.extensions.match.lifecycle.delete_unreserved_match', 'elo_bot.features.matches.lifecycle.delete_unreserved_match'), new=AsyncMock(side_effect=delete)), \
                 patch.object(Player, "set", new=save_player):
             await self.invoke("queued_district_action", ctx)
         self.assertIn("Are you sure", ctx.send.await_args.args[0])
@@ -820,7 +828,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.players["222"].capital_peak_enabled = False
         self.seed(districts=DISTRICTS, confirmed=True)
         self.seed("222")
-        with patch.object(commands.random, "choice") as random_choice:
+        with patch.object(lifecycle_module.random, "choice") as random_choice:
             match = await self.pair()
         self.assertEqual(match.participants[0].districts, DISTRICTS)
         random_choice.assert_not_called()
@@ -905,7 +913,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         selection = self.seed(districts=DISTRICTS)
         self.seed("222", districts=DISTRICTS, confirmed=True)
         match = await self.pair()
-        self.confirm_thread.side_effect = commands.MatchChannelUnavailable("unavailable")
+        self.confirm_thread.side_effect = match_lifecycle_module.MatchChannelUnavailable("unavailable")
         ctx = self.action(selection)
         with self.assertLogs(level="ERROR"):
             await self.invoke("queued_district_action", ctx)
@@ -972,7 +980,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             return SimpleNamespace(ctx=response)
 
         self.bot.wait_for_component = AsyncMock(side_effect=confirm_during_prompt)
-        with patch.object(commands, "delete_unreserved_match", new=AsyncMock(return_value=False)) as delete:
+        with patch_sites(('elo_bot.extensions.match.lifecycle.delete_unreserved_match', 'elo_bot.features.matches.lifecycle.delete_unreserved_match'), new=AsyncMock(return_value=False)) as delete:
             await self.invoke("queued_district_action", cancel_ctx)
         self.assertEqual(self.matches[match.token].thread, "9001")
         self.assertIn("changed", response.send.await_args.args[0])
@@ -997,7 +1005,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         await self.invoke("match_confirm_button", ctx)
         self.assertTrue(match.participants[0].confirmed)
         self.assertIn("waiting for your opponent", ctx.send.await_args.args[0])
-        self.bot.fetch_guild.assert_awaited_once_with(commands.MAIN_GUILD)
+        self.bot.fetch_guild.assert_awaited_once_with(match_results_module.MAIN_GUILD)
         opponent = next(field for field in ctx.message.embeds[0].fields if field.name == "**Opponent**")
         self.assertEqual(opponent.value, "**[Player 222](<https://discordapp.com/users/222>)**")
 
@@ -1007,7 +1015,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         match = await self.pair()
         ctx = self.context(custom_id=f"reveal_opponent|{match.token}")
         await self.invoke("reveal_opponent_button", ctx)
-        self.bot.fetch_guild.assert_awaited_once_with(commands.MAIN_GUILD)
+        self.bot.fetch_guild.assert_awaited_once_with(match_results_module.MAIN_GUILD)
         opponent = next(field for field in ctx.message.embeds[0].fields if field.name == "**Opponent**")
         self.assertEqual(opponent.value, "**[Player 222](<https://discordapp.com/users/222>)**")
         self.assertIn("opponent is now revealed", ctx.send.await_args.args[0])
@@ -1022,8 +1030,8 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(match.participants[0].confirmed)
 
     async def test_normal_automatic_queueing_does_not_create_optional_selection(self):
-        outcome = await commands.queue_player(self.bot, self.context().author)
-        self.assertEqual(outcome.status, commands.QueueOutcomeStatus.QUEUED)
+        outcome = await match_queue_module.queue_player(self.bot, self.context().author)
+        self.assertEqual(outcome.status, match_queue_module.QueueOutcomeStatus.QUEUED)
         self.assertIsNone(outcome.selection)
         self.assertEqual(self.queues[3].district_selections, {})
 
@@ -1043,7 +1051,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             return SimpleNamespace(ctx=response)
 
         self.bot.wait_for_component = AsyncMock(side_effect=remove_before_prompt_returns)
-        with patch.object(commands, "delete_unreserved_match", new=AsyncMock()) as delete:
+        with patch_sites(('elo_bot.extensions.match.lifecycle.delete_unreserved_match', 'elo_bot.features.matches.lifecycle.delete_unreserved_match'), new=AsyncMock()) as delete:
             await self.invoke("queued_district_action", ctx)
         delete.assert_not_awaited()
         self.assertIn("NEWER", self.matches)
@@ -1055,11 +1063,11 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         selection = self.seed(districts=DISTRICTS)
         self.fail_queue_tier = 3
         with self.assertRaises(OperationFailure):
-            await commands.move_queue_tier(3, 2, 3_000_000_001.0)
+            await state_module.move_queue_tier(3, 2, 3_000_000_001.0)
         self.fail_queue_tier = None
         await self.invoke("queued_district_action", self.action(selection))
         self.assertTrue(self.queues[2].district_selections["111"].confirmed)
-        await commands.move_queue_tier(3, 2, 3_000_000_002.0)
+        await state_module.move_queue_tier(3, 2, 3_000_000_002.0)
         self.assertTrue(self.queues[2].district_selections["111"].confirmed)
         self.assertEqual(self.queues[2].district_selections["111"].attempt_id, selection.attempt_id)
         self.assertFalse(self.queues[3].district_selections)
@@ -1080,7 +1088,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             self.matches.pop(captured.token)
             return True
 
-        with patch.object(commands, "delete_unreserved_match", new=AsyncMock(side_effect=delete)), \
+        with patch_sites(('elo_bot.extensions.match.lifecycle.delete_unreserved_match', 'elo_bot.features.matches.lifecycle.delete_unreserved_match'), new=AsyncMock(side_effect=delete)), \
                 patch.object(Player, "set", new=AsyncMock()):
             await self.invoke("queued_district_action", ctx)
         self.assertNotIn(match.token, self.matches)
@@ -1102,7 +1110,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             self.matches.pop(captured.token)
             return True
 
-        with patch.object(commands, "delete_unreserved_match", new=AsyncMock(side_effect=delete)), \
+        with patch_sites(('elo_bot.extensions.match.lifecycle.delete_unreserved_match', 'elo_bot.features.matches.lifecycle.delete_unreserved_match'), new=AsyncMock(side_effect=delete)), \
                 patch.object(Player, "set", new=AsyncMock(side_effect=OperationFailure("priority save failed"))):
             with self.assertLogs(level="ERROR"):
                 await self.invoke("queued_district_action", ctx)
@@ -1150,8 +1158,8 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
             self.matches.pop(captured.token)
             return True
 
-        with patch.object(commands, "delete_unreserved_match", new=AsyncMock(side_effect=delete)):
-            await commands.cancel_match(self.bot, match.token)
+        with patch_sites(('elo_bot.extensions.match.lifecycle.delete_unreserved_match', 'elo_bot.features.matches.lifecycle.delete_unreserved_match'), new=AsyncMock(side_effect=delete)):
+            await match_lifecycle_module.cancel_match(self.bot, match.token)
         ctx = self.action(selection)
         await self.invoke("queued_district_action", ctx)
         self.assertIn("no longer active", ctx.send.await_args.args[0])

@@ -8,9 +8,9 @@ from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
 
-from cogs import data_commands
-from common.constants import BASE_STORE_SLOTS
-from database_models import BaseStore, Clan, Match, Participant, Player, RecordedMatch
+from elo_bot.extensions import data as data_commands
+from elo_bot.config.game import BASE_STORE_SLOTS
+from elo_bot.db import BaseStore, Clan, Match, Participant, Player, RecordedMatch
 
 
 class DataResetFixture(unittest.IsolatedAsyncioTestCase):

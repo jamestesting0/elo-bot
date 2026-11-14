@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import AsyncMock
 
-from common.base_fingerprints.runtime import InferenceWorker
-from common.base_fingerprints.types import FingerprintError, ImageInput, PIPELINE_ID
+from elo_bot.features.bases.fingerprints.runtime import InferenceWorker
+from elo_bot.features.bases.fingerprints.types import FingerprintError, ImageInput
+from elo_bot.db.fingerprint_types import PIPELINE_ID
 from tests._relative_geometry_fixture import layout
 
 

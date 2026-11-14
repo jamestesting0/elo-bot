@@ -9,8 +9,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from PIL import Image
 
-from common.base_fingerprints import labels, service
-from common.base_fingerprints.types import ExtractionResult, FingerprintError, ImageAttachment, ImageInput, PIPELINE_ID
+from elo_bot.features.bases.fingerprints import labels, service
+from elo_bot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, ImageInput
+from elo_bot.db.fingerprint_types import ImageAttachment, PIPELINE_ID
 from tests import _base_search_fixture as fixture
 from tests._relative_geometry_fixture import layout, points
 from tests._base_extraction_fixture import detections
@@ -54,7 +55,7 @@ class TestLabelRendering(unittest.TestCase):
         original = plotting.Annotator.box_label
         with patch.object(plotting, "check_font", side_effect=AssertionError("font download attempted")), \
                 patch.object(plotting.Annotator, "box_label", autospec=True, side_effect=original) as draw, \
-                patch("common.base_fingerprints.extractor.sliced_detections",
+                patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections",
                       side_effect=[detections(), detections(halls=(("district_hall", .1, .1),))]):
             labels.create_labels(detector, inputs, expected, "cpu")
         self.assertEqual(len(draw.call_args_list), 61)
@@ -89,7 +90,7 @@ class TestLabelRendering(unittest.TestCase):
                             district_id=1, pipeline_id=PIPELINE_ID)
         fp = layout().model_copy(update={"source_image_sha256": hashlib.sha256(self.path.read_bytes()).hexdigest()})
         detector = MagicMock()
-        with patch("common.base_fingerprints.extractor.sliced_detections",
+        with patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections",
                    side_effect=[detections(), detections(points(3))]), \
                 self.assertRaisesRegex(FingerprintError, "labels_extraction_failed"):
             labels.create_labels(detector, [source, source], (fp, fp), "cpu")
@@ -101,7 +102,7 @@ class TestLabelRendering(unittest.TestCase):
         expected = layout(version=1).model_copy(update={
             "source_image_sha256": hashlib.sha256(self.path.read_bytes()).hexdigest()})
         detector = MagicMock()
-        with patch("common.base_fingerprints.extractor.sliced_detections", return_value=detections()) as sliced:
+        with patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections", return_value=detections()) as sliced:
             labels.create_labels(detector, [source, source], (expected, expected), "cpu")
         self.assertTrue(self.output.is_file())
         self.assertEqual(sliced.call_count, 2)
@@ -121,7 +122,7 @@ class TestLabelRendering(unittest.TestCase):
                             district_id=1, pipeline_id=PIPELINE_ID)
         fp = fp.model_copy(update={"source_image_sha256": hashlib.sha256(self.path.read_bytes()).hexdigest()})
         detector = MagicMock()
-        with patch("common.base_fingerprints.extractor.sliced_detections", return_value=detections(points(3))), \
+        with patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections", return_value=detections(points(3))), \
                 self.assertRaisesRegex(FingerprintError, "labels_extraction_failed"):
             labels.create_labels(detector, [source, source], (fp, fp), "cpu")
         self.assertFalse(self.output.exists())

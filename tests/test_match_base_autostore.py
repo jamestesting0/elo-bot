@@ -3,10 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.base_store.models import SelfBaseStoreRequest
-from cogs.match_commands import MatchCommands
-from common.constants import ERROR_EMOJI, LVL2_ROLES, PLAYER_ROLE
-from database_models import Match, Participant
+from elo_bot.features.base_store.models import SelfBaseStoreRequest
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.config.ids import LVL2_ROLES, PLAYER_ROLE
+from elo_bot.db import Match, Participant
+from tests._patch_sites import patch_sites
 
 
 class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
@@ -26,8 +28,8 @@ class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
 
     async def _invoke(self, player: int) -> AsyncMock:
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.base_store_storage.store_self_bases", new_callable=AsyncMock) as store,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
+            patch_sites(('elo_bot.features.base_store.match_adapters.base_store_storage.store_self_bases', 'elo_bot.extensions.match.base_store.base_store_storage.store_self_bases'), new_callable=AsyncMock) as store,
         ):
             match_model.find_one = AsyncMock(return_value=self.match)
             await self.cog.match_base_autostore.callback.func(self.cog, self.ctx, player=player)
@@ -126,7 +128,7 @@ class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
         self.ctx.author.has_role.side_effect = lambda role_id: role_id == LVL2_ROLES[-1]
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
             patch.object(self.cog, "_prepare_base_store", new_callable=AsyncMock) as prepare,
         ):
             match_model.find_one = AsyncMock(return_value=self.match)

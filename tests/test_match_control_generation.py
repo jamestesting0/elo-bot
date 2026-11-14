@@ -4,10 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-import cogs.match_commands as commands
 import tests._stored_base_controls_fixture as fixtures
-from common.constants import STAFF_ROLE, SUCCESS_EMOJI
-from database_models import Match, Player
+from elo_bot.config.ids import STAFF_ROLE
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import Match, Player
+from tests._patch_sites import patch_sites
 
 
 class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
@@ -39,8 +40,8 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
                 self.ctx.send_modal.reset_mock()
                 with (
                     patch.object(Match, "set", new_callable=AsyncMock) as write,
-                    patch.object(commands, "try_reserve_resource_clan", new=AsyncMock(return_value=MagicMock())),
-                    patch.object(commands, "claim_resource_clan", new=AsyncMock(return_value=True)) as claim,
+                    patch_sites(('elo_bot.extensions.match.base_store.try_reserve_resource_clan', 'elo_bot.extensions.match.hosting.try_reserve_resource_clan', 'elo_bot.extensions.match.settings.try_reserve_resource_clan', 'elo_bot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock(return_value=MagicMock())),
+                    patch_sites(('elo_bot.extensions.match.hosting.claim_resource_clan', 'elo_bot.extensions.match.settings.claim_resource_clan', 'elo_bot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=True)) as claim,
                 ):
                     await getattr(self.cog, name).callback.func(self.cog, self.ctx)
                 write.assert_not_awaited()

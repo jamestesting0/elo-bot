@@ -8,9 +8,9 @@ from beanie.odm.fields import ExpressionField
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
-from cogs import data_commands
-from database_models import Match, RecordedMatch
+from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elo_bot.extensions import data as data_commands
+from elo_bot.db import Match, RecordedMatch
 from tests import _result_retry_store as fixture
 from tests._result_retry_store import apply_operations, matches
 

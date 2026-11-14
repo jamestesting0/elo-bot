@@ -8,8 +8,8 @@ from beanie.odm.settings.document import DocumentSettings
 from beanie.odm.fields import ExpressionField
 from pymongo.errors import OperationFailure
 
-import cogs.giveaway_commands as commands
-from database_models import Giveaway
+import elo_bot.extensions.giveaway as commands
+from elo_bot.db import Giveaway
 
 
 class TestGiveawayStateConsistency(unittest.IsolatedAsyncioTestCase):

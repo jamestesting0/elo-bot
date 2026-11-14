@@ -1,17 +1,18 @@
 import unittest
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call
 
 import anyio
 import interactions as ipy
 
-import cogs.match_commands as match_commands
-from common.constants import MAIN_GUILD, STAR_EMOJI
-from database_models import HelperHistory, Match
-from database_models.result_models import MatchResultOperation
+from elo_bot.config.ids import MAIN_GUILD
+from elo_bot.config.emojis import STAR_EMOJI
+from elo_bot.db import HelperHistory, Match
+from elo_bot.db.result_models import MatchResultOperation
 from tests._result_finalization_fixture import (
     PLAYER2_RESULTS, VALID_RESULTS, RecordArgument, ResultFinalizationFixture,
     make_result_match, record_result, release_result_stores,
 )
+from tests._patch_sites import patch_sites
 
 
 class TestResultFinalization(ResultFinalizationFixture):
@@ -204,7 +205,7 @@ class TestResultFinalization(ResultFinalizationFixture):
         record_result(self.match)
         self.match.recorded_match_id = "1"
         self.clear_stores.side_effect = RuntimeError("release failed")
-        with patch.object(match_commands, "completed_result_changes", new=AsyncMock(return_value=("+5", "-5"))):
+        with patch_sites(('elo_bot.extensions.match.results.completed_result_changes', 'elo_bot.features.results.recording.completed_result_changes'), new=AsyncMock(return_value=("+5", "-5"))):
             with self.assertRaisesRegex(RuntimeError, "release failed"):
                 await self.cog._finalize_match_results("TOKEN")
             self.thread.send.assert_not_awaited()

@@ -3,7 +3,7 @@ import unittest
 import interactions as ipy
 from interactions.models.discord.message import process_message_payload
 
-from common.discord.embeds import embed_edit_payload
+from elo_bot.discord.embeds import embed_edit_payload
 
 
 class TestEmbedEditPayload(unittest.TestCase):

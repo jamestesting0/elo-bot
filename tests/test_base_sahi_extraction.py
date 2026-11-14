@@ -8,10 +8,13 @@ import numpy as np
 import torch
 from PIL import Image
 
-from common.base_fingerprints.artifacts import MANIFEST, PREVIOUS_MANIFEST
-from common.base_fingerprints.extractor import extract_batch
-from common.base_fingerprints.slicing import Detection, deduplicate, sliced_detections
-from common.base_fingerprints.types import LEGACY_PIPELINE_ID, PIPELINE_ID, PREVIOUS_PIPELINE_ID, PREVIOUS_SAHI_PIPELINE_ID, BaseFingerprint, FingerprintError
+from elo_bot.features.bases.fingerprints.artifacts import MANIFEST, PREVIOUS_MANIFEST
+from elo_bot.features.bases.fingerprints.extractor import extract_batch
+from elo_bot.features.bases.fingerprints.slicing import Detection, deduplicate, sliced_detections
+from elo_bot.db.fingerprint_types import (
+    LEGACY_PIPELINE_ID, PIPELINE_ID, PREVIOUS_PIPELINE_ID, PREVIOUS_SAHI_PIPELINE_ID, BaseFingerprint,
+)
+from elo_bot.features.bases.fingerprints.types import FingerprintError
 from tests._relative_geometry_fixture import points
 from tests._relative_geometry_fixture import prediction
 
@@ -113,7 +116,7 @@ class TestSahiExtraction(SahiExtractionStateMixin, unittest.TestCase):
                                    (((wrong, .2, .2),), "hall_wrong_class"),
                                    (((correct, .2, .2), (correct, .3, .3)), None)):
                 with self.subTest(district=district, warning=warning), patch(
-                    "common.base_fingerprints.extractor.sliced_detections", return_value=detections(halls=halls)
+                    "elo_bot.features.bases.fingerprints.extractor.sliced_detections", return_value=detections(halls=halls)
                 ) as sliced:
                     # When extracting through the public production API.
                     result = extract_batch(MagicMock(), [self.source(district=district)], "cpu", include_bounds=True)[0]
@@ -138,7 +141,7 @@ class TestSahiExtraction(SahiExtractionStateMixin, unittest.TestCase):
         # Given insufficient detections or a degenerate geometry.
         for data in (points(11), [("cannon", x, y) for _, x, y in points()],
                      [(name, .2, y) for name, _, y in points()]):
-            with self.subTest(data=data), patch("common.base_fingerprints.extractor.sliced_detections",
+            with self.subTest(data=data), patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections",
                                                return_value=detections(data)) as sliced:
                 # When extracting.
                 result = extract_batch(MagicMock(), [self.source()], "cpu")[0]
@@ -154,7 +157,7 @@ class TestSahiExtraction(SahiExtractionStateMixin, unittest.TestCase):
                                                      for _ in kwargs["source"]]
         sources = [self.source(LEGACY_PIPELINE_ID, revision=1), self.source(PREVIOUS_PIPELINE_ID, revision=2),
                    self.source(PREVIOUS_SAHI_PIPELINE_ID, revision=3), self.source(PIPELINE_ID, revision=4)]
-        with patch("common.base_fingerprints.extractor.sliced_detections", return_value=detections(points(53))) as sliced:
+        with patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections", return_value=detections(points(53))) as sliced:
             # When extracting on the selected device.
             results = extract_batch(model, sources, "cuda:0")
         # Then historical jobs retain their manifests and only current work uses SAHI.
@@ -168,15 +171,15 @@ class TestSahiExtraction(SahiExtractionStateMixin, unittest.TestCase):
     def test_bad_source_preserves_other_batch_entry_and_inference_failure_closes_images(self) -> None:
         # Given a missing source alongside a valid source.
         missing = self.source().model_copy(update={"path": str(self.directory / "missing.png")})
-        with patch("common.base_fingerprints.extractor.sliced_detections", return_value=detections()):
+        with patch("elo_bot.features.bases.fingerprints.extractor.sliced_detections", return_value=detections()):
             # When extracting both entries.
             bad, good = extract_batch(MagicMock(), [missing, self.source(revision=4)], "cpu")
         # Then the output positions and successful source identity remain correct.
         self.assertEqual(bad.error, "source_unavailable")
         self.assertEqual(good.fingerprint.source_revision, 4)
         image = Image.new("RGB", (1000, 800))
-        with patch("common.base_fingerprints.extractor.decode_image", return_value=image), patch(
-            "common.base_fingerprints.extractor.sliced_detections", side_effect=RuntimeError("inference failed")
+        with patch("elo_bot.features.bases.fingerprints.extractor.decode_image", return_value=image), patch(
+            "elo_bot.features.bases.fingerprints.extractor.sliced_detections", side_effect=RuntimeError("inference failed")
         ), self.assertRaisesRegex(RuntimeError, "inference failed"):
             extract_batch(MagicMock(), [self.source()], "cpu")
         with self.assertRaises(ValueError):

@@ -127,6 +127,25 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([option.value for option in ctx.message.components[-1].components[0].options
                           if option.default], ["Good"])
 
+    async def test_tier_selection_completes_interaction_for_live_and_regular_boards(self):
+        for live in (False, True):
+            with self.subTest(live=live):
+                self.cog._player_cache = [make_player("player", [("Good", 3, 90)] * 5)]
+                self.cog._seasons_cache = [SimpleNamespace(season_number=1, start=100, end=200)]
+                ctx = context()
+                await self.cog.leaderboard.callback.func(self.cog, ctx, lb_type="Hitrate", season="1", live=live)
+                payload = ctx.send.await_args.kwargs
+                ctx.message.embeds = [payload["embed"]]
+                ctx.message.components = payload["components"]
+                ctx.send.reset_mock()
+                ctx.values = ["Average"]
+
+                await self.cog.lb_tier_select.callback.func(self.cog, ctx)
+
+                ctx.edit.assert_awaited_once()
+                ctx.send.assert_awaited_once()
+                self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+
     async def test_selectors_pagination_and_empty_quality_keep_state(self):
         self.cog._player_cache = [
             make_player(str(index), [("Good", 3, 100 - index)] * 6)
@@ -139,7 +158,7 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
         ctx.message.components = payload["components"]
         menu = ctx.message.components[-2].components[0]
         self.assertEqual([option.value for option in menu.options],
-                         ["Overall", "Average", "Good", "Great", "Excellent"])
+                         ["Overall", "Excellent", "Great", "Good", "Average"])
 
         ctx.values = ["Good"]
         await self.cog.lb_tier_select.callback.func(self.cog, ctx)

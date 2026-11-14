@@ -27,7 +27,7 @@ Watch Elo matches on our collaboration YouTube channel, [SenFGr](https://www.you
 
 ## How it works
 
-The bot uses `interactions.py` for Discord interactions and `coc.py` for Clash of Clans data. MongoDB stores the application state through Beanie models. The entry points initialize the services and load the extensions in `elo_bot/extensions/`. [docs/architecture.md](docs/architecture.md) describes the layers and where code goes; [docs/commands.md](docs/commands.md) maps every command to its handler.
+The bot uses `interactions.py` for Discord interactions and `coc.py` for Clash of Clans data. MongoDB stores the application state through Beanie models. The entry points initialize the services and load the extensions in `elo_bot/extensions/`. [docs/architecture.md](docs/architecture.md) describes the layers and where code goes; [docs/commands.md](docs/commands.md) maps every command to its handler. [docs/bot-ui.md](docs/bot-ui.md) and [docs/copy-style.md](docs/copy-style.md) set the presentation and message conventions, and [docs/base-fingerprints.md](docs/base-fingerprints.md) covers the base finder.
 
 | Path | Purpose |
 | --- | --- |

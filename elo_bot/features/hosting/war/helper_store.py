@@ -36,7 +36,7 @@ from elo_bot.integrations.helper_api import (
 from elo_bot.features.hosting.war.confirmation import confirm_helper_queue
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI
 from elo_bot.config.ids import STAFF_ROLE
-from elo_bot.core.match_results import is_valid_match_result_entry
+from elo_bot.core.match_results import score_entry
 from elo_bot.db import Match, Player
 
 
@@ -180,14 +180,7 @@ async def _confirm_score_availability(
 def _result_entry(score: HelperScore) -> str | None:
     if not score.attacker_name_verified or not score.same_attacker_for_all_attacks:
         return None
-    stars = score.stars_gained
-    destruction = score.destruction_gained
-    if stars is None or destruction is None:
-        return None
-    if not destruction.is_integer():
-        return None
-    entry = f"{stars}.{int(destruction)}"
-    return entry if is_valid_match_result_entry(entry) else None
+    return score_entry(score.stars_gained, score.destruction_gained)
 
 
 def _skipped_reason(score: HelperScore | None) -> str:

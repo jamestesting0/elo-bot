@@ -21,6 +21,13 @@ def is_valid_match_result_entry(value: str) -> bool:
     return 0 <= stars <= 3 and 0 <= destruction <= 100
 
 
+def score_entry(stars: int | None, destruction: float | None) -> str | None:
+    if stars is None or destruction is None or not destruction.is_integer():
+        return None
+    entry = f"{stars}.{int(destruction)}"
+    return entry if is_valid_match_result_entry(entry) else None
+
+
 def is_valid_complete_match_result(value: str, entry_count: int = MATCH_RESULT_ENTRY_COUNT) -> bool:
     entries = re.split(r"\r?\n", value)
     return (

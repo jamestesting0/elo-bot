@@ -3,7 +3,7 @@ from beanie.odm.operators.update.general import Set
 
 from elobot.extensions.leaderboard import request_leaderboard_player_reload
 from elobot.features.matches.resources import free_match_clans
-from elobot.extensions.player import clear_match_id_choices, forget_match_id_choice
+from elobot.features.players.match_choices import clear_match_id_choices, forget_match_id_choice
 from elobot.features.hosting.war import result_store
 from elobot.features.results.operations import cancel_result_operation
 from elobot.features.matches.cleanup import delete_unreserved_match, has_reserved_match_slots

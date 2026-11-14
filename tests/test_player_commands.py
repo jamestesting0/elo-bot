@@ -11,6 +11,7 @@ sys.path.append(os.getcwd())
 from elobot.extensions.player import PlayerCommands
 from elobot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
 from elobot.config.ids import PLAYER_ROLE
+from tests._patch_sites import patch_sites
 
 class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
@@ -30,7 +31,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         
         self.cog = PlayerCommands(self.bot)
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     async def test_player_capital_peak_persists_preference(self, mock_player):
         # Given: a registered player invoking /player capital-peak
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -48,7 +49,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         player.save_changes.assert_awaited_once()
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     async def test_player_capital_peak_rejects_unregistered_user(self, mock_player):
         # Given: an unregistered user invoking /player capital-peak
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -63,7 +64,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("not registered", ctx.send.await_args.args[0].lower())
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     async def test_player_register_success(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -91,7 +92,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("registered", ctx.send.call_args[0][0])
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     async def test_player_deregister_success(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -115,7 +116,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("deregistered", ctx.send.call_args[0][0])
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.Season")
     async def test_player_profile_success(self, mock_season, mock_player):
         # Setup
@@ -172,7 +173,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
              ("Season 7", "7")],
         )
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.Season")
     async def test_player_profile_in_dm_names_recent_opponents_from_main_server(self, mock_season, mock_player):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -207,7 +208,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(recent.startswith("vs. **[Kelly](<https://discordapp.com/users/55>)** ("))
         self.assertIn("<t:1761900000:R>", recent)
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     async def test_player_h2h_success(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -247,7 +248,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Player1's Record Against Player2", embed.title)
         self.assertIn("1 - 0", embed.description)
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.construct_match_embed")
     async def test_player_matches_view_success(self, mock_construct_match_embed, mock_player):
         # Setup
@@ -306,7 +307,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("embed", ctx.send.await_args.kwargs)
         self.assertIn(str(ERROR_EMOJI), ctx.send.await_args.args[0])
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.Season")
     async def test_player_hitrates_success(self, mock_season, mock_player):
         # Setup
@@ -355,7 +356,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch("elobot.extensions.player.Queue")
     @patch("elobot.extensions.player.Match")
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     async def test_elo_select_success(self, mock_player, mock_match, mock_queue):
         # Setup
         ctx = MagicMock(spec=ipy.ComponentContext)
@@ -387,7 +388,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("1050", ctx.send.call_args[0][0])
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.Season")
     async def test_stats_select_success(self, mock_season, mock_player):
         # Setup
@@ -415,7 +416,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit_origin.assert_called()
         self.assertIn("Statistics (All Seasons)", ctx.message.embeds[0].fields[0].name)
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.construct_match_embed")
     async def test_match_right_button_success(self, mock_construct_match_embed, mock_player):
         # Setup
@@ -449,7 +450,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         mock_construct_match_embed.assert_called_with(unittest.mock.ANY, ctx.guild, "1", "123")
         ctx.edit_origin.assert_called()
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.construct_match_embed")
     async def test_match_left_button_success(self, mock_construct_match_embed, mock_player):
         # Setup
@@ -483,7 +484,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         mock_construct_match_embed.assert_called_with(unittest.mock.ANY, ctx.guild, "2", "123")
         ctx.edit_origin.assert_called()
 
-    @patch("elobot.extensions.player.Player")
+    @patch_sites(('elobot.extensions.player.Player', 'elobot.features.players.match_choices.Player'))
     @patch("elobot.extensions.player.Season")
     async def test_hitrates_select_success(self, mock_season, mock_player):
         # Setup

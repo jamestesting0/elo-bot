@@ -54,7 +54,7 @@ from elobot.discord.mentions import mention_user
 from elobot.discord.message_edits import edit_channel_message
 from elobot.extensions.match.adapters import ResultDetectionType, clear_match_base_stores
 from elobot.extensions.match.groups import base, result_group
-from elobot.extensions.player import fetch_user_match_id_choices, forget_replaced_match_choice
+from elobot.features.players.match_choices import fetch_user_match_id_choices, forget_replaced_match_choice
 from elobot.features.finals.types import is_final_match
 from elobot.features.hosting.self_hosted.invitations import invite_eligible_players
 from elobot.features.matches.cleanup import has_reserved_match_slots

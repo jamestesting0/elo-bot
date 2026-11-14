@@ -34,7 +34,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.object(self_commands, "Match", new=MagicMock(
             find_one=AsyncMock(return_value=self.match),
         )))
-        self.enterContext(patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False))
+        self.enterContext(patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.extensions.match.settings.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False))
         self.enterContext(patch.object(self_commands, "is_match_finished", return_value=False))
         self.enterContext(patch.object(self_commands, "is_raid_weekend", return_value=False))
         self.self_confirm = self.enterContext(patch.object(

@@ -63,7 +63,7 @@ class TestResourceClanClaimRollback(unittest.IsolatedAsyncioTestCase):
         with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
                 patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(return_value=clan)), \
                 patch('elobot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=occupy_then_fail)), \
-                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
+                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             # When the durable match claim is visible while occupancy remains unfinished.
             claim_task = asyncio.create_task(run_claim())
             await asyncio.wait_for(occupancy_started.wait(), timeout=5)

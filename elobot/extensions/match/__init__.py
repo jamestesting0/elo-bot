@@ -14,11 +14,13 @@ from elobot.extensions.match.lifecycle import MatchLifecycleCommands
 from elobot.extensions.match.bases import MatchBaseCommands
 from elobot.extensions.match.base_store import MatchBaseStoreCommands
 from elobot.extensions.match.results import MatchResultCommands
+from elobot.extensions.match.result_store import MatchResultStoreCommands
 from elobot.extensions.match.hosting import MatchHostingCommands
+from elobot.extensions.match.settings import MatchSettingsCommands
 from elobot.extensions.match.dashboards import MatchDashboardTasks
 
 
-class MatchCommands(QueueCommands, MatchLifecycleCommands, MatchBaseCommands, MatchBaseStoreCommands, MatchResultCommands, MatchHostingCommands, MatchDashboardTasks, ipy.Extension):
+class MatchCommands(QueueCommands, MatchLifecycleCommands, MatchBaseCommands, MatchBaseStoreCommands, MatchResultCommands, MatchResultStoreCommands, MatchHostingCommands, MatchSettingsCommands, MatchDashboardTasks, ipy.Extension):
     # Class attributes so interactions.py registers the /match command and its groups with this extension.
     base = groups.base
     base_group = groups.base_group

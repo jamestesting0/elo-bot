@@ -109,10 +109,10 @@ class AutowinStateMixin:
         self.enterContext(patch.object(Match, "set", new=legacy_set))
         self.enterContext(patch.object(Helper, "find_one", return_value=MagicMock(upsert=AsyncMock(side_effect=legacy_credit))))
         self.free_clans = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new=AsyncMock()))
-        self.cleanup = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new=AsyncMock()))
-        self.autoqueue = self.enterContext(patch('elobot.extensions.match.results.autoqueue_completed_match_participants', new=AsyncMock()))
-        self.schedule = self.enterContext(patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit'), new=MagicMock()))
-        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
+        self.cleanup = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new=AsyncMock()))
+        self.autoqueue = self.enterContext(patch_sites(('elobot.extensions.match.results.autoqueue_completed_match_participants', 'elobot.extensions.match.result_store.autoqueue_completed_match_participants'), new=AsyncMock()))
+        self.schedule = self.enterContext(patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit', 'elobot.extensions.match.settings.schedule_channel_name_edit'), new=MagicMock()))
+        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.extensions.match.result_store.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
 
     @staticmethod
     def value(row, path):

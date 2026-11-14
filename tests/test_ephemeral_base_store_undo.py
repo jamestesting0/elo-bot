@@ -36,7 +36,7 @@ class TestEphemeralBaseStoreUndo(unittest.IsolatedAsyncioTestCase):
         self.bot.http.edit_interaction_message = AsyncMock(side_effect=self.edit_interaction)
         self.enterContext(patch.object(controls, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.case.match))))
         self.enterContext(patch_sites(
-            ('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.results.Match'),
+            ('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match'),
             new=MagicMock(find_one=AsyncMock(return_value=self.case.match)),
         ))
         self.enterContext(patch.object(storage, "clear_participant_base_store", new=REAL_CLEAR))

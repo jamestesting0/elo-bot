@@ -209,7 +209,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
+        with patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
             first = await start_live_match(bot, ctx, start)
         self.assertIsInstance(first, LiveStartClanUnavailable)
         accepted_at = (await Match.get(source.id)).final_started_at

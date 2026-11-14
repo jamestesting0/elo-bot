@@ -203,7 +203,7 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
         self.start_war.side_effect = lambda *_args: self.events.append("start") or None
 
         with patch_sites(
-                ('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
+                ('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.extensions.match.settings.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
                 new=AsyncMock(return_value="Available clans:\n- None"),
         ) as available_clans:
             # When automatic hosting tries to commit the local start.

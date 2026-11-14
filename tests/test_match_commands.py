@@ -91,7 +91,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch.dict(resources_module.RESOURCE_MATCH_SIDE_LOCKS, clear=True))
         self.enterContext(patch.dict(resources_module.RESOURCE_CLAN_LOCKS, clear=True))
         self.enterContext(patch("elobot.features.base_store.preparation.BASE_STORE_RESERVATION_LOCK", new=asyncio.Lock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.extensions.match.result_store.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
         self.queue_docs = {}
         self.enterContext(patch('elobot.extensions.match.queue.find_attempt_match', new=AsyncMock(return_value=None)))
         self.enterContext(patch_sites(('elobot.extensions.match.queue.find_attempt_queue', 'elobot.features.queue.state.find_attempt_queue'), new=AsyncMock(
@@ -135,7 +135,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ]))
         self.bot.fetch_channel.return_value = channel
 
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model:
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model:
             match_model.find_one = AsyncMock(return_value=None)
             await self.cog.inactive_threads_delete.callback.func(self.cog)
 
@@ -202,7 +202,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         matches_query.to_list = AsyncMock(return_value=[])
 
         with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as mock_player, \
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as mock_match, \
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as mock_match, \
                 patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout')) as mock_base_layout, \
                 patch('elobot.features.matches.attack_bases.NotIn', side_effect=lambda *args: args), \
                 patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=qualities), \
@@ -408,7 +408,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 ]
                 match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-                with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
+                with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
                         patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=("Good", "Good")), \
                         patch_sites(('elobot.extensions.match.lifecycle.confirm_match', 'elobot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock), \
                         patch_sites(('elobot.features.matches.lifecycle.random.choice', 'elobot.features.matches.attack_bases.random.choice')) as mock_choice:
@@ -433,7 +433,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                       district_presets=[None, None, None]),
         ]
         match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as match_type, \
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as match_type, \
                 patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=("Good", "Good")), \
                 patch_sites(('elobot.extensions.match.datetime', 'elobot.extensions.match.queue.datetime', 'elobot.extensions.match.lifecycle.datetime', 'elobot.extensions.match.bases.datetime', 'elobot.extensions.match.hosting.datetime', 'elobot.features.queue.state.datetime', 'elobot.features.queue.matching.datetime', 'elobot.features.matches.resources.datetime', 'elobot.features.matches.lifecycle.datetime', 'elobot.features.matches.attack_bases.datetime', 'elobot.features.results.recording.datetime')) as clock:
             clock.now.return_value.timestamp.return_value = 1000.0
@@ -463,7 +463,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ]
         match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
                 patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=("Good", "Good")), \
                 patch_sites(('elobot.extensions.match.lifecycle.confirm_match', 'elobot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock), \
                 patch_sites(('elobot.features.matches.lifecycle.random.choice', 'elobot.features.matches.attack_bases.random.choice'),
@@ -512,7 +512,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ]
         match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
                 patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=("Good", "Good")), \
                 patch_sites(('elobot.extensions.match.lifecycle.confirm_match', 'elobot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock), \
                 patch_sites(('elobot.features.matches.lifecycle.random.choice', 'elobot.features.matches.attack_bases.random.choice'),
@@ -592,7 +592,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 ]
                 match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-                with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match), \
+                with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match), \
                         patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=("Good", "Good")), \
                         patch_sites(('elobot.extensions.match.lifecycle.confirm_match', 'elobot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock), \
                         patch_sites(('elobot.features.matches.lifecycle.random.choice', 'elobot.features.matches.attack_bases.random.choice'),
@@ -646,7 +646,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 ]
                 match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-                with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
+                with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), return_value=match) as mock_match, \
                         patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=("Good", "Good")), \
                         patch_sites(('elobot.extensions.match.lifecycle.confirm_match', 'elobot.features.matches.lifecycle.confirm_match'), new_callable=AsyncMock), \
                         patch_sites(('elobot.features.matches.lifecycle.random.choice', 'elobot.features.matches.attack_bases.random.choice')) as mock_choice:
@@ -658,7 +658,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(participant.districts, primary)
                 mock_choice.assert_not_called()
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_district_select_rejects_stale_or_forged_values(self, mock_match):
         # Given: unavailable conditional choices and a district forged into the wrong slot
         cases = [
@@ -996,7 +996,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         legacy_match.save_changes.assert_not_awaited()
         clan.save_changes.assert_awaited_once()
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_list_success(self, mock_match):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1495,7 +1495,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 mock_record_match.assert_not_awaited()
                 self.assertIn("not available", ctx.send.await_args.args[0].lower())
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_resubmit_success(self, mock_match):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1546,7 +1546,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         )
 
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch("elobot.features.base_store.preparation.Match")
     @patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout'))
     @patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'))
@@ -1610,7 +1610,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Please store the bases", ctx.send.call_args[0][0])
 
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch("elobot.features.base_store.preparation.Match")
     @patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'))
     async def test_match_base_store_chooses_bases_before_reserving_slot(
@@ -1663,7 +1663,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Please store the bases", ctx.send.call_args[0][0])
 
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch("elobot.features.base_store.preparation.Match")
     @patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'))
     async def test_match_base_store_serializes_reservations_for_the_same_participant(
@@ -1772,7 +1772,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         contexts[1].send.assert_awaited_once()
 
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch("elobot.features.base_store.preparation.Match")
     @patch("elobot.features.base_store.storage.sync_base_store_slots", new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'))
@@ -1814,7 +1814,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_match_doc.clear_base_store.assert_not_awaited()
 
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch("elobot.features.base_store.preparation.Match")
     @patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'))
     async def test_match_base_store_does_not_claim_slot_when_preclaim_resync_fails(
@@ -1853,7 +1853,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_choose_bases.assert_awaited_once()
 
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch("elobot.features.base_store.preparation.Match")
     @patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'))
     async def test_match_base_store_blocks_unavailable_slot(
@@ -1887,7 +1887,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("already being used", ctx.send.call_args[0][0])
 
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch("elobot.features.base_store.preparation.Match")
     @patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'))
     async def test_match_base_store_blocks_when_clan_slots_cannot_be_verified(
@@ -2093,7 +2093,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 tasks["create_matches"].start.assert_called_once()
 
     @patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_undo_base_storage_button_releases_stored_slot(self, mock_match, mock_clear_base_store):
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.custom_id = "undo_base_storage|TOKEN|0"
@@ -2121,7 +2121,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("undone", ctx.send.call_args[0][0])
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_failed_manual_store_recovery_does_not_claim_undo_was_restored(self, mock_match):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.channel.id = 12345
@@ -2156,15 +2156,15 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(messages, ["Stored-slot controls could not be confirmed."])
         self.assertTrue(all("has been restored" not in message for message in messages))
 
-    @patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock)
+    @patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
     @patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
+    @patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch("elobot.features.base_store.storage.clear_participant_base_store", new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.bases.send_bases', 'elobot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock)
     @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_war_start_from_stored_button_retains_slot_after_sending_bases(
             self, mock_match, mock_player, mock_is_clan_available, mock_send_bases,
             mock_clear_base_store, _mock_free_clan, _mock_occupy_clan, mock_clan_find,
@@ -2312,7 +2312,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     )
     @patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False)
     @patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock, return_value=True)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_war_start_blocks_when_both_foreign_slots_are_occupied(
             self, mock_match, _mock_is_clan_available, _mock_is_raid_weekend, mock_start_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -2385,7 +2385,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     return_value=None,
                 ),
                 patch_sites(
-                    ('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                    ('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                     new_callable=AsyncMock,
                 ) as reserve_clan,
                 patch(
@@ -2397,7 +2397,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     new_callable=AsyncMock,
                 ) as reserve_side,
                 patch_sites(
-                    ('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
+                    ('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.result_store.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.settings.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
                     new=AsyncMock(return_value=match),
                 ),
                 patch_sites(
@@ -2409,7 +2409,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     new_callable=AsyncMock,
                 ) as occupy,
                 patch_sites(
-                    ('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
+                    ('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
                     new_callable=AsyncMock,
                 ),
                 patch(
@@ -2586,7 +2586,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         with (
                 patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'),
                       new_callable=AsyncMock) as clear_bases,
-                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
+                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
                       new_callable=AsyncMock) as free_clan,
                 patch("elobot.features.hosting.live.live_start.schedule_channel_name_edit") as rename,
         ):
@@ -2606,7 +2606,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         with (
                 patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'),
                       new_callable=AsyncMock) as clear_bases,
-                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
+                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
                       new_callable=AsyncMock) as free_clan,
                 patch("elobot.features.hosting.live.live_start.schedule_channel_name_edit") as rename,
         ):
@@ -2628,7 +2628,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         with (
                 patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'),
                       new_callable=AsyncMock) as clear_bases,
-                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
+                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
                       new_callable=AsyncMock) as free_clan,
                 patch("elobot.features.hosting.live.live_start.schedule_channel_name_edit") as rename,
         ):
@@ -2648,7 +2648,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         with (
                 patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'),
                       new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
+                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'),
                       new_callable=AsyncMock) as free_clan,
                 patch("elobot.features.hosting.live.live_start.schedule_channel_name_edit"),
         ):
@@ -2686,10 +2686,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.set = AsyncMock()
         match.abort_started_live_match = AsyncMock(return_value=True)
 
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
-                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False), \
+        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.extensions.match.settings.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False), \
                 patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock), \
-                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock), \
+                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock), \
                 patch("elobot.features.hosting.live.live_start.schedule_channel_name_edit"):
             match_model.find_one = AsyncMock(return_value=match)
 
@@ -2735,8 +2735,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.coc_client.get_clan = AsyncMock(return_value=clan)
 
         with (
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
-                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.features.hosting.live.helper_live.is_match_finished', 'elobot.features.hosting.live.live_start.is_match_finished', 'elobot.features.hosting.war.helper_host.is_match_finished', 'elobot.extensions.match.bases.is_match_finished', 'elobot.extensions.match.base_store.is_match_finished', 'elobot.extensions.match.hosting.is_match_finished', 'elobot.extensions.match.settings.is_match_finished', 'elobot.features.matches.occupancy.is_match_finished'), return_value=False),
                 patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False),
                 patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
                 patch_sites(
@@ -2748,7 +2748,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     new=AsyncMock(return_value=side_reservation),
                 ),
                 patch_sites(
-                    ('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                    ('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                     new=AsyncMock(return_value=clan_reservation),
                 ),
                 patch(
@@ -2851,7 +2851,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             events.append("runner")
 
         with (
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                 patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
                 patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False),
                 patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
@@ -2870,9 +2870,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                       new=AsyncMock(side_effect=run_job)) as runner,
                 patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_match_side', 'elobot.extensions.match.hosting.try_reserve_resource_match_side', 'elobot.features.matches.resources.try_reserve_resource_match_side'),
                       new=AsyncMock(side_effect=reserve_match_side)) as reserve_side,
-                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                       new=AsyncMock(side_effect=reserve_clan)),
-                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
+                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
                       new=AsyncMock(side_effect=claim_clan)),
                 patch("elobot.features.hosting.live.live_start.complete_live_start",
                       new=AsyncMock(return_value=started_message)),
@@ -2970,7 +2970,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 ),
                 patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'),
                       new=AsyncMock(side_effect=choose_side)) as choose,
-                patch_sites(('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
+                patch_sites(('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.extensions.match.settings.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
                       new=AsyncMock(return_value="available clans")),
                 patch("elobot.features.hosting.live.helper_live.confirm_helper_availability", new=eta),
                 patch("elobot.features.hosting.live.helper_live.live_start.start_live_match", new=start),
@@ -3015,18 +3015,18 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     participants=[MagicMock(user_id="100"), MagicMock(user_id="200")],
                 )
                 with (
-                        patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                        patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                         patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
                         patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock) as choose,
                         patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_match_side', 'elobot.extensions.match.hosting.try_reserve_resource_match_side', 'elobot.features.matches.resources.try_reserve_resource_match_side'), new_callable=AsyncMock) as reserve,
-                        patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                        patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                               new_callable=AsyncMock) as reserve_clan,
                         patch('elobot.extensions.match.hosting.live_start.start_live_match', new_callable=AsyncMock) as start,
                         patch('elobot.extensions.match.hosting.helper_live.confirm_helper_availability',
                               new_callable=AsyncMock) as eta,
                         patch('elobot.extensions.match.hosting.helper_live.run_helper_host_job', new_callable=AsyncMock) as post_poll,
                         patch('elobot.extensions.match.hosting.live_start.abort_live_start', new_callable=AsyncMock) as abort,
-                        patch_sites(('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
+                        patch_sites(('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.extensions.match.settings.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
                               new=AsyncMock(return_value="available clans")),
                 ):
                     match_model.find_one = AsyncMock(return_value=match)
@@ -3362,7 +3362,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'), new_callable=AsyncMock)
     @patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False)
     @patch_sites(('elobot.extensions.match.dashboards.Clan', 'elobot.features.matches.resources.Clan'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_update_clan_availability_embed_shows_slots_outside_raid_weekend(
             self, mock_server_state_current, mock_match, mock_clan, mock_is_raid_weekend, mock_sync_slots):
@@ -3408,8 +3408,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
     @patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_host_clan_select_updates_occupancy_before_discord_side_effects(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a started war side whose replacement clan can be persisted.
@@ -3461,7 +3461,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         async def publish_existing(_ctx, _match, _expected, *, embed, existing_message):
             await existing_message.edit(embed=embed)
 
-        with patch('elobot.extensions.match.hosting.publish_match_message', new=AsyncMock(side_effect=publish_existing)) as publisher:
+        with patch_sites(('elobot.extensions.match.hosting.publish_match_message', 'elobot.extensions.match.settings.publish_match_message'), new=AsyncMock(side_effect=publish_existing)) as publisher:
             await self.cog.host_clan_select.callback.func(self.cog, ctx)
         publisher.assert_awaited_once()
         self.assertIs(publisher.await_args.kwargs["existing_message"], ctx.message)
@@ -3488,8 +3488,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
     @patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_host_clan_select_persistence_failure_skips_occupancy_and_discord(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a valid war-side clan selection whose durable write fails.
@@ -3534,8 +3534,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
     @patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_set_clan_updates_occupancy_before_discord_side_effects(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a scheduled match whose selected host clan can be persisted.
@@ -3592,7 +3592,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         async def publish_existing(_ctx, _match, _expected, *, embed, existing_message):
             await existing_message.edit(embed=embed)
 
-        with patch('elobot.extensions.match.hosting.publish_match_message', new=AsyncMock(side_effect=publish_existing)) as publisher:
+        with patch_sites(('elobot.extensions.match.hosting.publish_match_message', 'elobot.extensions.match.settings.publish_match_message'), new=AsyncMock(side_effect=publish_existing)) as publisher:
             await self.cog.match_set_clan.callback.func(self.cog, ctx, clan="#NEW")
         publisher.assert_awaited_once()
         self.assertIs(publisher.await_args.kwargs["existing_message"], old_message)
@@ -3617,8 +3617,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
     @patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_set_clan_persistence_failure_skips_occupancy_and_discord(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a valid scheduled match whose host-clan write fails.
@@ -3663,16 +3663,16 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel.assert_not_awaited()
 
     @patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock)
+    @patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock)
     @patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
+    @patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.bases.send_bases', 'elobot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.features.matches.tips.choose_tip'), new_callable=AsyncMock)
+    @patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip', 'elobot.features.matches.tips.choose_tip'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock)
     @patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False)
     @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_start_updates_occupancy_before_discord_side_effects(
             self, mock_match, mock_player, _mock_is_raid_weekend, mock_is_clan_available, mock_choose_tip,
             mock_send_bases, mock_clear_base_stores, mock_free_clan, mock_occupy_clan,
@@ -3858,7 +3858,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         shared_start = AsyncMock(return_value=live_start.LiveStartSucceeded(message=MagicMock()))
 
         with (
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                 patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
                 patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False),
                 patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=True)),
@@ -3867,7 +3867,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     return_value=(["Slot 2"], {"Slot 1": ("987", "789")}),
                 )),
                 patch('elobot.extensions.match.hosting.live_start.start_live_match', new=shared_start),
-                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new_callable=AsyncMock) as direct_claim,
+                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new_callable=AsyncMock) as direct_claim,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             player_model.find_one = AsyncMock(side_effect=[
@@ -3905,11 +3905,11 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             return False
 
         with (
-                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
+                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.result_store.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.settings.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
                       new=AsyncMock(return_value=match)),
-                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                       new=AsyncMock(return_value=MagicMock())),
-                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
+                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
                       new=AsyncMock(side_effect=pending_claim)),
         ):
             with anyio.fail_after(5):
@@ -3926,11 +3926,11 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             reservation.release()
 
         with (
-                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
+                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.result_store.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.settings.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
                       new=AsyncMock(return_value=match)),
-                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                       new=AsyncMock(return_value=MagicMock())),
-                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
+                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
                       new=AsyncMock(return_value=True)),
                 patch("elobot.features.hosting.live.live_start.complete_live_start",
                       new=AsyncMock(return_value=MagicMock())),
@@ -3945,7 +3945,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             reservation.release()
 
         busy = MagicMock(times=[None, 1], hosts=[None, None])
-        with patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
+        with patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.result_store.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.settings.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
                    new=AsyncMock(return_value=busy)):
             self.assertIsInstance(
                 await live_start.start_live_match(MagicMock(), MagicMock(), request),
@@ -3957,11 +3957,11 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             reservation.release()
 
         with (
-                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
+                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.result_store.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.settings.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'),
                       new=AsyncMock(return_value=match)),
-                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                       new=AsyncMock(return_value=MagicMock())),
-                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
+                patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'),
                       new=AsyncMock(side_effect=RuntimeError("claim failed"))),
         ):
             with self.assertRaisesRegex(RuntimeError, "claim failed"):
@@ -4006,9 +4006,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         with (
                 patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_match_side', 'elobot.extensions.match.hosting.try_reserve_resource_match_side', 'elobot.features.matches.resources.try_reserve_resource_match_side'),
                       new=AsyncMock(side_effect=[side0, side1])),
-                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
+                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'),
                       new=AsyncMock(return_value=clan_reservation)),
-                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'), new=AsyncMock(return_value=match)),
+                patch_sites(('elobot.features.base_store.match_adapters.Match.find_one', 'elobot.extensions.match.lifecycle.Match.find_one', 'elobot.extensions.match.bases.Match.find_one', 'elobot.extensions.match.base_store.Match.find_one', 'elobot.extensions.match.results.Match.find_one', 'elobot.extensions.match.result_store.Match.find_one', 'elobot.extensions.match.hosting.Match.find_one', 'elobot.extensions.match.settings.Match.find_one', 'elobot.extensions.match.dashboards.Match.find_one', 'elobot.features.queue.state.Match.find_one', 'elobot.features.matches.occupancy.Match.find_one', 'elobot.features.matches.resources.Match.find_one', 'elobot.features.matches.lifecycle.Match.find_one', 'elobot.features.matches.attack_bases.Match.find_one', 'elobot.features.results.recording.Match.find_one'), new=AsyncMock(return_value=match)),
                 patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new=AsyncMock(
                     return_value=MagicMock(availability_str="Available"))),
                 patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy,
@@ -4020,15 +4020,15 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.channel.send.assert_not_awaited()
 
     @patch_sites(('elobot.extensions.match.dashboards.Clan.find_one', 'elobot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock)
+    @patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock)
     @patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
+    @patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.bases.send_bases', 'elobot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock, return_value=True)
     @patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False)
     @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_start_persistence_failure_skips_occupancy_and_discord(
             self, mock_match, mock_player, _mock_is_raid_weekend, _mock_is_clan_available, mock_send_bases,
             mock_clear_base_stores, mock_free_clan, mock_occupy_clan, mock_remove_helper_task, mock_clan_find):
@@ -4101,7 +4101,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False)
     @patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock, return_value=True)
     @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_start_blocks_when_both_foreign_slots_are_occupied(
             self, mock_match, mock_player, _mock_is_clan_available, _mock_is_raid_weekend, mock_start_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4144,7 +4144,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("<#300> <@3>", response)
 
     @patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_data_clean_up_keeps_match_without_thread(
             self, mock_match, mock_clear_base_stores):
         match = MagicMock(thread=None)
@@ -4163,7 +4163,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_data_clean_up_requires_confirmed_deletion_before_release(
             self, mock_match, mock_clear_base_stores, mock_free_match_clans):
         match = MagicMock()
@@ -4191,7 +4191,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'))
     @patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=True)
     @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_start_blocks_without_stored_bases_during_raid_weekend(
             self, mock_match, mock_player, _mock_is_raid_weekend, mock_clear_base_stores):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4219,7 +4219,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("separate slots in the same clan", ctx.send.call_args[0][0])
         mock_clear_base_stores.assert_not_called()
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_base_remove_success(self, mock_match):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4252,7 +4252,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch('elobot.extensions.match.bases.validators')
     @patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_base_set_image_success(self, mock_match, mock_base_layout, mock_validators):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4297,7 +4297,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch('elobot.extensions.match.bases.validators')
     @patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_base_set_success(self, mock_match, mock_base_layout, mock_validators):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4329,7 +4329,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch('elobot.extensions.match.bases.validators')
     @patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_base_submit_success(self, mock_match, mock_base_layout, mock_validators):
         for scheduled_time in (3000000000, None):
             with self.subTest(scheduled_time=scheduled_time):
@@ -4370,7 +4370,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertIn("submitted", ctx.send.await_args.args[0])
 
     @patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_base_view_success(self, mock_match, mock_base_layout):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4420,7 +4420,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(is_match_finished(match))
         self.assertTrue(is_match_finished(match, player=0))
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_player_occupied_distinguishes_regular_and_war_completion(self, mock_match):
         match = MagicMock(spec=Match)
         match.is_autowin = False
@@ -4437,7 +4437,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.is_war = True
         self.assertIsNone(await is_player_occupied("111"))
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_player_occupied_offers_inline_confirmation_for_unconfirmed_match(self, mock_match):
         match = MagicMock(spec=Match)
         match.token = "abc123"
@@ -4460,7 +4460,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("Confirm Match", occupied.component.label)
         self.assertEqual("confirm_occupied_match|abc123", occupied.component.custom_id)
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_confirm_occupied_match_opens_district_confirmation_modal(self, mock_match):
         match = MagicMock(wizard_valley_available=False, capital_peak_available=False)
         mock_match.find_one = AsyncMock(return_value=match)
@@ -4484,7 +4484,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             [label["component"]["custom_id"] for label in components],
         )
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_inline_confirmation_modal_reuses_match_confirmation(self, mock_match):
         participant = MagicMock(
             user_id="111",
@@ -4522,7 +4522,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         )
         match.save_changes.assert_awaited_once()
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_original_dm_cannot_confirm_after_inline_modal_confirmation(self, mock_match):
         participant = MagicMock(
             user_id="111",
@@ -4548,7 +4548,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.edit.assert_not_awaited()
         self.assertIn("already confirmed", ctx.send.call_args.args[0])
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_start_blocks_finished_regular_match(self, mock_match):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 999
@@ -4569,7 +4569,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("finished", ctx.send.call_args[0][0].lower())
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_result_store_allows_finished_war_player_correction(self, mock_match):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 999
@@ -4627,7 +4627,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.set.assert_not_awaited()
         self.assertIn("recorded", ctx.send.call_args[0][0].lower())
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_result_store_button_allows_finished_war_player_correction(self, mock_match):
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.custom_id = "match_result_store|token|0"
@@ -4653,7 +4653,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send_modal.assert_awaited_once()
         self.assertEqual("store_modal|token|0", ctx.send_modal.call_args.args[0].custom_id)
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_result_store_button_modal_title_stays_within_discord_limits(self, mock_match):
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.custom_id = "match_result_store|token|0"
@@ -4685,7 +4685,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertLessEqual(len(modal.title), 45)
 
     @patch('elobot.extensions.match.bases.download_file', new_callable=AsyncMock)
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_base_set_image_checks_finished_opponent(self, mock_match, mock_download):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 999
@@ -4717,7 +4717,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     @patch.object(OverrideCode, "is_valid", new_callable=AsyncMock)
     @patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_match_base_remove_all_checks_effective_player_opponent(
             self, mock_match, mock_base_layout, mock_is_valid):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4771,7 +4771,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         fixture.autoqueue.assert_awaited_once_with(fixture.bot, fixture.match.token, ("111", "222"))
         ctx.channel.edit.assert_not_called()
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_result_store_modal_allows_finished_war_player_correction(self, mock_match):
         ctx = MagicMock(spec=ipy.ModalContext)
         ctx.custom_id = "store_modal|token|0"
@@ -4819,7 +4819,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         }})
         self.assertIn("stored", ctx.send.call_args[0][0].lower())
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_process_match_results_rechecks_finished_channel(self, mock_match):
         ctx = MagicMock(spec=ipy.ModalContext)
         ctx.custom_id = "result_modal|token"
@@ -4848,7 +4848,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.save_changes.assert_not_awaited()
         self.assertIn("already ended", ctx.send.call_args[0][0].lower())
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_raid_weekend_start_notify_skips_ended_matches(self, mock_match):
         cases = [
             ("autowin", True, [None] * 3, "match-thread"),
@@ -4875,7 +4875,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
                 thread.send.assert_not_called()
 
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
     async def test_raid_weekend_start_notify_sends_to_active_match(self, mock_match):
         thread = AsyncMock(spec=ipy.ThreadChannel)
         thread.name = "match-thread"

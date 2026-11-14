@@ -141,19 +141,19 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(Match, "save_changes", new_callable=AsyncMock),
                 patch.object(Match, "get_pymongo_collection", return_value=collection),
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
                 patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model,
                 patch('elobot.extensions.match.results.record_match', new=record),
-                patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new_callable=AsyncMock) as invite,
+                patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.extensions.match.result_store.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new_callable=AsyncMock) as invite,
                 patch('elobot.extensions.match.results.record_base_stats', new_callable=AsyncMock),
                 patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock) as clear_stores,
                 patch('elobot.extensions.match.results.award_helper_once', new_callable=AsyncMock) as credit,
                 patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
                 patch_sites(('elobot.extensions.match.results.fetch_user_match_id_choices', 'elobot.features.results.recording.fetch_user_match_id_choices'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")),
-                patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit'), new=schedule),
-                patch('elobot.extensions.match.results.autoqueue_completed_match_participants', new=terminal),
+                patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")),
+                patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit', 'elobot.extensions.match.settings.schedule_channel_name_edit'), new=schedule),
+                patch_sites(('elobot.extensions.match.results.autoqueue_completed_match_participants', 'elobot.extensions.match.result_store.autoqueue_completed_match_participants'), new=terminal),
         ):
             match_model.find_one = AsyncMock(return_value=match)
             self.assertTrue(await cog._finalize_match_results_locked("TOKEN"))
@@ -189,8 +189,8 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
         thread.name = "🟢 Match TOKEN"
         self.bot.fetch_channel = AsyncMock(return_value=thread)
         with (
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
-                patch('elobot.extensions.match.results.autoqueue_completed_match_participants', new_callable=AsyncMock) as terminal,
+                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model,
+                patch_sites(('elobot.extensions.match.results.autoqueue_completed_match_participants', 'elobot.extensions.match.result_store.autoqueue_completed_match_participants'), new_callable=AsyncMock) as terminal,
         ):
             match_model.find_one = AsyncMock(return_value=incomplete)
             self.assertFalse(await cog._finalize_match_results_locked("TOKEN"))
@@ -234,9 +234,9 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
                 patch.object(Player, "find_one", new=AsyncMock(return_value=None)),
                 patch.object(result_store_ui, "notify_stored_result", new_callable=AsyncMock),
                 patch('elobot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
-                patch('elobot.extensions.match.results.autoqueue_completed_match_participants', new_callable=AsyncMock) as autoqueue,
+                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task'), new_callable=AsyncMock),
+                patch_sites(('elobot.extensions.match.results.autoqueue_completed_match_participants', 'elobot.extensions.match.result_store.autoqueue_completed_match_participants'), new_callable=AsyncMock) as autoqueue,
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])
             await result_store.store_match_result_automatically(

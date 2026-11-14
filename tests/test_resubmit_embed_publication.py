@@ -16,7 +16,7 @@ class TestResubmitEmbedPublication(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.runtime = retry_fixture.ResultRetryState(self)
         self.runtime.setUp()
-        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip'), new=AsyncMock(return_value="tip")))
+        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip'), new=AsyncMock(return_value="tip")))
         self.summary = MagicMock(id=901, edit=AsyncMock())
         self.public = MagicMock(id=902, edit=AsyncMock())
         self.channel = MagicMock(send=AsyncMock(return_value=self.public),

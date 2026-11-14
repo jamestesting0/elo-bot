@@ -236,7 +236,7 @@ class TestFinalTiming(FinalScenarioCase):
                     raise ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
 
                 with patch_sites(('elobot.extensions.match.lifecycle.append_helper_task', 'elobot.extensions.match.hosting.append_helper_task'), new=AsyncMock()), \
-                        patch('elobot.extensions.match.hosting.publish_match_message', new=AsyncMock(side_effect=fail)):
+                        patch_sites(('elobot.extensions.match.hosting.publish_match_message', 'elobot.extensions.match.settings.publish_match_message'), new=AsyncMock(side_effect=fail)):
                     with self.assertRaises(ipy.errors.Forbidden):
                         if player is None:
                             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")

@@ -113,7 +113,7 @@ class TestResultReservationRelease(unittest.IsolatedAsyncioTestCase):
     async def test_a_finished_side_alone_does_not_release_the_reservation(self) -> None:
         self.runtime.match["participants"][1]["result"] = [None, None, None]
         release_side = self.enterContext(patch('elobot.extensions.match.base_store.clear_participant_base_store', new=AsyncMock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()))
+        self.enterContext(patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()))
         await self.runtime.cog._finish_stored_result_side(await Match.find_one({"token": "TOKEN"}), 0)
         release_side.assert_not_awaited()
         self.assert_store_held()

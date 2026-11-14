@@ -95,7 +95,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
             player1_elo=1000, player2_elo=1000, scout=False,
             reply=live_start.AutomaticLiveStartReply(), stored_reservation_id=PAIR,
         )
-        with patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=claim):
+        with patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=claim):
             outcome = await live_start.start_live_match(self.f.bot, self.f.ctx, request)
         self.assertIsInstance(outcome, live_start.LiveStartClanUnavailable)
         self.assertFalse(any(self.f.document["times"]))
@@ -118,7 +118,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
                                host_clans=[CLAN, None], old_msgs=[700, None])
         self.match = await self.f.find({})
         started = MagicMock(id=700, delete=AsyncMock(), edit=AsyncMock(), embeds=[])
-        with patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock), patch.object(
+        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock), patch.object(
             live_start, "schedule_channel_name_edit",
         ):
             aborted = await live_start.abort_live_start(self.f.ctx, live_start.LiveAbort(self.match, started))

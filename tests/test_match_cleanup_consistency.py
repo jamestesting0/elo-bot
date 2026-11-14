@@ -149,7 +149,7 @@ class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsync
         store = self.match.participants[0].base_store
         self.collection.update_one.side_effect = [UpdateResult({"n": 1}, True)]
         message = MagicMock(id=77, delete=AsyncMock(), edit=AsyncMock(), embeds=[])
-        with patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
+        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
                 patch.object(war_start, "schedule_channel_name_edit") as rename:
             # When: abort commits but cannot update the retained reservation's controls.
             with self.assertRaises(war_start.BaseStoreMessageConflict):

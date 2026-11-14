@@ -42,7 +42,7 @@ class TestLiveResultEmbed(unittest.IsolatedAsyncioTestCase):
         bot = MagicMock(fetch_channel=AsyncMock(return_value=self.channel))
         self.cog = match_module.MatchCommands(bot)
         self.embed = ipy.Embed(title="**Match has Ended**", description="111: 9 stars, 300%; 222: 6 stars, 270%")
-        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
+        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
 
     async def publish(self) -> None:
         await self.cog._publish_result_embeds_locked(self.match, self.thread, self.embed)

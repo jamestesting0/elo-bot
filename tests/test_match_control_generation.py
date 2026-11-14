@@ -40,8 +40,8 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
                 self.ctx.send_modal.reset_mock()
                 with (
                     patch.object(Match, "set", new_callable=AsyncMock) as write,
-                    patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock(return_value=MagicMock())),
-                    patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=True)) as claim,
+                    patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock(return_value=MagicMock())),
+                    patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=True)) as claim,
                 ):
                     await getattr(self.cog, name).callback.func(self.cog, self.ctx)
                 write.assert_not_awaited()

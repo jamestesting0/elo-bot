@@ -117,7 +117,7 @@ class TestResultPublicationRetry(ResultFinalizationFixture):
 
     async def test_stored_side_http_failure_keeps_cleanup_and_logs_recovery(self) -> None:
         self.first.edit.side_effect = ipy.errors.HTTPException(response=MagicMock(status=500))
-        with patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
+        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             with self.assertLogs(level="ERROR") as logs:
                 await self.cog._finish_stored_result_side(self.match, 0)
         free_clan.assert_awaited_once()
@@ -127,7 +127,7 @@ class TestResultPublicationRetry(ResultFinalizationFixture):
     async def test_stored_side_stale_message_does_not_edit_new_run(self) -> None:
         snapshot = self.match.model_copy(deep=True)
         self.match.old_msgs[0] = 99
-        with patch_sites(('elobot.extensions.match.results.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock):
+        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock):
             await self.cog._finish_stored_result_side(snapshot, 0)
         self.thread.fetch_message.assert_not_awaited()
         self.first.edit.assert_not_awaited()

@@ -20,7 +20,7 @@ async def is_player_occupied(player_id: str) -> PlayerOccupied | None:
     for match in matches:
         if match.is_autowin:
             continue
-        
+
         participant = next((p for p in match.participants if p.user_id == str(player_id)))
         opponent = next(p for p in match.participants if p.user_id != str(player_id))
         # unconfirmed challenge where this player created it

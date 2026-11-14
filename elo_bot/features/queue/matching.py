@@ -37,7 +37,7 @@ from elo_bot.features.queue.state import (
 )
 
 
-async def find_opponent(player: Player, last_opponent: Optional[str], candidates: list[Player], 
+async def find_opponent(player: Player, last_opponent: Optional[str], candidates: list[Player],
                         max_elo_diff: int, tier: int, queue: Queue | None = None) -> Optional[Player]:
     for candidate in candidates:
         candidate_last_opponent_id = await get_last_opponent(candidate)
@@ -59,7 +59,7 @@ async def find_opponent(player: Player, last_opponent: Optional[str], candidates
             continue
 
         return candidate
-    
+
     return None
 
 
@@ -115,25 +115,25 @@ async def match_players(bot: ipy.Client, tier: int, max_elo_diff: int, *, queue:
     if queue is None:
         queue = await get_match_queue(tier)
     normalize_queue_timestamps(queue)
-    
+
     # sort the queue so that players with similar elo get matched
     iterations = math.floor(len(queue.players) / 2)
-    
+
     for _ in range(iterations):
         available_players = list(queue.players)
         if len(available_players) < 2:
             break
-            
+
         player1 = available_players[0]
         if await is_player_occupied(str(player1.user_id)):
             remove_player_from_queue(queue, player1)
             await queue.save_changes()
             continue
         last_opponent_id = await get_last_opponent(player1)
-    
+
         candidates = sorted(available_players, key=lambda x: x.elo)
         player2 = await find_opponent(player1, last_opponent_id, candidates, max_elo_diff, tier, queue)
-        
+
         if not player2:
             continue
 

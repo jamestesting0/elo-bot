@@ -89,7 +89,7 @@ class HelperCommands(ipy.Extension):
     @property
     def coc_client(self) -> coc.Client:
         return self.bot.coc_client
-    
+
     base = ipy.SlashCommand(name="helper", description="", scopes=GUILD_IDS)
 
     @base.subcommand(sub_cmd_name="leaderboard", sub_cmd_description="List the number of matches the helpers hosted")

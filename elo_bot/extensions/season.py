@@ -32,7 +32,7 @@ async def construct_season_leaderboard_string(bot, district_data_list, starting_
     leaderboard_str = ""
     # Slice the list
     current_page_data = district_data_list[starting_index:starting_index + LB_ENTRIES_PER_PAGE]
-    
+
     for index, data in enumerate(current_page_data):
         rank_index = starting_index + index
         if rank_index > 2:
@@ -45,7 +45,7 @@ async def construct_season_leaderboard_string(bot, district_data_list, starting_
         else:
             builder = await bot.fetch_user(data.builder_id)
             builder_mention = mention_user(builder)
-        
+
         leaderboard_str += (f"{emoji} {builder_mention} `{data.attacks}` → "
                             f"`{data.average_stars:.2f}⭐ {data.average_destruction:.2f}%`\n")
     return leaderboard_str
@@ -183,7 +183,7 @@ class SeasonCommands(ipy.Extension):
             async with PLAYER_DATA_BOUNDARY.reset():
                 # Get last season to determine start date if not provided
                 last_season = await Season.find_all().sort("-season_number").first_or_none()
-        
+
                 if not start_date:
                     start_date = last_season.end if last_season else int(datetime.now().timestamp())
 
@@ -192,7 +192,7 @@ class SeasonCommands(ipy.Extension):
 
                 start_date = extract_integer(start_date)
                 end_date = extract_integer(end_date)
-        
+
                 if not start_date or not end_date:
                     await ctx.send(f"{ERROR_EMOJI} The timestamps you provided are not valid.", ephemeral=True)
 
@@ -206,14 +206,14 @@ class SeasonCommands(ipy.Extension):
                 # process players
                 players = await Player.find_all().to_list()
                 player_season_data_list = []
-        
+
                 for player in players:
                     # store current ELO
                     player_season_data_list.append(PlayerSeasonData(
                         player_id=player.user_id,
                         elo=player.elo
                     ))
-            
+
                     if player.highest_elo >= 1200:
                         anchor = 1150
                     elif player.highest_elo > 1150:
@@ -234,12 +234,12 @@ class SeasonCommands(ipy.Extension):
                         new_elo = min(new_elo, player.elo)
                         new_elo = min(new_elo, 1400)  # post-reset elo capped at 1400
                         player.elo = new_elo
-                
+
                         await player.save_changes()
-            
+
                     if player.elo < 950:
                         player.elo = 950
-                
+
                         await player.save_changes()
 
                 # create new season
@@ -310,7 +310,7 @@ class SeasonCommands(ipy.Extension):
         current_season = await Season.find_all().sort("-season_number").first_or_none()
         if not current_season:
             await ctx.send(f"{ERROR_EMOJI} No active season found.", ephemeral=True)
-            
+
             return
 
         # fetch bases for the district, excluding Private ones
@@ -326,9 +326,9 @@ class SeasonCommands(ipy.Extension):
             if entries > 0:
                 avg_stars = sum(record[1] for record in base.records) / entries
                 avg_destruction = sum(record[2] for record in base.records) / entries
-                
+
                 builder_id = base.builder_id if base.builder_id else "Unknown"
-                
+
                 district_data_list.append(DistrictSeasonData(
                     builder_id=builder_id,
                     attacks=entries,
@@ -337,7 +337,7 @@ class SeasonCommands(ipy.Extension):
                 ))
 
         current_season.districts[district] = district_data_list
-        
+
         await current_season.save_changes()
 
         await ctx.send(f"{SUCCESS_EMOJI} Successfully recorded the base leaderboard for **{district}**.",
@@ -368,7 +368,7 @@ class SeasonCommands(ipy.Extension):
         await ctx.defer(ephemeral=hidden)
 
         season_doc = await Season.find_one(Season.season_number == season)
-        
+
         if not season_doc:
             await ctx.send(f"{ERROR_EMOJI} The season is not valid!", ephemeral=True)
 
@@ -380,7 +380,7 @@ class SeasonCommands(ipy.Extension):
             return
 
         district_data_list = season_doc.districts[district]
-        
+
         # Reconstruct leaderboard string
         leaderboard_str = await construct_season_leaderboard_string(self.bot, district_data_list)
 
@@ -428,7 +428,7 @@ class SeasonCommands(ipy.Extension):
         district = ctx.message.embeds[0].title.replace("**", "").replace(" Best Performing ", "|")
         district = district.replace(" Bases", "").split("|")[1]
         season_num = int(ctx.message.embeds[0].title.split("Season ")[1].split(" ")[0])
-        
+
         _, starting_index = ctx.custom_id.split("|")
         starting_index = int(starting_index)
 
@@ -472,7 +472,7 @@ class SeasonCommands(ipy.Extension):
         district = ctx.message.embeds[0].title.replace("**", "").replace(" Best Performing ", "|")
         district = district.replace(" Bases", "").split("|")[1]
         season_num = int(ctx.message.embeds[0].title.split("Season ")[1].split(" ")[0])
-        
+
         _, starting_index = ctx.custom_id.split("|")
         starting_index = int(starting_index)
 

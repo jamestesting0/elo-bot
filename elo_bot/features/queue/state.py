@@ -59,7 +59,7 @@ async def get_last_opponent(player: Player) -> Optional[str]:
                             )
     sorted_matches = sorted(player.matches, key=lambda m: int(m.id), reverse=True)
     last_match = sorted_matches[0]
-            
+
     return last_match.players[player.user_id].opponent
 
 

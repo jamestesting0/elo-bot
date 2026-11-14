@@ -31,36 +31,36 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         # Setup
         mock_validate_url.return_value = True
         mock_download_screenshot.return_value = True
-        
+
         # Mock BaseLayout.find_one to return None (no existing base)
         mock_base_layout.find_one = AsyncMock(return_value=None)
-        
+
         # mock BaseLayout.insert()
         mock_instance = MagicMock()
         mock_instance.insert = AsyncMock()
         mock_base_layout.return_value = mock_instance
-        
+
         # Mock SlashContext
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
         ctx.author.id = 12345
-        
+
         # Args
         base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
         base_ss = MagicMock(spec=ipy.Attachment)
         base_ss.url = "httpa://example.com/image.png"
         base_quality = "Excellent"
-        
+
         # Execute
         await self.cog.base_add.callback.func(self.cog, ctx, base_link, base_ss, base_quality)
-        
+
         # Verify
         mock_download_screenshot.assert_called_once()
         self.bot.owner.send.assert_called_once()
         mock_delete_file.assert_called_once()
         mock_instance.insert.assert_called_once()
-        
+
         # Check success message
         expected_msg = (f"{SUCCESS_EMOJI} You have successfully added a base for `Barbarian Camp`. "
                         "Fingerprint extraction pending.")
@@ -77,12 +77,12 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.owner.id = 99999
 
         base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
-        
+
         mock_base = MagicMock()
         mock_base.builder_id = "12345"
         ctx.guild.fetch_member = AsyncMock(return_value=MagicMock(id=12345, display_name="Builder"))
         mock_base_layout.find_one = AsyncMock(return_value=mock_base)
-        
+
         mock_embed = MagicMock()
         mock_construct_embed.return_value = mock_embed
 
@@ -102,13 +102,13 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
     async def test_base_remove_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
-        
+
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
-        
+
         mock_base = MagicMock()
         mock_base.delete = AsyncMock()
         mock_base_layout.find_one = AsyncMock(return_value=mock_base)
@@ -126,14 +126,14 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
     async def test_base_set_link_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
-        
+
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         old_base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
         new_base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ABBBBB"
-        
+
         mock_base = MagicMock()
         mock_base.district = "Barbarian Camp"
         mock_base.save_changes = AsyncMock()
@@ -162,7 +162,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
         ctx.author.has_any_role.return_value = True
-        
+
         mock_query = MagicMock()
         mock_base_layout.find.return_value = mock_query
         mock_query.find.return_value = mock_query
@@ -174,7 +174,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_query.sort.return_value.skip.return_value.limit.return_value.to_list = AsyncMock(
             return_value=[mock_base]
         )
-        
+
         mock_embed = MagicMock()
         mock_construct_embed.return_value = mock_embed
 
@@ -189,7 +189,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             mock_base, "Performance", names={"12345": "**[Builder](<https://discordapp.com/users/12345>)**"},
         )
         ctx.send.assert_called_once()
-        
+
         # Check components (district select, embed-type select, pagination)
         call_args = ctx.send.call_args
         self.assertIn("components", call_args.kwargs)
@@ -244,13 +244,13 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
     async def test_base_set_expired_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
-        
+
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
-        
+
         mock_base = MagicMock()
         mock_base.save_changes = AsyncMock()
         mock_base_layout.find_one = AsyncMock(return_value=mock_base)
@@ -268,14 +268,14 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
     async def test_base_set_quality_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
-        
+
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
         base_quality = "Excellent"
-        
+
         mock_base = MagicMock()
         mock_base.save_changes = AsyncMock()
         mock_base_layout.find_one = AsyncMock(return_value=mock_base)
@@ -296,17 +296,17 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
     async def test_base_set_builder_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
-        
+
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
         builder = MagicMock(spec=ipy.User)
         builder.id = 12345
         builder.bot = False
         builder.mention = "@builder"
-        
+
         mock_base = MagicMock()
         mock_base.set = AsyncMock()
         mock_base_layout.find_one = AsyncMock(return_value=mock_base)
@@ -326,17 +326,17 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         # Setup
         mock_validate_url.return_value = True
         mock_download_screenshot.return_value = True
-        
+
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         base_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
         image_link = "https://example.com/image.png"
         uploaded = MagicMock()
         uploaded.attachments = [MagicMock(url="https://cdn.example/durable.webp")]
         self.bot.owner.send.return_value = uploaded
-        
+
         mock_base = MagicMock()
         mock_base.save_changes = AsyncMock()
         mock_base.image_revision = 0
@@ -368,10 +368,10 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         mock_bases_sorted = [MagicMock() for _ in range(10)]
         mock_sort_bases.return_value = mock_bases_sorted
-        
+
         mock_construct_lb_string.return_value = "Leaderboard String"
 
         # Execute
@@ -382,7 +382,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_sort_bases.assert_called_once()
         mock_construct_lb_string.assert_called_once()
         ctx.send.assert_called_once()
-        
+
         # Check components
         call_args = ctx.send.call_args
         self.assertIn("components", call_args.kwargs)

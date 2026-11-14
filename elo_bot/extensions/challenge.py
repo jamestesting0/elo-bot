@@ -209,7 +209,7 @@ class ChallengeCommands(ipy.Extension):
             return
 
         opponent_last_challenge = get_last_challenge(opponent_player.matches, str(opponent.id))
-        if (opponent_last_challenge and opponent_last_challenge.opponent == str(ctx.author.id) and 
+        if (opponent_last_challenge and opponent_last_challenge.opponent == str(ctx.author.id) and
                 not has_override):
             await ctx.send(f"{ERROR_EMOJI} The player you are challenging was {opponent.mention} challenged "
                            f"by you recently.", ephemeral=True)
@@ -238,7 +238,7 @@ class ChallengeCommands(ipy.Extension):
         # ensure last_challenged has 2 elements
         if len(player.last_challenged) < 2:
             player.last_challenged = ["", ""]
-            
+
         if all(record == f"{current_year}.{current_week}" for record in player.last_challenged):
             await ctx.send(f"{ERROR_EMOJI} You may only challenge twice per week.",
                            ephemeral=True)

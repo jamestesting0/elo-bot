@@ -15,12 +15,12 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.guild = MagicMock()
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         player1 = MagicMock(spec=ipy.User)
         player1.id = 111
         player2 = MagicMock(spec=ipy.User)
         player2.id = 222
-        
+
         # Mock players found
         mock_player.find_one = AsyncMock(side_effect=[
             MagicMock(elo=1300, capital_peak_enabled=False),
@@ -29,10 +29,10 @@ class TestMatchCommands(MatchCommandsCase):
 
         # Execute
         await self.cog.match_submit.callback(
-            ctx, 
-            player1=player1, 
-            player2=player2, 
-            player1_result="3.100\n3.100\n3.100", 
+            ctx,
+            player1=player1,
+            player2=player2,
+            player1_result="3.100\n3.100\n3.100",
             player2_result="2.90\n2.80\n1.50",
             district1="Barbarian Camp",
             district2="Balloon Lagoon",
@@ -95,13 +95,13 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.channel.name = "🔴 Match Channel"
         ctx.send_modal = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         # Mock match found
         mock_match_doc = MagicMock()
         mock_match_doc.is_autowin = False
         # Configure __contains__ to return False (author not in match)
         mock_match_doc.__contains__.return_value = False
-        
+
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
 
         # Execute

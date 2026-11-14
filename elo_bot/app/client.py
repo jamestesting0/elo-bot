@@ -32,8 +32,8 @@ async def dispatch_elo_interaction(event: ipy.events.RawGatewayEvent) -> None:
     data = event.data
     if str(ELO_BLACKLIST_ROLE) in data.get("member", {}).get("roles", []):
         response = {"type": 4, "data": {
-            "content": f"{ERROR_EMOJI} You are banned from using Elo commands. " 
-            "Please contact the staff team if you have doubts.", 
+            "content": f"{ERROR_EMOJI} You are banned from using Elo commands. "
+            "Please contact the staff team if you have doubts.",
             "flags": 64,
         }}
         if data["type"] == 4:

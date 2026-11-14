@@ -88,7 +88,7 @@ def get_matches_against(player_matches: list[RecordedMatch],
     for m in player_matches:
         if m.players[player_id].opponent == opponent_id:
             matches.append(m)
-            
+
     return matches
 
 
@@ -99,7 +99,7 @@ class PlayerCommands(ipy.Extension):
     @property
     def coc_client(self) -> coc.Client:
         return self.bot.coc_client
-    
+
     base = ipy.SlashCommand(name="player", description="", dm_permission=True)
 
     @base.subcommand(
@@ -168,7 +168,7 @@ class PlayerCommands(ipy.Extension):
         matches_against_player2 = []
         player1_id = str(player1.id)
         player2_id = str(player2.id)
-        
+
         for match in p1_doc.matches:
             if player1_id in match.players and match.players[player1_id].opponent == player2_id:
                 matches_against_player2.append(match)
@@ -187,11 +187,11 @@ class PlayerCommands(ipy.Extension):
         opp_total_stars = 0
         opp_total_destruction = 0
         districts = {}
-        
+
         for match in matches_against_player2:
             p1_stats = match.players[player1_id]
             p2_stats = match.players[player2_id]
-            
+
             if p1_stats.won:
                 wins += 1
             else:
@@ -201,7 +201,7 @@ class PlayerCommands(ipy.Extension):
             total_destruction += p1_stats.destruction
             opp_total_stars += p2_stats.stars
             opp_total_destruction += p2_stats.destruction
-            
+
             for district in p1_stats.districts.keys():
                 districts.setdefault(district, 0)
                 districts[district] += 1
@@ -220,7 +220,7 @@ class PlayerCommands(ipy.Extension):
         for match in sorted_matches:
             if count >= 6:
                 break
-            
+
             p1_stats = match.players[player1_id]
             p2_stats = match.players[player2_id]
 
@@ -275,7 +275,7 @@ class PlayerCommands(ipy.Extension):
         p_doc = await Player.find_one(Player.user_id == str(player.id))
         if not p_doc:
             await ctx.send(f"{ERROR_EMOJI} {player.mention} is not in the system.", ephemeral=True)
-            
+
             return
 
         try:
@@ -389,7 +389,7 @@ class PlayerCommands(ipy.Extension):
                 ephemeral=True
             )
             return
-       
+
         if p_doc.matches:
             await ctx.send(f"{ERROR_EMOJI} You cannot change your starting Elo after playing a match.",
                            ephemeral=True)
@@ -418,9 +418,9 @@ class PlayerCommands(ipy.Extension):
         await ctx.defer(ephemeral=hidden)
 
         user = ctx.author if not user else user
-        
+
         player_doc = await Player.find_one(Player.user_id == str(user.id), fetch_links=True)
-        
+
         if not player_doc:
             if user == ctx.author:
                 await ctx.send(f"{ERROR_EMOJI} You are not registered in the elo system, "
@@ -441,7 +441,7 @@ class PlayerCommands(ipy.Extension):
 
         higher_elo_count = await Player.find(Player.elo > elo).count()
         rank = higher_elo_count + 1
-        
+
         wins = player_doc.wins
         avg_stars = player_doc.avg_stars
         avg_destruction = player_doc.avg_destruction
@@ -453,13 +453,13 @@ class PlayerCommands(ipy.Extension):
         for match in sorted_matches:
             if len(recent) >= 4:
                 break
-            
+
             if player_id not in match.players:
                 continue
-                
+
             p_stats = match.players[player_id]
             opponent_id = p_stats.opponent
-            
+
             if opponent_id not in match.players:
                 continue
             o_stats = match.players[opponent_id]
@@ -562,7 +562,7 @@ class PlayerCommands(ipy.Extension):
 
         seasons = await Season.find_all().sort("season_number").to_list()
         scope, season_start, season_end = interpret_season_string(seasons, ctx.values[0])
-        
+
         player_matches = get_season_matches(p_doc.matches, season_start, season_end)
 
         wins = get_wins(player_matches, player_id)
@@ -645,7 +645,7 @@ class PlayerCommands(ipy.Extension):
 
         _, user_id, index = ctx.custom_id.split("|")
         index = int(index) + 1
-        
+
         p_doc = await Player.find_one(Player.user_id == user_id, fetch_links=True)
 
         sorted_matches = sorted(p_doc.matches, key=lambda m: int(m.id), reverse=True)
@@ -679,7 +679,7 @@ class PlayerCommands(ipy.Extension):
 
         _, user_id, index = ctx.custom_id.split("|")
         index = int(index) - 1
-        
+
         p_doc = await Player.find_one(Player.user_id == user_id, fetch_links=True)
 
         sorted_matches = sorted(p_doc.matches, key=lambda m: int(m.id), reverse=True)
@@ -800,22 +800,22 @@ class PlayerCommands(ipy.Extension):
 
         seasons = await Season.find_all().sort("season_number").to_list()
         scope, season_start, season_end = interpret_season_string(seasons, season)
-        
+
         # p_doc.matches contains RecordedMatch objects
         player_matches = get_season_matches(p_doc.matches, season_start, season_end)
 
         district_stars = {}
         district_destruction = {}
         district_count = {}
-        
+
         player_id = str(user.id)
-        
+
         for match in player_matches:
             if player_id not in match.players:
                 continue
-                
+
             p_stats = match.players[player_id]
-            
+
             for district, district_data in p_stats.districts.items():
                 district_stars.setdefault(district, []).append(district_data.stars)
                 district_destruction.setdefault(district, []).append(district_data.destruction)
@@ -875,19 +875,19 @@ class PlayerCommands(ipy.Extension):
 
         seasons = await Season.find_all().sort("season_number").to_list()
         scope, season_start, season_end = interpret_season_string(seasons, ctx.values[0])
-        
+
         player_matches = get_season_matches(p_doc.matches, season_start, season_end)
 
         district_stars = {}
         district_destruction = {}
         district_count = {}
-        
+
         for match in player_matches:
             if player_id not in match.players:
                 continue
-                
+
             p_stats = match.players[player_id]
-            
+
             for district, district_data in p_stats.districts.items():
                 district_stars.setdefault(district, []).append(district_data.stars)
                 district_destruction.setdefault(district, []).append(district_data.destruction)

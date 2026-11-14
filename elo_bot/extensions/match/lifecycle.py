@@ -395,7 +395,7 @@ class MatchLifecycleCommands:
     async def _cancel_match(self, ctx: ipy.ComponentContext, token: str) -> None:
         # DB/JSON fetches
         match = await Match.find_one(Match.token == token)
-        
+
         author_id = str(ctx.author.id)
         author_player = await Player.find_one(Player.user_id == author_id)
 

@@ -39,7 +39,7 @@ class QueueCommands(ipy.Extension):
                 members = await asyncio.gather(*(guild.fetch_member(player.user_id) for player in queue.players))
                 for player, user in zip(queue.players, members):
                     description += f"{mention_user(user, player.user_id)} `{player.elo}`\n"
-            
+
             embed.add_field(name=f"Tier {i}", value=description if description else "This queue is empty...")
 
         await ctx.send(embed=embed, ephemeral=hidden)

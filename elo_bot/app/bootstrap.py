@@ -79,7 +79,7 @@ async def main():
         print(f"  ✓ Beta database sync completed in {time.time() - sync_start:.2f}s")
     elif runtime.VERSION == "beta":
         print("➤ Beta database sync is disabled (`BETA_SYNC_FROM_MAIN=False`).")
-    
+
     print("➤ Initializing Beanie...")
     beanie_start = time.time()
     await init_beanie(

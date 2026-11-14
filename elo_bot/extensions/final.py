@@ -50,7 +50,7 @@ async def get_current_elo_final_season():
 class FinalCommands(Extension):
 
     final = ipy.SlashCommand(name="final", description="Elo Final management commands")
-    
+
     bracket_group = final.group(name="bracket", description="Create and view the Final bracket")
     bye_group = final.group(name="bye", description="Assign first-round byes")
     round_group = final.group(name="round", description="Prepare Final rounds")
@@ -499,7 +499,7 @@ class FinalCommands(Extension):
             return
 
         await ctx.send(f"{SUCCESS_EMOJI} Updated {player.mention}'s nickname from **{old_nick}** to **{nickname}**.")
-    
+
     @final.subcommand(
         sub_cmd_name="players",
         sub_cmd_description="List players in the Elo Final",
@@ -515,7 +515,7 @@ class FinalCommands(Extension):
         if not elo_final or not elo_final.player_nicknames:
             await ctx.send(f"{ERROR_EMOJI} No players registered for Season {season} Final.", ephemeral=True)
             return
-        
+
         player_ids = seeded_players(elo_final)
         guild = await member_guild(ctx)
         members = await asyncio.gather(*(guild.fetch_member(user_id) for user_id in player_ids))
@@ -523,7 +523,7 @@ class FinalCommands(Extension):
         for position, (user_id, member) in enumerate(zip(player_ids, members), 1):
             msg_lines.append(f"{elo_final.seeds.get(user_id, position)}. {mention_user(member, user_id)} — "
                              f"{re.sub(r'([*_~|>])', r'\\\1', elo_final.player_nicknames[user_id])}")
-        
+
         embed = ipy.Embed(
             title=f"**Elo Final Season {season}**",
             description=f"**Registered Players ({len(elo_final.player_nicknames)}/8):**\n\n" + "\n".join(msg_lines),

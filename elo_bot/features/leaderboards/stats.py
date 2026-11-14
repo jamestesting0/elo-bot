@@ -14,7 +14,7 @@ def get_season_matches(player_matches: list[RecordedMatch], season_start: int | 
                        season_end: int | float) -> list[RecordedMatch]:
     if not player_matches:
         return []
-        
+
     return list(
         filter(lambda m: season_start < m.time < season_end, player_matches)
     )

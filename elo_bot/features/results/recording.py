@@ -77,7 +77,7 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
 
     # generate match data
     ts = int(datetime.now().timestamp())
-    
+
     # Get next match ID
     last_match = await RecordedMatch.find_all().sort("-time").first_or_none()
     if last_match and last_match.id.isdigit():

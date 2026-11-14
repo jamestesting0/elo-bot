@@ -382,7 +382,7 @@ class MatchResultCommands:
         match_info = ""
         p1_stats = recorded_match.players[player1_id]
         p2_stats = recorded_match.players[player2_id]
-        
+
         district_keys = list(p1_stats.districts.keys())
         for district in district_keys:
             match_info += (
@@ -681,10 +681,10 @@ class MatchResultCommands:
         # DB/JSON fetches
         p1, p2 = match.participants[0], match.participants[1]
         player1_id, player2_id = p1.user_id, p2.user_id
-        
+
         player1_doc = await Player.find_one(Player.user_id == player1_id, fetch_links=True)
         player2_doc = await Player.find_one(Player.user_id == player2_id, fetch_links=True)
-        
+
         # Find previously recorded match
         previous_match = None
         if match.result_operation and not match.result_operation.completed and match.result_operation.previous_record:
@@ -698,27 +698,27 @@ class MatchResultCommands:
                 # Check if opponent matches
                 if player2_id not in m.players:
                     continue
-                
+
                 # Check districts
                 p1_stats = m.players[player1_id]
                 if list(p1_stats.districts.keys()) != match.final_districts:
                     continue
-                
+
                 # Check results (stars/destruction) against the OLD results in match.participants
                 # p1.result is list of strings "stars.destruction"
                 if not p1.result or not p2.result:
                     continue
-                    
+
                 p1_res_stars = sum(map(get_stars, p1.result))
                 p1_res_dest = sum(map(get_destruction, p1.result))
-                
+
                 if p1_stats.stars != p1_res_stars or p1_stats.destruction != p1_res_dest:
                     continue
-                    
+
                 # If we are here, it's likely the match
                 previous_match = m
                 break
-        
+
         if not previous_match:
             await ctx.send(f"{ERROR_EMOJI} Could not find the previous match record to revert.", ephemeral=True)
             return
@@ -751,11 +751,11 @@ class MatchResultCommands:
 
         # update match result embed
         new_match = match.result_operation.record
-        
+
         match_info = ""
         p1_new_stats = new_match.players[player1_id]
         p2_new_stats = new_match.players[player2_id]
-        
+
         district_keys = list(p1_new_stats.districts.keys())
         for district in district_keys:
             match_info += (

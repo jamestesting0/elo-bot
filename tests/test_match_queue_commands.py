@@ -45,9 +45,9 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.author.has_role.return_value = False
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         mock_server_state_current.return_value = MagicMock(queue_disabled=False)
-        
+
         # Mock player
         mock_player_doc = MagicMock(spec=Player)
         mock_player_doc.user_id = "123"
@@ -57,7 +57,7 @@ class TestMatchCommands(MatchCommandsCase):
         mock_player_doc.district_presets = [None, None, None]
         mock_player_doc.capital_peak_enabled = True
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
-        
+
         # Mock queues (tier 1, 2, 3)
         mock_queue_doc = MagicMock(spec=Queue)
         mock_queue_doc.tier = QUEUE_TIER_NORMAL
@@ -66,16 +66,16 @@ class TestMatchCommands(MatchCommandsCase):
         mock_queue_doc.district_selections = {}
         self.queue_docs[QUEUE_TIER_NORMAL] = mock_queue_doc
         mock_queue_doc.save_changes = AsyncMock()
-        
+
         # Explicitly make find_one an AsyncMock that returns mock_queue_doc
         mock_queue.find_one = AsyncMock(return_value=mock_queue_doc)
-        
+
         # Mock is_player_occupied
         mock_is_occupied.return_value = None
-        
+
         # Execute
         await self.cog.match_queue.callback(ctx)
-        
+
         # Verify
         ctx.defer.assert_called_once_with(ephemeral=True)
         # Should check if player added to tier 3 queue (normal)
@@ -245,16 +245,16 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.author.has_role.return_value = False
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         mock_server_state_current.return_value = MagicMock(queue_disabled=False)
-        
+
         mock_player_doc = MagicMock(spec=Player)
         mock_player_doc.user_id = "123"
         mock_player_doc.priority = False
         mock_player_doc.elo = 1000
         mock_player_doc.matches = []
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
-        
+
         # Mock queue to contain player
         queues = [self.make_queue(tier) for tier in (
             QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUEUE_TIER_PRIORITY, QUEUE_TIER_NORMAL,
@@ -262,10 +262,10 @@ class TestMatchCommands(MatchCommandsCase):
         queues[-1].players = [mock_player_doc]
         queues[-1].entered_at = {mock_player_doc.user_id: datetime.now().timestamp()}
         mock_queue.find_one = AsyncMock(side_effect=queues)
-        
+
         # Execute
         await self.cog.match_queue.callback.func(self.cog, ctx)
-        
+
         # Verify
         ctx.send.assert_called_with(f"{ERROR_EMOJI} You are already in the match-making queue.", ephemeral=True)
 
@@ -289,7 +289,7 @@ class TestMatchCommands(MatchCommandsCase):
         mock_queue_doc.players = [mock_player_doc]
         mock_queue_doc.district_selections = {}
         mock_queue_doc.save_changes = AsyncMock()
-        
+
         # Mock find_one to return queue for tier 1, then None for others
         mock_queue.find_one = AsyncMock(side_effect=[mock_queue_doc, None, None, None])
 

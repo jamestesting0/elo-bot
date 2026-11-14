@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=missing-docstring, C0302, too-many-ancestors, too-few-public-methods, trailing-whitespace
+disable=missing-docstring, C0302, too-many-ancestors, too-few-public-methods
 
 [FORMAT]
 max-line-length=120

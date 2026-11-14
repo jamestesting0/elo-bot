@@ -232,7 +232,7 @@ class PresetCommands(ipy.Extension):
                 ) if file_msg else None,
             )
             await new_base.insert()
-            
+
             player.base_presets[district] = new_base
 
         await player.save_changes()
@@ -253,7 +253,7 @@ class PresetCommands(ipy.Extension):
             await ctx.send(
                 f"{ERROR_EMOJI} You are not registered in the elo system. Please register by running this command "
                 f"{self.bot.mention_command('player register')}!", ephemeral=True)
-            
+
             return
 
         player.district_presets = [None, None, None]
@@ -336,7 +336,7 @@ class PresetCommands(ipy.Extension):
             await ctx.send(
                 f"{ERROR_EMOJI} You are not registered in the elo system. Please register by running this command "
                 f"{self.bot.mention_command('player register')}!", ephemeral=True)
-            
+
             return
 
         player.district_presets = [district1, district2, district3]
@@ -374,9 +374,9 @@ class PresetCommands(ipy.Extension):
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
             color=COLOR
         )
-        
+
         presets = player.district_presets
-            
+
         for i in range(3):
             if presets[i]:
                 embed.description += f"{i+1}. {DISTRICT_EMOJI} {presets[i]}\n"

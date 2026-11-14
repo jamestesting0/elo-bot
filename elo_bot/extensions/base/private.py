@@ -50,7 +50,7 @@ class PrivateBaseCommands:
         if not player:
             await ctx.send(f"{ERROR_EMOJI} You are not registered. Please register first.", ephemeral=True)
             return
-        
+
         player_base_count = await BaseLayout.find(
             BaseLayout.builder_id == str(ctx.author.id),
             BaseLayout.quality == "Private"
@@ -112,10 +112,10 @@ class PrivateBaseCommands:
         # update database
         expiration_ts = datetime.now().timestamp() + 15 * 86400
         district = DISTRICT_CODES_REVERSED[base_link.split('%')[2]]
-        
+
         # check if base already exists (even if private)
         existing_base = await BaseLayout.find_one(
-            BaseLayout.link == base_link, 
+            BaseLayout.link == base_link,
             BaseLayout.quality == "Private"
         )
         if existing_base:
@@ -189,7 +189,7 @@ class PrivateBaseCommands:
         # pagination and buttons
         index = 0
         base = bases[index]
-        
+
         is_preset = False
         if base.district in player.base_presets:
             preset_base = player.base_presets[base.district]
@@ -208,7 +208,7 @@ class PrivateBaseCommands:
             custom_id=f"p_base_right|{district}|{index + 1}",
             disabled=(len(bases) - 1 <= index)
         )
-        
+
         preset_label = "Preset Remove" if is_preset else "Preset Add"
         preset_style = ipy.ButtonStyle.DANGER if is_preset else ipy.ButtonStyle.SUCCESS
         preset_action = "remove" if is_preset else "add"
@@ -227,7 +227,7 @@ class PrivateBaseCommands:
         guild = await member_guild(ctx)
         embed = construct_base_embed(base, embed_type, names=await base_embed_names(guild, base, embed_type))
         await ctx.send(
-            embed=embed, ephemeral=True, 
+            embed=embed, ephemeral=True,
             components=ipy.ActionRow(
                 left_button, right_button, preset_button, remove_button
             )
@@ -243,12 +243,12 @@ class PrivateBaseCommands:
         action, district, index_str = ctx.custom_id.split("|")
         action = action.split("_")[1]
         index = int(index_str)
-        
+
         if action == "left":
             index -= 1
         elif action == "right":
             index += 1
-            
+
         await update_private_base_message(ctx, district, index)
 
     @ipy.component_callback(re.compile(r"^p_base_preset\|[^|]+\|\d+(?:\|[0-9a-f]{24}(?:\|(?:add|remove))?)?$"))
@@ -267,7 +267,7 @@ class PrivateBaseCommands:
             await ctx.send(f"{ERROR_EMOJI} Base not found.", ephemeral=True)
             return
         player = await Player.find_one(Player.user_id == str(ctx.author.id), fetch_links=True)
-        
+
         if not player:
             # Should not happen if they are adding private bases, but good to check
             await ctx.send(f"{ERROR_EMOJI} Player not found.", ephemeral=True)
@@ -307,7 +307,7 @@ class PrivateBaseCommands:
             await ctx.edit(ctx.message, components=[])
             await ctx.send(f"{ERROR_EMOJI} Base not found.", ephemeral=True)
             return
-        
+
         player = await Player.find_one(Player.user_id == str(ctx.author.id), fetch_links=True)
         if player:
             await clear_private_base_preset(player, base)
@@ -323,6 +323,6 @@ class PrivateBaseCommands:
             )
             return
         await ctx.send(f"{SUCCESS_EMOJI} Base deleted.", ephemeral=True)
-        
+
         # update message, index might need adjustment if it was the last element
         await update_private_base_message(ctx, district, index)

@@ -15,7 +15,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.author.has_any_role.return_value = True
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         # Mock match
         mock_match_doc = MagicMock(spec=Match)
         mock_base_obj = MagicMock()
@@ -28,7 +28,7 @@ class TestMatchCommands(MatchCommandsCase):
         mock_match_doc.hosts = [None, None]
         mock_match_doc.final_districts = ["Barbarian Camp"]
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
-        
+
         # Execute
         await self.cog.match_base_remove.callback(ctx, player=1, district="Barbarian Camp")
 
@@ -48,9 +48,9 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
         ctx.channel.id = 999
-        
+
         mock_validators.url.return_value = True
-        
+
         # Mock Match
         mock_match_doc = MagicMock()
         mock_base = MagicMock()
@@ -62,18 +62,18 @@ class TestMatchCommands(MatchCommandsCase):
         mock_match_doc.final_districts = ["Barbarian Camp"]
         mock_match_doc.save_changes = AsyncMock()
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
-        
+
         attachment = MagicMock(spec=ipy.Attachment)
         attachment.url = "http://image.url"
         attachment.content_type = "image/png"
-        
+
         mock_base_layout.find_one = AsyncMock(return_value=mock_base)
-        
+
         # Execute
         # Mock download_file (imported in elo_bot.extensions.match)
         self.bot.owner.send = AsyncMock()
         self.bot.owner.send.return_value.attachments = [MagicMock(url="http://new_image")]
-        
+
         with patch('elo_bot.extensions.match.bases.download_file', new=AsyncMock(return_value=True)):
              with patch('elo_bot.extensions.match.bases.delete_file', new=AsyncMock()):
                  await self.cog.match_base_set_image.callback(ctx, player=0, district="Barbarian Camp", base_ss=attachment)
@@ -93,10 +93,10 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
         ctx.channel.id = 999
-        
+
         mock_validators.url.return_value = True
         mock_base_layout.find_one = AsyncMock(return_value=None) # No existing base
-        
+
         # Mock Match
         mock_match_doc = MagicMock()
         mock_match_doc.participants = [MagicMock(user_id="111"), MagicMock(user_id="222")]
@@ -104,7 +104,7 @@ class TestMatchCommands(MatchCommandsCase):
         mock_match_doc.final_districts = ["Barbarian Camp"]
         mock_match_doc.save_changes = AsyncMock()
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
-        
+
         # Execute
         # Link must be valid per code logic
         # 3A1 is Barbarian Camp, encoded as %3A1 in the ID part (because split('%')[2] gets 3A1)
@@ -166,7 +166,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
         ctx.channel.id = 999
-        
+
         # Mock Match
         mock_match_doc = MagicMock()
         mock_match_doc.participants = [
@@ -175,10 +175,10 @@ class TestMatchCommands(MatchCommandsCase):
         ]
         mock_match_doc.final_districts = ["Barbarian Camp"]
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
-        
+
         # Mock BaseLayout
         mock_base_layout.find.return_value.to_list = AsyncMock(return_value=[])
-        
+
         # Execute
         await self.cog.match_base_view.callback(ctx)
 

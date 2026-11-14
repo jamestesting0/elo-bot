@@ -284,7 +284,7 @@ class TestMatchCommands(MatchCommandsCase):
         clan_obj.name = "Test Clan"
         clan_obj.share_link = "http://clan"
         mock_sync_slots.return_value = {"#CLAN": ["Slot 1", "Slot 2"]}
-        
+
         # Mock match found
         mock_match_doc = MagicMock()
         mock_match_doc.token = "TOKEN"
@@ -298,10 +298,10 @@ class TestMatchCommands(MatchCommandsCase):
         self.enable_base_store_message_binding(mock_match_doc)
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
         mock_preparation_match.find_one = mock_match.find_one
-        
+
         # Mock existing base check (none found)
         mock_base_layout.find_one = AsyncMock(return_value=None)
-        
+
         # Execute
         with (
             patch("elo_bot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,

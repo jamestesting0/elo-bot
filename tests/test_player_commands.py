@@ -28,7 +28,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.owner = MagicMock()
         self.bot.owner.id = 999
         self.bot.match_id_choices = {}
-        
+
         self.cog = PlayerCommands(self.bot)
 
     @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
@@ -72,16 +72,16 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.author = MagicMock(spec=ipy.Member)
         ctx.author.add_role = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         # Mock player not registered
         mock_player.find_one = AsyncMock(return_value=None)
         mock_player.return_value.insert = AsyncMock()
-        
+
         # Mock coc player
         mock_coc_player = MagicMock()
         mock_coc_player.tag = "#TAG"
         self.bot.coc_client.get_player.return_value = mock_coc_player
-        
+
         # Execute
         await self.cog.player_register.callback(ctx, player_tag="#TAG")
 
@@ -98,16 +98,16 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.has_any_role.return_value = True
         ctx.send = AsyncMock()
-        
+
         target_user = MagicMock(spec=ipy.User)
         target_user.id = 123
         target_user.mention = "@User"
-        
+
         # Mock player found
         mock_player_doc = MagicMock()
         mock_player_doc.delete = AsyncMock()
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
-        
+
         # Execute
         await self.cog.player_deregister.callback(ctx, player=target_user)
 
@@ -124,7 +124,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.author.id = 123
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         # Mock player found
         mock_player_doc = MagicMock()
         mock_player_doc.elo = 1000
@@ -138,17 +138,17 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         mock_player_doc.opponent_avg_destruction = 70.0
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
         mock_player.find.return_value.count = AsyncMock(return_value=5) # Rank
-        
+
         # Mock Player.elo > elo comparison
         mock_player.elo = MagicMock()
         mock_player.elo.__gt__ = MagicMock(return_value=True)
-        
+
         # Mock coc player
         mock_coc_player = MagicMock()
         mock_coc_player.name = "TestPlayer"
         mock_coc_player.tag = "#TAG"
         mock_coc_player.share_link = "http://link"
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[
             SimpleNamespace(season_number=3, start=300, end=400),
@@ -214,21 +214,21 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         player1 = MagicMock(spec=ipy.User)
         player1.id = 123
         player1.avatar.url = "http://avatar1"
         player1.__str__.return_value = "Player1"
-        
+
         player2 = MagicMock(spec=ipy.User)
         player2.id = 456
         player2.__str__.return_value = "Player2"
-        
+
         # Mock players found
         mock_p1_doc = MagicMock()
         mock_p1_doc.matches = []
         mock_player.find_one = AsyncMock(side_effect=[mock_p1_doc, MagicMock()]) # p1 found, p2 found
-        
+
         # Mock match against player2
         mock_match = MagicMock()
         mock_match.players = {
@@ -255,17 +255,17 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.guild = MagicMock()
         ctx.send = AsyncMock()
-        
+
         user = MagicMock(spec=ipy.User)
         user.id = 123
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match = MagicMock()
         mock_match.id = "1"
         mock_p_doc.matches = [mock_match]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock construct_match_embed
         mock_embed = MagicMock(spec=ipy.Embed)
         mock_construct_match_embed.return_value = mock_embed
@@ -314,11 +314,11 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        
+
         user = MagicMock(spec=ipy.User)
         user.id = 123
         user.__str__.return_value = "Player1"
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match = MagicMock()
@@ -331,7 +331,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         }
         mock_p_doc.matches = [mock_match]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[
             SimpleNamespace(season_number=3, start=300, end=400),
@@ -363,10 +363,10 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.author.id = 123
         ctx.values = ["1050"]
         ctx.send = AsyncMock()
-        
+
         # Mock queue (empty)
         mock_queue.find_all.return_value.to_list = AsyncMock(return_value=[])
-        
+
         # Mock mixed_queue (empty)
         self.cog.bot.ext = {} # Reset ext
         # Mock match (not in match)
@@ -400,12 +400,12 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit_origin = AsyncMock()
         ctx.message.embeds = [MagicMock()]
         ctx.message.embeds[0].fields = [MagicMock()]
-        
+
         # Mock player found
         mock_p_doc = MagicMock()
         mock_p_doc.matches = []
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
 
@@ -425,7 +425,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.interaction.user = 123
         ctx.custom_id = "match_right|123|0"
         ctx.edit_origin = AsyncMock()
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match1 = MagicMock()
@@ -437,7 +437,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         # Index 1 is match1 (ID "1")
         mock_p_doc.matches = [mock_match1, mock_match2]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock construct_match_embed
         mock_embed = MagicMock(spec=ipy.Embed)
         mock_construct_match_embed.return_value = mock_embed
@@ -459,7 +459,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.interaction.user = 123
         ctx.custom_id = "match_left|123|1"
         ctx.edit_origin = AsyncMock()
-        
+
         # Mock player found with matches
         mock_p_doc = MagicMock()
         mock_match1 = MagicMock()
@@ -471,7 +471,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         # Index 1 is match1 (ID "1")
         mock_p_doc.matches = [mock_match1, mock_match2]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock construct_match_embed
         mock_embed = MagicMock(spec=ipy.Embed)
         mock_construct_match_embed.return_value = mock_embed
@@ -496,12 +496,12 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         ctx.edit_origin = AsyncMock()
         ctx.message.embeds = [MagicMock()]
         ctx.message.embeds[0].fields = [MagicMock()]
-        
+
         # Mock player found
         mock_p_doc = MagicMock()
         mock_p_doc.matches = []
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
-        
+
         # Mock seasons
         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
 

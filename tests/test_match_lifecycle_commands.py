@@ -441,7 +441,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.guild.fetch_member = AsyncMock(side_effect=lambda user_id: MagicMock(
             id=int(user_id), display_name=f"Player {user_id}",
         ))
-        
+
         # Mock matches
         mock_match1 = MagicMock(spec=Match)
         mock_match1.matched_time = 3000000000
@@ -450,7 +450,7 @@ class TestMatchCommands(MatchCommandsCase):
             MagicMock(user_id="222")
         ]
         mock_match1.host_clans = ["#CLAN1", "#CLAN2"]
-        
+
         mock_match2 = MagicMock(spec=Match)
         mock_match2.matched_time = 3000000100
         mock_match2.participants = [
@@ -460,13 +460,13 @@ class TestMatchCommands(MatchCommandsCase):
         mock_match2.host_clans = [None]
 
         mock_match.find_all.return_value.to_list = AsyncMock(return_value=[mock_match1, mock_match2])
-        
+
         # Mock clan fetch
         mock_clan = MagicMock()
         mock_clan.name = "Test Clan"
         mock_clan.tag = "#CLAN1"
         mock_clan.share_link = "http://link"
-        
+
         # Execute
         with patch("elo_bot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client_prop:
              mock_coc_client_prop.return_value.get_clan = AsyncMock(return_value=mock_clan)
@@ -476,7 +476,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.defer.assert_called_once_with(ephemeral=False)
         mock_match.find_all.assert_called_once()
         ctx.send.assert_called_once()
-        
+
         # Check embed content
         _, kwargs = ctx.send.call_args
         embed = kwargs.get('embed')

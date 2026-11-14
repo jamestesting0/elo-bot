@@ -21,19 +21,14 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 import cogs.war_hosting.helper_preserve as helper_preserve
 from cogs._base_screenshots import capture_base_screenshot
-from cogs.base_submission import (
-    ACCEPT_BUTTON_ID, ACCEPT_MODAL_ID, REJECT_BUTTON_ID, REJECT_MODAL_ID,
-    AcceptDecision,
-    RejectDecision,
-    ResolutionDecision,
-    ReviewStatus,
-    SubmissionDraft,
-    build_resolution_embed,
-    build_review_components,
-    build_review_embed,
-    mark_review_embed,
-    parse_base_district,
+from cogs.base_submission.presentation import (
+    ACCEPT_BUTTON_ID, ACCEPT_MODAL_ID, REJECT_BUTTON_ID, REJECT_MODAL_ID, build_resolution_embed,
+    build_review_components, build_review_embed, mark_review_embed,
 )
+from cogs.base_submission.models import (
+    AcceptDecision, RejectDecision, ResolutionDecision, ReviewStatus, SubmissionDraft,
+)
+from cogs.base_submission.parsing import parse_base_district
 import interactions as ipy
 from elobot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI
 from elobot.config.ids import (

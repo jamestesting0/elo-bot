@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from beanie import PydanticObjectId
 
-import common.finals.recovery as recovery
+import elobot.features.finals.recovery as recovery
 from elobot.db import EloFinal, EloFinalMatch
 from elobot.db.final_models import FinalMatchResult, FinalResultSnapshot
 from elobot.db.season_models import FinalResultProgress

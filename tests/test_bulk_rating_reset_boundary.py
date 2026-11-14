@@ -9,9 +9,9 @@ from pymongo.errors import OperationFailure
 from pymongo.results import InsertOneResult
 
 from cogs import season_commands
-from cogs.war_hosting import result_store
+from elobot.features.hosting.war import result_store
 from elobot.config.emojis import SUCCESS_EMOJI
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
 from elobot.db import Player, Season
 from tests import _autowin_fixture as autowin_fixture
 from tests import _result_finalization_fixture as result_fixture

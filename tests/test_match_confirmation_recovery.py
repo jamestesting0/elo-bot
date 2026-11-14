@@ -381,7 +381,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.persisted.thread_message_id, 456)
 
     async def test_recovery_skips_a_match_scheduled_while_waiting_for_the_shared_lock(self) -> None:
-        from common.matches.message_lock import match_message_lock
+        from elobot.features.matches.message_lock import match_message_lock
 
         self.persisted.thread = "123"
         self.persisted._save_state()

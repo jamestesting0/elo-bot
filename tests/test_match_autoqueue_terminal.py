@@ -8,8 +8,9 @@ from pymongo.results import UpdateResult
 
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
-from cogs.war_hosting import result_store, result_store_ui
-from cogs.war_hosting.helper_store import HelperScoreStoreOutcome
+from elobot.features.hosting.war import result_store
+from elobot.features.hosting.war import result_store_ui
+from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
 from elobot.db import Match, Player
 from tests._result_finalization_fixture import VALID_RESULTS, RecordArgument, make_result_match, record_result
 

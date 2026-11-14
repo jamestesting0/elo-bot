@@ -7,8 +7,8 @@ import aiohttp
 import anyio
 import interactions as ipy
 
-import cogs.war_hosting.helper_host as helper_host
-import cogs.war_hosting.helper_host_job as helper_host_job
+import elobot.features.hosting.war.helper_host as helper_host
+import elobot.features.hosting.war.helper_host_job as helper_host_job
 from elobot.integrations.helper_api import HelperJob, HelperJobCreated, HelperJobEvent
 
 

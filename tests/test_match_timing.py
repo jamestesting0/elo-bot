@@ -1,6 +1,6 @@
 import unittest
 
-from common.matches.timing import hosting_started
+from elobot.features.matches.timing import hosting_started
 from elobot.db import Match
 
 

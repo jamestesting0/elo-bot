@@ -7,11 +7,12 @@ import anyio
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-import cogs.base_store.self_service as self_service
+import elobot.features.base_store.self_service as self_service
 import cogs.match_commands as match_commands
-import cogs.war_hosting.helper_base_store as helper_base_store
-import cogs.war_hosting.helper_base_store_availability as helper_base_store_availability
-from cogs.war_hosting import stored_bases, war_start
+import elobot.features.hosting.war.helper_base_store as helper_base_store
+import elobot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
+from elobot.features.hosting.war import war_start
+from elobot.features.hosting.war import stored_bases
 from elobot.integrations.helper_api import (
     HelperJobCreateAcceptedInvalid,
     HelperJobCreateRejected,

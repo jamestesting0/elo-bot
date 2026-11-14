@@ -8,8 +8,8 @@ import coc
 from beanie import init_beanie
 from pymongo import AsyncMongoClient
 
-from common.base_fingerprints.service import FingerprintService
-from common.finals.persistence import register_final_indexes
+from elobot.features.bases.fingerprints.service import FingerprintService
+from elobot.features.finals.persistence import register_final_indexes
 from elobot.app import root_callbacks, runtime
 from elobot.app.backups import backup_database1, backup_database2, sync_database
 from elobot.app.client import create_client

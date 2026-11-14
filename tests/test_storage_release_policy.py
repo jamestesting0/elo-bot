@@ -4,8 +4,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.base_store import preparation, storage
-from cogs.base_store.models import BaseStorePreparationFailure, BaseStorePreparationRequest
+from elobot.features.base_store import storage
+from elobot.features.base_store import preparation
+from elobot.features.base_store.models import BaseStorePreparationFailure, BaseStorePreparationRequest
 from elobot.db import BaseStore, Match, MatchPlayerStats, Participant
 from elobot.db.result_models import MatchResultOperation, ResultRecordSnapshot
 

@@ -6,7 +6,7 @@ from beanie import Document, PydanticObjectId
 from pydantic import Field
 from pymongo import IndexModel
 
-from common.base_fingerprints.types import LEGACY_PIPELINE_ID, utcnow
+from elobot.features.bases.fingerprints.types import LEGACY_PIPELINE_ID, utcnow
 
 
 BASE_FINGERPRINT_INDEXES = [

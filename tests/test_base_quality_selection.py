@@ -7,7 +7,7 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
 from cogs import match_commands
-from common.matches import base_selection
+from elobot.features.matches import base_selection
 from elobot.db import BaseLink, Match, Participant
 
 

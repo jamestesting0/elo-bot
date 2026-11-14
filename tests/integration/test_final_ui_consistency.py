@@ -11,14 +11,14 @@ from cogs.token_commands import TokenCommands
 from elobot.config.ids import FINAL_CHANNEL, LVL1_ROLES, LVL2_ROLES
 from elobot.config.game import DISTRICT_CODES
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import bind_thread, prepare_match, schedule_final_match
-from common.finals.profile_ui import profile_view
-from common.finals.pairing_ui import pairing_view
-from common.finals.results import FinalResultSubmission, submit_result
-from common.finals.leaderboards import FinalBoardRow, final_board_text
-from common.tokens.bets import BetAction, apply_bet, open_market, void_market
-from common.tokens.presentation import bet_review, market_controls, market_embed, publish_market
+from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elobot.features.finals.profile_ui import profile_view
+from elobot.features.finals.pairing_ui import pairing_view
+from elobot.features.finals.results import FinalResultSubmission, submit_result
+from elobot.features.finals.leaderboards import FinalBoardRow, final_board_text
+from elobot.features.tokens.bets import BetAction, apply_bet, open_market, void_market
+from elobot.features.tokens.presentation import bet_review, market_controls, market_embed, publish_market
 from elobot.db import EloFinal, Match, Player
 from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile
 from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet

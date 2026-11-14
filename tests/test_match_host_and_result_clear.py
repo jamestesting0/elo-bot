@@ -125,7 +125,7 @@ class TestMatchHostAndResultClear(unittest.IsolatedAsyncioTestCase):
 
     async def test_clear_rejects_finalization_claim_at_write_boundary(self) -> None:
         async def claim(_query, _updates):
-            from common.results.operations import begin_result_operation
+            from elobot.features.results.operations import begin_result_operation
             self.runtime.before_match_write = AsyncMock()
             match = await Match.find_one({"token": "TOKEN"})
             assert match is not None
@@ -165,7 +165,7 @@ class TestMatchHostAndResultClear(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.match["participants"][0]["result"], [None] * 3)
 
     async def test_clear_rejects_pending_completed_and_cancelled_operations(self) -> None:
-        from common.results.operations import begin_result_operation
+        from elobot.features.results.operations import begin_result_operation
         match = await Match.find_one({"token": "TOKEN"})
         assert match is not None
         await begin_result_operation(match, fixture.RESULTS)

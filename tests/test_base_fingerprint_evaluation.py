@@ -3,9 +3,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from common.base_fingerprints.evaluation import Fixture, PairEvaluation, legacy_score, load_fixtures, quality_report
-from common.base_fingerprints.types import ExtractionResult, FingerprintError, LayoutMatch
-from common.base_fingerprints.types import DISTRICTS
+from elobot.features.bases.fingerprints.evaluation import Fixture, PairEvaluation, legacy_score, load_fixtures, quality_report
+from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, LayoutMatch
+from elobot.features.bases.fingerprints.types import DISTRICTS
 from tests._relative_geometry_fixture import layout
 from tests._base_fingerprint_fixture import fingerprint
 

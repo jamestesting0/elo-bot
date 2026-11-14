@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from bson import ObjectId
 
 import cogs.base_commands as commands
-from common.base_fingerprints import matcher, search
-from common.base_fingerprints.worker import WorkerRequest
+from elobot.features.bases.fingerprints import matcher, search
+from elobot.features.bases.fingerprints.worker import WorkerRequest
 from elobot.db import BaseLayout
 from tests import _base_search_fixture as fixture
 from tests._relative_geometry_fixture import layout, points

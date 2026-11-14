@@ -6,9 +6,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs import match_commands
-from cogs.base_store import controls, publication, storage
-from cogs.base_store.presentation import build_helper_store_components, build_manual_store_components
-from cogs.war_hosting import helper_base_store, helper_base_store_availability
+from elobot.features.base_store import storage
+from elobot.features.base_store import publication
+from elobot.features.base_store import controls
+from elobot.features.base_store.presentation import build_helper_store_components, build_manual_store_components
+from elobot.features.hosting.war import helper_base_store
+from elobot.features.hosting.war import helper_base_store_availability
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests import _match_publication_fixture as recovery_tests
 from tests._stored_start_fixture import terminal_job

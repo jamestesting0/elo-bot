@@ -10,10 +10,10 @@ from bson import BSON
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.base_store import live_service
+from elobot.features.base_store import live_service
 from cogs.match_commands import MatchCommands
 import cogs.match_commands as match_commands
-from cogs.war_hosting import helper_base_store_availability
+from elobot.features.hosting.war import helper_base_store_availability
 from elobot.config.game import HOST_CLAN_CHOICES
 from elobot.db import BaseLink, BaseStore, Match, Participant
 from tests import _helper_stored_bases_fixture as transport

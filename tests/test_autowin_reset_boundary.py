@@ -4,7 +4,7 @@ import anyio
 from pymongo.results import UpdateResult
 
 from elobot.config.emojis import SUCCESS_EMOJI
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
 from elobot.db import Match, Player
 
 

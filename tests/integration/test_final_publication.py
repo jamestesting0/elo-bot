@@ -3,22 +3,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import bind_thread
-from common.finals.publication import publish_bracket
-from common.finals.types import FinalError
+from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elobot.features.finals.matches import bind_thread
+from elobot.features.finals.publication import publish_bracket
+from elobot.features.finals.types import FinalError
 from elobot.db import EloFinal
-from common.tokens.bets import close_market, open_market
-from common.tokens.presentation import publish_market, market_signature
-from common.finals.recovery import recover_final
-from common.finals.results import FinalResultSubmission, submit_result
+from elobot.features.tokens.bets import close_market, open_market
+from elobot.features.tokens.presentation import publish_market, market_signature
+from elobot.features.finals.recovery import recover_final
+from elobot.features.finals.results import FinalResultSubmission, submit_result
 from elobot.db.token_models import FinalBettingMarket
 
 
 class TestFinalPublication(FinalScenarioCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
-        rendering = patch("common.finals.publication.render_bracket", return_value=b"bracket-image")
+        rendering = patch("elobot.features.finals.publication.render_bracket", return_value=b"bracket-image")
         rendering.start()
         self.addCleanup(rendering.stop)
         self.final = await confirm_bracket(await self.roster(8), "manager")

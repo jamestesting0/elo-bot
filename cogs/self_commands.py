@@ -4,35 +4,35 @@ from datetime import UTC, datetime
 
 import interactions as ipy
 
-from cogs.live_hosting.request import (
+from elobot.features.hosting.live.request import (
     LIVE_REQUEST_ACCEPT_PATTERN,
     LIVE_REQUEST_REJECT_PATTERN,
     LiveRequestCoordinator,
     LiveRequestIdentity,
 )
-import cogs.base_store.live_controls as live_store_controls
-from cogs.base_store import controls as base_store_controls
-from cogs.base_store.models import StoredBaseActionRequest
-import cogs.war_hosting.helper_spectate as helper_spectate
-import cogs.self_hosting.hosting as self_hosting
-import cogs.war_hosting.helper_reinvite as helper_reinvite
+import elobot.features.base_store.live_controls as live_store_controls
+from elobot.features.base_store import controls as base_store_controls
+from elobot.features.base_store.models import StoredBaseActionRequest
+import elobot.features.hosting.war.helper_spectate as helper_spectate
+import elobot.features.hosting.self_hosted.hosting as self_hosting
+import elobot.features.hosting.war.helper_reinvite as helper_reinvite
 from cogs.match_commands import (
     format_available_resource_clans,
     is_match_finished,
     try_reserve_resource_clan,
     try_reserve_resource_match_side,
 )
-from cogs.war_hosting.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
-from cogs.war_hosting.helper_host import (
+from elobot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
+from elobot.features.hosting.war.helper_host import (
     AutomaticWarHost,
     host_war_automatically,
 )
 from elobot.config.ids import AUTOMATIC_MATCH_THREAD, BOT_ID, LVL2_ROLES
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
-from common.base_store.start import held_store
+from elobot.features.base_store.start import held_store
 from elobot.discord.checks import has_any
-from common.matches.timing import hosting_started
+from elobot.features.matches.timing import hosting_started
 from elobot.core.raid_weekend import is_raid_weekend
 from elobot.db import Clan, Match, Player
 

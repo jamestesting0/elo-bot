@@ -4,7 +4,7 @@ from beanie import Document, Link
 from pydantic import BaseModel, Field, conlist
 from pymongo import IndexModel
 
-from common.base_fingerprints.types import BaseFingerprint, ExtractionState, ImageAttachment
+from elobot.features.bases.fingerprints.types import BaseFingerprint, ExtractionState, ImageAttachment
 from .fingerprint_models import BASE_FINGERPRINT_INDEXES
 
 

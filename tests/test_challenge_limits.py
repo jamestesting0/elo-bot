@@ -11,8 +11,8 @@ from pymongo.errors import OperationFailure
 
 from cogs.challenge_commands import ChallengeCommands, available_challenges
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
-from common.matches.challenges import weekly_challenge_balance
-from common.matches.season_stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
+from elobot.features.matches.challenges import weekly_challenge_balance
+from elobot.features.seasons.stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
 from elobot.db import Match, MatchPlayerStats, OverrideCode, Participant, Player, RecordedMatch, ServerState
 from tests._result_retry_store import RESULTS, ResultRetryState
 

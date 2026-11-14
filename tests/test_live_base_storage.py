@@ -4,8 +4,9 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from cogs.base_store import live_service, live_publication
-from common.base_store.live import live_pair_ready, ready_live_reservation_id
+from elobot.features.base_store import live_service
+from elobot.features.base_store import live_publication
+from elobot.features.base_store.live import live_pair_ready, ready_live_reservation_id
 from tests._live_base_fixture import CLAN, LiveBaseFixture
 
 

@@ -8,9 +8,9 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from cogs.war_hosting.confirmation import confirm_helper_queue
+from elobot.features.hosting.war.confirmation import confirm_helper_queue
 from elobot.integrations.helper_api import HelperEtaReader, HelperJobCanceller, HelperTrackingFailure
-from cogs.war_hosting.helper_host import AutomaticWarHost, host_war_automatically
+from elobot.features.hosting.war.helper_host import AutomaticWarHost, host_war_automatically
 from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI
 
 
@@ -151,16 +151,16 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
             clan=MagicMock(tag="#2RY0QP8GY"),
             host=MagicMock(id=300),
         )
-        with patch("cogs.war_hosting.helper_host.Player") as player_model, \
-                patch("cogs.war_hosting.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
+        with patch("elobot.features.hosting.war.helper_host.Player") as player_model, \
+                patch("elobot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
                 patch("cogs.match_commands.choose_bases", new=AsyncMock(return_value=match)), \
                 patch(
-                    "cogs.war_hosting.helper_host_job.time",
+                    "elobot.features.hosting.war.helper_host_job.time",
                     new=MagicMock(time=MagicMock(return_value=1000.0)),
                 ), \
-                patch("cogs.war_hosting.war_start.start_war", new=self.start_war), \
-                patch("cogs.war_hosting.war_start.abort_war_start", new=self.abort_war_start), \
-                patch("cogs.war_hosting.helper_host_job.HelperJobPoller.wait", new=self.poll):
+                patch("elobot.features.hosting.war.war_start.start_war", new=self.start_war), \
+                patch("elobot.features.hosting.war.war_start.abort_war_start", new=self.abort_war_start), \
+                patch("elobot.features.hosting.war.helper_host_job.HelperJobPoller.wait", new=self.poll):
             player_model.find_one = AsyncMock(return_value=MagicMock(tag="#CALLER"))
             self.poll.return_value = outcome
             if not self.start_war.side_effect:
@@ -202,7 +202,7 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
         self.start_war.side_effect = lambda *_args: self.events.append("start") or None
 
         with patch(
-                "cogs.war_hosting.helper_host.match_commands.available_resource_clans_text",
+                "elobot.features.hosting.war.helper_host.match_commands.available_resource_clans_text",
                 new=AsyncMock(return_value="Available clans:\n- None"),
         ) as available_clans:
             # When automatic hosting tries to commit the local start.

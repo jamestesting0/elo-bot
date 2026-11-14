@@ -8,8 +8,8 @@ import interactions as ipy
 from bson import ObjectId
 
 import cogs.base_commands as commands
-from common.base_fingerprints.search import SearchSession, render_page
-from common.base_fingerprints.types import MatchScore
+from elobot.features.bases.fingerprints.search import SearchSession, render_page
+from elobot.features.bases.fingerprints.types import MatchScore
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.db import BaseLayout
 from tests._base_fingerprint_fixture import fingerprint

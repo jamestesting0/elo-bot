@@ -5,10 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.base_store.publication import mark_store_reserved
-from cogs.live_hosting import helper_live, live_start
-from cogs.war_hosting.helper_host_job import run_helper_host_job
-from common.base_store.live import live_store_components
+from elobot.features.base_store.publication import mark_store_reserved
+from elobot.features.hosting.live import live_start
+from elobot.features.hosting.live import helper_live
+from elobot.features.hosting.war.helper_host_job import run_helper_host_job
+from elobot.features.base_store.live import live_store_components
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
 
 

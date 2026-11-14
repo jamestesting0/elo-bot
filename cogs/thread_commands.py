@@ -7,10 +7,10 @@ from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCES
 from elobot.config.ids import FINAL_CHANNEL, GUILD_IDS, LVL1_ROLES, MATCH_CHANNEL
 from elobot.db import Match
 import asyncio
-from common.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
-from cogs.base_store.preparation import BASE_STORE_RESERVATION_LOCK
-from cogs.base_store.storage import clear_match_base_stores
-from cogs.war_hosting import result_store
+from elobot.features.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
+from elobot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
+from elobot.features.base_store.storage import clear_match_base_stores
+from elobot.features.hosting.war import result_store
 from cogs.match_commands import free_match_clans, remove_helper_task
 
 

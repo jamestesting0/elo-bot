@@ -6,7 +6,7 @@ import interactions as ipy
 from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.config.emojis import DISTRICT_EMOJI
 from elobot.discord.pagination import build_page_button
-from common.matches.season_stats import (
+from elobot.features.seasons.stats import (
     ActivityPeak,
     SeasonStats,
     SeasonStatsError,

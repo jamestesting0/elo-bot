@@ -1,8 +1,8 @@
 import unittest
 
-from common.finals.bracket import automatic_pairs, build_bracket
-from common.finals.prediction_ui import prediction_view
-from common.finals.types import NODE_IDS
+from elobot.features.finals.bracket import automatic_pairs, build_bracket
+from elobot.features.finals.prediction_ui import prediction_view
+from elobot.features.finals.types import NODE_IDS
 from elobot.db import EloFinal
 from elobot.db.final_models import FinalPrediction
 

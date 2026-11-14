@@ -5,7 +5,7 @@ from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import UpdateResult
 import cogs.match_commands as match_commands
-from cogs.war_hosting import helper_base_store_availability
+from elobot.features.hosting.war import helper_base_store_availability
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.db import BaseStore, Match, Participant
 

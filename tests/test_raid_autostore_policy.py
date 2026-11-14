@@ -1,6 +1,6 @@
 import unittest
 
-from cogs.base_store.raid_policy import eligible_for_raid_storage, select_raid_storage_slot
+from elobot.features.base_store.raid_policy import eligible_for_raid_storage, select_raid_storage_slot
 from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
 from elobot.db import BaseLink, BaseStore
 

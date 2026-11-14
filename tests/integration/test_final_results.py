@@ -1,10 +1,10 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.results import FinalResultSubmission, submit_result
-from common.finals.types import FinalError
+from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elobot.features.finals.results import FinalResultSubmission, submit_result
+from elobot.features.finals.types import FinalError
 from elobot.db import Match, Player, RecordedMatch
 from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile
-from common.finals.recovery import recover_final
+from elobot.features.finals.recovery import recover_final
 from dataclasses import replace
 
 

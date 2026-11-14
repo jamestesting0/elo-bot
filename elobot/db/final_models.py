@@ -3,8 +3,8 @@ from beanie import Document
 from pydantic import BaseModel, Field, model_validator
 from pymongo import IndexModel
 
-from common.finals.types import FINAL_DISTRICTS, Outcome
-from common.results.validation import is_valid_match_result_entry
+from elobot.features.finals.types import FINAL_DISTRICTS, Outcome
+from elobot.features.results.validation import is_valid_match_result_entry
 from elobot.db.system_models import HelperHistory
 
 

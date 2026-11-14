@@ -54,7 +54,7 @@ class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTes
         self.assertFalse(self.rows[Match][0]["is_autowin"])
 
     async def test_result_claim_between_read_and_autowin_write_prevents_both_awards(self) -> None:
-        from common.results.operations import begin_result_operation
+        from elobot.features.results.operations import begin_result_operation
 
         # Given: a result operation claims Mongo after the autowin snapshot was read.
         original_claim = match_commands.claim_autowin

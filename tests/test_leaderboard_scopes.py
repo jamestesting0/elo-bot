@@ -6,7 +6,7 @@ import interactions as ipy
 
 from cogs.leaderboard_commands import LeaderboardCommands
 from elobot.config.presentation import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
-from common.finals.leaderboards import final_board_rows
+from elobot.features.finals.leaderboards import final_board_rows
 from elobot.features.seasons.selection import interpret_season_string
 
 
@@ -269,8 +269,8 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
             for number in (3, 7, 9)
         ]
         self.predictions = []
-        final_model = self.enterContext(patch("common.finals.leaderboards.EloFinal"))
-        self.enterContext(patch("common.finals.lifecycle.EloFinal", final_model))
+        final_model = self.enterContext(patch("elobot.features.finals.leaderboards.EloFinal"))
+        self.enterContext(patch("elobot.features.finals.lifecycle.EloFinal", final_model))
         final_model.find_all.return_value.to_list = AsyncMock(side_effect=lambda: self.finals)
         final_model.find_all.return_value.sort.return_value.first_or_none = AsyncMock(
             side_effect=lambda: self.finals[-1] if self.finals else None
@@ -278,7 +278,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         final_model.find_one = AsyncMock(side_effect=lambda query: next(
             (final for final in self.finals if all(getattr(final, key) == value for key, value in query.items())), None
         ))
-        predictions_model = self.enterContext(patch("common.finals.leaderboards.FinalPrediction"))
+        predictions_model = self.enterContext(patch("elobot.features.finals.leaderboards.FinalPrediction"))
 
         def find_predictions(query):
             final_ids = query["final_id"]
@@ -290,18 +290,18 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
 
         predictions_model.find.side_effect = find_predictions
         self.wallets = [SimpleNamespace(id="wallet", user_id="token-user", initialized=True, balance=8765)]
-        players = self.enterContext(patch("common.finals.leaderboards.Player"))
+        players = self.enterContext(patch("elobot.features.finals.leaderboards.Player"))
         players.find_all.return_value.to_list = AsyncMock(side_effect=lambda: [
             SimpleNamespace(user_id=wallet.user_id) for wallet in self.wallets
         ])
-        wallets = self.enterContext(patch("common.finals.leaderboards.TokenWallet"))
+        wallets = self.enterContext(patch("elobot.features.finals.leaderboards.TokenWallet"))
         wallets.find.return_value.to_list = AsyncMock(side_effect=lambda: self.wallets)
-        ledger = self.enterContext(patch("common.finals.leaderboards.TokenLedgerEntry"))
+        ledger = self.enterContext(patch("elobot.features.finals.leaderboards.TokenLedgerEntry"))
         ledger.find.return_value.to_list = AsyncMock(side_effect=lambda: [
             SimpleNamespace(operation_key=f"grant:{wallet.id}") for wallet in self.wallets
         ])
         self.ensure_wallet = self.enterContext(patch(
-            "common.finals.leaderboards.ensure_wallet", new_callable=AsyncMock
+            "elobot.features.finals.leaderboards.ensure_wallet", new_callable=AsyncMock
         ))
 
     def prediction(self, season, user, points, eligible, submitted_at=1):

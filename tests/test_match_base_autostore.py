@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.base_store.models import SelfBaseStoreRequest
+from elobot.features.base_store.models import SelfBaseStoreRequest
 from cogs.match_commands import MatchCommands
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.config.ids import LVL2_ROLES, PLAYER_ROLE

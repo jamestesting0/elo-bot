@@ -5,7 +5,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 from elobot.config.emojis import SUCCESS_EMOJI
-from cogs.base_store import raid_task
+from elobot.features.base_store import raid_task
 from elobot.db import Match
 from tests._raid_autostore_fixture import RaidAutostoreFixture
 from tests._stored_start_fixture import terminal_job

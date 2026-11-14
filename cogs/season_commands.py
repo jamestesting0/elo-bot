@@ -12,12 +12,12 @@ from elobot.config.game import DISTRICT_CHOICES
 from elobot.config.ids import GUILD_IDS, LVL1_ROLES
 from elobot.config.emojis import RANK_EMOJIS, SUCCESS_EMOJI
 from elobot.config.emojis import ERROR_EMOJI
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from elobot.db import BaseLayout, Season, Player, DistrictSeasonData, PlayerSeasonData
 from elobot.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
 from elobot.discord.season_stats import stats_controls, stats_embed
-from common.matches.season_stats import SeasonStatsError, SeasonWindow, season_windows
-from common.matches.season_stats_data import load_season_stats
+from elobot.features.seasons.stats import SeasonStatsError, SeasonWindow, season_windows
+from elobot.features.seasons.stats_data import load_season_stats
 import math
 from datetime import datetime
 from elobot.core.parsing import extract_integer

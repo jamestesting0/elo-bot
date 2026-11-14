@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import interactions as ipy
 
-from common.matches.recovery import _repair_match, _repair_message
+from elobot.features.matches.recovery import _repair_match, _repair_message
 from elobot.db import Match, Participant
 
 

@@ -7,10 +7,10 @@ from unittest.mock import patch
 
 from PIL import Image, ImageChops
 
-from common.finals.bracket import advance_nodes, automatic_pairs, build_bracket
-from common.finals.rendering import bracket_labels, fitted_label, render_bracket
-from common.finals.prediction_display import prediction_statuses
-from common.finals.types import FinalError
+from elobot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket
+from elobot.features.finals.rendering import bracket_labels, fitted_label, render_bracket
+from elobot.features.finals.prediction_display import prediction_statuses
+from elobot.features.finals.types import FinalError
 from elobot.db import EloFinal
 from elobot.db.final_models import FinalPrediction
 
@@ -46,7 +46,7 @@ class TestFinalRendering(unittest.TestCase):
             final.player_nicknames = names
             final.champion = "0"
             with self.subTest(names=names), \
-                    patch("common.finals.rendering.fitted_label", lru_cache(maxsize=None)(fitted_label)), \
+                    patch("elobot.features.finals.rendering.fitted_label", lru_cache(maxsize=None)(fitted_label)), \
                     patch.object(Image.Image, "save", partialmethod(Image.Image.save, compress_level=0)), \
                     Image.open("assets/elo_final_bracket.png") as template, \
                     Image.open(BytesIO(render_bracket(final))) as rendered:
@@ -117,7 +117,7 @@ class TestFinalRendering(unittest.TestCase):
         self.assertTrue(label.endswith("…"))
 
     def test_missing_template_reports_truthful_error(self):
-        with patch("common.finals.rendering.TEMPLATE", Path("absent-final-template.png")):
+        with patch("elobot.features.finals.rendering.TEMPLATE", Path("absent-final-template.png")):
             with self.assertRaises(FinalError):
                 render_bracket(self.edition(5))
 
@@ -126,7 +126,7 @@ class TestFinalRendering(unittest.TestCase):
             template = Path(directory) / "bracket.png"
             with Image.new("RGB", (100, 100)) as image:
                 image.save(template)
-            with patch("common.finals.rendering.TEMPLATE", template):
+            with patch("elobot.features.finals.rendering.TEMPLATE", template):
                 with self.assertRaisesRegex(FinalError, "template dimensions changed"):
                     render_bracket(self.edition(8))
 

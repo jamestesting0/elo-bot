@@ -1,6 +1,6 @@
 import unittest
 
-from common.finals.inventory import inventory
+from elobot.features.finals.inventory import inventory
 
 
 class TestFinalInventory(unittest.TestCase):

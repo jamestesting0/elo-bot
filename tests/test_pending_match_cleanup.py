@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 
 from cogs import match_commands, thread_commands
-from common.results.autowin import claim_autowin
+from elobot.features.results.autowin import claim_autowin
 from elobot.config.ids import LVL2_ROLES, MATCH_CHANNEL
-from common.matches.cleanup import delete_unreserved_match
-from common.results.operations import begin_result_operation
+from elobot.features.matches.cleanup import delete_unreserved_match
+from elobot.features.results.operations import begin_result_operation
 from elobot.db import Match
 from elobot.db.result_models import MatchResultOperation
 from tests import _result_finalization_fixture as result_fixture

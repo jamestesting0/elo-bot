@@ -2,8 +2,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from cogs.base_store.models import BaseStorePresentationRequest
-from cogs.base_store.presentation import (
+from elobot.features.base_store.models import BaseStorePresentationRequest
+from elobot.features.base_store.presentation import (
     build_helper_store_components,
     build_manual_store_components,
     build_store_embed,

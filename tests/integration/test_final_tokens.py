@@ -1,12 +1,12 @@
 import asyncio
 
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.hosting import accept_final_start
-from common.finals.lifecycle import confirm_bracket
-from common.finals.types import FinalError
-from common.tokens.bets import BetAction, apply_bet, open_market, projected_return
-from common.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
-from common.tokens.wallets import ensure_wallet, wallet_summary
+from elobot.features.finals.hosting import accept_final_start
+from elobot.features.finals.lifecycle import confirm_bracket
+from elobot.features.finals.types import FinalError
+from elobot.features.tokens.bets import BetAction, apply_bet, open_market, projected_return
+from elobot.features.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
+from elobot.features.tokens.wallets import ensure_wallet, wallet_summary
 from elobot.db import Player
 from elobot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
 

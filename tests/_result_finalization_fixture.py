@@ -6,7 +6,7 @@ from beanie import PydanticObjectId
 from pymongo.results import UpdateResult
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
-from cogs.war_hosting import result_store
+from elobot.features.hosting.war import result_store
 from elobot.config.ids import MATCH_CHANNEL
 from elobot.db import BaseStore, Match, Participant
 from elobot.db.player_models import MatchPlayerStats
@@ -158,8 +158,8 @@ from copy import deepcopy
 from pymongo.results import DeleteResult, InsertOneResult
 from cogs import data_commands
 from elobot.config.emojis import SUCCESS_EMOJI
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
-from common.results.manual import manual_result_key
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elobot.features.results.manual import manual_result_key
 from elobot.db import Player, RecordedMatch
 from tests._result_retry_store import apply_operations, matches
 from tests._result_retry_store import apply_update

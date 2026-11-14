@@ -4,8 +4,8 @@ from uuid import uuid4
 from beanie import init_beanie
 from bson import ObjectId
 from pymongo import AsyncMongoClient
-from common.base_fingerprints.jobs import claim_tasks, materialize_outbox
-from common.base_fingerprints.types import ExtractionState, utcnow
+from elobot.features.bases.fingerprints.jobs import claim_tasks, materialize_outbox
+from elobot.features.bases.fingerprints.types import ExtractionState, utcnow
 from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 
 

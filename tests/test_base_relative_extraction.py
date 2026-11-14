@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 
 from PIL import Image
 
-from common.base_fingerprints.artifacts import PREVIOUS_MANIFEST
-from common.base_fingerprints.extractor import extract_batch
-from common.base_fingerprints.types import FingerprintError, ImageInput
+from elobot.features.bases.fingerprints.artifacts import PREVIOUS_MANIFEST
+from elobot.features.bases.fingerprints.extractor import extract_batch
+from elobot.features.bases.fingerprints.types import FingerprintError, ImageInput
 from tests._relative_geometry_fixture import points
 
 
@@ -90,7 +90,7 @@ class TestRelativeExtraction(unittest.TestCase):
                 value = prediction(points())
                 value.names[0] = "wrong"
                 model.predict.return_value = [value]
-            with patch("common.base_fingerprints.extractor.decode_image", return_value=image):
+            with patch("elobot.features.bases.fingerprints.extractor.decode_image", return_value=image):
                 with self.assertRaises((RuntimeError, FingerprintError)):
                     extract_batch(model, [self.source()], "cpu")
             with self.assertRaises(ValueError):

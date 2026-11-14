@@ -6,8 +6,8 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.results import UpdateResult
 
-from cogs.base_store import storage as base_store_storage
-from cogs.war_hosting import war_start
+from elobot.features.base_store import storage as base_store_storage
+from elobot.features.hosting.war import war_start
 from elobot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
 
 

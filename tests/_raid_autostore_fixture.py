@@ -11,9 +11,11 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import UpdateResult
 
-from cogs.base_store import preparation, raid_task, self_service
-from cogs.base_store.channel_context import ScheduledBaseStoreContext
-from cogs.base_store.models import SelfBaseStoreRequest
+from elobot.features.base_store import self_service
+from elobot.features.base_store import raid_task
+from elobot.features.base_store import preparation
+from elobot.features.base_store.channel_context import ScheduledBaseStoreContext
+from elobot.features.base_store.models import SelfBaseStoreRequest
 from cogs.match_commands import MatchCommands
 from elobot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
 from tests._stored_start_fixture import terminal_job

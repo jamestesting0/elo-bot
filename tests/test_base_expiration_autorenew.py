@@ -98,7 +98,7 @@ class TestBaseExpirationAutorenew(unittest.IsolatedAsyncioTestCase):
         with (
                 patch("cogs.base_commands.BaseLayout") as base_layout,
                 patch("cogs.base_commands.datetime", new=clock),
-                patch("cogs.war_hosting.helper_preserve.datetime", new=clock),
+                patch("elobot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.expiration_date.__le__.return_value = "expiring"
             base_layout.find.return_value.to_list = AsyncMock(return_value=[base])

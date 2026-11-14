@@ -2,7 +2,7 @@ import unittest
 
 import anyio
 
-from common.players.data_boundary import PlayerDataBoundary, PlayerDataReset
+from elobot.features.players.data_boundary import PlayerDataBoundary, PlayerDataReset
 
 
 class TestPlayerDataBoundary(unittest.IsolatedAsyncioTestCase):

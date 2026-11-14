@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from pydantic import ValidationError
 
 from elobot.db import Match, Participant
-from common.finals.types import FinalError
+from elobot.features.finals.types import FinalError
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Builder's Workshop", "Dragon Cliffs",

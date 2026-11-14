@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 import anyio
 
 from cogs import match_commands
-from cogs.base_store.models import BaseStorePreparationFailure, PreparedBaseStore
+from elobot.features.base_store.models import BaseStorePreparationFailure, PreparedBaseStore
 
 
 from tests._match_cleanup_fixture import ThreadReservationStateMixin

@@ -6,8 +6,9 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-from cogs.base_store import repository, storage
-from common.base_store.messages import StoredBaseMessageRetirement
+from elobot.features.base_store import storage
+from elobot.features.base_store import repository
+from elobot.features.base_store.messages import StoredBaseMessageRetirement
 from elobot.features.base_store.slots import clear_all_base_store_slots
 from elobot.db import BaseStore, Match, Participant
 

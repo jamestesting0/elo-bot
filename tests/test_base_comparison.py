@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from PIL import Image, ImageChops, ImageDraw
 
-from common.base_fingerprints import comparison, presentation, service
-from common.base_fingerprints.extractor import extract_batch
-from common.base_fingerprints.matcher import align_layout, score_layout
-from common.base_fingerprints.types import (
+from elobot.features.bases.fingerprints import comparison, presentation, service
+from elobot.features.bases.fingerprints.extractor import extract_batch
+from elobot.features.bases.fingerprints.matcher import align_layout, score_layout
+from elobot.features.bases.fingerprints.types import (
     ComparisonSummary, ExtractionResult, FingerprintError, ImageAttachment, ImageInput, PIPELINE_ID, PREVIOUS_PIPELINE_ID,
 )
 from tests._relative_geometry_fixture import layout, points
@@ -98,7 +98,7 @@ class TestComparisonGeometry(unittest.TestCase):
             inputs = [ImageInput(path=str(path), source_revision=0, source_image_url="synthetic",
                                  district_id=1, pipeline_id=PIPELINE_ID) for path in paths]
             detector = MagicMock()
-            with patch("common.base_fingerprints.extractor.sliced_detections",
+            with patch("elobot.features.bases.fingerprints.extractor.sliced_detections",
                        side_effect=[detections(), detections(points()[2:])]) as sliced:
                 result = comparison.create_comparison(detector, inputs, expected, "cpu", False)
             self.assertEqual((result.query_unmatched, result.candidate_unmatched), (2, 0))
@@ -125,7 +125,7 @@ class TestComparisonGeometry(unittest.TestCase):
             inputs = [ImageInput(path=str(path), source_revision=0, source_image_url="synthetic",
                                  district_id=1, pipeline_id=PIPELINE_ID) for path in paths]
             detector = MagicMock()
-            with patch("common.base_fingerprints.extractor.sliced_detections", return_value=detections(points(7))):
+            with patch("elobot.features.bases.fingerprints.extractor.sliced_detections", return_value=detections(points(7))):
                 result = comparison.create_comparison(detector, inputs, expected, "cpu", False)
             self.assertEqual(result.score.matched, 7)
             self.assertEqual(result.warnings, [])
@@ -144,7 +144,7 @@ class TestComparisonGeometry(unittest.TestCase):
                                  district_id=1, pipeline_id=PIPELINE_ID) for path in paths]
             different = [("inferno_tower", x, y) for _, x, y in points()]
 
-            with patch("common.base_fingerprints.extractor.sliced_detections",
+            with patch("elobot.features.bases.fingerprints.extractor.sliced_detections",
                        side_effect=[detections(), detections(different)]):
                 result = comparison.create_comparison(MagicMock(), inputs, expected, "cpu", False)
 
@@ -169,7 +169,7 @@ class TestComparisonGeometry(unittest.TestCase):
             inputs = [ImageInput(path=str(path), source_revision=0, source_image_url="synthetic",
                                  district_id=1, pipeline_id=PIPELINE_ID) for path in paths]
 
-            with patch("common.base_fingerprints.extractor.sliced_detections", return_value=()):
+            with patch("elobot.features.bases.fingerprints.extractor.sliced_detections", return_value=()):
                 result = comparison.create_comparison(MagicMock(), inputs, expected, "cpu", False)
 
             self.assertEqual((result.score.matched, result.score.total), (0, 0))

@@ -6,15 +6,15 @@ from unittest.mock import AsyncMock
 import anyio
 from bson import ObjectId
 
-from common.base_fingerprints.jobs import (
+from elobot.features.bases.fingerprints.jobs import (
     claim_tasks,
     commit_result,
     enroll_batch,
     materialize_outbox,
 )
-from common.base_fingerprints.removal import remove_all_fingerprints, remove_fingerprint
-from common.base_fingerprints.service import FingerprintService
-from common.base_fingerprints.types import PIPELINE_ID, ExtractionResult, utcnow
+from elobot.features.bases.fingerprints.removal import remove_all_fingerprints, remove_fingerprint
+from elobot.features.bases.fingerprints.service import FingerprintService
+from elobot.features.bases.fingerprints.types import PIPELINE_ID, ExtractionResult, utcnow
 from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._relative_geometry_fixture import layout, points
 from tests.integration import _fingerprint_fixture as fixture

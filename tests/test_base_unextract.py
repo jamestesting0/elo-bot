@@ -7,12 +7,12 @@ import interactions as ipy
 from pymongo.errors import AutoReconnect
 
 import cogs.base_commands as commands
-from common.base_fingerprints.removal import (
+from elobot.features.bases.fingerprints.removal import (
     BulkRemovalError,
     FingerprintRemoval,
     FingerprintRemovalProgress,
 )
-from common.base_fingerprints.types import FingerprintError
+from elobot.features.bases.fingerprints.types import FingerprintError
 from tests import _base_extract_fixture as fixture
 
 

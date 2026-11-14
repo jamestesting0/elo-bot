@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from cogs.base_store import raid_task
+from elobot.features.base_store import raid_task
 from cogs.match_commands import MatchCommands
 from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
 from elobot.config.presentation import COLOR

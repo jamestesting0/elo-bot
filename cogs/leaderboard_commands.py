@@ -251,7 +251,7 @@ async def construct_leaderboard_string(guild: ipy.Guild, players_sorted: list[Pl
     else:
         page = players_sorted[starting_index:starting_index + LB_ENTRIES_PER_PAGE]
     if lb_type in {"Tokens", "Predictions"}:
-        from common.finals.leaderboards import final_board_text
+        from elobot.features.finals.leaderboards import final_board_text
         members = await asyncio.gather(*(guild.fetch_member(row.user_id) for row in page))
         return final_board_text(page, lb_type, {row.user_id: mention_user(member, row.user_id, mention_type="Player")
             for row, member in zip(page, members)})
@@ -647,7 +647,7 @@ class LeaderboardCommands(ipy.Extension):
                           season_end: int | float, starting_index: int,
                           seasons: list[Season], tier: str = "Overall") -> tuple[list, int, bool]:
         if lb_type in {"Tokens", "Predictions"}:
-            from common.finals.leaderboards import final_board_rows
+            from elobot.features.finals.leaderboards import final_board_rows
             rows = await final_board_rows(lb_type, season)
             return rows, len(rows), False
         if _is_live_elo_board(lb_type, season):

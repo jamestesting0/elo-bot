@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.base_store import storage
-from cogs.base_store.publication import mark_store_reserved
-from cogs.live_hosting import live_start
-from cogs.war_hosting import war_start
+from elobot.features.base_store import storage
+from elobot.features.base_store.publication import mark_store_reserved
+from elobot.features.hosting.live import live_start
+from elobot.features.hosting.war import war_start
 from elobot.config.ids import MATCH_CHANNEL
 from elobot.db import BaseStore
 from tests import _match_publication_fixture as publication_tests

@@ -7,7 +7,7 @@ import interactions as ipy
 from bson import ObjectId
 
 import cogs.base_commands as commands
-from common.base_fingerprints.matcher import score_layout
+from elobot.features.bases.fingerprints.matcher import score_layout
 from elobot.config.ids import BASE_SUBMISSION_CHANNEL
 from elobot.db import BaseLayout, PendingBaseSubmission
 from tests._relative_geometry_fixture import layout, points
@@ -39,7 +39,7 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
 
         async def worker(payload):
             self.assertEqual(len(payload["candidates"]), 1)
-            from common.base_fingerprints.types import BaseFingerprint
+            from elobot.features.bases.fingerprints.types import BaseFingerprint
             query = BaseFingerprint.model_validate(payload["query"])
             candidates = [BaseFingerprint.model_validate(value) for value in payload["candidates"]]
             return {"scores": [(await asyncio.to_thread(score_layout, query, value,

@@ -4,7 +4,7 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, ConfigDict, Field
 
 from .auditlog_models import DiscordId
-from common.base_fingerprints.types import ImageAttachment
+from elobot.features.bases.fingerprints.types import ImageAttachment
 
 
 class SubmissionAcceptance(BaseModel):

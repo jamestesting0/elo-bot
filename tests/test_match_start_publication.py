@@ -5,11 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from cogs.live_hosting import live_start
+from elobot.features.hosting.live import live_start
 import cogs.match_commands as match_commands
-from cogs.base_store import storage as base_store_storage
-from cogs.war_hosting import war_start
-from common.matches.messages import MatchMessagePublicationError, mark_match_message_ended
+from elobot.features.base_store import storage as base_store_storage
+from elobot.features.hosting.war import war_start
+from elobot.features.matches.messages import MatchMessagePublicationError, mark_match_message_ended
 from elobot.discord.embeds import embed_edit_payload
 from interactions.models.discord.message import process_message_payload
 from elobot.db import Match
@@ -301,7 +301,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             await war_start.complete_war_start(self.bot, self.ctx, self.war_request())
         message = self.bot.cache.place_message_data(deepcopy(self.message_data))
         self.bot.http.edit_message.side_effect = self.edit_message
-        from common.matches.publication_state import restore_match_publication
+        from elobot.features.matches.publication_state import restore_match_publication
         # When: recovery replays the still-current publication.
         restored = await restore_match_publication(message, self.match, 0)
         # Then: exact final instructions and controls survive the failed initial edit.
@@ -315,7 +315,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         message = await war_start.complete_war_start(self.bot, self.ctx, self.war_request())
         self.persisted["times.0"] = 2000
         self.bot.http.edit_message.reset_mock()
-        from common.matches.publication_state import restore_match_publication
+        from elobot.features.matches.publication_state import restore_match_publication
         # When: recovery attempts the stale model's final payload.
         restored = await restore_match_publication(message, self.match, 0)
         # Then: stale controls are never republished.
@@ -355,14 +355,14 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
 
     async def test_replay_rejects_other_live_side_change(self) -> None:
         # Given: a live payload was bound with both participants' original run details.
-        from common.matches.messages import MatchMessageState, publish_match_message
+        from elobot.features.matches.messages import MatchMessageState, publish_match_message
         self.live_request()
         message = await publish_match_message(
             self.ctx, self.match, MatchMessageState.capture(self.match, 0), embed=ipy.Embed(title="**Match Started**"),
         )
         self.match.times[1] = 2000
         self.bot.http.edit_message.reset_mock()
-        from common.matches.publication_state import restore_match_publication
+        from elobot.features.matches.publication_state import restore_match_publication
         # When: recovery considers the old live payload.
         restored = await restore_match_publication(message, self.match, 0)
         # Then: a changed opponent run also disqualifies that payload.

@@ -1,9 +1,9 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.lifecycle import confirm_bracket
-from common.finals.results import FinalResultSubmission, submit_result
-from common.tokens.bets import BetAction, apply_bet, open_market
-from common.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
-from common.tokens.wallets import ensure_wallet
+from elobot.features.finals.lifecycle import confirm_bracket
+from elobot.features.finals.results import FinalResultSubmission, submit_result
+from elobot.features.tokens.bets import BetAction, apply_bet, open_market
+from elobot.features.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
+from elobot.features.tokens.wallets import ensure_wallet
 from elobot.db.final_models import FinalMatchResult
 from elobot.db.token_models import TokenLedgerEntry, TokenWallet
 
@@ -26,7 +26,7 @@ class TestFinalCommitRecovery(FinalScenarioCase):
     async def test_ambiguous_official_result_commit_does_not_append_twice(self):
         final = await confirm_bracket(await self.roster(8), "manager")
         await self.scheduled_pairing(final, "QF1")
-        from common.finals.lifecycle import resolve_final
+        from elobot.features.finals.lifecycle import resolve_final
         final = await resolve_final()
         node = final.nodes["QF1"]
         request = FinalResultSubmission(final_id=final.id, node_id=node.id, actor_id="manager", operation_key="official",

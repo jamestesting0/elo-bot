@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import AutoReconnect
 
-from common.base_fingerprints.types import FingerprintError
+from elobot.features.bases.fingerprints.types import FingerprintError
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.db import BaseLayout
 from tests import _base_search_fixture as fixture

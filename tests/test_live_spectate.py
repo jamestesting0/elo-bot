@@ -60,9 +60,9 @@ class TestLiveSpectate(unittest.IsolatedAsyncioTestCase):
             side_effect=lambda: [self.match] if self.candidate_matches is None else self.candidate_matches,
         )
         for target, replacement in (
-            ("cogs.war_hosting.helper_spectate.Player.find_one", self.find_player),
-            ("cogs.war_hosting.helper_spectate.Match.find_one", self.find_match),
-            ("cogs.war_hosting.helper_spectate.Match.find", self.find_candidates),
+            ("elobot.features.hosting.war.helper_spectate.Player.find_one", self.find_player),
+            ("elobot.features.hosting.war.helper_spectate.Match.find_one", self.find_match),
+            ("elobot.features.hosting.war.helper_spectate.Match.find", self.find_candidates),
             ("elobot.integrations.helper_api.HELPER_POLL_INTERVAL_SECONDS", 0),
         ):
             patcher = patch(target, new=replacement)

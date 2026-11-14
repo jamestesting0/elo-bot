@@ -7,8 +7,8 @@ from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS
 from elobot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
 from elobot.discord.pagination import build_page_button, build_page_jump_modal, parse_page_number, InvalidPageError
-from common.finals.types import FinalError
-from common.tokens.wallets import ensure_wallet, wallet_summary
+from elobot.features.finals.types import FinalError
+from elobot.features.tokens.wallets import ensure_wallet, wallet_summary
 from elobot.db.token_models import TokenLedgerEntry
 
 

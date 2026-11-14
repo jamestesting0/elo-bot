@@ -1,7 +1,7 @@
 from interactions import Client
 
-from common.base_store.legacy import resolve_stored_base_message_ids
-from common.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
+from elobot.features.base_store.legacy import resolve_stored_base_message_ids
+from elobot.features.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
 from elobot.config.game import BASE_STORE_SLOTS
 from elobot.core.raid_weekend import latest_completed_raid_weekend_end_timestamp
 from elobot.db import Clan, Match, Participant

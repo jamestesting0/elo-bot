@@ -5,7 +5,8 @@ import anyio
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from cogs.base_store import repository, storage
+from elobot.features.base_store import storage
+from elobot.features.base_store import repository
 from elobot.features.base_store import slots
 from elobot.db import Clan, Match
 from tests._live_base_fixture import LiveBaseFixture

@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from cogs.base_store import publication
-from cogs.base_store.presentation import build_helper_store_components
+from elobot.features.base_store import publication
+from elobot.features.base_store.presentation import build_helper_store_components
 
 
 from tests._match_publication_fixture import BaseStoreRecoveryStateMixin

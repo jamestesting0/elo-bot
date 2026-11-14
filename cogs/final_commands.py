@@ -9,9 +9,9 @@ from elobot.db import Player, EloFinal
 from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elobot.config.ids import ELO_BLACKLIST_ROLE, FINAL_CHANNEL, GUILD_IDS, LVL1_ROLES, LVL2_ROLES
 from elobot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from common.finals import lifecycle
-from common.finals.types import FinalError
-from common.finals.bracket import seeded_players
+from elobot.features.finals import lifecycle
+from elobot.features.finals.types import FinalError
+from elobot.features.finals.bracket import seeded_players
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
 
@@ -33,7 +33,7 @@ class FinalCommands(Extension):
     betting_group = final.group(name="betting", description="Manage Final betting markets")
 
     async def _recover(self, edition):
-        from common.finals.recovery import recover_final
+        from elobot.features.finals.recovery import recover_final
         from cogs.match_commands import clear_match_base_stores, free_match_clans, remove_helper_task
         async def release(source):
             await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")
@@ -104,7 +104,7 @@ class FinalCommands(Extension):
 
     @ipy.listen(ipy.events.Startup)
     async def on_start(self):
-        from common.tokens.wallets import backfill_wallets
+        from elobot.features.tokens.wallets import backfill_wallets
         try:
             await backfill_wallets()
         except FinalError:
@@ -116,7 +116,7 @@ class FinalCommands(Extension):
     @slash_option(name="player", description="Player", opt_type=OptionType.USER)
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_profile(self, ctx: SlashContext, player: ipy.User = None, season: int = None):
-        from common.finals.profile_ui import profile_view
+        from elobot.features.finals.profile_ui import profile_view
         await ctx.defer()
         try:
             edition = await self._edition(ctx, season)
@@ -128,7 +128,7 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^finalprofile(?:refresh)?\|.+$"))
     async def final_profile_navigation(self, ctx: ipy.ComponentContext):
-        from common.finals.profile_ui import profile_view
+        from elobot.features.finals.profile_ui import profile_view
         parts = ctx.custom_id.split("|")
         try:
             if parts[1] != str(ctx.author.id):
@@ -143,7 +143,7 @@ class FinalCommands(Extension):
 
     async def _history_view(self, ctx, season, user, page=1, *, edit=False):
         from elobot.discord.pagination import build_page_button, parse_page_number
-        from common.finals.result_ui import result_embed
+        from elobot.features.finals.result_ui import result_embed
         from elobot.db.final_models import FinalMatchResult
         from elobot.db.token_models import TokenWallet
         edition = await self._edition(ctx, season)
@@ -245,8 +245,8 @@ class FinalCommands(Extension):
     @slash_option(name="match", description="Match, e.g. QF1", opt_type=OptionType.STRING, required=True,
                   autocomplete=True)
     async def final_betting_announce(self, ctx: SlashContext, match: str):
-        from common.tokens.bets import open_market
-        from common.tokens.presentation import publish_market
+        from elobot.features.tokens.bets import open_market
+        from elobot.features.tokens.presentation import publish_market
         await ctx.defer(ephemeral=True)
         try:
             edition = await self._edition(ctx, manager=True)
@@ -270,8 +270,8 @@ class FinalCommands(Extension):
     @betting_group.subcommand(sub_cmd_name="close", sub_cmd_description="Close a betting market early")
     @slash_option(name="match", description="Match, e.g. QF1", opt_type=OptionType.STRING, required=True)
     async def final_betting_close(self, ctx: SlashContext, match: str):
-        from common.tokens.bets import close_market
-        from common.tokens.presentation import publish_market
+        from elobot.features.tokens.bets import close_market
+        from elobot.features.tokens.presentation import publish_market
         await ctx.defer(ephemeral=True)
         try:
             edition, market = await self._node_market(ctx, match, manager=True)
@@ -290,7 +290,7 @@ class FinalCommands(Extension):
     @slash_option(name="match", description="Match, e.g. QF1", opt_type=OptionType.STRING, required=True)
     @slash_option(name="reason", description="Refund reason", opt_type=OptionType.STRING, required=True)
     async def final_betting_void(self, ctx: SlashContext, match: str, reason: str):
-        from common.tokens.bets import void_market
+        from elobot.features.tokens.bets import void_market
         await ctx.defer(ephemeral=True)
         try:
             edition, market = await self._node_market(ctx, match, manager=True)
@@ -305,7 +305,7 @@ class FinalCommands(Extension):
     @slash_option(name="match", description="Match, e.g. QF1", opt_type=OptionType.STRING, required=True)
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_betting_status(self, ctx: SlashContext, match: str, season: int = None):
-        from common.tokens.presentation import market_controls, market_embed
+        from elobot.features.tokens.presentation import market_controls, market_embed
         try:
             edition, market = await self._node_market(ctx, match, season)
             guild = await member_guild(ctx)
@@ -317,7 +317,7 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^betopen\|.+$"))
     async def bet_open(self, ctx: ipy.ComponentContext):
-        from common.tokens.wallets import ensure_wallet, wallet_summary
+        from elobot.features.tokens.wallets import ensure_wallet, wallet_summary
         from elobot.db.token_models import FinalBet
         await ctx.defer(ephemeral=True)
         try:
@@ -365,7 +365,7 @@ class FinalCommands(Extension):
 
     @ipy.modal_callback(re.compile(r"^betamount\|.+$"))
     async def bet_amount(self, ctx: ipy.ModalContext, amount: str):
-        from common.tokens.presentation import bet_review
+        from elobot.features.tokens.presentation import bet_review
         _, market_id, owner, contestant, version = ctx.custom_id.split("|")
         await ctx.defer(ephemeral=True)
         try:
@@ -380,7 +380,7 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^betcancel\|.+$"))
     async def bet_cancel_review(self, ctx: ipy.ComponentContext):
-        from common.tokens.presentation import bet_review
+        from elobot.features.tokens.presentation import bet_review
         _, market_id, owner, contestant, version = ctx.custom_id.split("|")
         await ctx.defer(ephemeral=True)
         try:
@@ -395,8 +395,8 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^betconfirm\|.+$"))
     async def bet_confirm(self, ctx: ipy.ComponentContext):
-        from common.tokens.bets import BetAction, apply_bet
-        from common.tokens.wallets import wallet_summary
+        from elobot.features.tokens.bets import BetAction, apply_bet
+        from elobot.features.tokens.wallets import wallet_summary
         from elobot.db.token_models import FinalBet, TokenWallet
         _, market_id, owner, contestant, version, amount = ctx.custom_id.split("|")
         if owner != str(ctx.author.id):
@@ -591,7 +591,7 @@ class FinalCommands(Extension):
         try:
             edition = await self._edition(ctx, manager=True)
             if mode == "Manual":
-                from common.finals.pairing_ui import pairing_view
+                from elobot.features.finals.pairing_ui import pairing_view
                 edition = await lifecycle.save_pairing_draft(edition, str(ctx.author.id), edition.manual_draft)
                 guild = await member_guild(ctx)
                 members = await asyncio.gather(*(guild.fetch_member(user) for user in edition.entrant_ids))
@@ -607,7 +607,7 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^finalpair\|.+$"))
     async def final_pairing_action(self, ctx: ipy.ComponentContext):
-        from common.finals.pairing_ui import pairing_view
+        from elobot.features.finals.pairing_ui import pairing_view
         _, season, owner, revision, page, action = ctx.custom_id.split("|")
         try:
             edition = await self._edition(ctx, int(season), manager=True)
@@ -649,8 +649,8 @@ class FinalCommands(Extension):
     @bracket_group.subcommand(sub_cmd_name="view", sub_cmd_description="View the saved Final bracket")
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_bracket_view(self, ctx: SlashContext, season: int = None):
-        from common.finals.publication import bracket_embed
-        from common.finals.rendering import render_bracket
+        from elobot.features.finals.publication import bracket_embed
+        from elobot.features.finals.rendering import render_bracket
         await ctx.defer()
         try:
             edition = await self._edition(ctx, season)
@@ -673,7 +673,7 @@ class FinalCommands(Extension):
 
     @bracket_group.subcommand(sub_cmd_name="publish", sub_cmd_description="Publish or refresh the saved bracket")
     async def final_bracket_publish(self, ctx: SlashContext):
-        from common.finals.publication import publish_bracket
+        from elobot.features.finals.publication import publish_bracket
         await ctx.defer(ephemeral=True)
         try:
             edition = await self._edition(ctx, manager=True)
@@ -688,7 +688,7 @@ class FinalCommands(Extension):
                   choices=[ipy.SlashCommandChoice(name=name, value=name) for name in
                            ("Quarterfinals", "Semifinals", "Final")])
     async def final_round_create(self, ctx: SlashContext, round: str):
-        from common.finals.bracket import require_round_ready
+        from elobot.features.finals.bracket import require_round_ready
         try:
             edition = await self._edition(ctx, manager=True)
             nodes = require_round_ready(edition, round)
@@ -703,10 +703,10 @@ class FinalCommands(Extension):
                            ("Quarterfinals", "Semifinals", "Final")])
     async def final_round_start(self, ctx: SlashContext, round: str):
         import cogs.match_commands as matches
-        from common.finals.bracket import require_round_ready
-        from common.finals.matches import bind_thread, prepare_match
+        from elobot.features.finals.bracket import require_round_ready
+        from elobot.features.finals.matches import bind_thread, prepare_match
         from pymongo.errors import PyMongoError
-        from common.matches.thread_messages import ThreadMessageBindingError
+        from elobot.features.matches.thread_messages import ThreadMessageBindingError
         await ctx.defer(ephemeral=True)
         completed = []
         try:
@@ -726,7 +726,7 @@ class FinalCommands(Extension):
         await ctx.send(f"{SUCCESS_EMOJI} Threads ready. Hosting has not started.\n" + "\n".join(completed), ephemeral=True)
 
     async def open_result_form(self, ctx, edition, node_id, *, winner=None, outcome="Played", reason=None):
-        from common.finals.result_ui import result_form
+        from elobot.features.finals.result_ui import result_form
         from elobot.db.final_models import FinalMatchResult
         node = edition.nodes.get(node_id)
         if node is None or node.bye or not all(node.contestants):
@@ -766,8 +766,8 @@ class FinalCommands(Extension):
 
     @ipy.modal_callback(re.compile(r"^finalres\|.+$"))
     async def final_result_modal(self, ctx: ipy.ModalContext, **response):
-        from common.finals.result_ui import result_embed, score_embed
-        from common.finals.results import FinalResultSubmission, submission_snapshot, submit_result
+        from elobot.features.finals.result_ui import result_embed, score_embed
+        from elobot.features.finals.results import FinalResultSubmission, submission_snapshot, submit_result
         from pydantic import ValidationError
         from pymongo.errors import PyMongoError
         _, season, node_id, owner, version, revision, attempt, winner, forfeit = ctx.custom_id.split("|")
@@ -847,7 +847,7 @@ class FinalCommands(Extension):
     @slash_option(name="round", description="Round", opt_type=OptionType.STRING)
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_match_list(self, ctx: SlashContext, round: str = None, season: int = None):
-        from common.finals.types import ROUND_NODES
+        from elobot.features.finals.types import ROUND_NODES
         try:
             edition = await self._edition(ctx, season)
             nodes = ROUND_NODES.get(round, tuple(edition.nodes))
@@ -866,7 +866,7 @@ class FinalCommands(Extension):
                   autocomplete=True)
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_match_view(self, ctx: SlashContext, match: str, season: int = None):
-        from common.finals.result_ui import result_embed
+        from elobot.features.finals.result_ui import result_embed
         from elobot.db.final_models import FinalMatchResult
         try:
             edition = await self._edition(ctx, season)
@@ -906,7 +906,7 @@ class FinalCommands(Extension):
         await self._prediction_state(ctx, False)
 
     async def _prediction_state(self, ctx, open_predictions):
-        from common.finals.predictions import change_prediction_state
+        from elobot.features.finals.predictions import change_prediction_state
         try:
             edition = await self._edition(ctx, manager=True)
             edition = await change_prediction_state(edition, open_predictions)
@@ -918,8 +918,8 @@ class FinalCommands(Extension):
 
     @final.subcommand(sub_cmd_name="predict", sub_cmd_description="Create or resume your full bracket prediction")
     async def final_predict(self, ctx: SlashContext):
-        from common.finals.predictions import begin_prediction
-        from common.finals.prediction_ui import prediction_view
+        from elobot.features.finals.predictions import begin_prediction
+        from elobot.features.finals.prediction_ui import prediction_view
         await ctx.defer(ephemeral=True)
         try:
             edition = await self._edition(ctx, registered=True)
@@ -934,8 +934,8 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^finalpred\|.+$"))
     async def final_prediction_action(self, ctx: ipy.ComponentContext):
-        from common.finals.predictions import PredictionAction, apply_prediction_action
-        from common.finals.prediction_ui import prediction_view
+        from elobot.features.finals.predictions import PredictionAction, apply_prediction_action
+        from elobot.features.finals.prediction_ui import prediction_view
         _, season, owner, revision, action, node = ctx.custom_id.split("|")
         if owner != str(ctx.author.id):
             await ctx.send(f"{ERROR_EMOJI} This prediction belongs to another player.", ephemeral=True)
@@ -964,8 +964,8 @@ class FinalCommands(Extension):
     @prediction_group.subcommand(sub_cmd_name="view", sub_cmd_description="View your submitted picks and accuracy")
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_prediction_view(self, ctx: SlashContext, season: int = None):
-        from common.finals.prediction_display import finished_results, prediction_alt_text, prediction_statuses
-        from common.finals.rendering import render_bracket
+        from elobot.features.finals.prediction_display import finished_results, prediction_alt_text, prediction_statuses
+        from elobot.features.finals.rendering import render_bracket
         from elobot.db.final_models import FinalMatchResult, FinalPrediction
         await ctx.defer(ephemeral=True)
         try:

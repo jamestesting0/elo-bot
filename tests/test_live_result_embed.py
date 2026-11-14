@@ -8,7 +8,7 @@ from pymongo.results import UpdateResult
 
 import cogs.match_commands as match_commands
 from elobot.config.presentation import RED_COLOR
-from common.results.operations import ResultOperationConflict
+from elobot.features.results.operations import ResultOperationConflict
 from elobot.db import Match, Participant
 from elobot.db.result_models import MatchResultOperation
 from tests._result_retry_store import apply_operations, matches

@@ -7,8 +7,8 @@ from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, ORDINAL
 from elobot.config.ids import COMMAND_CHANNEL, ELO_BLACKLIST_ROLE, GUILD_IDS, INFO_CHANNEL, LVL3_ROLES
 from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elobot.discord.decorators import reset_cooldown_on_error
-from common.matches.challenges import weekly_challenge_balance
-from common.matches.cleanup import delete_unreserved_match
+from elobot.features.matches.challenges import weekly_challenge_balance
+from elobot.features.matches.cleanup import delete_unreserved_match
 from elobot.db import Participant, Match, Player, RecordedMatch, MatchPlayerStats, OverrideCode, ServerState
 import asyncio
 import re

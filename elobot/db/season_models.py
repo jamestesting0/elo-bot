@@ -4,7 +4,7 @@ from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
-from common.finals.types import FINAL_DISTRICTS, FinalState, NodeState, Outcome, PredictionState
+from elobot.features.finals.types import FINAL_DISTRICTS, FinalState, NodeState, Outcome, PredictionState
 
 from .player_models import MatchPlayerStats
 

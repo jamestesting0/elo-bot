@@ -5,11 +5,12 @@ import anyio
 
 import cogs.match_commands as match_commands
 import cogs.self_commands as self_commands
-from cogs.base_store.models import SelfBaseStoreRequest
-from cogs.base_store.publication import BaseStoreMessageConflict
-from cogs.base_store.storage import store_self_bases
-from cogs.war_hosting import helper_base_store, war_start
-from cogs.war_hosting import result_store_task
+from elobot.features.base_store.models import SelfBaseStoreRequest
+from elobot.features.base_store.publication import BaseStoreMessageConflict
+from elobot.features.base_store.storage import store_self_bases
+from elobot.features.hosting.war import war_start
+from elobot.features.hosting.war import helper_base_store
+from elobot.features.hosting.war import result_store_task
 from tests._stored_start_fixture import StoredStartFixture, terminal_job
 
 
@@ -48,7 +49,7 @@ class TestStoredStartRace(unittest.IsolatedAsyncioTestCase):
             find_all=MagicMock(return_value=MagicMock(to_list=AsyncMock(return_value=[clan]))),
             find_one=AsyncMock(return_value=clan),
         )))
-        self.enterContext(patch("cogs.self_hosting.hosting.Player", new=MagicMock(
+        self.enterContext(patch("elobot.features.hosting.self_hosted.hosting.Player", new=MagicMock(
             find_one=AsyncMock(return_value=MagicMock(tag="#PLAYER")),
         )))
         self.enterContext(patch.object(match_commands.Player, "find_one", new=AsyncMock(

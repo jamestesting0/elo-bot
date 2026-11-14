@@ -2,7 +2,7 @@ import unittest
 
 from pydantic import ValidationError
 
-from common.base_fingerprints.types import BaseFingerprint
+from elobot.features.bases.fingerprints.types import BaseFingerprint
 from tests._relative_geometry_fixture import layout
 
 

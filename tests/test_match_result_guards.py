@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.match_commands import MatchCommands
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
 from elobot.db import Match
 
 

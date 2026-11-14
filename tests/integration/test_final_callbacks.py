@@ -9,10 +9,10 @@ from cogs.token_commands import TokenCommands
 from elobot.config.ids import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES
 from elobot.config.presentation import LB_ENTRIES_PER_PAGE
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import bind_thread, prepare_match, schedule_final_match
-from common.finals.predictions import change_prediction_state
-from common.tokens.bets import open_market
+from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elobot.features.finals.predictions import change_prediction_state
+from elobot.features.tokens.bets import open_market
 from elobot.db.final_models import FinalPrediction
 from elobot.db.token_models import FinalBet, TokenWallet
 from elobot.db import Player

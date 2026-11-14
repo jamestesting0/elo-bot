@@ -7,10 +7,10 @@ import interactions as ipy
 from pymongo.errors import OperationFailure
 
 from cogs import data_commands
-from cogs.war_hosting import result_store
-from cogs.war_hosting.helper_store import HelperScoreStoreOutcome
+from elobot.features.hosting.war import result_store
+from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
 from elobot.config.emojis import SUCCESS_EMOJI
-from common.results.operations import ResultOperationConflict, begin_result_operation
+from elobot.features.results.operations import ResultOperationConflict, begin_result_operation
 from elobot.db import Match
 from tests import _result_retry_store as retry_fixture
 

@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from common.matches.season_stats import RecordedStatsRow
+from elobot.features.seasons.stats import RecordedStatsRow
 
 
 def timestamp(day: str) -> int:

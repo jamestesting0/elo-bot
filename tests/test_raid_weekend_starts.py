@@ -8,10 +8,13 @@ from beanie.odm.fields import ExpressionField
 from pymongo.errors import PyMongoError
 
 import cogs.match_commands as commands
-from cogs.live_hosting import helper_live, live_start
+from elobot.features.hosting.live import live_start
+from elobot.features.hosting.live import helper_live
 from cogs.self_commands import SelfCommands
-from cogs.war_hosting import helper_base_store_availability, helper_host, war_start
-from common.base_store.start import held_store, ready_store, shared_store_clan
+from elobot.features.hosting.war import war_start
+from elobot.features.hosting.war import helper_host
+from elobot.features.hosting.war import helper_base_store_availability
+from elobot.features.base_store.start import held_store, ready_store, shared_store_clan
 from elobot.config.ids import BOT_ID
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
 
@@ -64,7 +67,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         player_model = MagicMock(find_one=AsyncMock(return_value=SimpleNamespace(tag="#PLAYER", elo=1000)))
         self.enterContext(patch.object(commands, "Player", new=player_model))
         self.enterContext(patch.object(helper_host, "Player", new=player_model))
-        self.enterContext(patch("cogs.base_store.controls.Player", new=player_model))
+        self.enterContext(patch("elobot.features.base_store.controls.Player", new=player_model))
         self.f.runtime.coc_client.get_player = AsyncMock(return_value=SimpleNamespace(
             tag="#PLAYER", town_hall=3, share_link="https://player.example",
         ))

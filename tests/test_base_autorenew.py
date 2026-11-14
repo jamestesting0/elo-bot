@@ -106,8 +106,8 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = 2_000_000_000.25
 
         with (
-                patch("cogs.war_hosting.helper_preserve.BaseLayout") as base_layout,
-                patch("cogs.war_hosting.helper_preserve.datetime", new=clock),
+                patch("elobot.features.hosting.war.helper_preserve.BaseLayout") as base_layout,
+                patch("elobot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.find_one = AsyncMock(return_value=base)
 
@@ -144,7 +144,7 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
         base.save_changes = AsyncMock()
         ctx = self.context()
 
-        with patch("cogs.war_hosting.helper_preserve.BaseLayout") as base_layout:
+        with patch("elobot.features.hosting.war.helper_preserve.BaseLayout") as base_layout:
             base_layout.find_one = AsyncMock(return_value=base)
 
             # When
@@ -189,8 +189,8 @@ class TestBaseRenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = 2_000_000_000.25
 
         with (
-                patch("cogs.war_hosting.helper_preserve.BaseLayout") as base_layout,
-                patch("cogs.war_hosting.helper_preserve.datetime", new=clock),
+                patch("elobot.features.hosting.war.helper_preserve.BaseLayout") as base_layout,
+                patch("elobot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.find_one = AsyncMock(return_value=base)
 

@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
-from cogs.war_hosting import result_store_ui
+from elobot.features.hosting.war import result_store_ui
 from elobot.integrations.helper_api import HelperJob, HelperEtaFailure
-from cogs.war_hosting.confirmation import HelperQueueDecision
+from elobot.features.hosting.war.confirmation import HelperQueueDecision
 from elobot.config.ids import STAFF_ROLE
 from elobot.config.emojis import STAR_EMOJI
 
@@ -393,7 +393,7 @@ class TestHelperScoreStore(HelperScoreStateMixin, unittest.IsolatedAsyncioTestCa
                     await update_progress(job)
                     return job
 
-                with patch("cogs.war_hosting.helper_store.HelperJobPoller.wait", new=AsyncMock(side_effect=poll_terminal)):
+                with patch("elobot.features.hosting.war.helper_store.HelperJobPoller.wait", new=AsyncMock(side_effect=poll_terminal)):
                     outcome = await self.invoke(ctx, self.make_match())
 
                 self.assertEqual(outcome.status, status)
@@ -403,7 +403,7 @@ class TestHelperScoreStore(HelperScoreStateMixin, unittest.IsolatedAsyncioTestCa
 
     async def test_unavailable_eta_transport_returns_unchanged_outcome(self) -> None:
         ctx = self.make_context()
-        with patch("cogs.war_hosting.helper_store.HelperEtaReader.read", new=AsyncMock(
+        with patch("elobot.features.hosting.war.helper_store.HelperEtaReader.read", new=AsyncMock(
             return_value=HelperEtaFailure(reason="offline"),
         )):
             outcome = await self.invoke(ctx, self.make_match())
@@ -463,7 +463,7 @@ class TestHelperScoreStore(HelperScoreStateMixin, unittest.IsolatedAsyncioTestCa
             await update_progress(job)
             return job
 
-        with patch("cogs.war_hosting.helper_store.HelperJobPoller.wait", new=AsyncMock(side_effect=poll_terminal)):
+        with patch("elobot.features.hosting.war.helper_store.HelperJobPoller.wait", new=AsyncMock(side_effect=poll_terminal)):
             outcome = await self.invoke(ctx, self.make_match())
 
         self.assertEqual(outcome.status, "cancelled")

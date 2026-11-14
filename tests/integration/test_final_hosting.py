@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.hosting import accept_final_start
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import prepare_match
-from common.finals.types import FINAL_DISTRICTS, FinalError
+from elobot.features.finals.hosting import accept_final_start
+from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elobot.features.finals.matches import prepare_match
+from elobot.features.finals.types import FINAL_DISTRICTS, FinalError
 from elobot.db import Match, Clan
 from elobot.db.token_models import FinalBettingMarket
-from cogs.war_hosting import result_store_task
+from elobot.features.hosting.war import result_store_task
 import cogs.match_commands as match_commands
 
 

@@ -5,16 +5,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.live_hosting import helper_live
+from elobot.features.hosting.live import helper_live
 from cogs.match_commands import MatchCommands
 from cogs.self_commands import SelfCommands
-from cogs.war_hosting import helper_host
+from elobot.features.hosting.war import helper_host
 from elobot.integrations.helper_api import (
     HelperHostWarMatchPayload,
     HelperJobCreateRejected,
     HelperJobCreateRequest,
 )
-from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
+from elobot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]
@@ -323,13 +323,13 @@ class TestDistrictHelperPayloads(unittest.IsolatedAsyncioTestCase):
             requested_by="777",
         )
         with (
-                patch("cogs.war_hosting.helper_host.Match") as match_model,
-                patch("cogs.war_hosting.helper_host.Player") as player_model,
-                patch("cogs.war_hosting.helper_host.get_available_helper_slot",
+                patch("elobot.features.hosting.war.helper_host.Match") as match_model,
+                patch("elobot.features.hosting.war.helper_host.Player") as player_model,
+                patch("elobot.features.hosting.war.helper_host.get_available_helper_slot",
                       new=AsyncMock(return_value=2), create=True) as available_slot,
-                patch("cogs.war_hosting.helper_host.confirm_helper_availability",
+                patch("elobot.features.hosting.war.helper_host.confirm_helper_availability",
                       new=AsyncMock(return_value=True)),
-                patch("cogs.war_hosting.helper_host.run_helper_host_job",
+                patch("elobot.features.hosting.war.helper_host.run_helper_host_job",
                       new_callable=AsyncMock) as run_job,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -366,10 +366,10 @@ class TestDistrictHelperPayloads(unittest.IsolatedAsyncioTestCase):
             allow_opponent_cancel=True,
         )
         with (
-                patch("cogs.live_hosting.helper_live.Match") as match_model,
-                patch("cogs.live_hosting.helper_live.confirm_helper_availability",
+                patch("elobot.features.hosting.live.helper_live.Match") as match_model,
+                patch("elobot.features.hosting.live.helper_live.confirm_helper_availability",
                       new=AsyncMock(return_value=True)),
-                patch("cogs.live_hosting.helper_live.run_helper_host_job",
+                patch("elobot.features.hosting.live.helper_live.run_helper_host_job",
                       new_callable=AsyncMock) as run_job,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -412,7 +412,7 @@ class TestDistrictHelperPayloads(unittest.IsolatedAsyncioTestCase):
         runtime = MagicMock(helper_api_base_url="https://helper.invalid", helper_api_key="key")
         ctx = self.context()
         with patch(
-                "cogs.war_hosting.helper_host_job.HelperJobCreator.create",
+                "elobot.features.hosting.war.helper_host_job.HelperJobCreator.create",
                 new=AsyncMock(return_value=HelperJobCreateRejected(error="rejected")),
         ):
             await run_helper_host_job(

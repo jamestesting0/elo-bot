@@ -9,7 +9,7 @@ from ._state import match_slot_changes
 from .result_models import MatchResultOperation
 from .publication_models import MatchMessagePublication
 from .final_models import FinalResultOperation
-from common.finals.types import FINAL_DISTRICTS, MatchFormat
+from elobot.features.finals.types import FINAL_DISTRICTS, MatchFormat
 
 
 class BaseLink(BaseModel):

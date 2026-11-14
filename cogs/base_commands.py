@@ -19,16 +19,16 @@ from interactions import utils
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-import cogs.war_hosting.helper_preserve as helper_preserve
-from cogs._base_screenshots import capture_base_screenshot
-from cogs.base_submission.presentation import (
+import elobot.features.hosting.war.helper_preserve as helper_preserve
+from elobot.features.bases.screenshots import capture_base_screenshot
+from elobot.features.base_submission.presentation import (
     ACCEPT_BUTTON_ID, ACCEPT_MODAL_ID, REJECT_BUTTON_ID, REJECT_MODAL_ID, build_resolution_embed,
     build_review_components, build_review_embed, mark_review_embed,
 )
-from cogs.base_submission.models import (
+from elobot.features.base_submission.models import (
     AcceptDecision, RejectDecision, ResolutionDecision, ReviewStatus, SubmissionDraft,
 )
-from cogs.base_submission.parsing import parse_base_district
+from elobot.features.base_submission.parsing import parse_base_district
 import interactions as ipy
 from elobot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI
 from elobot.config.ids import (
@@ -47,14 +47,14 @@ from elobot.integrations.files import delete_file
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
 from elobot.discord.checks import has_any, has_any_id
-from common.base_fingerprints.images import attachment_identity, download_base_screenshot
-from common.base_fingerprints.ingestion import replace_source
-from common.base_fingerprints.removal import FingerprintRemovalProgress, remove_all_fingerprints, remove_fingerprint
-from common.base_fingerprints.search import (
+from elobot.features.bases.fingerprints.images import attachment_identity, download_base_screenshot
+from elobot.features.bases.fingerprints.ingestion import replace_source
+from elobot.features.bases.fingerprints.removal import FingerprintRemovalProgress, remove_all_fingerprints, remove_fingerprint
+from elobot.features.bases.fingerprints.search import (
     SearchSession, SearchSessions, can_search, show_result_image, find_matches, render_page, visibility_filter,
 )
-from common.base_fingerprints.types import DISTRICTS, ExtractionState, FingerprintError, PIPELINE_ID
-from cogs.base_submission.presentation import FIND_SIMILAR_BUTTON_ID
+from elobot.features.bases.fingerprints.types import DISTRICTS, ExtractionState, FingerprintError, PIPELINE_ID
+from elobot.features.base_submission.presentation import FIND_SIMILAR_BUTTON_ID
 
 BASE_QUALITY_CHOICES = [
     ipy.SlashCommandChoice(name="Average", value="Average"),

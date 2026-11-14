@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 import cogs.base_commands as commands
-from cogs.base_submission.presentation import build_review_components
-from common.base_fingerprints.search import SearchSession
-from common.base_fingerprints.types import FingerprintError
+from elobot.features.base_submission.presentation import build_review_components
+from elobot.features.bases.fingerprints.search import SearchSession
+from elobot.features.bases.fingerprints.types import FingerprintError
 from elobot.config.ids import BASE_SUBMISSION_CHANNEL
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elobot.db import PendingBaseSubmission

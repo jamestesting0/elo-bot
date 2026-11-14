@@ -1,16 +1,16 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from cogs.war_hosting import helper_host
+from elobot.features.hosting.war import helper_host
 
 
 class TestHelperHostSlotSelection(unittest.IsolatedAsyncioTestCase):
     async def test_selects_first_available_slot_or_none(self) -> None:
-        from cogs.war_hosting.helper_slot import get_available_helper_slot
+        from elobot.features.hosting.war.helper_slot import get_available_helper_slot
 
         for available, expected in ((["Slot 1", "Slot 2"], 1), (["Slot 2"], 2), ([], None)):
             with self.subTest(available=available), patch(
-                    "cogs.war_hosting.helper_slot.base_store_storage.sync_base_store_slots",
+                    "elobot.features.hosting.war.helper_slot.base_store_storage.sync_base_store_slots",
                     new=AsyncMock(return_value={"#CLAN": available}),
             ) as sync_slots:
                 slot = await get_available_helper_slot("#CLAN")

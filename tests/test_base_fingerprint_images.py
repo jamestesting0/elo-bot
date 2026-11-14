@@ -11,8 +11,8 @@ import aiohttp
 from bson import ObjectId
 from PIL import Image
 
-from common.base_fingerprints import images, service
-from common.base_fingerprints.types import ExtractionResult, FingerprintError, ImageAttachment
+from elobot.features.bases.fingerprints import images, service
+from elobot.features.bases.fingerprints.types import ExtractionResult, FingerprintError, ImageAttachment
 from elobot.db import BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 

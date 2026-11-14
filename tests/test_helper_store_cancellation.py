@@ -8,10 +8,10 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from cogs.war_hosting import helper_base_store
+from elobot.features.hosting.war import helper_base_store
 from elobot.integrations import helper_api
 from elobot.integrations.helper_api import HelperStoreBasesPayload, HelperTrackingFailure
-from cogs.war_hosting.stored_bases import HelperStoredBaseTerminalJob
+from elobot.features.hosting.war.stored_bases import HelperStoredBaseTerminalJob
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
 

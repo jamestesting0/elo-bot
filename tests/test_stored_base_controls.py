@@ -5,9 +5,11 @@ import interactions as ipy
 from pymongo.results import UpdateResult
 
 import cogs.match_commands as match_commands
-from cogs.base_store.controls import resolve_stored_base_control
-from cogs.base_store.models import StoredBaseActionRequest, StoredBaseControlFailure, StoredBaseControlState
-from cogs.war_hosting import helper_base_store, stored_bases, war_start
+from elobot.features.base_store.controls import resolve_stored_base_control
+from elobot.features.base_store.models import StoredBaseActionRequest, StoredBaseControlFailure, StoredBaseControlState
+from elobot.features.hosting.war import war_start
+from elobot.features.hosting.war import stored_bases
+from elobot.features.hosting.war import helper_base_store
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import Match
 

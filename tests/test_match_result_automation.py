@@ -11,11 +11,13 @@ from pymongo.errors import OperationFailure
 
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
-from cogs.war_hosting import result_store, result_store_task, result_store_ui
-from cogs.war_hosting.helper_store import HelperScoreStoreOutcome
+from elobot.features.hosting.war import result_store
+from elobot.features.hosting.war import result_store_ui
+from elobot.features.hosting.war import result_store_task
+from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 from elobot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, STAR_EMOJI
-from common.players import self_hosting
+from elobot.features.hosting.self_hosted import invitations as self_hosting
 from elobot.db import Match, Player
 from elobot.db.final_models import FinalPlayerProfile
 from elobot.db.match_models import Participant

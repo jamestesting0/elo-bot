@@ -7,7 +7,7 @@ from beanie import PydanticObjectId
 from interactions.models.discord.message import process_message_payload
 
 import cogs.match_commands as match_commands
-from cogs.live_hosting import live_start
+from elobot.features.hosting.live import live_start
 from elobot.db import Participant
 
 

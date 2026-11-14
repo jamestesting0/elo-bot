@@ -6,7 +6,8 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.base_store import repository, storage
+from elobot.features.base_store import storage
+from elobot.features.base_store import repository
 from elobot.features.base_store.slots import clear_all_base_store_slots
 from elobot.db import BaseStore, Match, Participant
 

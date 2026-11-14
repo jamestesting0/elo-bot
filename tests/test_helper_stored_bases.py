@@ -9,10 +9,10 @@ from aiohttp import ClientSession
 import anyio
 import interactions as ipy
 
-import cogs.war_hosting.helper_base_store as helper_base_store
-import cogs.war_hosting.helper_base_store_availability as helper_base_store_availability
+import elobot.features.hosting.war.helper_base_store as helper_base_store
+import elobot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
 from elobot.integrations.helper_api import HelperEta, HelperHostWarMatchOnStoredPayload, HelperJob, HelperJobCreateAcceptedInvalid, HelperJobCreateRejected, HelperJobCreateUnavailable, HelperJobPoller, HelperTrackingFailure
-from cogs.war_hosting.stored_bases import (
+from elobot.features.hosting.war.stored_bases import (
     HelperStoredBaseTerminalJob,
     host_war_match_on_stored,
     remove_bases,

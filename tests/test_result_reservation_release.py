@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from pymongo.errors import OperationFailure
 
 from cogs import match_commands
-from cogs.base_store.storage import BaseStoreReleaseConflict
+from elobot.features.base_store.storage import BaseStoreReleaseConflict
 from elobot.db import BaseStore, Match
 from tests import _result_retry_store as fixture
 

@@ -13,11 +13,11 @@ import interactions as ipy
 from PIL import Image
 from pymongo.errors import OperationFailure
 
-import cogs._base_screenshots as screenshots
+import elobot.features.bases.screenshots as screenshots
 import cogs.base_commands as commands
 import cogs.preset_commands as presets
 from elobot.integrations import helper_api
-from common.base_fingerprints import images
+from elobot.features.bases.fingerprints import images
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elobot.config.presentation import UNAVAILABLE_IMAGE
 

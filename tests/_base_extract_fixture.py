@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie import PydanticObjectId
 import cogs.base_commands as commands
-from common.base_fingerprints.types import ExtractionState
+from elobot.features.bases.fingerprints.types import ExtractionState
 
 
 class BaseExtractStateMixin:

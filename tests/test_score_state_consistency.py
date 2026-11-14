@@ -8,7 +8,8 @@ from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 from pymongo.errors import OperationFailure
 
-from cogs.war_hosting import helper_store, result_store
+from elobot.features.hosting.war import result_store
+from elobot.features.hosting.war import helper_store
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.db import Match, Participant, Player
 from tests import _helper_score_fixture as http_fixture

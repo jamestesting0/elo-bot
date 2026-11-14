@@ -8,7 +8,7 @@ from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
 from elobot.config.ids import LVL2_ROLES
-from common.players import self_hosting
+from elobot.features.hosting.self_hosted import invitations as self_hosting
 from elobot.db import Match, Player, RecordedMatch
 from elobot.db.final_models import FinalEditionStats, FinalPlayerProfile
 from elobot.db.match_models import Participant

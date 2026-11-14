@@ -6,16 +6,16 @@ from unittest.mock import AsyncMock, patch
 from bson import ObjectId
 from pymongo.errors import AutoReconnect
 
-from common.base_fingerprints.ingestion import replace_source
-from common.base_fingerprints.jobs import claim_tasks, commit_result, enroll_batch, materialize_outbox, run_counts
-from common.base_fingerprints.search import eligible, find_matches, visibility_filter
-from common.base_fingerprints.service import FingerprintService
-from common.base_fingerprints.types import ExtractionResult, ExtractionState, utcnow
-from common.base_fingerprints.types import FingerprintError
+from elobot.features.bases.fingerprints.ingestion import replace_source
+from elobot.features.bases.fingerprints.jobs import claim_tasks, commit_result, enroll_batch, materialize_outbox, run_counts
+from elobot.features.bases.fingerprints.search import eligible, find_matches, visibility_filter
+from elobot.features.bases.fingerprints.service import FingerprintService
+from elobot.features.bases.fingerprints.types import ExtractionResult, ExtractionState, utcnow
+from elobot.features.bases.fingerprints.types import FingerprintError
 from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
-from common.base_fingerprints.types import PIPELINE_ID
+from elobot.features.bases.fingerprints.types import PIPELINE_ID
 import cogs.base_commands as base_commands
 import cogs.preset_commands as preset_commands
 from unittest.mock import MagicMock
@@ -39,7 +39,7 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
 
     async def test_crash_after_base_commit_recovers_receipt(self):
         task = await self.claim()
-        with patch("common.base_fingerprints.jobs.finish_task", new=AsyncMock(side_effect=AutoReconnect("crash"))):
+        with patch("elobot.features.bases.fingerprints.jobs.finish_task", new=AsyncMock(side_effect=AutoReconnect("crash"))):
             with self.assertRaises(AutoReconnect):
                 await commit_result(task, ExtractionResult(fingerprint=fingerprint()))
         await BaseFingerprintTask.get_pymongo_collection().update_one({"_id": task.id},

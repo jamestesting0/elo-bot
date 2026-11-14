@@ -6,9 +6,9 @@ import interactions as ipy
 from pymongo.errors import OperationFailure
 
 from cogs import match_commands
-from cogs.base_store import storage
-from common.results.operations import ResultOperationConflict, begin_result_operation
-from common.matches.season_stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
+from elobot.features.base_store import storage
+from elobot.features.results.operations import ResultOperationConflict, begin_result_operation
+from elobot.features.seasons.stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
 from elobot.db import Match
 from elobot.db.result_models import MatchResultOperation
 from tests import _result_retry_store as record_fixture

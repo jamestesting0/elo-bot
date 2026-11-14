@@ -4,19 +4,19 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
-from cogs.live_hosting.live_start import LiveStart, ManualLiveStartReply, start_live_match
+from elobot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
 from cogs.match_commands import MatchCommands
-from common.finals.hosting import accept_final_start
-from common.finals.lifecycle import confirm_bracket, resolve_final
-from common.finals.matches import bind_thread, prepare_match, schedule_final_match
-from common.finals.recovery import mark_deleted_attempt, recover_final
-from common.finals.results import FinalResultSubmission, submit_result
-from common.finals.types import FinalError
-from common.matches.messages import MatchMessageState
+from elobot.features.finals.hosting import accept_final_start
+from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elobot.features.finals.recovery import mark_deleted_attempt, recover_final
+from elobot.features.finals.results import FinalResultSubmission, submit_result
+from elobot.features.finals.types import FinalError
+from elobot.features.matches.messages import MatchMessageState
 from elobot.db import Clan, EloFinal, Match
 from elobot.db.final_models import FinalMatchResult
 from elobot.db.token_models import FinalBettingMarket
-from common.tokens.bets import open_market
+from elobot.features.tokens.bets import open_market
 from tests.integration._final_fixture import FinalScenarioCase
 
 
@@ -105,9 +105,9 @@ class TestFinalTiming(FinalScenarioCase):
     async def test_each_war_side_keeps_its_accepted_start_without_reclosing_market(self):
         source = await self.scheduled_pairing(self.final, "QF1")
         market = await open_market(await resolve_final(), "QF1")
-        with patch("common.finals.hosting.time.time", return_value=1800000000):
+        with patch("elobot.features.finals.hosting.time.time", return_value=1800000000):
             await accept_final_start(source, "host", player=1)
-        with patch("common.finals.hosting.time.time", return_value=1800000300):
+        with patch("elobot.features.finals.hosting.time.time", return_value=1800000300):
             await accept_final_start(source, "host", player=0)
             await accept_final_start(source, "host", player=1)
         saved = await Match.get(source.id)
@@ -185,7 +185,7 @@ class TestFinalTiming(FinalScenarioCase):
 
     async def test_correction_retains_official_timing_after_mutation_and_source_deletion(self):
         source = await schedule_final_match(self.source, 1700000000)
-        with patch("common.finals.hosting.time.time", return_value=1800000000):
+        with patch("elobot.features.finals.hosting.time.time", return_value=1800000000):
             await accept_final_start(source, "host", player=None)
         initial = await submit_result(await self.request())
         await source.delete()

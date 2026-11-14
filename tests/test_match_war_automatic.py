@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.match_commands import MatchCommands
-from cogs.war_hosting import war_start
+from elobot.features.hosting.war import war_start
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 
 
@@ -85,7 +85,7 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
                     new=AsyncMock(return_value=([], {"Slot 1": ("111", "222")})),
                 ) as available_slots, \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elobot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:
@@ -122,7 +122,7 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
                 ), \
                 patch("cogs.match_commands.war_start.start_war", new_callable=AsyncMock) as start_war, \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elobot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:
@@ -157,7 +157,7 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
                 patch("cogs.match_commands.is_match_finished", return_value=False), \
                 patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock) as clan_available, \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elobot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:
@@ -185,7 +185,7 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
                 patch("cogs.match_commands.is_raid_weekend", return_value=False), \
                 patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=False)), \
                 patch(
-                    "cogs.war_hosting.helper_host.host_war_automatically",
+                    "elobot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                     create=True,
                 ) as automatic_host:

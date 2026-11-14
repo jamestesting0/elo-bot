@@ -8,7 +8,7 @@ from beanie.odm.fields import ExpressionField
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
 from cogs import data_commands
 from elobot.db import Match, RecordedMatch
 from tests import _result_retry_store as fixture

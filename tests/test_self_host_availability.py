@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 import cogs.match_commands as match_commands
-import cogs.self_hosting.hosting as self_hosting
+import elobot.features.hosting.self_hosted.hosting as self_hosting
 from cogs.self_commands import SelfCommands
 from elobot.config.ids import BOT_ID
 
@@ -25,7 +25,7 @@ class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
         self.bot.user = MagicMock(id=BOT_ID)
         self.bot.coc_client.get_clan = AsyncMock(return_value=MagicMock(tag="#CLAN", name="Helper Clan"))
         self.bot.coc_client.get_player = AsyncMock(return_value=MagicMock(clan=None))
-        self.player_patcher = patch("cogs.self_hosting.hosting.Player")
+        self.player_patcher = patch("elobot.features.hosting.self_hosted.hosting.Player")
         self.player_model = self.player_patcher.start()
         self.addCleanup(self.player_patcher.stop)
         self.player_model.find_one = AsyncMock(return_value=MagicMock(tag="#PLAYER"))
@@ -149,7 +149,7 @@ class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
 
         with patch("cogs.self_commands.Match") as match_model, \
                 patch("cogs.self_commands.Clan") as clan_model, \
-                patch("cogs.self_hosting.hosting.random.shuffle"), \
+                patch("elobot.features.hosting.self_hosted.hosting.random.shuffle"), \
                 patch("cogs.self_commands.host_war_automatically", new_callable=AsyncMock) as automatic_host:
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=[fallback, current])
@@ -179,7 +179,7 @@ class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
 
         with patch("cogs.self_commands.Match") as match_model, \
                 patch("cogs.self_commands.Clan") as clan_model, \
-                patch("cogs.self_hosting.hosting.random.shuffle"), \
+                patch("elobot.features.hosting.self_hosted.hosting.random.shuffle"), \
                 patch("cogs.self_commands.host_war_automatically", new_callable=AsyncMock) as automatic_host:
             match_model.find_one = AsyncMock(return_value=match)
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=[attack_clan, fallback])

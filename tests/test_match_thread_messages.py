@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from common.matches.thread_messages import find_match_thread_announcement
+from elobot.features.matches.thread_messages import find_match_thread_announcement
 from elobot.db import Match
 
 

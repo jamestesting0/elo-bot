@@ -5,10 +5,10 @@ import interactions as ipy
 from pymongo.results import UpdateResult
 
 from cogs import match_commands
-from cogs.base_store import storage
-from cogs.war_hosting import war_start
+from elobot.features.base_store import storage
+from elobot.features.hosting.war import war_start
 from elobot.config.emojis import SUCCESS_EMOJI
-from common.matches.cleanup import delete_unreserved_match
+from elobot.features.matches.cleanup import delete_unreserved_match
 from elobot.db import BaseStore
 
 

@@ -1,6 +1,6 @@
-from common.finals.types import FinalError, is_final_match
-from common.finals.matches import schedule_final_match
-from common.matches.timing import hosting_started
+from elobot.features.finals.types import FinalError, is_final_match
+from elobot.features.finals.matches import schedule_final_match
+from elobot.features.matches.timing import hosting_started
 import asyncio  # noqa: ANYIO_OK - interactions.py runtime and the requested registry use asyncio locks
 import anyio
 import copy
@@ -21,17 +21,17 @@ from typing import Literal, Optional, assert_never
 from beanie.odm.operators.find.comparison import In, NotIn
 from pymongo.errors import PyMongoError
 from interactions import utils
-import cogs.base_store.presentation as base_store_presentation
-import cogs.base_store.publication as base_store_publication
-import cogs.base_store.storage as base_store_storage
-from cogs.base_store.raid_task import store_before_raid_weekend
-from cogs.base_store.preparation import BASE_STORE_RESERVATION_LOCK
-from common.base_store.live import live_stores, ready_live_reservation_id
-from common.base_store.messages import BaseStoreReleaseReason
-from common.base_store.start import StoredStartState, held_store, shared_store_clan
-import cogs.live_hosting.helper_live as helper_live
-import cogs.live_hosting.live_start as live_start
-from cogs.base_store.models import (
+import elobot.features.base_store.presentation as base_store_presentation
+import elobot.features.base_store.publication as base_store_publication
+import elobot.features.base_store.storage as base_store_storage
+from elobot.features.base_store.raid_task import store_before_raid_weekend
+from elobot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
+from elobot.features.base_store.live import live_stores, ready_live_reservation_id
+from elobot.features.base_store.messages import BaseStoreReleaseReason
+from elobot.features.base_store.start import StoredStartState, held_store, shared_store_clan
+import elobot.features.hosting.live.helper_live as helper_live
+import elobot.features.hosting.live.live_start as live_start
+from elobot.features.base_store.models import (
     BaseStorePreparationFailure,
     BaseStorePreparationOutcome,
     BaseStorePreparationRequest,
@@ -47,19 +47,19 @@ from cogs.base_store.models import (
 from cogs.leaderboard_commands import get_wins, get_avg_destruction, get_opponent_avg_stars, \
     get_opponent_avg_destruction, get_avg_stars
 from cogs.player_commands import fetch_user_match_id_choices, forget_replaced_match_choice
-import cogs.war_hosting.helper_host as helper_host
-import cogs.base_store.live_service as live_base_service
-import cogs.live_hosting.result_store as live_result_store
-import cogs.war_hosting.result_store as result_store
-import cogs.war_hosting.result_store_ui as result_store_ui
-import cogs.war_hosting.war_start as war_start
-from cogs.war_hosting.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
-from cogs.war_hosting.district_selection import match_district_index, started_host_clan_tag
+import elobot.features.hosting.war.helper_host as helper_host
+import elobot.features.base_store.live_service as live_base_service
+import elobot.features.hosting.live.result_store as live_result_store
+import elobot.features.hosting.war.result_store as result_store
+import elobot.features.hosting.war.result_store_ui as result_store_ui
+import elobot.features.hosting.war.war_start as war_start
+from elobot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
+from elobot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag
 from elobot.integrations.helper_api import HelperScoreAttackLimit
-from common.results.autowin import apply_autowin_player, claim_autowin, mark_autowin
+from elobot.features.results.autowin import apply_autowin_player, claim_autowin, mark_autowin
 from elobot.discord.channel_edits import schedule_channel_name_edit
 from elobot.discord.message_edits import edit_channel_message
-from common.results.helper_credits import award_helper_once
+from elobot.features.results.helper_credits import award_helper_once
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 import interactions as ipy
 from elobot.config.ids import (
@@ -79,33 +79,33 @@ from elobot.config.presentation import (
 )
 from elobot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 from elobot.discord.decorators import create_async_task
-from common.results.validation import is_match_finished, is_valid_complete_match_result, is_valid_match_result_entry
-from common.matches.base_selection import district_base_quality, ensure_secondary_base_index
-from common.matches.controls import check_match_control, reject_outdated_match_control, update_match_control
-from common.matches.queued_districts import (
+from elobot.features.results.validation import is_match_finished, is_valid_complete_match_result, is_valid_match_result_entry
+from elobot.features.matches.base_selection import district_base_quality, ensure_secondary_base_index
+from elobot.features.matches.controls import check_match_control, reject_outdated_match_control, update_match_control
+from elobot.features.matches.queued_districts import (
     find_attempt_match, find_attempt_queue, queue_district_components, start_district_selection,
 )
 from elobot.db.player_models import QueueDistrictSelection
-from common.matches.message_lock import coordinated_match_message, match_message_lock
-from common.matches.recovery import repair_match_messages
-from common.matches.messages import (
+from elobot.features.matches.message_lock import coordinated_match_message, match_message_lock
+from elobot.features.matches.recovery import repair_match_messages
+from elobot.features.matches.messages import (
     MatchMessageState, mark_match_message_ended, match_message_embeds, publish_match_message,
 )
-from common.matches.thread_messages import (
+from elobot.features.matches.thread_messages import (
     ThreadMessageBindingError, attach_thread_message, find_match_thread_announcement,
 )
 from elobot.discord.embeds import embed_edit_payload
-from common.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
-from common.results.manual import (
+from elobot.features.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
+from elobot.features.results.manual import (
     ManualResultConfirmationUnknown, complete_manual_result, manual_result_key, persist_manual_result,
 )
-from common.results.records import add_recorded_match
-from common.results.operations import (
+from elobot.features.results.records import add_recorded_match
+from elobot.features.results.operations import (
     ResultOperationConflict, begin_result_operation, complete_result_operation, completed_result_changes, persist_result_record,
     publish_result_operation, result_input_error, rollback_result_operation, bind_result_message,
 )
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
-from common.players.self_hosting import invite_eligible_players
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
+from elobot.features.hosting.self_hosted.invitations import invite_eligible_players
 from elobot.db import Match, Participant, BaseLink, Clan, HelperTask, BaseLayout, \
     RecordedMatch, Player, Queue, MatchPlayerStats, MatchDistrictStats, HelperHistory, OverrideCode, ServerState
 import coc
@@ -121,7 +121,7 @@ from elobot.integrations.files import delete_file, read_json
 from elobot.integrations.http import download_file
 from elobot.core.parsing import extract_integer, get_destruction, get_stars
 from elobot.discord.members import fetch_member_otherwise_user, member_guild
-from common.matches.base_selection import get_base_quality
+from elobot.features.matches.base_selection import get_base_quality
 from elobot.core.raid_weekend import is_raid_weekend
 from elobot.discord.mentions import mention_user
 from datetime import datetime
@@ -2953,8 +2953,8 @@ class MatchCommands(ipy.Extension):
             return
 
         if is_final_match(match):
-            from common.finals.result_ui import show_source_result_form
-            from common.finals.types import FinalError
+            from elobot.features.finals.result_ui import show_source_result_form
+            from elobot.features.finals.types import FinalError
             try:
                 await show_source_result_form(ctx, match)
             except FinalError as error:
@@ -3077,8 +3077,8 @@ class MatchCommands(ipy.Extension):
         if mongo_match is not None and is_final_match(mongo_match):
             from beanie import PydanticObjectId
             from elobot.db.season_models import EloFinal
-            from common.finals.results import FinalResultSubmission, automatic_operation_key, submit_result
-            from common.finals.types import FinalError
+            from elobot.features.finals.results import FinalResultSubmission, automatic_operation_key, submit_result
+            from elobot.features.finals.types import FinalError
             from pydantic import ValidationError
             try:
                 final = await EloFinal.get(PydanticObjectId(mongo_match.final_id))
@@ -3094,7 +3094,7 @@ class MatchCommands(ipy.Extension):
                     contestant_revision=mongo_match.final_contestant_revision, attempt=mongo_match.final_attempt,
                     scores=scores,
                 ))
-                from common.finals.recovery import recover_final
+                from elobot.features.finals.recovery import recover_final
                 async def release_final(source):
                     await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")
                     await free_match_clans(source)
@@ -3453,8 +3453,8 @@ class MatchCommands(ipy.Extension):
             return
 
         if is_final_match(match):
-            from common.finals.result_ui import show_source_result_form
-            from common.finals.types import FinalError
+            from elobot.features.finals.result_ui import show_source_result_form
+            from elobot.features.finals.types import FinalError
             try:
                 await show_source_result_form(ctx, match, correction=True)
             except FinalError as error:
@@ -4897,7 +4897,7 @@ class MatchCommands(ipy.Extension):
     async def _base_command_match(self, ctx, node_id=None):
         if node_id is None:
             return await Match.find_one(Match.thread == str(ctx.channel.id))
-        from common.finals.lifecycle import resolve_final
+        from elobot.features.finals.lifecycle import resolve_final
         final = await resolve_final()
         if ctx.guild_id != final.guild_id or ctx.author.has_role(ELO_BLACKLIST_ROLE):
             raise FinalError("Use this command in the Final's server while eligible.")
@@ -7267,7 +7267,7 @@ class MatchCommands(ipy.Extension):
     @match_base_submit.autocomplete("match")
     @match_base_view.autocomplete("match")
     async def final_base_match_autocomplete(self, ctx: ipy.AutocompleteContext):
-        from common.finals.lifecycle import resolve_final
+        from elobot.features.finals.lifecycle import resolve_final
         try:
             final = await resolve_final()
             choices = [ipy.SlashCommandChoice(name=node.id, value=node.id) for node in final.nodes.values()

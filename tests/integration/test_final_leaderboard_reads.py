@@ -1,7 +1,7 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from common.finals.leaderboards import final_board_rows
-from common.finals.types import FinalError
-from common.tokens.wallets import ensure_wallet
+from elobot.features.finals.leaderboards import final_board_rows
+from elobot.features.finals.types import FinalError
+from elobot.features.tokens.wallets import ensure_wallet
 from elobot.db import EloFinal, Season
 from elobot.db.final_models import FinalPrediction
 from elobot.db.token_models import TokenLedgerEntry, TokenWallet

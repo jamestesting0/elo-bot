@@ -174,7 +174,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         response.edit_origin.assert_awaited_once()
 
     @patch("cogs.thread_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.base_store.storage.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elobot.features.base_store.storage.clear_match_base_stores", new_callable=AsyncMock)
     @patch("cogs.thread_commands.free_match_clans", new_callable=AsyncMock)
     @patch("cogs.thread_commands.Match")
     async def test_thread_delete_cleans_up_an_unreserved_match_without_releasing_slots(

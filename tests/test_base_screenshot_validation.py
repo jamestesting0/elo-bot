@@ -11,7 +11,7 @@ from PIL import Image
 
 import cogs.base_commands as commands
 import cogs.preset_commands as presets
-from common.base_fingerprints import images
+from elobot.features.bases.fingerprints import images
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"

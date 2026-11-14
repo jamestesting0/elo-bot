@@ -4,10 +4,10 @@ from beanie.odm.operators.update.general import Set
 from cogs.leaderboard_commands import request_leaderboard_player_reload
 from cogs.match_commands import free_match_clans
 from cogs.player_commands import clear_match_id_choices, forget_match_id_choice
-from cogs.war_hosting import result_store
-from common.results.operations import cancel_result_operation
-from common.matches.cleanup import delete_unreserved_match, has_reserved_match_slots
-from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
+from elobot.features.hosting.war import result_store
+from elobot.features.results.operations import cancel_result_operation
+from elobot.features.matches.cleanup import delete_unreserved_match, has_reserved_match_slots
+from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 import interactions as ipy
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.config.ids import GUILD_IDS, LVL1_ROLES, LVL2_ROLES
@@ -317,8 +317,8 @@ class DataCommands(ipy.Extension):
 
             return
 
-        from common.finals.administration import migrate_final_identity
-        from common.finals.types import FinalError
+        from elobot.features.finals.administration import migrate_final_identity
+        from elobot.features.finals.types import FinalError
         try:
             await migrate_final_identity(old_user_id, new_user_id, str(ctx.author.id))
         except FinalError as error:
@@ -415,8 +415,8 @@ class DataCommands(ipy.Extension):
     async def data_delete_match(self, ctx: ipy.SlashContext, match_id: str):
         data_generation = PLAYER_DATA_BOUNDARY.generation
         await ctx.defer(ephemeral=True)
-        from common.finals.administration import guard_result_deletion
-        from common.finals.types import FinalError
+        from elobot.features.finals.administration import guard_result_deletion
+        from elobot.features.finals.types import FinalError
         try:
             await guard_result_deletion(match_id)
         except FinalError as error:
@@ -535,8 +535,8 @@ class DataCommands(ipy.Extension):
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     async def data_reset_all(self, ctx: ipy.SlashContext):
         await ctx.defer(ephemeral=True)
-        from common.finals.administration import guard_full_reset
-        from common.finals.types import FinalError
+        from elobot.features.finals.administration import guard_full_reset
+        from elobot.features.finals.types import FinalError
         try:
             async with PLAYER_DATA_BOUNDARY.reset():
                 await guard_full_reset()

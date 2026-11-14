@@ -10,8 +10,9 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
 import cogs.helper_commands as helper_commands
-from common.constants import ERROR_EMOJI, STAFF_ROLE, SUCCESS_EMOJI
-from database_models import Helper
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.config.ids import STAFF_ROLE
+from elobot.db import Helper
 
 
 class TestHelperMutationState(unittest.IsolatedAsyncioTestCase):

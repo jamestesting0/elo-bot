@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aiohttp import web
 import anyio
 import interactions as ipy
-from cogs.war_hosting.helper_api import HelperScoreAttackLimit
+from elobot.integrations.helper_api import HelperScoreAttackLimit
 from cogs.war_hosting.helper_store import (
     HelperScoreStoreContext,
     HelperScoreStoreOutcome,

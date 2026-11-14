@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 from tests.integration._final_fixture import FinalScenarioCase
 from common.finals.lifecycle import add_entrant, confirm_bracket, reset_bracket, resolve_final, save_pairing_draft, start_final
 from common.finals.types import FinalError
-from database_models import EloFinal, Player
-from database_models.final_models import FinalPlayerProfile
+from elobot.db import EloFinal, Player
+from elobot.db.final_models import FinalPlayerProfile
 
 
 class TestFinalLifecycle(FinalScenarioCase):

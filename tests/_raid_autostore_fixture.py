@@ -1,5 +1,5 @@
-from common.constants import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
-from database_models import BaseLink, Match, Participant
+from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elobot.db import BaseLink, Match, Participant
 
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
@@ -15,7 +15,7 @@ from cogs.base_store import preparation, raid_task, self_service
 from cogs.base_store.channel_context import ScheduledBaseStoreContext
 from cogs.base_store.models import SelfBaseStoreRequest
 from cogs.match_commands import MatchCommands
-from common.constants import RAID_AUTOSTORE_LOGS_CHANNEL
+from elobot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
 from tests._stored_start_fixture import terminal_job
 
 

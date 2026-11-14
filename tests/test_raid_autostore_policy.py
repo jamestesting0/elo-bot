@@ -1,8 +1,8 @@
 import unittest
 
 from cogs.base_store.raid_policy import eligible_for_raid_storage, select_raid_storage_slot
-from common.constants import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
-from database_models import BaseLink, BaseStore
+from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elobot.db import BaseLink, BaseStore
 
 
 from tests._raid_autostore_fixture import make_match

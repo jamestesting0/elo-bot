@@ -5,15 +5,15 @@ import logging
 from io import BytesIO
 from interactions import Extension, SlashContext, slash_option, OptionType
 
-from database_models import Player, EloFinal
-from common.constants import (
-    COLOR, ELO_BLACKLIST_ROLE, ERROR_EMOJI, FINAL_CHANNEL, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS, IMPORTANT_EMOJI,
-    LVL1_ROLES, LVL2_ROLES, SUCCESS_EMOJI, TOKEN_EMOJI,
-)
+from elobot.db import Player, EloFinal
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.ids import ELO_BLACKLIST_ROLE, FINAL_CHANNEL, GUILD_IDS, LVL1_ROLES, LVL2_ROLES
+from elobot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from common.finals import lifecycle
 from common.finals.types import FinalError
 from common.finals.bracket import seeded_players
-from common.utils import mention_user, member_guild
+from elobot.discord.mentions import mention_user
+from elobot.discord.members import member_guild
 
 
 async def get_current_elo_final_season():
@@ -142,10 +142,10 @@ class FinalCommands(Extension):
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
     async def _history_view(self, ctx, season, user, page=1, *, edit=False):
-        from common.discord.pagination import build_page_button, parse_page_number
+        from elobot.discord.pagination import build_page_button, parse_page_number
         from common.finals.result_ui import result_embed
-        from database_models.final_models import FinalMatchResult
-        from database_models.token_models import TokenWallet
+        from elobot.db.final_models import FinalMatchResult
+        from elobot.db.token_models import TokenWallet
         edition = await self._edition(ctx, season)
         query = {"final_id": str(edition.id)}
         if user != "-":
@@ -201,7 +201,7 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^finalhist\|.+$"))
     async def final_history_page(self, ctx: ipy.ComponentContext):
-        from common.discord.pagination import InvalidPageError
+        from elobot.discord.pagination import InvalidPageError
         _, owner, season, user, page = ctx.custom_id.split("|")
         try:
             if owner != str(ctx.author.id):
@@ -212,7 +212,7 @@ class FinalCommands(Extension):
 
     @ipy.component_callback(re.compile(r"^finalhistjump\|.+$"))
     async def final_history_jump(self, ctx: ipy.ComponentContext):
-        from common.discord.pagination import build_page_jump_modal
+        from elobot.discord.pagination import build_page_jump_modal
         if ctx.custom_id.split("|")[1] != str(ctx.author.id):
             await ctx.send(f"{ERROR_EMOJI} This history navigation belongs to another user.", ephemeral=True)
             return
@@ -220,7 +220,7 @@ class FinalCommands(Extension):
 
     @ipy.modal_callback(re.compile(r"^finalhistmodal\|.+$"))
     async def final_history_jump_modal(self, ctx: ipy.ModalContext, page: str):
-        from common.discord.pagination import InvalidPageError
+        from elobot.discord.pagination import InvalidPageError
         _, owner, season, user = ctx.custom_id.split("|")
         try:
             if owner != str(ctx.author.id):
@@ -231,7 +231,7 @@ class FinalCommands(Extension):
 
     async def _market(self, ctx, market_id, *, registered=False):
         from beanie import PydanticObjectId
-        from database_models.token_models import FinalBettingMarket
+        from elobot.db.token_models import FinalBettingMarket
         market = await FinalBettingMarket.get(market_id)
         if market is None:
             raise FinalError("This betting market is unavailable.")
@@ -257,7 +257,7 @@ class FinalCommands(Extension):
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
     async def _node_market(self, ctx, match, season=None, *, manager=False):
-        from database_models.token_models import FinalBettingMarket
+        from elobot.db.token_models import FinalBettingMarket
         edition = await self._edition(ctx, season, manager=manager)
         node = edition.nodes.get(match)
         if node is None:
@@ -318,7 +318,7 @@ class FinalCommands(Extension):
     @ipy.component_callback(re.compile(r"^betopen\|.+$"))
     async def bet_open(self, ctx: ipy.ComponentContext):
         from common.tokens.wallets import ensure_wallet, wallet_summary
-        from database_models.token_models import FinalBet
+        from elobot.db.token_models import FinalBet
         await ctx.defer(ephemeral=True)
         try:
             edition, market = await self._market(ctx, ctx.custom_id.split("|")[1], registered=True)
@@ -397,7 +397,7 @@ class FinalCommands(Extension):
     async def bet_confirm(self, ctx: ipy.ComponentContext):
         from common.tokens.bets import BetAction, apply_bet
         from common.tokens.wallets import wallet_summary
-        from database_models.token_models import FinalBet, TokenWallet
+        from elobot.db.token_models import FinalBet, TokenWallet
         _, market_id, owner, contestant, version, amount = ctx.custom_id.split("|")
         if owner != str(ctx.author.id):
             await ctx.send(f"{ERROR_EMOJI} This bet belongs to another user.", ephemeral=True)
@@ -727,7 +727,7 @@ class FinalCommands(Extension):
 
     async def open_result_form(self, ctx, edition, node_id, *, winner=None, outcome="Played", reason=None):
         from common.finals.result_ui import result_form
-        from database_models.final_models import FinalMatchResult
+        from elobot.db.final_models import FinalMatchResult
         node = edition.nodes.get(node_id)
         if node is None or node.bye or not all(node.contestants):
             raise FinalError("Choose a playable match from `/final match list`.")
@@ -867,7 +867,7 @@ class FinalCommands(Extension):
     @slash_option(name="season", description="Final season", opt_type=OptionType.INTEGER)
     async def final_match_view(self, ctx: SlashContext, match: str, season: int = None):
         from common.finals.result_ui import result_embed
-        from database_models.final_models import FinalMatchResult
+        from elobot.db.final_models import FinalMatchResult
         try:
             edition = await self._edition(ctx, season)
             node = edition.nodes.get(match)
@@ -966,7 +966,7 @@ class FinalCommands(Extension):
     async def final_prediction_view(self, ctx: SlashContext, season: int = None):
         from common.finals.prediction_display import finished_results, prediction_alt_text, prediction_statuses
         from common.finals.rendering import render_bracket
-        from database_models.final_models import FinalMatchResult, FinalPrediction
+        from elobot.db.final_models import FinalMatchResult, FinalPrediction
         await ctx.defer(ephemeral=True)
         try:
             edition = await self._edition(ctx, season, registered=True)

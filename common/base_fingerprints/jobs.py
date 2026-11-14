@@ -9,7 +9,7 @@ from common.base_fingerprints.removal import REMOVAL_REASON
 from common.base_fingerprints.types import (
     DISTRICTS, ExtractionResult, ExtractionState, FingerprintError, LEGACY_PIPELINE_ID, PIPELINE_IDENTITIES, utcnow,
 )
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 
 
 async def materialize_outbox() -> None:

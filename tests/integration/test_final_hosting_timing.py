@@ -12,7 +12,7 @@ from cogs.live_hosting.live_start import (
     start_live_match,
 )
 from cogs.self_commands import SelfCommands
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperEta, HelperEtaReader, HelperHostLiveMatchPayload, HelperHostWarMatchPayload,
     HelperJobCreateRequest, HelperJobCreator, HelperJobCreateRejected,
 )
@@ -25,9 +25,9 @@ from common.finals.types import FinalError
 from common.matches.messages import MatchMessageState
 from common.matches.timing import hosting_started
 from common.tokens.bets import open_market
-from database_models import BaseStore, Clan, Match
-from database_models.match_models import ExpectedLiveStartState
-from database_models.token_models import FinalBettingMarket
+from elobot.db import BaseStore, Clan, Match
+from elobot.db.match_models import ExpectedLiveStartState
+from elobot.db.token_models import FinalBettingMarket
 from tests.integration._final_fixture import FinalScenarioCase
 
 

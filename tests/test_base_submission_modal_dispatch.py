@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 import cogs.base_commands as base_commands
-from common.utils import ComponentsV2ModalContext
+from elobot.discord.contexts import ComponentsV2ModalContext
 from tests._base_submission_fixtures import configure_pending_resolution
 
 

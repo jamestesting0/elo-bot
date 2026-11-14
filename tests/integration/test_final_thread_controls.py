@@ -5,10 +5,10 @@ import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
 from cogs.match_commands import confirm_match
-from common.constants import STAFF_ROLE
+from elobot.config.ids import STAFF_ROLE
 from common.finals.lifecycle import confirm_bracket
 from common.finals.matches import prepare_match
-from database_models import Match
+from elobot.db import Match
 
 
 class TestFinalThreadControls(FinalScenarioCase):

@@ -7,12 +7,12 @@ from beanie.odm.settings.document import DocumentSettings
 from bson import DBRef
 from pymongo.results import UpdateResult
 from cogs import match_commands
-from database_models import BaseLayout, BaseLink, Match, MatchDistrictStats, MatchPlayerStats, Participant, Player, RecordedMatch
+from elobot.db import BaseLayout, BaseLink, Match, MatchDistrictStats, MatchPlayerStats, Participant, Player, RecordedMatch
 from pymongo.errors import DuplicateKeyError
 from pymongo.results import DeleteResult
-from common.constants import MATCH_CHANNEL
-from database_models import Helper
-from database_models.result_models import MatchResultOperation, ResultRecordSnapshot
+from elobot.config.ids import MATCH_CHANNEL
+from elobot.db import Helper
+from elobot.db.result_models import MatchResultOperation, ResultRecordSnapshot
 
 
 

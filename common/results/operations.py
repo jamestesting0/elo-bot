@@ -4,11 +4,11 @@ from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
 
-from database_models import BaseLayout, Match, Player, RecordedMatch
-from database_models.result_models import MatchResultOperation, ResultBaseRollback, ResultRecordSnapshot
+from elobot.db import BaseLayout, Match, Player, RecordedMatch
+from elobot.db.result_models import MatchResultOperation, ResultBaseRollback, ResultRecordSnapshot
 from common.results.records import remove_base_record
-from common.constants import LOSS_EMOJI, WIN_EMOJI
-from common.utils import get_destruction, get_stars
+from elobot.config.emojis import LOSS_EMOJI, WIN_EMOJI
+from elobot.core.parsing import get_destruction, get_stars
 
 
 class ResultOperationConflict(RuntimeError):

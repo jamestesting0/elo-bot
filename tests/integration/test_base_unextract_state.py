@@ -15,7 +15,7 @@ from common.base_fingerprints.jobs import (
 from common.base_fingerprints.removal import remove_all_fingerprints, remove_fingerprint
 from common.base_fingerprints.service import FingerprintService
 from common.base_fingerprints.types import PIPELINE_ID, ExtractionResult, utcnow
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._relative_geometry_fixture import layout, points
 from tests.integration import _fingerprint_fixture as fixture
 

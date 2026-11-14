@@ -5,7 +5,7 @@ import interactions as ipy
 
 from cogs.match_commands import MatchCommands
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY
-from database_models import Match
+from elobot.db import Match
 
 
 VALID_RESULT = "0.0\n3.100\n2.20"

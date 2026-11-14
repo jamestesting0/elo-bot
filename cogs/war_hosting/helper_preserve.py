@@ -6,7 +6,7 @@ import aiohttp
 import interactions as ipy
 from pydantic import Field, ValidationError
 
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperJob,
     HelperJobCreateAcceptedInvalid,
     HelperJobCreateConflict,
@@ -20,8 +20,8 @@ from cogs.war_hosting.helper_api import (
     HelperTrackingFailure,
     helper_job_notification,
 )
-from common.constants import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
-from database_models import BaseLayout
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.db import BaseLayout
 
 
 type HelperPreserveBaseLinkTerminalStatus = Literal["succeeded", "failed", "cancelled"]

@@ -7,9 +7,9 @@ from common.finals.bracket import require_round_ready
 from common.finals.persistence import transaction
 from common.finals.matches import require_current_match
 from common.finals.types import FinalError, ROUND_NODES
-from database_models import EloFinal, Match
-from database_models import Clan
-from database_models.token_models import FinalBettingMarket
+from elobot.db import EloFinal, Match
+from elobot.db import Clan
+from elobot.db.token_models import FinalBettingMarket
 
 
 async def accept_final_start(source: Match, actor_id: str, *, clan_tag: str | None = None,

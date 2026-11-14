@@ -10,10 +10,10 @@ from common.finals.matches import require_current_match
 from common.finals.profiles import rebuild_profiles
 from common.finals.predictions import rescore_predictions
 from common.finals.types import FinalError, Outcome, ROUND_NODES
-from common.utils import get_destruction, get_stars
-from database_models import EloFinal, Match, Season, HelperHistory
-from database_models.final_models import FinalHelperCredit, FinalMatchResult, FinalResultOperation, FinalResultSnapshot
-from database_models.season_models import FinalResultProgress
+from elobot.core.parsing import get_destruction, get_stars
+from elobot.db import EloFinal, Match, Season, HelperHistory
+from elobot.db.final_models import FinalHelperCredit, FinalMatchResult, FinalResultOperation, FinalResultSnapshot
+from elobot.db.season_models import FinalResultProgress
 
 
 @dataclass(frozen=True, slots=True)

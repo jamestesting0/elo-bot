@@ -6,10 +6,10 @@ from pymongo.write_concern import WriteConcern
 from pymongo import IndexModel
 
 from common.finals.types import FinalError
-from database_models.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
-from database_models.season_models import EloFinal
-from database_models.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
-from database_models.match_models import Match
+from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
+from elobot.db.season_models import EloFinal
+from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db.match_models import Match
 
 FINAL_DOCUMENT_MODELS = (FinalMatchResult, FinalPlayerProfile, FinalPrediction,
                          TokenWallet, TokenLedgerEntry, FinalBettingMarket, FinalBet)

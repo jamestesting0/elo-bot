@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.self_commands import SelfCommands
-from common.constants import ERROR_EMOJI
+from elobot.config.emojis import ERROR_EMOJI
 
 
 CALLER_ID = "123456789012345678"

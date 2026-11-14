@@ -20,8 +20,8 @@ from common.base_store.messages import BaseStoreReleaseReason, StoredBaseMessage
 from common.base_store.legacy import resolve_stored_base_message_ids
 from common.results.validation import is_valid_complete_match_result
 from common.finals.types import is_final_match
-from common.utils import latest_completed_raid_weekend_end_timestamp
-from database_models import Match
+from elobot.core.raid_weekend import latest_completed_raid_weekend_end_timestamp
+from elobot.db import Match
 from cogs.base_store.self_service import store_self_bases
 
 

@@ -9,7 +9,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
 from cogs.match_commands import add_player_to_queue, normalize_queue_timestamps, remove_player_from_queue
-from database_models import Player, Queue
+from elobot.db import Player, Queue
 
 
 class TestQueueStateConsistency(unittest.IsolatedAsyncioTestCase):

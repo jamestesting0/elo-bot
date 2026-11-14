@@ -8,8 +8,8 @@ from cogs.base_store import storage
 from cogs.base_store.publication import mark_store_reserved
 from cogs.live_hosting import live_start
 from cogs.war_hosting import war_start
-from common.constants import MATCH_CHANNEL
-from database_models import BaseStore
+from elobot.config.ids import MATCH_CHANNEL
+from elobot.db import BaseStore
 from tests import _match_publication_fixture as publication_tests
 
 

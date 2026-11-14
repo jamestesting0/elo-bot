@@ -5,7 +5,8 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.self_commands import SelfCommands
-from common.constants import ERROR_EMOJI, LVL2_ROLES
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.config.ids import LVL2_ROLES
 
 
 class TestSelfStoreResultLive(unittest.IsolatedAsyncioTestCase):

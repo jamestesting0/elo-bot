@@ -1,4 +1,4 @@
-from common.constants import DISTRICT_CODES_REVERSED
+from elobot.config.game import DISTRICT_CODES_REVERSED
 
 
 def parse_base_district(link: str) -> str | None:

@@ -1,6 +1,6 @@
 import interactions as ipy
 
-from database_models import Match
+from elobot.db import Match
 
 
 class ThreadMessageBindingError(RuntimeError):

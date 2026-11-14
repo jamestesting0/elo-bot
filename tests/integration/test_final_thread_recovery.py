@@ -10,8 +10,8 @@ from common.finals.matches import bind_thread, prepare_match
 from common.finals.recovery import recover_final
 from common.finals.results import FinalResultSubmission, submit_result
 from common.tokens.bets import open_market
-from database_models import BaseStore, Clan, Helper, Match
-from database_models.token_models import FinalBettingMarket
+from elobot.db import BaseStore, Clan, Helper, Match
+from elobot.db.token_models import FinalBettingMarket
 
 
 class TestFinalThreadRecovery(FinalScenarioCase):

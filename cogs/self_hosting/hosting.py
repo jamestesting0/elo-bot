@@ -12,9 +12,9 @@ from cogs.match_commands import (
     is_resource_clan_locked,
 )
 from common.base_store.live import live_stores, ready_live_reservation_id
-from common.constants import ERROR_EMOJI
+from elobot.config.emojis import ERROR_EMOJI
 from common.matches.timing import hosting_started
-from database_models import Clan, Match, Player
+from elobot.db import Clan, Match, Player
 
 
 class SelfHostingRuntime(Protocol):

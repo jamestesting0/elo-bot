@@ -5,9 +5,9 @@ from common.finals.predictions import begin_prediction, change_prediction_state
 from common.finals.results import FinalResultSubmission, submit_result
 from common.finals.types import FinalError
 from common.tokens.wallets import ensure_wallet
-from database_models import Player
-from database_models.final_models import FinalPrediction
-from database_models.token_models import TokenLedgerEntry, TokenWallet
+from elobot.db import Player
+from elobot.db.final_models import FinalPrediction
+from elobot.db.token_models import TokenLedgerEntry, TokenWallet
 
 
 class TestFinalAdministration(FinalScenarioCase):

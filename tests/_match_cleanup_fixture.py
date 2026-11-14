@@ -4,19 +4,19 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 from cogs import match_commands, thread_commands
-from common.constants import LVL2_ROLES, MATCH_CHANNEL
-from database_models import Match
+from elobot.config.ids import LVL2_ROLES, MATCH_CHANNEL
+from elobot.db import Match
 from tests import _result_finalization_fixture as result_fixture
 from copy import deepcopy
 from cogs.base_store import storage
-from database_models import BaseStore
+from elobot.db import BaseStore
 from cogs.base_store import preparation
 from cogs.base_store.models import BaseStorePreparationFailure, BaseStorePreparationRequest, PreparedBaseStore
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
 from cogs import challenge_commands
-from database_models import Participant
+from elobot.db import Participant
 
 
 class PendingMatchStateMixin:

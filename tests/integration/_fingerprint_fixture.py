@@ -6,7 +6,7 @@ from bson import ObjectId
 from pymongo import AsyncMongoClient
 from common.base_fingerprints.jobs import claim_tasks, materialize_outbox
 from common.base_fingerprints.types import ExtractionState, utcnow
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 
 
 class FingerprintPersistenceStateMixin:

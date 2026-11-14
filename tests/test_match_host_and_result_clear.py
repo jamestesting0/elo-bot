@@ -5,8 +5,9 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from common.constants import MATCH_CHANNEL, STAFF_ROLE, SUCCESS_EMOJI
-from database_models import Match
+from elobot.config.ids import MATCH_CHANNEL, STAFF_ROLE
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.db import Match
 from tests import _result_retry_store as fixture
 
 

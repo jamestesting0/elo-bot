@@ -6,7 +6,7 @@ from bson import ObjectId
 
 from common.base_fingerprints import jobs
 from common.base_fingerprints.types import ExtractionState, PIPELINE_ID
-from database_models import BaseFingerprintTask, BaseLayout
+from elobot.db import BaseFingerprintTask, BaseLayout
 
 
 class TestBaseBulkExtraction(unittest.IsolatedAsyncioTestCase):

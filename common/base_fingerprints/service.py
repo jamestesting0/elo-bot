@@ -20,8 +20,8 @@ from common.base_fingerprints.types import (
     DISTRICTS, PIPELINE_ID, PIPELINE_IDENTITIES, BaseFingerprint, ComparisonSummary, ExtractionResult,
     ExtractionState, FingerprintError, ImageInput, utcnow,
 )
-from common.constants import BASE_SUBMISSION_CHANNEL, LVL1_ROLES, WHITELISTED_STAFFS
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elobot.config.ids import BASE_SUBMISSION_CHANNEL, LVL1_ROLES, WHITELISTED_STAFFS
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 
 
 async def read_rendered_image(path: Path) -> bytes:

@@ -4,7 +4,7 @@ from unittest.mock import patch
 from cogs.base_store.live_publication import publish_live_storage
 from cogs.base_store.publication import mark_store_reserved, mark_store_unavailable
 from common.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
-from common.discord import message_edits
+from elobot.discord import message_edits
 from tests._live_base_fixture import LiveBaseFixture
 
 

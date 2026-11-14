@@ -9,7 +9,7 @@ from pymongo.errors import OperationFailure
 
 import cogs.embed_commands as commands
 import cogs.match_commands as match_commands
-from database_models import ServerState
+from elobot.db import ServerState
 
 
 class TestDashboardPublicationConsistency(unittest.IsolatedAsyncioTestCase):

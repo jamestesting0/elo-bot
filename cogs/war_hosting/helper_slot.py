@@ -2,7 +2,7 @@ import interactions as ipy
 
 import cogs.base_store.storage as base_store_storage
 from cogs.base_store.models import numeric_base_store_slot
-from cogs.war_hosting.helper_api import HelperStoredBaseSlot
+from elobot.integrations.helper_api import HelperStoredBaseSlot
 
 
 async def get_available_helper_slot(clan_tag: str, *, bot: ipy.Client | None = None) -> HelperStoredBaseSlot | None:

@@ -1,9 +1,9 @@
 import interactions as ipy
 
-from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from common.finals.types import NODE_IDS
-from common.utils import mention_user
-from database_models import EloFinal
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal
 
 
 def pairing_view(final: EloFinal, owner: str, page: int, names: dict[str, str] | None = None):

@@ -1,5 +1,5 @@
 from common.base_fingerprints.types import ExtractionState, FingerprintError, ImageAttachment, PIPELINE_ID
-from database_models import BaseLayout
+from elobot.db import BaseLayout
 
 
 def source_filter(base: BaseLayout) -> dict:

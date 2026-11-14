@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 
 import common.finals.recovery as recovery
-from database_models import EloFinal, EloFinalMatch
-from database_models.final_models import FinalMatchResult, FinalResultSnapshot
-from database_models.season_models import FinalResultProgress
+from elobot.db import EloFinal, EloFinalMatch
+from elobot.db.final_models import FinalMatchResult, FinalResultSnapshot
+from elobot.db.season_models import FinalResultProgress
 
 
 class TestFinalSelfHostInvitations(unittest.IsolatedAsyncioTestCase):

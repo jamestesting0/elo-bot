@@ -6,8 +6,8 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import UpdateResult
 import cogs.match_commands as match_commands
 from cogs.war_hosting import helper_base_store_availability
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
-from database_models import BaseStore, Match, Participant
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.db import BaseStore, Match, Participant
 
 
 class StoredBaseControlsStateMixin:

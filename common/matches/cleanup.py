@@ -1,7 +1,7 @@
 from beanie import PydanticObjectId
 from pydantic import JsonValue
 
-from database_models import Match
+from elobot.db import Match
 
 
 def has_pending_match_operation(match: Match) -> bool:

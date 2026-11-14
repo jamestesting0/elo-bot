@@ -4,8 +4,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from common.finals.types import FinalError, NODE_IDS
-from common.utils import mention_user
-from database_models import EloFinal
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal
 
 
 TEMPLATE = Path("assets/elo_final_bracket.png")

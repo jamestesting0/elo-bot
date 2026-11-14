@@ -30,7 +30,7 @@ import interactions as ipy
 from interactions.models.discord.message import process_message_payload
 
 from cogs.base_commands import BaseCommands
-from common.constants import DISTRICT_CHOICES
+from elobot.config.game import DISTRICT_CHOICES
 
 OWNER_ID = 111
 OTHER_USER_ID = 999

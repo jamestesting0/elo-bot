@@ -6,9 +6,10 @@ import anyio
 import interactions as ipy
 
 from cogs.war_hosting import result_store_ui
-from cogs.war_hosting.helper_api import HelperJob, HelperEtaFailure
+from elobot.integrations.helper_api import HelperJob, HelperEtaFailure
 from cogs.war_hosting.confirmation import HelperQueueDecision
-from common.constants import STAFF_ROLE, STAR_EMOJI
+from elobot.config.ids import STAFF_ROLE
+from elobot.config.emojis import STAR_EMOJI
 
 
 from tests._helper_score_fixture import HelperScoreStateMixin

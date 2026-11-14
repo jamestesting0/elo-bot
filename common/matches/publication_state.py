@@ -2,9 +2,9 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from pydantic import JsonValue
 
-from common.constants import MATCH_CHANNEL
+from elobot.config.ids import MATCH_CHANNEL
 from common.finals.types import is_final_match
-from database_models import Match
+from elobot.db import Match
 
 
 async def restore_match_publication(message: ipy.Message, match: Match, player: int | None) -> bool:

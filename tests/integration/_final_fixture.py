@@ -7,7 +7,7 @@ from beanie import init_beanie
 from pymongo import AsyncMongoClient
 
 from common.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes, require_transactions
-from database_models import BaseLayout, Clan, EloFinal, Helper, Match, Player, PlayerSeasonData, RecordedMatch, Season
+from elobot.db import BaseLayout, Clan, EloFinal, Helper, Match, Player, PlayerSeasonData, RecordedMatch, Season
 
 
 class FinalMongoCase(unittest.IsolatedAsyncioTestCase):
@@ -45,7 +45,7 @@ class FinalScenarioCase(FinalMongoCase):
 
     async def roster(self, count):
         from common.finals.lifecycle import add_entrant, start_final
-        from common.constants import MAIN_GUILD, FINAL_CHANNEL
+        from elobot.config.ids import MAIN_GUILD, FINAL_CHANNEL
         final = await start_final(None, MAIN_GUILD, FINAL_CHANNEL)
         for user in range(1, count + 1):
             final = await add_entrant(final, str(user), f"Player {user}")

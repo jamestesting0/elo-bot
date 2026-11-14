@@ -7,7 +7,7 @@ import interactions as ipy
 
 import cogs.match_commands as match_commands
 from cogs.embed_commands import EmbedCommands
-from database_models import BaseStore, ServerState
+from elobot.db import BaseStore, ServerState
 
 
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):

@@ -4,7 +4,7 @@ import aiohttp
 import coc
 import interactions as ipy
 
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperInviteSpectatorPayload,
     HelperJob,
     HelperJobCreateAcceptedInvalid,
@@ -18,10 +18,11 @@ from cogs.war_hosting.helper_api import (
     HelperTrackingFailure,
     helper_job_notification,
 )
-from common.constants import ERROR_EMOJI, LOADING_EMOJI, MATCH_CHANNEL, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.ids import MATCH_CHANNEL
 from common.finals.types import is_final_match
 from common.results.validation import is_match_finished
-from database_models import Match, Player
+from elobot.db import Match, Player
 
 
 class SpectateRuntime(Protocol):

@@ -4,8 +4,8 @@ import interactions as ipy
 from bson import ObjectId
 import cogs.base_commands as commands
 from common.base_fingerprints.types import MatchScore
-from common.constants import BASE_SUBMISSION_CHANNEL
-from database_models import BaseLayout, PendingBaseSubmission
+from elobot.config.ids import BASE_SUBMISSION_CHANNEL
+from elobot.db import BaseLayout, PendingBaseSubmission
 from tests._base_fingerprint_fixture import fingerprint
 
 

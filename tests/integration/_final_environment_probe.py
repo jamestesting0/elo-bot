@@ -6,7 +6,8 @@ import sys
 from beanie import init_beanie, PydanticObjectId
 from pymongo import AsyncMongoClient
 
-from common.constants import DATA_BASES, FINAL_CHANNEL, MAIN_GUILD
+from elobot.config.settings import DATA_BASES
+from elobot.config.ids import FINAL_CHANNEL, MAIN_GUILD
 from common.finals.lifecycle import add_entrant, confirm_bracket, resolve_final, start_final
 from common.finals.matches import prepare_match, schedule_final_match
 from common.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes
@@ -14,7 +15,7 @@ from common.finals.recovery import recover_final
 from common.finals.results import FinalResultSubmission, submit_result
 from common.tokens.bets import BetAction, apply_bet, open_market
 from common.tokens.wallets import ensure_wallet
-from database_models import BaseLayout, EloFinal, Helper, Match, Player, PlayerSeasonData, RecordedMatch, Season
+from elobot.db import BaseLayout, EloFinal, Helper, Match, Player, PlayerSeasonData, RecordedMatch, Season
 
 
 async def run():

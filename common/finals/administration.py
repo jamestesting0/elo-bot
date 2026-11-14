@@ -2,9 +2,9 @@ import time
 
 from common.finals.persistence import transaction
 from common.finals.types import FinalError
-from database_models import EloFinal, Player
-from database_models.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
-from database_models.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db import EloFinal, Player
+from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
+from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 async def guard_full_reset() -> None:

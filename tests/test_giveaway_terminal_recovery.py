@@ -6,7 +6,7 @@ import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 
 from cogs.giveaway_commands import GiveawayCommands
-from database_models import Giveaway
+from elobot.db import Giveaway
 
 
 class TestGiveawayTerminalRecovery(unittest.IsolatedAsyncioTestCase):

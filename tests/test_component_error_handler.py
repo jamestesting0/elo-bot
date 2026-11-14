@@ -5,8 +5,8 @@ import interactions as ipy
 
 import beta
 import main
-from common.constants import ERROR_EMOJI
-from common.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 
 
 class TestComponentErrorHandler(unittest.IsolatedAsyncioTestCase):

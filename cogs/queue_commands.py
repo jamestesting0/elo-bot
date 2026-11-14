@@ -1,9 +1,12 @@
 import asyncio
 
 import interactions as ipy
-from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS, LVL1_ROLES, SUCCESS_EMOJI
-from common.utils import mention_user, member_guild
-from database_models import Queue, ServerState
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.ids import GUILD_IDS, LVL1_ROLES
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.discord.mentions import mention_user
+from elobot.discord.members import member_guild
+from elobot.db import Queue, ServerState
 
 
 class QueueCommands(ipy.Extension):

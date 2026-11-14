@@ -5,7 +5,7 @@ from aiohttp import web
 import interactions as ipy
 
 from cogs.self_commands import SelfCommands
-from common.constants import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

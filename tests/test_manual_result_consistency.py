@@ -10,7 +10,7 @@ from pymongo.results import UpdateResult
 
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY
 from cogs import data_commands
-from database_models import Match, RecordedMatch
+from elobot.db import Match, RecordedMatch
 from tests import _result_retry_store as fixture
 from tests._result_retry_store import apply_operations, matches
 

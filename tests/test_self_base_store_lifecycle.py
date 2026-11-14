@@ -12,13 +12,13 @@ import cogs.match_commands as match_commands
 import cogs.war_hosting.helper_base_store as helper_base_store
 import cogs.war_hosting.helper_base_store_availability as helper_base_store_availability
 from cogs.war_hosting import stored_bases, war_start
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperJobCreateAcceptedInvalid,
     HelperJobCreateRejected,
     HelperJobCreateUnavailable,
     HelperTrackingFailure,
 )
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests._stored_start_fixture import (
     BASE_LINKS, DISTRICTS, FIRST_CLAN_TAG, PLAYER_ID, SECOND_CLAN_TAG, TOKEN,
     StoredStartFixture, terminal_job,

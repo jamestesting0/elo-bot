@@ -4,8 +4,9 @@ import re
 from interactions.models.discord.message import process_message_payload
 from tests._season_stats_fixture import row, timestamp
 
-from common.constants import COLOR, DISTRICT_EMOJI, FOOTER_IMAGE, FOOTER_TEXT
-from common.discord.season_stats import stats_controls, stats_embed
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.emojis import DISTRICT_EMOJI
+from elobot.discord.season_stats import stats_controls, stats_embed
 from common.matches.season_stats import SeasonWindow, StatsAccumulator
 
 

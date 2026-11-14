@@ -10,7 +10,7 @@ from cogs.live_hosting import result_store as live_store
 from cogs.match_commands import MatchCommands
 from cogs.self_commands import SelfCommands
 from cogs.war_hosting import helper_store, result_store
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests import _helper_score_fixture as helper_tests
 
 

@@ -8,9 +8,12 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from cogs.war_hosting.helper_api import HelperTrackingFailure
+from elobot.integrations.helper_api import HelperTrackingFailure
 from cogs.self_commands import SelfCommands
-from common.constants import BASE_STORE_SLOTS, BOT_ID, COLOR, ERROR_EMOJI, LOADING_EMOJI, TICK_EMOJI
+from elobot.config.game import BASE_STORE_SLOTS
+from elobot.config.ids import BOT_ID
+from elobot.config.presentation import COLOR
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, TICK_EMOJI
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -41,7 +44,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.status_job_type = "host_live_match"
         self.stop_after_eta = False
         self.abort_war_start = AsyncMock(return_value=True)
-        self.enterContext(patch("cogs.war_hosting.helper_api.anyio.sleep", new_callable=AsyncMock))
+        self.enterContext(patch("elobot.integrations.helper_api.anyio.sleep", new_callable=AsyncMock))
         app = web.Application()
         app.router.add_get("/v1/eta", self.handle_eta)
         app.router.add_post("/v1/jobs", self.handle_job)
@@ -788,7 +791,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
     def test_host_live_contract_serializes_paired_payload_and_accepts_null_result(self) -> None:
         # Given a paired live-match hosting request and a successful Helper response.
-        from cogs.war_hosting.helper_api import (
+        from elobot.integrations.helper_api import (
             HelperContractMismatchError,
             HelperHostLiveMatchPayload,
             HelperHostWarMatchPayload,
@@ -851,7 +854,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
     async def test_shared_host_job_runner_preserves_ambiguous_and_terminal_compensation(self) -> None:
         # Given accepted-but-unconfirmed, failed, and successful shared job outcomes.
-        from cogs.war_hosting.helper_api import (
+        from elobot.integrations.helper_api import (
             HelperHostWarMatchPayload,
             HelperJob,
             HelperJobCreateAcceptedInvalid,
@@ -930,7 +933,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
     async def test_failed_job_aborts_when_progress_publication_fails(self) -> None:
         import json
 
-        from cogs.war_hosting.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest, HelperJobCreated
+        from elobot.integrations.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest, HelperJobCreated
         from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
 
         failed_job = {
@@ -1002,7 +1005,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
 
     async def test_stored_message_conflict_after_abort_still_reports_the_abort(self) -> None:
         from cogs.base_store.publication import BaseStoreMessageConflict
-        from cogs.war_hosting.helper_api import (
+        from elobot.integrations.helper_api import (
             HelperHostWarMatchPayload,
             HelperJob,
             HelperJobCreateRequest,
@@ -1057,7 +1060,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("could not be aborted safely", ctx.edit.await_args.kwargs["content"])
 
     async def test_same_type_conflict_adopts_the_open_host_job(self) -> None:
-        from cogs.war_hosting.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest
+        from elobot.integrations.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest
         from cogs.war_hosting.helper_host_job import HelperHostJobRequest, run_helper_host_job
 
         self.response_status = 409

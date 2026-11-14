@@ -13,7 +13,7 @@ from pymongo.results import UpdateResult
 
 from cogs.base_store import storage as base_store_storage
 from cogs.war_hosting import war_start
-from database_models import Match, Participant
+from elobot.db import Match, Participant
 
 
 class WarStartFixture(unittest.IsolatedAsyncioTestCase):

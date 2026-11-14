@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock
 
 from cogs.base_store.models import BaseStorePreparationFailure
 from common.results.autowin import claim_autowin, mark_autowin
-from database_models import Match
-from database_models.result_models import MatchResultOperation
+from elobot.db import Match
+from elobot.db.result_models import MatchResultOperation
 from tests import _match_cleanup_fixture as fixtures
 
 

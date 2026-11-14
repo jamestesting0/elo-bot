@@ -7,7 +7,9 @@ import anyio
 import interactions as ipy
 
 from cogs.base_commands import BaseCommands
-from common.constants import BASE_RENEWAL_LOGS_CHANNEL, LOADING_EMOJI, RED_COLOR
+from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
+from elobot.config.emojis import LOADING_EMOJI
+from elobot.config.presentation import RED_COLOR
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

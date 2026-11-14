@@ -9,7 +9,7 @@ from pymongo.errors import AutoReconnect
 
 from common.base_fingerprints import removal
 from common.base_fingerprints.types import ExtractionState, FingerprintError
-from database_models import BaseLayout
+from elobot.db import BaseLayout
 from tests._relative_geometry_fixture import layout
 
 

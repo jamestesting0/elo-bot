@@ -9,9 +9,9 @@ import anyio
 import interactions as ipy
 
 from cogs.war_hosting.confirmation import confirm_helper_queue
-from cogs.war_hosting.helper_api import HelperEtaReader, HelperJobCanceller, HelperTrackingFailure
+from elobot.integrations.helper_api import HelperEtaReader, HelperJobCanceller, HelperTrackingFailure
 from cogs.war_hosting.helper_host import AutomaticWarHost, host_war_automatically
-from common.constants import CROSS_EMOJI, ERROR_EMOJI
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

@@ -2,7 +2,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Protocol
 
-from database_models import Match
+from elobot.db import Match
 from common.matches.timing import hosting_started
 
 

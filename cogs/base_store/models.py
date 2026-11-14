@@ -4,7 +4,7 @@ from typing import Literal, Protocol
 import coc
 import interactions as ipy
 
-from database_models import Match
+from elobot.db import Match
 from common.base_store.messages import BaseStoreReleaseReason
 
 

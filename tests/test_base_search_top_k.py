@@ -11,7 +11,7 @@ from bson import ObjectId
 import cogs.base_commands as commands
 from common.base_fingerprints import matcher, search
 from common.base_fingerprints.worker import WorkerRequest
-from database_models import BaseLayout
+from elobot.db import BaseLayout
 from tests import _base_search_fixture as fixture
 from tests._relative_geometry_fixture import layout, points
 from tests._base_fingerprint_fixture import fingerprint

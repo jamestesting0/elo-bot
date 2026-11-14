@@ -35,17 +35,23 @@ from cogs.base_submission import (
     parse_base_district,
 )
 import interactions as ipy
-from common.constants import (
-    BASE_QUALITY_EMOJIS, BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD, BASE_SUBMISSION_CHANNEL, BASE_TIERS, BOT_ID,
-    COLOR, COMMAND_CHANNEL, DISTRICT_CHOICES, DISTRICT_CODES_REVERSED, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT,
-    GUILD_IDS, HELPER_API_BASE_URL, HELPER_API_KEY, LB_ENTRIES_PER_PAGE, LINE_SEPERATOR_GIF, LOADING_EMOJI, LVL1_ROLES,
-    LVL2_ROLES, LVL3_ROLES, MAIN_GUILD, RANK_EMOJIS, RED_COLOR, SUCCESS_EMOJI, UNAVAILABLE_IMAGE, WHITELISTED_STAFFS,
+from elobot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI
+from elobot.config.ids import (
+    BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD, BASE_SUBMISSION_CHANNEL, BOT_ID, COMMAND_CHANNEL, GUILD_IDS,
+    LVL1_ROLES, LVL2_ROLES, LVL3_ROLES, MAIN_GUILD, WHITELISTED_STAFFS,
 )
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout, PendingBaseSubmission, Player
-from database_models.base_submission_models import SubmissionAcceptance, SubmissionRejection
-from common.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
-from common.utils import delete_file, mention_user, member_guild
-from common.discord.checks import has_any, has_any_id
+from elobot.config.game import BASE_TIERS, DISTRICT_CHOICES, DISTRICT_CODES_REVERSED
+from elobot.config.presentation import (
+    COLOR, FOOTER_IMAGE, FOOTER_TEXT, LB_ENTRIES_PER_PAGE, LINE_SEPERATOR_GIF, RED_COLOR, UNAVAILABLE_IMAGE,
+)
+from elobot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout, PendingBaseSubmission, Player
+from elobot.db.base_submission_models import SubmissionAcceptance, SubmissionRejection
+from elobot.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
+from elobot.integrations.files import delete_file
+from elobot.discord.mentions import mention_user
+from elobot.discord.members import member_guild
+from elobot.discord.checks import has_any, has_any_id
 from common.base_fingerprints.images import attachment_identity, download_base_screenshot
 from common.base_fingerprints.ingestion import replace_source
 from common.base_fingerprints.removal import FingerprintRemovalProgress, remove_all_fingerprints, remove_fingerprint

@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.leaderboard_commands import LeaderboardCommands
-from common.constants import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
+from elobot.config.presentation import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
 from common.finals.leaderboards import final_board_rows
-from common.utils import interpret_season_string
+from elobot.features.seasons.selection import interpret_season_string
 
 
 def player(user_id, times=()):
@@ -49,7 +49,7 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         self.cog = LeaderboardCommands(MagicMock())
         self.cog._player_cache = self.players
         self.cog._seasons_cache = self.seasons
-        clock = self.enterContext(patch("common.utils.datetime"))
+        clock = self.enterContext(patch("elobot.features.seasons.selection.datetime"))
         clock.now.return_value.timestamp.return_value = 1000
         self.player_model = self.enterContext(patch("cogs.leaderboard_commands.Player"))
         self.query = self.player_model.find_all.return_value

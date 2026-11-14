@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from cogs.war_hosting import helper_preserve
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperJobCreateAcceptedInvalid,
     HelperJobCreateRejected,
     HelperJobCreateUnavailable,

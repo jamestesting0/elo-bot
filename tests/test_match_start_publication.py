@@ -10,9 +10,9 @@ import cogs.match_commands as match_commands
 from cogs.base_store import storage as base_store_storage
 from cogs.war_hosting import war_start
 from common.matches.messages import MatchMessagePublicationError, mark_match_message_ended
-from common.discord.embeds import embed_edit_payload
+from elobot.discord.embeds import embed_edit_payload
 from interactions.models.discord.message import process_message_payload
-from database_models import Match
+from elobot.db import Match
 
 
 from tests._match_publication_fixture import MatchPublicationStateMixin
@@ -247,7 +247,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.bot.http.delete_message.assert_not_awaited()
 
     async def test_finishing_side_clears_stale_publication_description(self) -> None:
-        self.enterContext(patch("common.discord.message_edits._now", side_effect=range(100)))
+        self.enterContext(patch("elobot.discord.message_edits._now", side_effect=range(100)))
         # Given: a real Discord message still contains the old placeholder.
         for title in ("**Match Started**", "**Match Ended**"):
             for description in ("Updating…", "Updating...", "Loading…", "Loading..."):

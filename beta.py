@@ -3,7 +3,7 @@ from beanie import init_beanie
 from dotenv import load_dotenv
 from pymongo import AsyncMongoClient
 
-from database_models import (
+from elobot.db import (
     Match,
     Clan,
     HelperTask,
@@ -42,16 +42,18 @@ import coc
 
 import interactions as ipy
 import os
-from common.constants import (
-    COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWORD, COLOR, DATA_BASES, ELO_BLACKLIST_ROLE, ERROR_EMOJI, FOOTER_IMAGE,
-    GUILD_IDS, LVL1_ROLES, MONGO_DB_URL, RAID_CHANNEL, STAFF_EMOJI, SUCCESS_EMOJI, TOKENS,
-)
-from common.utils import ComponentsV2ModalContext, clear_all_base_store_slots, get_extensions
+from elobot.config.settings import COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWORD, DATA_BASES, MONGO_DB_URL, TOKENS
+from elobot.config.presentation import COLOR, FOOTER_IMAGE
+from elobot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS, LVL1_ROLES, RAID_CHANNEL
+from elobot.config.emojis import ERROR_EMOJI, STAFF_EMOJI, SUCCESS_EMOJI
+from elobot.discord.contexts import ComponentsV2ModalContext
+from elobot.features.base_store.slots import clear_all_base_store_slots
+from elobot.app.extensions import get_extensions
 from common.base_fingerprints.service import FingerprintService
 from common.finals.persistence import register_final_indexes
-from database_models.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
-from database_models.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
-from database_models.fingerprint_models import (
+from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
+from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db.fingerprint_models import (
     BASE_FINGERPRINT_INDEXES, EXTRACTION_RUN_INDEXES, FINGERPRINT_TASK_INDEXES,
 )
 

@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 import beta
 import main
-from database_models.sticky_models import StickyMessage
+from elobot.db.sticky_models import StickyMessage
 
 
 def guild_text(channel_id="10"):

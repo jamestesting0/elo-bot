@@ -10,10 +10,10 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
 from cogs.challenge_commands import ChallengeCommands, available_challenges
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from common.matches.challenges import weekly_challenge_balance
 from common.matches.season_stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
-from database_models import Match, MatchPlayerStats, OverrideCode, Participant, Player, RecordedMatch, ServerState
+from elobot.db import Match, MatchPlayerStats, OverrideCode, Participant, Player, RecordedMatch, ServerState
 from tests._result_retry_store import RESULTS, ResultRetryState
 
 

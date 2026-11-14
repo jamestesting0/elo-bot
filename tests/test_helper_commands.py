@@ -5,7 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.helper_commands import HelperCommands
-from common.constants import LB_ENTRIES_PER_PAGE, STAFF_ROLE, SUCCESS_EMOJI
+from elobot.config.presentation import LB_ENTRIES_PER_PAGE
+from elobot.config.ids import STAFF_ROLE
+from elobot.config.emojis import SUCCESS_EMOJI
 
 
 class TestHelperPagination(unittest.IsolatedAsyncioTestCase):

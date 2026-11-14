@@ -13,7 +13,7 @@ import interactions as ipy
 
 from cogs.base_store.publication import BaseStoreMessageConflict
 from cogs.war_hosting.confirmation import confirm_helper_queue
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperEta,
     HelperEtaFailure,
     HelperEtaReader,
@@ -31,7 +31,7 @@ from cogs.war_hosting.helper_api import (
     HelperTrackingFailure,
     helper_job_notification,
 )
-from common.constants import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
 
 HELPER_QUEUE_PROMPT_THRESHOLD_SECONDS: Final = 30

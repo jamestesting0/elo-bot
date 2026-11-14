@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, Literal
 
 if TYPE_CHECKING:
-    from database_models import Match
+    from elobot.db import Match
 
 FINAL_DISTRICTS: Final = (
     "Barbarian Camp", "Balloon Lagoon", "Builder's Workshop", "Dragon Cliffs",

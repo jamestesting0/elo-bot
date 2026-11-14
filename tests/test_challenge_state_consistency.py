@@ -7,7 +7,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
 from cogs.challenge_commands import ChallengeCommands
-from database_models import Player
+from elobot.db import Player
 
 
 class TestChallengeStateConsistency(unittest.IsolatedAsyncioTestCase):

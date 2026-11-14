@@ -6,8 +6,8 @@ from beanie.odm.settings.document import DocumentSettings
 
 from cogs.base_store import preparation, storage
 from cogs.base_store.models import BaseStorePreparationFailure, BaseStorePreparationRequest
-from database_models import BaseStore, Match, MatchPlayerStats, Participant
-from database_models.result_models import MatchResultOperation, ResultRecordSnapshot
+from elobot.db import BaseStore, Match, MatchPlayerStats, Participant
+from elobot.db.result_models import MatchResultOperation, ResultRecordSnapshot
 
 
 class TestStorageReleasePolicy(unittest.IsolatedAsyncioTestCase):

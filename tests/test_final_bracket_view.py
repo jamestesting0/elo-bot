@@ -11,10 +11,10 @@ from common.finals.recovery import publish_result
 from common.finals.rendering import render_bracket
 from cogs.final_commands import FinalCommands
 from common.finals.types import FinalError
-from database_models import EloFinal, EloFinalMatch
-from database_models.final_models import FinalMatchResult, FinalPrediction, FinalResultSnapshot
-from database_models.season_models import FinalResultProgress
-from database_models import Match
+from elobot.db import EloFinal, EloFinalMatch
+from elobot.db.final_models import FinalMatchResult, FinalPrediction, FinalResultSnapshot
+from elobot.db.season_models import FinalResultProgress
+from elobot.db import Match
 
 
 class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):

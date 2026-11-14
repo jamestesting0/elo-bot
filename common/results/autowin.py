@@ -1,7 +1,7 @@
 from common.finals.types import is_final_match
 from pydantic import JsonValue
 
-from database_models import Match, Player
+from elobot.db import Match, Player
 from common.finals.types import FinalError
 
 

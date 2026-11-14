@@ -7,9 +7,9 @@ import anyio
 from cogs import data_commands, match_commands
 from cogs.war_hosting import result_store
 from cogs.war_hosting.helper_store import HelperScoreStoreOutcome
-from common.constants import SUCCESS_EMOJI
+from elobot.config.emojis import SUCCESS_EMOJI
 from common.players.data_boundary import PlayerDataBoundary
-from database_models import Match
+from elobot.db import Match
 from tests import _result_retry_store as retry_fixture
 
 

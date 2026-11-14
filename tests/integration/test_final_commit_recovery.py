@@ -4,8 +4,8 @@ from common.finals.results import FinalResultSubmission, submit_result
 from common.tokens.bets import BetAction, apply_bet, open_market
 from common.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
 from common.tokens.wallets import ensure_wallet
-from database_models.final_models import FinalMatchResult
-from database_models.token_models import TokenLedgerEntry, TokenWallet
+from elobot.db.final_models import FinalMatchResult
+from elobot.db.token_models import TokenLedgerEntry, TokenWallet
 
 
 class TestFinalCommitRecovery(FinalScenarioCase):

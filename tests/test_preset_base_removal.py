@@ -9,8 +9,8 @@ from pymongo.errors import OperationFailure
 
 import cogs.match_commands as match_commands
 import cogs.preset_commands as preset_commands
-from common.constants import SUCCESS_EMOJI
-from database_models import BaseLayout, Player
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.db import BaseLayout, Player
 
 
 class TestPresetBaseRemoval(unittest.IsolatedAsyncioTestCase):

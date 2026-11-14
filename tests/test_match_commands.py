@@ -20,9 +20,13 @@ from cogs.match_commands import MatchCommands, QUEUE_TIER_AGED, QUEUE_TIER_MIXED
     get_start_base_store_slot_availability, is_match_finished, is_player_occupied, choose_bases, \
     initiate_match
 from cogs.preset_commands import PresetCommands
-from database_models import BaseStore, Match, OverrideCode, Participant, Player, Queue, ServerState
-from common.constants import BASE_STORE_SLOTS, BOT_ID, ERROR_EMOJI, SUCCESS_EMOJI
-from common.utils import clear_all_base_store_slots, collect_base_store_slot_owners, format_base_store_slot_status
+from elobot.db import BaseStore, Match, OverrideCode, Participant, Player, Queue, ServerState
+from elobot.config.game import BASE_STORE_SLOTS
+from elobot.config.ids import BOT_ID
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.features.base_store.slots import (
+    clear_all_base_store_slots, collect_base_store_slot_owners, format_base_store_slot_status,
+)
 
 
 class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
@@ -945,8 +949,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             call("#CLAN", bot=None), call("#CLAN2", bot=None),
         ])
 
-    @patch("common.utils.Clan")
-    @patch("common.utils.Match")
+    @patch("elobot.features.base_store.slots.Clan")
+    @patch("elobot.features.base_store.slots.Match")
     async def test_clear_all_base_store_slots_frees_match_metadata_and_clan_slots(self, mock_match, mock_clan):
         stored_participant = MagicMock(
             base_store=BaseStore(clan_tag="#CLAN", slot="Slot 1", stored_at=10),
@@ -1506,7 +1510,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(modal.title, "Result Submission")
 
     async def test_match_autowin_success(self):
-        from database_models import Helper
+        from elobot.db import Helper
         from tests._autowin_fixture import AutowinState
 
         fixture = AutowinState(self)
@@ -2483,7 +2487,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
     async def test_abort_started_live_match_requires_exact_started_state(self) -> None:
         from cogs.live_hosting import live_start
-        from database_models.match_models import ExpectedLiveStartState
+        from elobot.db.match_models import ExpectedLiveStartState
 
         expected = ExpectedLiveStartState(
             times=(1000, None),
@@ -2646,7 +2650,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_match_abort_preserves_persistent_host_clans(self) -> None:
-        from database_models.match_models import ExpectedLiveStartState
+        from elobot.db.match_models import ExpectedLiveStartState
 
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.channel.id = 12345
@@ -3126,7 +3130,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     patch("cogs.live_hosting.helper_live.Match.find_one", new=AsyncMock(return_value=match)),
                     patch("cogs.live_hosting.helper_live.live_start.start_live_match",
                           new=AsyncMock(side_effect=start_side)),
-                    patch("cogs.war_hosting.helper_api.anyio.sleep", new=AsyncMock()),
+                    patch("elobot.integrations.helper_api.anyio.sleep", new=AsyncMock()),
             ):
                 await helper_live.host_live_automatically(runtime, ctx, request)
         finally:

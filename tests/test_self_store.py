@@ -7,7 +7,8 @@ import interactions as ipy
 
 from cogs import self_commands
 from cogs.self_commands import SelfCommands
-from common.constants import BOT_ID, ERROR_EMOJI
+from elobot.config.ids import BOT_ID
+from elobot.config.emojis import ERROR_EMOJI
 
 
 CALLER_ID = "123456789012345678"

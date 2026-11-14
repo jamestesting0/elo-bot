@@ -1,4 +1,4 @@
-from database_models import Match
+from elobot.db import Match
 
 
 def match_district_index(match: Match, district: str) -> int | None:

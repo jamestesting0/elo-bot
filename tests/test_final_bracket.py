@@ -2,7 +2,7 @@ import unittest
 
 from common.finals.bracket import advance_nodes, automatic_pairs, build_bracket, require_round_ready
 from common.finals.types import FinalError
-from database_models import EloFinal
+from elobot.db import EloFinal
 
 
 class TestFinalBracket(unittest.TestCase):

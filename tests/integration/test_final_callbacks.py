@@ -6,15 +6,17 @@ from tests.integration._final_fixture import FinalScenarioCase
 from cogs.final_commands import FinalCommands
 from cogs.leaderboard_commands import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
 from cogs.token_commands import TokenCommands
-from common.constants import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES, LB_ENTRIES_PER_PAGE, ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
+from elobot.config.ids import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES
+from elobot.config.presentation import LB_ENTRIES_PER_PAGE
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from common.finals.lifecycle import confirm_bracket, resolve_final
 from common.finals.matches import bind_thread, prepare_match, schedule_final_match
 from common.finals.predictions import change_prediction_state
 from common.tokens.bets import open_market
-from database_models.final_models import FinalPrediction
-from database_models.token_models import FinalBet, TokenWallet
-from database_models import Player
-from database_models.final_models import FinalMatchResult
+from elobot.db.final_models import FinalPrediction
+from elobot.db.token_models import FinalBet, TokenWallet
+from elobot.db import Player
+from elobot.db.final_models import FinalMatchResult
 
 
 class TestFinalCallbacks(FinalScenarioCase):

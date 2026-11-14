@@ -8,8 +8,8 @@ from bson import ObjectId
 
 import cogs.base_commands as commands
 from common.base_fingerprints.matcher import score_layout
-from common.constants import BASE_SUBMISSION_CHANNEL
-from database_models import BaseLayout, PendingBaseSubmission
+from elobot.config.ids import BASE_SUBMISSION_CHANNEL
+from elobot.db import BaseLayout, PendingBaseSubmission
 from tests._relative_geometry_fixture import layout, points
 from tests.integration import _fingerprint_fixture as fixture
 from tests._relative_geometry_fixture import summary

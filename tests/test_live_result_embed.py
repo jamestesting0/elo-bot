@@ -7,10 +7,10 @@ from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
 import cogs.match_commands as match_commands
-from common.constants import RED_COLOR
+from elobot.config.presentation import RED_COLOR
 from common.results.operations import ResultOperationConflict
-from database_models import Match, Participant
-from database_models.result_models import MatchResultOperation
+from elobot.db import Match, Participant
+from elobot.db.result_models import MatchResultOperation
 from tests._result_retry_store import apply_operations, matches
 
 

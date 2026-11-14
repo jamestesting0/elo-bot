@@ -10,7 +10,7 @@ import coc
 import interactions as ipy
 
 from cogs.war_hosting import result_store_ui
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperEta,
     HelperEtaFailure,
     HelperEtaReader,
@@ -34,9 +34,10 @@ from cogs.war_hosting.helper_api import (
     helper_job_notification,
 )
 from cogs.war_hosting.confirmation import confirm_helper_queue
-from common.constants import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI, STAFF_ROLE
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI
+from elobot.config.ids import STAFF_ROLE
 from common.results.validation import is_valid_match_result_entry
-from database_models import Match, Player
+from elobot.db import Match, Player
 
 
 HELPER_QUEUE_PROMPT_THRESHOLD_SECONDS: Final = 30

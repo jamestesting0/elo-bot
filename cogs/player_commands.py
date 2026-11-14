@@ -4,13 +4,17 @@ import re
 import coc
 
 import interactions as ipy
-from common.constants import (
-    BOT_ID, COLOR, DISTRICT_EMOJI, DISTRICT_ORDER, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT, LEAGUES, LEAGUE_EMOJIS,
-    LOSS_EMOJI, LVL1_ROLES, MAIN_GUILD, PLAYER_ROLE, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI,
+from elobot.config.ids import BOT_ID, LVL1_ROLES, MAIN_GUILD, PLAYER_ROLE
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.emojis import (
+    DISTRICT_EMOJI, ERROR_EMOJI, LEAGUE_EMOJIS, LOSS_EMOJI, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI,
 )
-from common.discord.decorators import lock_files, create_async_task
-from database_models import Match, Player, RecordedMatch, Queue, Season
-from common.utils import interpret_season_string, fetch_member_otherwise_user, mention_user, member_guild
+from elobot.config.game import DISTRICT_ORDER, LEAGUES
+from elobot.discord.decorators import lock_files, create_async_task
+from elobot.db import Match, Player, RecordedMatch, Queue, Season
+from elobot.features.seasons.selection import interpret_season_string
+from elobot.discord.members import fetch_member_otherwise_user, member_guild
+from elobot.discord.mentions import mention_user
 from cogs.leaderboard_commands import (
     get_season_matches,
     get_winrate,

@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from datetime import timedelta
 
-from database_models.player_models import RecordedMatch
+from elobot.db.player_models import RecordedMatch
 
 
 def weekly_challenge_balance(player_matches: Sequence[RecordedMatch], now: float) -> int:

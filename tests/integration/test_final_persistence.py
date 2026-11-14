@@ -3,9 +3,9 @@ from pymongo.errors import DuplicateKeyError
 from tests.integration._final_fixture import FinalMongoCase
 from common.finals.persistence import transaction
 from common.finals.types import FINAL_DISTRICTS
-from database_models import EloFinal, Match, Participant
-from database_models.final_models import FinalMatchResult, FinalResultOperation, FinalResultSnapshot
-from database_models.token_models import TokenWallet
+from elobot.db import EloFinal, Match, Participant
+from elobot.db.final_models import FinalMatchResult, FinalResultOperation, FinalResultSnapshot
+from elobot.db.token_models import TokenWallet
 
 
 class TestFinalPersistence(FinalMongoCase):

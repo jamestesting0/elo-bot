@@ -8,7 +8,7 @@ from interactions.models.discord.message import process_message_payload
 
 import cogs.match_commands as match_commands
 from cogs.live_hosting import live_start
-from database_models import Participant
+from elobot.db import Participant
 
 
 class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):

@@ -18,7 +18,7 @@ from common.base_fingerprints.ingestion import replace_source
 from common.base_fingerprints.jobs import claim_tasks, enroll_batch, materialize_outbox, run_counts
 from common.base_fingerprints.search import eligible
 from common.base_fingerprints.types import ExtractionResult, ExtractionState, utcnow
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
 from tests._base_image_fixture import FRESH_URL, OLD_URL, image_response

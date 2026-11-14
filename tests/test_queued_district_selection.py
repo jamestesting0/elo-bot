@@ -11,8 +11,8 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
 from cogs import match_commands as commands
-from database_models import Match, Participant, Player, Queue, ServerState
-from database_models.player_models import QueueDistrictSelection
+from elobot.db import Match, Participant, Player, Queue, ServerState
+from elobot.db.player_models import QueueDistrictSelection
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]

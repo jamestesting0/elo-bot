@@ -1,10 +1,10 @@
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from common.finals.types import FINAL_DISTRICTS
-from common.utils import get_destruction, get_stars
-from database_models import EloFinal, Player
-from database_models.final_models import FinalEditionStats, FinalMatchResult, FinalPlayerProfile
-from database_models.token_models import TokenWallet
+from elobot.core.parsing import get_destruction, get_stars
+from elobot.db import EloFinal, Player
+from elobot.db.final_models import FinalEditionStats, FinalMatchResult, FinalPlayerProfile
+from elobot.db.token_models import TokenWallet
 
 
 async def rebuild_profiles(final: EloFinal, session: AsyncClientSession) -> None:

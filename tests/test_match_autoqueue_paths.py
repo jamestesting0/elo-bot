@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from cogs.match_commands import MatchCommands
-from database_models import Match
+from elobot.db import Match
 
 
 class TestAutoqueueTerminalPaths(unittest.IsolatedAsyncioTestCase):

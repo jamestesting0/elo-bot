@@ -9,8 +9,8 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
 
 from cogs import data_commands
-from common.constants import BASE_STORE_SLOTS
-from database_models import BaseStore, Clan, Match, Participant, Player, RecordedMatch
+from elobot.config.game import BASE_STORE_SLOTS
+from elobot.db import BaseStore, Clan, Match, Participant, Player, RecordedMatch
 
 
 class DataResetFixture(unittest.IsolatedAsyncioTestCase):

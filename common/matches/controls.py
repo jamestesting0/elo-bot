@@ -4,9 +4,9 @@ from copy import deepcopy
 import interactions as ipy
 from pydantic import JsonValue
 
-from common.constants import ERROR_EMOJI
+from elobot.config.emojis import ERROR_EMOJI
 from common.matches.messages import MatchMessageState
-from database_models import Match
+from elobot.db import Match
 
 
 async def reject_outdated_match_control(ctx: ipy.ComponentContext | ipy.ModalContext) -> None:

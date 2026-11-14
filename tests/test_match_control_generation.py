@@ -6,8 +6,9 @@ from pymongo.results import UpdateResult
 
 import cogs.match_commands as commands
 import tests._stored_base_controls_fixture as fixtures
-from common.constants import STAFF_ROLE, SUCCESS_EMOJI
-from database_models import Match, Player
+from elobot.config.ids import STAFF_ROLE
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.db import Match, Player
 
 
 class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):

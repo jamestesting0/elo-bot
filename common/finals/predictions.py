@@ -7,8 +7,8 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 
 from common.finals.persistence import transaction
 from common.finals.types import FinalError, NODE_IDS
-from database_models import EloFinal, Player
-from database_models.final_models import FinalPrediction
+from elobot.db import EloFinal, Player
+from elobot.db.final_models import FinalPrediction
 
 
 @dataclass(frozen=True, slots=True)

@@ -6,7 +6,7 @@ import interactions as ipy
 
 from cogs.match_commands import MatchCommands
 from cogs.war_hosting import war_start
-from common.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 
 
 class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):

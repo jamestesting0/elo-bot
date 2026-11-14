@@ -6,8 +6,8 @@ from beanie import PydanticObjectId
 from common.finals.bracket import require_round_ready
 from common.finals.persistence import transaction
 from common.finals.types import FINAL_DISTRICTS, FinalError, ROUND_NODES
-from database_models import EloFinal, Match, Participant, Player
-from database_models.season_models import EloFinalMatch
+from elobot.db import EloFinal, Match, Participant, Player
+from elobot.db.season_models import EloFinalMatch
 
 
 def require_current_match(final: EloFinal, source: Match) -> EloFinalMatch:

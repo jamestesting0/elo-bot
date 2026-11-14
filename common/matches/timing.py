@@ -1,5 +1,5 @@
 from common.finals.types import is_final_match
-from database_models import Match
+from elobot.db import Match
 
 
 def hosting_started(match: Match, player: int | None = None) -> bool:

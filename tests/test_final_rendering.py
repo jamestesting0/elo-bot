@@ -11,8 +11,8 @@ from common.finals.bracket import advance_nodes, automatic_pairs, build_bracket
 from common.finals.rendering import bracket_labels, fitted_label, render_bracket
 from common.finals.prediction_display import prediction_statuses
 from common.finals.types import FinalError
-from database_models import EloFinal
-from database_models.final_models import FinalPrediction
+from elobot.db import EloFinal
+from elobot.db.final_models import FinalPrediction
 
 
 # Blue interiors measured from the supplied image, independently of renderer centers.

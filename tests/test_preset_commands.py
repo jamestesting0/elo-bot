@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.preset_commands import PresetCommands
-from common.constants import ERROR_EMOJI
+from elobot.config.emojis import ERROR_EMOJI
 
 
 class TestPresetBaseView(unittest.IsolatedAsyncioTestCase):

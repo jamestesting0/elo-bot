@@ -1,5 +1,5 @@
 from common.finals.types import FinalError, NODE_IDS, ROUND_NODES
-from database_models.season_models import EloFinal, EloFinalMatch
+from elobot.db.season_models import EloFinal, EloFinalMatch
 
 
 def seeded_players(final: EloFinal) -> list[str]:

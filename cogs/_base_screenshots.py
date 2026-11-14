@@ -5,7 +5,7 @@ from typing import assert_never
 import aiohttp
 import interactions as ipy
 
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperBaseImageResult, HelperGetBaseImagePayload, HelperJob, HelperJobCreateAcceptedInvalid,
     HelperJobCreateConflict, HelperJobCreated, HelperJobCreateRejected, HelperJobCreateRequest,
     HelperJobCreateUnavailable, HelperJobCreator, HelperJobPoller, HelperTrackingFailure, helper_job_notification,
@@ -14,7 +14,8 @@ from common.base_fingerprints.artifacts import MAX_IMAGE_BYTES
 from common.base_fingerprints.extractor import decode_image
 from common.base_fingerprints.images import MAX_SCREENSHOT_BYTES
 from common.base_fingerprints.types import FingerprintError
-from common.constants import ERROR_EMOJI, HELPER_API_BASE_URL, HELPER_API_KEY, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 
 
 async def capture_base_screenshot(

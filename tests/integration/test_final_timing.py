@@ -13,9 +13,9 @@ from common.finals.recovery import mark_deleted_attempt, recover_final
 from common.finals.results import FinalResultSubmission, submit_result
 from common.finals.types import FinalError
 from common.matches.messages import MatchMessageState
-from database_models import Clan, EloFinal, Match
-from database_models.final_models import FinalMatchResult
-from database_models.token_models import FinalBettingMarket
+from elobot.db import Clan, EloFinal, Match
+from elobot.db.final_models import FinalMatchResult
+from elobot.db.token_models import FinalBettingMarket
 from common.tokens.bets import open_market
 from tests.integration._final_fixture import FinalScenarioCase
 

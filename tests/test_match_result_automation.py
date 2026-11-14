@@ -13,12 +13,12 @@ import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
 from cogs.war_hosting import result_store, result_store_task, result_store_ui
 from cogs.war_hosting.helper_store import HelperScoreStoreOutcome
-from common.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
-from common.constants import ERROR_EMOJI, IMPORTANT_EMOJI, STAR_EMOJI
+from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from elobot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, STAR_EMOJI
 from common.players import self_hosting
-from database_models import Match, Player
-from database_models.final_models import FinalPlayerProfile
-from database_models.match_models import Participant
+from elobot.db import Match, Player
+from elobot.db.final_models import FinalPlayerProfile
+from elobot.db.match_models import Participant
 
 
 COMPLETE = ["3.100", "2.90", "1.80"]
@@ -630,7 +630,7 @@ class TestMatchResultAutomation(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel.assert_not_awaited()
 
     async def test_blocked_result_dm_retains_slot_and_finishes_side_tasks(self) -> None:
-        from database_models import BaseStore
+        from elobot.db import BaseStore
 
         source = self._match(results=[[None, None, None], COMPLETE.copy()])
         fresh = self._match(results=[[None, None, None], COMPLETE.copy()])

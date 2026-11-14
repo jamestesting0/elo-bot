@@ -10,8 +10,8 @@ import interactions as ipy
 import cogs.war_hosting.helper_host as helper_host
 from cogs.war_hosting import result_store_task
 from cogs.self_commands import SelfCommands
-from cogs.war_hosting.helper_api import HelperJob
-from common.constants import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.integrations.helper_api import HelperJob
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

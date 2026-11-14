@@ -9,7 +9,7 @@ import interactions as ipy
 import cogs.match_commands as match_commands
 import cogs.self_hosting.hosting as self_hosting
 from cogs.self_commands import SelfCommands
-from common.constants import BOT_ID
+from elobot.config.ids import BOT_ID
 
 
 REQUESTER_ID = "123456789012345678"

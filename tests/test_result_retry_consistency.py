@@ -9,8 +9,8 @@ from cogs import match_commands
 from cogs.base_store import storage
 from common.results.operations import ResultOperationConflict, begin_result_operation
 from common.matches.season_stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
-from database_models import Match
-from database_models.result_models import MatchResultOperation
+from elobot.db import Match
+from elobot.db.result_models import MatchResultOperation
 from tests import _result_retry_store as record_fixture
 
 

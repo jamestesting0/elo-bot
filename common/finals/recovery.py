@@ -7,7 +7,7 @@ import anyio
 from beanie import PydanticObjectId
 from pymongo.errors import PyMongoError
 
-from common.discord.message_edits import edit_channel_message
+from elobot.discord.message_edits import edit_channel_message
 from common.finals.lifecycle import resolve_final
 from common.finals.persistence import transaction
 from common.finals.predictions import rescore_predictions
@@ -19,10 +19,10 @@ from common.results.helper_credits import award_helper_once
 from common.players.self_hosting import invite_eligible_players
 from common.tokens.settlement import recover_market, set_settlement_intent
 from common.tokens.presentation import market_signature, publish_market
-from common.utils import mention_user
-from database_models import EloFinal, Match
-from database_models.final_models import FinalMatchResult
-from database_models.token_models import FinalBettingMarket
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal, Match
+from elobot.db.final_models import FinalMatchResult
+from elobot.db.token_models import FinalBettingMarket
 
 
 async def select_financial_work(final_id: PydanticObjectId) -> tuple[EloFinal, list[str]]:

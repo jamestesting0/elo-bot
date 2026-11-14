@@ -10,12 +10,12 @@ from beanie import PydanticObjectId
 from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 
-from common.discord.embeds import embed_edit_payload
-from common.discord.message_edits import edit_channel_message
+from elobot.discord.embeds import embed_edit_payload
+from elobot.discord.message_edits import edit_channel_message
 from common.matches.message_lock import match_message_lock
 from common.finals.types import is_final_match
-from database_models import Match
-from database_models.publication_models import MatchMessagePublication
+from elobot.db import Match
+from elobot.db.publication_models import MatchMessagePublication
 
 
 _PUBLICATION_PLACEHOLDERS: Final = frozenset(("Updating…", "Updating...", "Loading…", "Loading..."))

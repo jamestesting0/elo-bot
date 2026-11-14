@@ -8,13 +8,13 @@ from cogs.base_store.controls import start_stored_bases
 from cogs.base_store.models import StoredBaseActionRequest
 from cogs.live_hosting.live_start import LiveStart, ManualLiveStartReply, start_live_match
 from cogs.war_hosting.war_start import SelfHostedWarStartReply, WarStart, start_war
-from cogs.war_hosting.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
+from elobot.integrations.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
 from common.finals.lifecycle import confirm_bracket, resolve_final
 from common.finals.matches import bind_thread
 from common.finals.types import FINAL_DISTRICTS
 from common.tokens.bets import open_market
-from database_models import BaseStore, Clan, Match
-from database_models.token_models import FinalBettingMarket
+from elobot.db import BaseStore, Clan, Match
+from elobot.db.token_models import FinalBettingMarket
 
 
 class TestFinalStartRoutes(FinalScenarioCase):

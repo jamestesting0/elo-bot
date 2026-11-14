@@ -1,7 +1,7 @@
 import unittest
 
 from common.matches.timing import hosting_started
-from database_models import Match
+from elobot.db import Match
 
 
 class TestMatchTiming(unittest.TestCase):

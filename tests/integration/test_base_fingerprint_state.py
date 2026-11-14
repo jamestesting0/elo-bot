@@ -12,7 +12,7 @@ from common.base_fingerprints.search import eligible, find_matches, visibility_f
 from common.base_fingerprints.service import FingerprintService
 from common.base_fingerprints.types import ExtractionResult, ExtractionState, utcnow
 from common.base_fingerprints.types import FingerprintError
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
 from common.base_fingerprints.types import PIPELINE_ID

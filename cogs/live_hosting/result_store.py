@@ -7,11 +7,11 @@ from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 
 from cogs.war_hosting import helper_store, result_store, result_store_ui
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from common.results.operations import result_input_error
 from common.results.validation import is_valid_complete_match_result
-from database_models import Match
+from elobot.db import Match
 
 
 class LiveResultStoreRuntime(Protocol):

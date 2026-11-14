@@ -10,13 +10,9 @@ import cogs.base_commands as commands
 from cogs.base_submission.presentation import build_review_components
 from common.base_fingerprints.search import SearchSession
 from common.base_fingerprints.types import FingerprintError
-from common.constants import (
-    BASE_SUBMISSION_CHANNEL,
-    ERROR_EMOJI,
-    LOADING_EMOJI,
-    SUCCESS_EMOJI,
-)
-from database_models import PendingBaseSubmission
+from elobot.config.ids import BASE_SUBMISSION_CHANNEL
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.db import PendingBaseSubmission
 from tests._base_fingerprint_fixture import fingerprint
 from tests._base_finder_lock_fixture import ContendedLock
 

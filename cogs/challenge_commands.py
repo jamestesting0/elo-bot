@@ -3,18 +3,17 @@ import secrets
 from interactions import utils
 
 import interactions as ipy
-from common.constants import (
-    COLOR, COMMAND_CHANNEL, CROSS_EMOJI, ELO_BLACKLIST_ROLE, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT, GUILD_IDS,
-    IMPORTANT_EMOJI, INFO_CHANNEL, LVL3_ROLES, ORDINAL_REPRESENTATIONS, SUCCESS_EMOJI, TICK_EMOJI,
-)
-from common.discord.decorators import reset_cooldown_on_error
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, ORDINAL_REPRESENTATIONS
+from elobot.config.ids import COMMAND_CHANNEL, ELO_BLACKLIST_ROLE, GUILD_IDS, INFO_CHANNEL, LVL3_ROLES
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
+from elobot.discord.decorators import reset_cooldown_on_error
 from common.matches.challenges import weekly_challenge_balance
 from common.matches.cleanup import delete_unreserved_match
-from database_models import Participant, Match, Player, RecordedMatch, MatchPlayerStats, OverrideCode, ServerState
+from elobot.db import Participant, Match, Player, RecordedMatch, MatchPlayerStats, OverrideCode, ServerState
 import asyncio
 import re
 from datetime import datetime
-from common.utils import mention_user
+from elobot.discord.mentions import mention_user
 from cogs.match_commands import QUEUE_OPERATION_LOCK, confirm_match, get_district_options, is_player_occupied
 
 

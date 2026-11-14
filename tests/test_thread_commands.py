@@ -10,8 +10,8 @@ sys.path.append(os.getcwd())
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands, confirm_match
 from cogs.thread_commands import ThreadCommands
-from common.constants import LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
-from database_models import BaseStore, Participant
+from elobot.config.ids import LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
+from elobot.db import BaseStore, Participant
 
 
 class TestThreadCommands(unittest.IsolatedAsyncioTestCase):

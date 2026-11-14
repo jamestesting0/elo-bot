@@ -5,8 +5,8 @@ import interactions as ipy
 
 import cogs.war_hosting.stored_bases as stored_bases
 from cogs.war_hosting.confirmation import confirm_helper_queue
-from cogs.war_hosting.helper_api import HelperEta, HelperEtaFailure, HelperEtaReader
-from common.constants import ERROR_EMOJI
+from elobot.integrations.helper_api import HelperEta, HelperEtaFailure, HelperEtaReader
+from elobot.config.emojis import ERROR_EMOJI
 
 
 HELPER_QUEUE_PROMPT_THRESHOLD_SECONDS: Final = 30

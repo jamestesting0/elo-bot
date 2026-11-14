@@ -3,7 +3,7 @@ from collections.abc import Collection
 import interactions as ipy
 
 import cogs.base_store.storage as base_store_storage
-from common.constants import BASE_STORE_SLOTS
+from elobot.config.game import BASE_STORE_SLOTS
 
 
 def all_base_store_slots_available(available_slots: Collection[str] | None) -> bool:

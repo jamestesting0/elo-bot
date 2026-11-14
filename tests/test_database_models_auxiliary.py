@@ -2,7 +2,7 @@ import unittest
 
 from pymongo import ASCENDING, DESCENDING
 
-from database_models import auditlog_models, base_submission_models, giveaway_models, system_models
+from elobot.db import auditlog_models, base_submission_models, giveaway_models, system_models
 
 
 class TestDatabaseAuxiliaryModels(unittest.TestCase):

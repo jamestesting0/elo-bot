@@ -8,7 +8,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
 from cogs.match_commands import MatchCommands
-from database_models import BaseLink, Match, Participant
+from elobot.db import BaseLink, Match, Participant
 
 
 class TestMatchSlotUpdates(unittest.IsolatedAsyncioTestCase):

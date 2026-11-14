@@ -7,15 +7,17 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 
-from common.constants import COLOR, FINAL_CHANNEL, FOOTER_IMAGE, FOOTER_TEXT, TOKEN_EMOJI
-from common.discord.message_edits import edit_channel_message
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.ids import FINAL_CHANNEL
+from elobot.config.emojis import TOKEN_EMOJI
+from elobot.discord.message_edits import edit_channel_message
 from common.finals.types import FinalError
 from common.finals.publication import PUBLICATION_LOCKS
 from common.tokens.bets import projected_return
 from common.tokens.wallets import ensure_wallet, wallet_summary
-from common.utils import mention_user
-from database_models import EloFinal
-from database_models.token_models import FinalBet, FinalBettingMarket
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal
+from elobot.db.token_models import FinalBet, FinalBettingMarket
 
 
 def market_embed(final: EloFinal, market: FinalBettingMarket, names: dict[str, str] | None = None) -> ipy.Embed:

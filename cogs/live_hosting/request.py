@@ -9,10 +9,11 @@ from weakref import WeakValueDictionary
 import interactions as ipy
 
 from common.base_store.live import live_pair_ready
-from common.constants import COLOR, CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
+from elobot.config.presentation import COLOR
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from common.results.validation import is_match_finished
 from common.matches.timing import hosting_started
-from database_models import Match
+from elobot.db import Match
 
 
 LIVE_REQUEST_TTL_SECONDS: Final = 300

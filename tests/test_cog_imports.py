@@ -3,7 +3,7 @@ import sys
 import textwrap
 import unittest
 
-from common.utils import get_extensions
+from elobot.app.extensions import get_extensions
 
 
 class TestCogImports(unittest.TestCase):
@@ -36,7 +36,7 @@ class TestCogImports(unittest.TestCase):
             for name in ("interactions", "coc", "beanie", "numpy", "PIL.Image"):
                 importlib.import_module(name)
             assert not any(
-                name.split(".")[0] in {"cogs", "common", "database_models"}
+                name.split(".")[0] in {"cogs", "common", "elobot"}
                 for name in sys.modules
             )
             for name in sys.argv[1:]:

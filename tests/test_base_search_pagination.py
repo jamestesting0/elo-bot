@@ -10,8 +10,8 @@ from bson import ObjectId
 import cogs.base_commands as commands
 from common.base_fingerprints.search import SearchSession, render_page
 from common.base_fingerprints.types import MatchScore
-from common.constants import ERROR_EMOJI
-from database_models import BaseLayout
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.db import BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._base_finder_lock_fixture import ContendedLock
 

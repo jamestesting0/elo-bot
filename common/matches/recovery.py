@@ -5,12 +5,12 @@ import logging
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from common.constants import MATCH_CHANNEL
+from elobot.config.ids import MATCH_CHANNEL
 from common.matches.message_lock import match_message_lock
 from common.matches.messages import _PUBLICATION_PLACEHOLDERS, mark_match_message_ended, match_message_embeds
 from common.matches.publication_state import restore_match_publication
 from common.results.validation import is_valid_match_result_entry
-from database_models import Match
+from elobot.db import Match
 
 
 _MATCH_TITLES = frozenset((

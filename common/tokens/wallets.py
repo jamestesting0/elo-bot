@@ -4,8 +4,8 @@ from pymongo.errors import DuplicateKeyError
 
 from common.finals.persistence import transaction
 from common.finals.types import FinalError
-from database_models import Player
-from database_models.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db import Player
+from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 async def ensure_wallet(user_id: str) -> TokenWallet:

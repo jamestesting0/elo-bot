@@ -9,7 +9,7 @@ from cogs.live_hosting import helper_live
 from cogs.match_commands import MatchCommands
 from cogs.self_commands import SelfCommands
 from cogs.war_hosting import helper_host
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperHostWarMatchPayload,
     HelperJobCreateRejected,
     HelperJobCreateRequest,

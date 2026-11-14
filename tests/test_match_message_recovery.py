@@ -8,7 +8,7 @@ import interactions as ipy
 from common.matches.message_lock import match_message_lock
 from common.matches.messages import MatchMessageState, publish_match_message
 from common.matches.recovery import _repair_match, _repair_message, repair_match_messages
-from database_models import Match, Participant
+from elobot.db import Match, Participant
 
 
 class TestMatchMessageRecovery(unittest.IsolatedAsyncioTestCase):

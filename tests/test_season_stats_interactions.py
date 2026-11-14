@@ -7,8 +7,8 @@ from pymongo.errors import PyMongoError
 from tests._season_stats_fixture import row
 
 import cogs.season_commands as commands
-from common.constants import ERROR_EMOJI
-from common.discord.season_stats import stats_controls, stats_embed
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.discord.season_stats import stats_controls, stats_embed
 from common.matches.season_stats import SeasonWindow, StatsAccumulator
 
 

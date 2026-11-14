@@ -7,9 +7,9 @@ from pymongo.results import UpdateResult
 from cogs import match_commands
 from cogs.base_store import storage
 from cogs.war_hosting import war_start
-from common.constants import SUCCESS_EMOJI
+from elobot.config.emojis import SUCCESS_EMOJI
 from common.matches.cleanup import delete_unreserved_match
-from database_models import BaseStore
+from elobot.db import BaseStore
 
 
 from tests._match_cleanup_fixture import MatchCleanupStateMixin

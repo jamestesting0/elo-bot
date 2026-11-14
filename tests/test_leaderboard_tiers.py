@@ -3,8 +3,8 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from cogs.leaderboard_commands import LeaderboardCommands, sort_players
-from common.constants import LB_ENTRIES_PER_PAGE
-from database_models.player_models import MatchDistrictStats
+from elobot.config.presentation import LB_ENTRIES_PER_PAGE
+from elobot.db.player_models import MatchDistrictStats
 
 
 def make_player(user_id, attacks, played_at=150):
@@ -39,7 +39,7 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.cog = LeaderboardCommands(MagicMock())
         self.cog._seasons_cache = [SimpleNamespace(season_number=1, start=100, end=200)]
-        clock = self.enterContext(patch("common.utils.datetime"))
+        clock = self.enterContext(patch("elobot.features.seasons.selection.datetime"))
         clock.now.return_value.timestamp.return_value = 1000
 
     async def test_mixed_qualities_threshold_ranking_and_season_match_uncached(self):

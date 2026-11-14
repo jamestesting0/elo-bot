@@ -9,17 +9,10 @@ from cogs.base_submission.models import (
     ReviewStatus,
     SubmissionDraft,
 )
-from common.constants import (
-    COLOR,
-    CROSS_EMOJI,
-    FOOTER_IMAGE,
-    FOOTER_TEXT,
-    GREEN_COLOR,
-    RED_COLOR,
-    TICK_EMOJI,
-)
-from database_models import PendingBaseSubmission
-from common.utils import mention_user
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, RED_COLOR
+from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI
+from elobot.db import PendingBaseSubmission
+from elobot.discord.mentions import mention_user
 
 
 ACCEPT_BUTTON_ID: Final = "base_submission_accept"

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from common.matches.thread_messages import find_match_thread_announcement
-from database_models import Match
+from elobot.db import Match
 
 
 class TestMatchThreadMessages(unittest.IsolatedAsyncioTestCase):

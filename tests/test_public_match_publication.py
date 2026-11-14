@@ -6,7 +6,7 @@ import anyio
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from common.constants import MATCH_CHANNEL
+from elobot.config.ids import MATCH_CHANNEL
 from common.matches.messages import MatchMessagePublicationError, MatchMessageState, publish_match_message
 from common.matches.publication_state import restore_match_publication
 from common.matches.recovery import _attempt_repair_message

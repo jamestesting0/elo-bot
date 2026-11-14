@@ -6,10 +6,10 @@ from typing import Literal, assert_never
 import interactions as ipy
 
 from common.base_store.live import format_live_slot_line, live_store_components, live_stores
-from common.constants import COLOR
-from common.discord.embeds import embed_edit_payload
-from common.discord.message_edits import edit_channel_message
-from database_models import Match
+from elobot.config.presentation import COLOR
+from elobot.discord.embeds import embed_edit_payload
+from elobot.discord.message_edits import edit_channel_message
+from elobot.db import Match
 
 
 type BaseStoreReleaseReason = Literal["undone", "finished", "raid_weekend_ended", "thread_deleted"]
@@ -59,7 +59,7 @@ async def retire_stored_base_message(
             retained = live_stores(current, request.live_reservation_id) if current else []
             retained = [(i, store) for i, store in retained if store.message_id == request.message_id]
             if retained:
-                from common.utils import mention_user
+                from elobot.discord.mentions import mention_user
                 user_ids = [current.participants[index].user_id for index, _ in retained]
                 members = await asyncio.gather(*(channel.guild.fetch_member(user) for user in user_ids))
                 names = {user: mention_user(member, user) for user, member in zip(user_ids, members)}

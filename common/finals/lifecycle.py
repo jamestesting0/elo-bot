@@ -6,9 +6,9 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from common.finals.bracket import automatic_pairs, build_bracket
 from common.finals.types import FinalError
 from common.finals.persistence import transaction
-from database_models import EloFinal, Player, Season
-from database_models.token_models import FinalBettingMarket
-from database_models.match_models import Match
+from elobot.db import EloFinal, Player, Season
+from elobot.db.token_models import FinalBettingMarket
+from elobot.db.match_models import Match
 
 
 async def resolve_final(season: int | None = None) -> EloFinal:

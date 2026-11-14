@@ -1,4 +1,4 @@
-from database_models import BaseLayout, Player, RecordedMatch
+from elobot.db import BaseLayout, Player, RecordedMatch
 
 
 async def add_recorded_match(player: Player, recorded_match: RecordedMatch) -> int:

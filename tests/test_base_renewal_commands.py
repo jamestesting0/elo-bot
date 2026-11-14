@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.base_commands import BaseCommands
-from common.constants import BASE_RENEWAL_LOGS_CHANNEL, COLOR
+from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
+from elobot.config.presentation import COLOR
 
 
 BASE_RENEW_MODAL_CALLBACK = BaseCommands.base_renew_modal.callback

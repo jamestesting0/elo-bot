@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import anyio
 import interactions as ipy
 
-from common.discord.channel_edits import _PENDING_CHANNEL_NAME_EDITS, schedule_channel_name_edit
+from elobot.discord.channel_edits import _PENDING_CHANNEL_NAME_EDITS, schedule_channel_name_edit
 
 
 class TestChannelNameEdits(unittest.IsolatedAsyncioTestCase):

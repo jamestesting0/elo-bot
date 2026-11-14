@@ -1,7 +1,7 @@
 import anyio
 from pydantic import JsonValue
 
-from database_models import Helper, HelperHistory
+from elobot.db import Helper, HelperHistory
 
 
 _HELPER_CREDIT_LOCKS: dict[str, anyio.Lock] = {}

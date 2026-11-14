@@ -9,7 +9,7 @@ from cogs import match_commands
 from cogs.base_store import controls, publication, storage
 from cogs.base_store.presentation import build_helper_store_components, build_manual_store_components
 from cogs.war_hosting import helper_base_store, helper_base_store_availability
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests import _match_publication_fixture as recovery_tests
 from tests._stored_start_fixture import terminal_job
 

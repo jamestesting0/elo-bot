@@ -16,9 +16,10 @@ from pymongo.errors import OperationFailure
 import cogs._base_screenshots as screenshots
 import cogs.base_commands as commands
 import cogs.preset_commands as presets
-from cogs.war_hosting import helper_api
+from elobot.integrations import helper_api
 from common.base_fingerprints import images
-from common.constants import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI, UNAVAILABLE_IMAGE
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.presentation import UNAVAILABLE_IMAGE
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"

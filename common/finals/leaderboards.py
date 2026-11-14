@@ -3,10 +3,10 @@ from dataclasses import dataclass
 from common.finals.lifecycle import resolve_final
 from common.finals.types import FinalError
 from common.tokens.wallets import ensure_wallet
-from common.utils import mention_user
-from database_models import EloFinal, Player
-from database_models.final_models import FinalPrediction
-from database_models.token_models import TokenLedgerEntry, TokenWallet
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal, Player
+from elobot.db.final_models import FinalPrediction
+from elobot.db.token_models import TokenLedgerEntry, TokenWallet
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +60,7 @@ async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
 
 
 def final_board_text(rows: list[FinalBoardRow], lb_type: str, names: dict[str, str] | None = None) -> str:
-    from common.constants import RANK_EMOJIS, TOKEN_EMOJI
+    from elobot.config.emojis import RANK_EMOJIS, TOKEN_EMOJI
     names = names or {}
     return "\n".join((RANK_EMOJIS[row.rank - 1] if row.rank <= 3 else f"**#{row.rank}**")
         + f" {names.get(row.user_id, mention_user(None, row.user_id))} " + (

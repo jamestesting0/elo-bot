@@ -2,7 +2,7 @@ import time
 
 from common.finals.persistence import transaction
 from common.finals.types import FinalError
-from database_models.token_models import (
+from elobot.db.token_models import (
     FinalBet, FinalBettingMarket, FrozenStake, SettlementGeneration, TokenLedgerEntry, TokenWallet,
 )
 

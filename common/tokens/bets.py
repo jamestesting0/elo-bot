@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from common.finals.persistence import transaction
 from common.finals.types import FinalError
 from common.tokens.wallets import ensure_wallet
-from database_models import EloFinal, Player
-from database_models.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db import EloFinal, Player
+from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 class BetAction(BaseModel):

@@ -3,7 +3,8 @@ import logging
 from datetime import datetime
 from secrets import token_hex
 
-from common.constants import BASE_STORE_SLOTS, ERROR_EMOJI, HOST_CLAN_CHOICES
+from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elobot.config.emojis import ERROR_EMOJI
 from common.results.validation import is_match_finished
 from common.results.operations import result_input_error
 from cogs.base_store.models import (
@@ -13,7 +14,7 @@ from cogs.base_store.models import (
     BaseStoreRuntime,
     PreparedBaseStore,
 )
-from database_models import BaseStore, Match
+from elobot.db import BaseStore, Match
 from cogs.base_store.raid_policy import eligible_for_raid_storage, select_raid_storage_slot
 
 

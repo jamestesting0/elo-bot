@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.base_commands import BaseCommands
-from common.constants import LB_ENTRIES_PER_PAGE
+from elobot.config.presentation import LB_ENTRIES_PER_PAGE
 
 
 class TestBaseLeaderboardPagination(unittest.IsolatedAsyncioTestCase):

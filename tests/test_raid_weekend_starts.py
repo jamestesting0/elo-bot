@@ -12,7 +12,7 @@ from cogs.live_hosting import helper_live, live_start
 from cogs.self_commands import SelfCommands
 from cogs.war_hosting import helper_base_store_availability, helper_host, war_start
 from common.base_store.start import held_store, ready_store, shared_store_clan
-from common.constants import BOT_ID
+from elobot.config.ids import BOT_ID
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
 
 

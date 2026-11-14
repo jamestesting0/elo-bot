@@ -7,7 +7,7 @@ import anyio
 import interactions as ipy
 
 import cogs.war_hosting.stored_bases as stored_bases
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperHostWarMatchOnStoredPayload,
     HelperJob,
     HelperJobCanceller,
@@ -23,7 +23,7 @@ from cogs.war_hosting.helper_api import (
     HelperTrackingFailure,
     helper_job_notification,
 )
-from common.constants import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI
 
 
 FIRST_DISTRICT_SETUP: Final = re.compile(r"^Setting up .+? \(1 of [1-9]\d*\)")

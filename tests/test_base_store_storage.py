@@ -8,8 +8,8 @@ from pymongo.errors import OperationFailure
 
 from cogs.base_store import repository, storage
 from common.base_store.messages import StoredBaseMessageRetirement
-from common.utils import clear_all_base_store_slots
-from database_models import BaseStore, Match, Participant
+from elobot.features.base_store.slots import clear_all_base_store_slots
+from elobot.db import BaseStore, Match, Participant
 
 
 class TestBaseStoreStorage(unittest.IsolatedAsyncioTestCase):
@@ -153,9 +153,9 @@ class TestBaseStoreStorage(unittest.IsolatedAsyncioTestCase):
         self.collection.update_one.return_value.matched_count = 0
         clan = MagicMock(tag="#CLAN", available_slots=[], save_changes=AsyncMock())
         with (
-            patch("common.utils.Match") as match_model,
-            patch("common.utils.Clan") as clan_model,
-            patch("common.utils.retire_stored_base_message", new_callable=AsyncMock) as retire,
+            patch("elobot.features.base_store.slots.Match") as match_model,
+            patch("elobot.features.base_store.slots.Clan") as clan_model,
+            patch("elobot.features.base_store.slots.retire_stored_base_message", new_callable=AsyncMock) as retire,
         ):
             match_model.find.return_value.to_list = AsyncMock(side_effect=[[self.match], [replacement]])
             clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan])

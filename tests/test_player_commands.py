@@ -9,7 +9,8 @@ import interactions as ipy
 sys.path.append(os.getcwd())
 
 from cogs.player_commands import PlayerCommands
-from common.constants import ERROR_EMOJI, PLAYER_ROLE, TOKEN_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
+from elobot.config.ids import PLAYER_ROLE
 
 class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):

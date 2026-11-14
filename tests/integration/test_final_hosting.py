@@ -7,8 +7,8 @@ from common.finals.hosting import accept_final_start
 from common.finals.lifecycle import confirm_bracket, resolve_final
 from common.finals.matches import prepare_match
 from common.finals.types import FINAL_DISTRICTS, FinalError
-from database_models import Match, Clan
-from database_models.token_models import FinalBettingMarket
+from elobot.db import Match, Clan
+from elobot.db.token_models import FinalBettingMarket
 from cogs.war_hosting import result_store_task
 import cogs.match_commands as match_commands
 

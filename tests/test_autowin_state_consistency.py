@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 from pymongo.errors import OperationFailure
 
 from cogs import match_commands
-from database_models import BaseStore, Helper, Match, Player
+from elobot.db import BaseStore, Helper, Match, Player
 
 
 from tests._autowin_fixture import AutowinStateMixin
@@ -73,7 +73,7 @@ class TestAutowinStateConsistency(AutowinStateMixin, unittest.IsolatedAsyncioTes
         self.assertIsNone(self.rows[Match][0]["autowin_winner_id"])
 
     async def test_published_result_still_allows_an_operator_autowin_correction(self) -> None:
-        from database_models.result_models import MatchResultOperation
+        from elobot.db.result_models import MatchResultOperation
 
         # Given: an ordinary result has completed publishing.
         self.rows[Match][0]["result_operation"] = MatchResultOperation(

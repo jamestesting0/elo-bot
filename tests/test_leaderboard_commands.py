@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 sys.path.append(os.getcwd())
 
 from cogs.leaderboard_commands import LeaderboardCommands, sort_players
-from common.constants import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
-from common.utils import InvalidSeasonSelectionError, interpret_season_string
+from elobot.config.presentation import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
+from elobot.features.seasons.selection import InvalidSeasonSelectionError, interpret_season_string
 
 
 class _ScanList(list):

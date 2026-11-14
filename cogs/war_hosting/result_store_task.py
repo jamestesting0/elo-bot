@@ -8,7 +8,7 @@ import interactions as ipy
 
 from cogs.war_hosting import result_store, result_store_ui
 from common.results.validation import is_match_finished
-from database_models import Match
+from elobot.db import Match
 
 
 SCHEDULED_RESULT_STORE_DELAY: Final = timedelta(minutes=40)

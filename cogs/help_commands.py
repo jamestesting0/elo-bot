@@ -3,7 +3,7 @@ from typing import Final, assert_never
 
 import interactions as ipy
 
-from common.constants import COLOR
+from elobot.config.presentation import COLOR
 
 
 FALLBACK_DESCRIPTION: Final = "No description available."

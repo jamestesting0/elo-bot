@@ -9,12 +9,12 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 from cogs import match_commands
-from database_models import Helper, Match, Participant, Player
+from elobot.db import Helper, Match, Participant, Player
 from tests._result_retry_store import read_field, write_field
 from pymongo.results import DeleteResult
 from cogs import data_commands
-from common.constants import SUCCESS_EMOJI
-from database_models import RecordedMatch
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.db import RecordedMatch
 from tests._result_retry_store import matches
 
 

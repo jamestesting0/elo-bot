@@ -6,7 +6,7 @@ from aiohttp import web
 import interactions as ipy
 
 from cogs.base_commands import BaseCommands
-from common.constants import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
+from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

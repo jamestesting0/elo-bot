@@ -7,7 +7,9 @@ from pymongo.errors import PyMongoError
 
 from cogs.base_store import raid_task
 from cogs.match_commands import MatchCommands
-from common.constants import BASE_STORE_SLOTS, COLOR, HOST_CLAN_CHOICES, RAID_AUTOSTORE_LOGS_CHANNEL
+from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elobot.config.presentation import COLOR
+from elobot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
 from tests._raid_autostore_fixture import make_match
 
 

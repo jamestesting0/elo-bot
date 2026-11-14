@@ -6,9 +6,9 @@ from typing import Final, Literal, assert_never
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from common.constants import DISTRICT_CHOICES
-from database_models import Season
-from database_models.player_models import MatchDistrictStats
+from elobot.config.game import DISTRICT_CHOICES
+from elobot.db import Season
+from elobot.db.player_models import MatchDistrictStats
 
 DISTRICTS: Final = tuple(choice.value for choice in DISTRICT_CHOICES)
 

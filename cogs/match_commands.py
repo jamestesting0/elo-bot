@@ -55,29 +55,37 @@ import cogs.war_hosting.result_store_ui as result_store_ui
 import cogs.war_hosting.war_start as war_start
 from cogs.war_hosting.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from cogs.war_hosting.district_selection import match_district_index, started_host_clan_tag
-from cogs.war_hosting.helper_api import HelperScoreAttackLimit
+from elobot.integrations.helper_api import HelperScoreAttackLimit
 from common.results.autowin import apply_autowin_player, claim_autowin, mark_autowin
-from common.discord.channel_edits import schedule_channel_name_edit
-from common.discord.message_edits import edit_channel_message
+from elobot.discord.channel_edits import schedule_channel_name_edit
+from elobot.discord.message_edits import edit_channel_message
 from common.results.helper_credits import award_helper_once
-from common.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 import interactions as ipy
-from common.constants import (
-    ADMIN_ROLE, BASE_SUBMISSION_THRESHOLD, BOT_ID, CLASHING_SWORD_EMOJI, COLOR, COMMAND_CHANNEL, CROSS_EMOJI,
-    DISTRICT_CHOICES, DISTRICT_CODES_REVERSED, DISTRICT_EMOJI, DISTRICT_INDEX, ELO_BLACKLIST_ROLE, ERROR_EMOJI,
-    FINAL_CHANNEL, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, HELPER_API_BASE_URL, HELPER_API_KEY, HOST_CLAN_CHOICES,
-    HOST_CLAN_OPTIONS, IMPORTANT_EMOJI, INFO_CHANNEL, LOADING_EMOJI, LOSS_EMOJI, LVL1_ROLES, LVL2_ROLES, LVL3_ROLES,
-    MATCH_CHANNEL, MODERATOR_ROLE, ORDINAL_REPRESENTATIONS, RED_COLOR, SEN_ROLE, STAFF_ROLE, STAR_EMOJI, SUCCESS_EMOJI,
-    TICK_EMOJI, UNAVAILABLE_IMAGE, WIN_EMOJI,
+from elobot.config.ids import (
+    ADMIN_ROLE, BOT_ID, COMMAND_CHANNEL, ELO_BLACKLIST_ROLE, FINAL_CHANNEL, INFO_CHANNEL, LVL1_ROLES, LVL2_ROLES,
+    LVL3_ROLES, MATCH_CHANNEL, MODERATOR_ROLE, SEN_ROLE, STAFF_ROLE,
 )
-from common.discord.decorators import create_async_task
+from elobot.config.game import (
+    BASE_SUBMISSION_THRESHOLD, DISTRICT_CHOICES, DISTRICT_CODES_REVERSED, DISTRICT_INDEX, HOST_CLAN_CHOICES,
+    HOST_CLAN_OPTIONS,
+)
+from elobot.config.emojis import (
+    CLASHING_SWORD_EMOJI, CROSS_EMOJI, DISTRICT_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI, LOSS_EMOJI,
+    STAR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI, WIN_EMOJI,
+)
+from elobot.config.presentation import (
+    COLOR, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, ORDINAL_REPRESENTATIONS, RED_COLOR, UNAVAILABLE_IMAGE,
+)
+from elobot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
+from elobot.discord.decorators import create_async_task
 from common.results.validation import is_match_finished, is_valid_complete_match_result, is_valid_match_result_entry
 from common.matches.base_selection import district_base_quality, ensure_secondary_base_index
 from common.matches.controls import check_match_control, reject_outdated_match_control, update_match_control
 from common.matches.queued_districts import (
     find_attempt_match, find_attempt_queue, queue_district_components, start_district_selection,
 )
-from database_models.player_models import QueueDistrictSelection
+from elobot.db.player_models import QueueDistrictSelection
 from common.matches.message_lock import coordinated_match_message, match_message_lock
 from common.matches.recovery import repair_match_messages
 from common.matches.messages import (
@@ -86,7 +94,7 @@ from common.matches.messages import (
 from common.matches.thread_messages import (
     ThreadMessageBindingError, attach_thread_message, find_match_thread_announcement,
 )
-from common.discord.embeds import embed_edit_payload
+from elobot.discord.embeds import embed_edit_payload
 from common.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
 from common.results.manual import (
     ManualResultConfirmationUnknown, complete_manual_result, manual_result_key, persist_manual_result,
@@ -98,17 +106,24 @@ from common.results.operations import (
 )
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from common.players.self_hosting import invite_eligible_players
-from database_models import Match, Participant, BaseLink, Clan, HelperTask, BaseLayout, \
+from elobot.db import Match, Participant, BaseLink, Clan, HelperTask, BaseLayout, \
     RecordedMatch, Player, Queue, MatchPlayerStats, MatchDistrictStats, HelperHistory, OverrideCode, ServerState
 import coc
 import re
 import validators
-from common.constants import BASE_STORE_SLOTS, MAIN_GUILD
-from common.utils import (
-    calculate_elo, collect_base_store_slot_owners, delete_file, download_file, extract_integer,
-    fetch_member_otherwise_user, format_clan_availability_status, get_base_quality, get_destruction,
-    get_participant_base_store, get_stars, is_raid_weekend, member_guild, mention_user, read_json,
+from elobot.config.game import BASE_STORE_SLOTS
+from elobot.config.ids import MAIN_GUILD
+from elobot.core.elo import calculate_elo
+from elobot.features.base_store.slots import (
+    collect_base_store_slot_owners, format_clan_availability_status, get_participant_base_store,
 )
+from elobot.integrations.files import delete_file, read_json
+from elobot.integrations.http import download_file
+from elobot.core.parsing import extract_integer, get_destruction, get_stars
+from elobot.discord.members import fetch_member_otherwise_user, member_guild
+from common.matches.base_selection import get_base_quality
+from elobot.core.raid_weekend import is_raid_weekend
+from elobot.discord.mentions import mention_user
 from datetime import datetime
 
 
@@ -1921,7 +1936,7 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
             final_hits = {}
             final_usage = {}
             if is_final_match(match):
-                from database_models.final_models import FinalMatchResult
+                from elobot.db.final_models import FinalMatchResult
                 history = await FinalMatchResult.find({"snapshot.contestants": str(player.id), "snapshot.outcome": "Played"}).to_list()
                 seen_attempts = set()
                 for result in history:
@@ -3061,7 +3076,7 @@ class MatchCommands(ipy.Extension):
         mongo_match: Match | None = await Match.find_one(Match.token == token)
         if mongo_match is not None and is_final_match(mongo_match):
             from beanie import PydanticObjectId
-            from database_models.season_models import EloFinal
+            from elobot.db.season_models import EloFinal
             from common.finals.results import FinalResultSubmission, automatic_operation_key, submit_result
             from common.finals.types import FinalError
             from pydantic import ValidationError

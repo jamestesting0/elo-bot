@@ -1,9 +1,9 @@
 from collections.abc import Mapping, Sequence
 
-from common.constants import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
 from common.results.operations import result_input_error
 from common.results.validation import is_match_finished
-from database_models import Match
+from elobot.db import Match
 
 
 def raid_storage_skip_reason(match: Match, player: int) -> str | None:

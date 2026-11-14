@@ -4,8 +4,8 @@ from beanie import PydanticObjectId
 from pydantic import JsonValue
 
 from common.matches.messages import MatchMessageState
-from common.utils import latest_completed_raid_weekend_end_timestamp
-from database_models import BaseStore, Match, Participant
+from elobot.core.raid_weekend import latest_completed_raid_weekend_end_timestamp
+from elobot.db import BaseStore, Match, Participant
 
 
 def held_store(participant: Participant) -> BaseStore | None:

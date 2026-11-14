@@ -3,8 +3,8 @@ from typing import Literal
 
 from pydantic import ValidationError
 
-from cogs.war_hosting import helper_api
-from cogs.war_hosting.helper_api import HelperJob, helper_job_notification
+from elobot.integrations import helper_api
+from elobot.integrations.helper_api import HelperJob, helper_job_notification
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

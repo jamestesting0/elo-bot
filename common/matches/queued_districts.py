@@ -2,9 +2,10 @@ import secrets
 
 import interactions as ipy
 
-from common.constants import CROSS_EMOJI, ORDINAL_REPRESENTATIONS, TICK_EMOJI
-from database_models import Match, Player, Queue
-from database_models.player_models import QueueDistrictSelection
+from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI
+from elobot.config.presentation import ORDINAL_REPRESENTATIONS
+from elobot.db import Match, Player, Queue
+from elobot.db.player_models import QueueDistrictSelection
 
 
 def start_district_selection(player: Player, options: list[list[str]]) -> QueueDistrictSelection:

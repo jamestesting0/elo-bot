@@ -5,7 +5,7 @@ from pymongo import IndexModel
 
 from common.finals.types import FINAL_DISTRICTS, Outcome
 from common.results.validation import is_valid_match_result_entry
-from database_models.system_models import HelperHistory
+from elobot.db.system_models import HelperHistory
 
 
 class FinalResultSnapshot(BaseModel):

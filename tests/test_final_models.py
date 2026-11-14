@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import ValidationError
 
-from database_models import Match, Participant
+from elobot.db import Match, Participant
 from common.finals.types import FinalError
 
 

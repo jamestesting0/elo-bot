@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch, AsyncMock
 
 from cogs.base_commands import BaseAutocompleteRow, BaseCommands
-from common.constants import SUCCESS_EMOJI
+from elobot.config.emojis import SUCCESS_EMOJI
 
 BASE_SET_LINK_CALLBACK = BaseCommands.base_set_link.callback
 

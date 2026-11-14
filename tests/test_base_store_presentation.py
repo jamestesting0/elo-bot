@@ -10,7 +10,7 @@ from cogs.base_store.presentation import (
     construct_occupied_slots_error,
     format_opponent_bases,
 )
-from database_models import BaseLink, Participant
+from elobot.db import BaseLink, Participant
 
 
 class TestBaseStorePresentation(unittest.TestCase):

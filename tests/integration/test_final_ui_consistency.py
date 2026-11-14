@@ -8,7 +8,9 @@ from tests.integration._final_fixture import FinalScenarioCase
 from cogs.final_commands import FinalCommands
 from cogs.match_commands import MatchCommands
 from cogs.token_commands import TokenCommands
-from common.constants import FINAL_CHANNEL, DISTRICT_CODES, LVL1_ROLES, LVL2_ROLES, ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
+from elobot.config.ids import FINAL_CHANNEL, LVL1_ROLES, LVL2_ROLES
+from elobot.config.game import DISTRICT_CODES
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from common.finals.lifecycle import confirm_bracket, resolve_final
 from common.finals.matches import bind_thread, prepare_match, schedule_final_match
 from common.finals.profile_ui import profile_view
@@ -17,9 +19,9 @@ from common.finals.results import FinalResultSubmission, submit_result
 from common.finals.leaderboards import FinalBoardRow, final_board_text
 from common.tokens.bets import BetAction, apply_bet, open_market, void_market
 from common.tokens.presentation import bet_review, market_controls, market_embed, publish_market
-from database_models import EloFinal, Match, Player
-from database_models.final_models import FinalMatchResult, FinalPlayerProfile
-from database_models.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db import EloFinal, Match, Player
+from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile
+from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 class TestFinalUIConsistency(FinalScenarioCase):

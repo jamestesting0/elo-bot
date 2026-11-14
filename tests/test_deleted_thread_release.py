@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.base_store import repository, storage
-from database_models import BaseStore
-from database_models.result_models import MatchResultOperation
+from elobot.db import BaseStore
+from elobot.db.result_models import MatchResultOperation
 from tests import _match_cleanup_fixture as fixtures
 
 

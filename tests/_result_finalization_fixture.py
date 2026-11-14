@@ -7,10 +7,10 @@ from pymongo.results import UpdateResult
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
 from cogs.war_hosting import result_store
-from common.constants import MATCH_CHANNEL
-from database_models import BaseStore, Match, Participant
-from database_models.player_models import MatchPlayerStats
-from database_models.result_models import ResultRecordSnapshot
+from elobot.config.ids import MATCH_CHANNEL
+from elobot.db import BaseStore, Match, Participant
+from elobot.db.player_models import MatchPlayerStats
+from elobot.db.result_models import ResultRecordSnapshot
 
 
 
@@ -157,10 +157,10 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
 from copy import deepcopy
 from pymongo.results import DeleteResult, InsertOneResult
 from cogs import data_commands
-from common.constants import SUCCESS_EMOJI
+from elobot.config.emojis import SUCCESS_EMOJI
 from common.players.data_boundary import PLAYER_DATA_BOUNDARY
 from common.results.manual import manual_result_key
-from database_models import Player, RecordedMatch
+from elobot.db import Player, RecordedMatch
 from tests._result_retry_store import apply_operations, matches
 from tests._result_retry_store import apply_update
 from tests import _result_retry_store as result_fixture

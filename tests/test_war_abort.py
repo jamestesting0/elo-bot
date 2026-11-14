@@ -6,7 +6,7 @@ from beanie import PydanticObjectId
 
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
-from database_models import Match, Participant
+from elobot.db import Match, Participant
 
 
 class TestWarAbort(unittest.IsolatedAsyncioTestCase):

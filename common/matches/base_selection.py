@@ -1,6 +1,9 @@
 import random
 
-from database_models import BaseLayout, Match
+from elobot.db import BaseLayout, Match
+from elobot.config.game import BASE_TIERS
+from typing import Optional
+from elobot.db import Player
 
 
 def district_base_quality(district: str | None, quality: str) -> str:
@@ -50,3 +53,26 @@ async def ensure_secondary_base_index(match: Match, side: int, primary: str, sec
     if fresh is None or fresh.participants[side].secondary_base_index is None:
         raise RuntimeError("The match changed before its base quality assignment could be saved.")
     return fresh
+
+
+def get_base_quality(player_doc: Player, opponent_doc: Player, match_doc: Optional[Match] = None):
+    if match_doc and match_doc.primary_base_quality and match_doc.secondary_base_quality:
+        return match_doc.primary_base_quality, match_doc.secondary_base_quality
+
+    player_quality = "Excellent"
+    opponent_quality = "Excellent"
+    for quality, (lower, upper) in BASE_TIERS.items():
+        if lower <= player_doc.elo <= upper:
+            player_quality = quality
+
+        if lower <= opponent_doc.elo <= upper:
+            opponent_quality = quality
+
+    if player_doc.elo >= opponent_doc.elo:
+        primary_quality = player_quality
+        secondary_quality = opponent_quality
+    else:
+        primary_quality = opponent_quality
+        secondary_quality = player_quality
+
+    return primary_quality, secondary_quality

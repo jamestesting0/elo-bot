@@ -1,8 +1,9 @@
-from common.constants import LOSS_EMOJI, STAR_EMOJI, WIN_EMOJI
+from elobot.config.emojis import LOSS_EMOJI, STAR_EMOJI, WIN_EMOJI
 from common.finals.types import NODE_IDS
-from common.utils import get_destruction, get_stars, mention_user
-from database_models import EloFinal
-from database_models.final_models import FinalMatchResult, FinalPrediction
+from elobot.core.parsing import get_destruction, get_stars
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal
+from elobot.db.final_models import FinalMatchResult, FinalPrediction
 
 
 def prediction_statuses(final: EloFinal, prediction: FinalPrediction) -> dict[str, str]:

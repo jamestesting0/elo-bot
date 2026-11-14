@@ -8,8 +8,8 @@ import cogs.match_commands as match_commands
 from cogs.base_store.controls import resolve_stored_base_control
 from cogs.base_store.models import StoredBaseActionRequest, StoredBaseControlFailure, StoredBaseControlState
 from cogs.war_hosting import helper_base_store, stored_bases, war_start
-from common.constants import SUCCESS_EMOJI
-from database_models import Match
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.db import Match
 
 
 from tests._stored_base_controls_fixture import StoredBaseControlsStateMixin

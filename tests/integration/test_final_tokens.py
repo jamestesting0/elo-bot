@@ -7,8 +7,8 @@ from common.finals.types import FinalError
 from common.tokens.bets import BetAction, apply_bet, open_market, projected_return
 from common.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
 from common.tokens.wallets import ensure_wallet, wallet_summary
-from database_models import Player
-from database_models.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db import Player
+from elobot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 class TestFinalTokens(FinalScenarioCase):
@@ -56,7 +56,7 @@ class TestFinalTokens(FinalScenarioCase):
         await self.bet(9, 2000, side=self.market.contestants[1], version=1)
         market = await FinalBettingMarket.get(self.market.id)
         self.assertEqual(list(market.pools.values()), [0, 2000])
-        from database_models.token_models import FinalBet
+        from elobot.db.token_models import FinalBet
         self.assertEqual(projected_return(market, await FinalBet.get(f"{market.id}:9"), market.contestants[0], 100),
                          (100, 0))
         await self.bet(9, 0, version=2)
@@ -88,7 +88,7 @@ class TestFinalTokens(FinalScenarioCase):
         await self.assert_conserved()
 
     async def test_edit_cancel_and_accepted_start_race_has_one_valid_balance_and_pool(self):
-        from database_models.token_models import FinalBet
+        from elobot.db.token_models import FinalBet
         await self.bet(9, 1000)
         source = await self.scheduled_pairing(self.final, "QF1")
         barrier = asyncio.Event()

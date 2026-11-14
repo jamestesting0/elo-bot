@@ -14,8 +14,8 @@ from cogs.base_store import live_service
 from cogs.match_commands import MatchCommands
 import cogs.match_commands as match_commands
 from cogs.war_hosting import helper_base_store_availability
-from common.constants import HOST_CLAN_CHOICES
-from database_models import BaseLink, BaseStore, Match, Participant
+from elobot.config.game import HOST_CLAN_CHOICES
+from elobot.db import BaseLink, BaseStore, Match, Participant
 from tests import _helper_stored_bases_fixture as transport
 
 

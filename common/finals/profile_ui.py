@@ -2,12 +2,14 @@ import asyncio
 
 import interactions as ipy
 
-from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT, STAR_EMOJI, WIN_EMOJI, LOSS_EMOJI, TOKEN_EMOJI
-from common.utils import get_destruction, get_stars, mention_user
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.emojis import STAR_EMOJI, WIN_EMOJI, LOSS_EMOJI, TOKEN_EMOJI
+from elobot.core.parsing import get_destruction, get_stars
+from elobot.discord.mentions import mention_user
 from common.tokens.wallets import ensure_wallet, wallet_summary
-from database_models import EloFinal, Player
-from database_models.final_models import FinalEditionStats, FinalMatchResult, FinalPlayerProfile, FinalPrediction
-from database_models.token_models import TokenWallet
+from elobot.db import EloFinal, Player
+from elobot.db.final_models import FinalEditionStats, FinalMatchResult, FinalPlayerProfile, FinalPrediction
+from elobot.db.token_models import TokenWallet
 
 
 async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):

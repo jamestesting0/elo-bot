@@ -9,7 +9,7 @@ import interactions as ipy
 
 import cogs.war_hosting.helper_host as helper_host
 import cogs.war_hosting.helper_host_job as helper_host_job
-from cogs.war_hosting.helper_api import HelperJob, HelperJobCreated, HelperJobEvent
+from elobot.integrations.helper_api import HelperJob, HelperJobCreated, HelperJobEvent
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

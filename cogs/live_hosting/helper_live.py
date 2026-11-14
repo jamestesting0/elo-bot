@@ -10,7 +10,7 @@ import cogs.match_commands as match_commands
 import cogs.live_hosting.eligibility as live_eligibility
 import cogs.live_hosting.live_reservations as live_reservations
 import cogs.live_hosting.live_start as live_start
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperHostLiveMatchPayload, HelperHostLiveMatchOnStoredPayload, HelperJobCreateRequest,
 )
 from cogs.war_hosting.helper_host_job import (
@@ -20,8 +20,8 @@ from cogs.war_hosting.helper_host_job import (
 )
 from cogs.war_hosting.district_selection import match_district_index, started_host_clan_tag
 from common.base_store.live import live_pair_ready, live_stores
-from common.constants import ERROR_EMOJI
-from database_models import Match
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.db import Match
 
 
 @dataclass(frozen=True, slots=True)

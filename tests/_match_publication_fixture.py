@@ -12,10 +12,10 @@ from pymongo.results import UpdateResult
 from cogs.live_hosting import live_start
 from cogs.base_store import storage as base_store_storage
 from cogs.war_hosting import war_start
-from database_models import Match, Participant
+from elobot.db import Match, Participant
 from cogs.base_store import publication
 from cogs.base_store.models import BaseStorePresentationRequest
-from database_models import BaseStore
+from elobot.db import BaseStore
 
 
 class MatchPublicationStateMixin:

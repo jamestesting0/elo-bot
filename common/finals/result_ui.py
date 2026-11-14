@@ -1,13 +1,16 @@
 import interactions as ipy
 
-from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT, STAR_EMOJI, ELO_BLACKLIST_ROLE, LVL1_ROLES, LVL2_ROLES
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.emojis import STAR_EMOJI
+from elobot.config.ids import ELO_BLACKLIST_ROLE, LVL1_ROLES, LVL2_ROLES
 from common.finals.types import FinalError
 from beanie import PydanticObjectId
-from database_models import Match
+from elobot.db import Match
 from common.finals.types import FINAL_DISTRICTS, Outcome
-from common.utils import get_destruction, get_stars, mention_user
-from database_models import EloFinal, EloFinalMatch
-from database_models.final_models import FinalMatchResult, FinalResultSnapshot
+from elobot.core.parsing import get_destruction, get_stars
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal, EloFinalMatch
+from elobot.db.final_models import FinalMatchResult, FinalResultSnapshot
 
 
 def result_form(final: EloFinal, node: EloFinalMatch, owner: str, previous: FinalMatchResult | None = None,

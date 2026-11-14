@@ -3,13 +3,9 @@ from datetime import UTC, datetime, time
 
 import interactions as ipy
 
-from common.constants import (
-    COLOR,
-    DISTRICT_EMOJI,
-    FOOTER_IMAGE,
-    FOOTER_TEXT,
-)
-from common.discord.pagination import build_page_button
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.emojis import DISTRICT_EMOJI
+from elobot.discord.pagination import build_page_button
 from common.matches.season_stats import (
     ActivityPeak,
     SeasonStats,

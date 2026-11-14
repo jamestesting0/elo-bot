@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from common.constants import MATCH_CHANNEL
+from elobot.config.ids import MATCH_CHANNEL
 from tests import _result_retry_store as retry_fixture
 
 RESULTS = retry_fixture.RESULTS

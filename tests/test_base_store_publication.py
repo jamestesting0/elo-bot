@@ -13,8 +13,8 @@ from pymongo.results import UpdateResult
 from cogs.base_store.models import BaseStorePresentationRequest
 from cogs.base_store.presentation import build_helper_store_components, build_manual_store_components
 from cogs.base_store.publication import publish_base_store_message
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
-from database_models import BaseStore, Match, Participant
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.db import BaseStore, Match, Participant
 
 
 class TestBaseStorePublication(unittest.IsolatedAsyncioTestCase):

@@ -1,11 +1,11 @@
 import interactions as ipy
 
-from common.constants import COLOR, FOOTER_TEXT
+from elobot.config.presentation import COLOR, FOOTER_TEXT
 from common.finals.predictions import pick_options
 from common.finals.types import NODE_IDS
-from common.utils import mention_user
-from database_models import EloFinal
-from database_models.final_models import FinalPrediction
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal
+from elobot.db.final_models import FinalPrediction
 
 
 def prediction_view(final: EloFinal, prediction: FinalPrediction, names: dict[str, str] | None = None):

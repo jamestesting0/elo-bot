@@ -14,8 +14,8 @@ from pymongo.errors import AutoReconnect, DuplicateKeyError, OperationFailure, P
 from pymongo.results import InsertOneResult, UpdateResult
 
 import cogs.base_commands as commands
-from database_models import BaseLayout, PendingBaseSubmission
-from database_models.base_submission_models import SubmissionRejection
+from elobot.db import BaseLayout, PendingBaseSubmission
+from elobot.db.base_submission_models import SubmissionRejection
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"

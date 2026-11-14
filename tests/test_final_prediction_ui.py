@@ -3,8 +3,8 @@ import unittest
 from common.finals.bracket import automatic_pairs, build_bracket
 from common.finals.prediction_ui import prediction_view
 from common.finals.types import NODE_IDS
-from database_models import EloFinal
-from database_models.final_models import FinalPrediction
+from elobot.db import EloFinal
+from elobot.db.final_models import FinalPrediction
 
 
 class TestFinalPredictionNavigation(unittest.TestCase):

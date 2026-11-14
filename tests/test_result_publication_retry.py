@@ -4,7 +4,7 @@ import anyio
 import interactions as ipy
 
 import cogs.match_commands as match_commands
-from common.discord import message_edits
+from elobot.discord import message_edits
 from tests._result_finalization_fixture import ResultFinalizationFixture
 
 

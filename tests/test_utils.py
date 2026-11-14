@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions
 
-from common.utils import (
-    fetch_member_otherwise_user, get_extensions, is_raid_weekend, latest_completed_raid_weekend_end_timestamp,
-)
+from elobot.discord.members import fetch_member_otherwise_user
+from elobot.app.extensions import get_extensions
+from elobot.core.raid_weekend import is_raid_weekend, latest_completed_raid_weekend_end_timestamp
 
 
 def frozen_utc(now: datetime) -> type[datetime]:
@@ -28,7 +28,7 @@ class TestRaidWeekendClock(unittest.TestCase):
                 (datetime(2026, 11, 2, 6, 59), previous_end),
                 (datetime(2026, 11, 2, 7, 0, 1), next_end),
         ):
-            with self.subTest(now=now), patch("common.utils.datetime", frozen_utc(now)):
+            with self.subTest(now=now), patch("elobot.core.raid_weekend.datetime", frozen_utc(now)):
                 self.assertEqual(latest_completed_raid_weekend_end_timestamp(), int(expected))
 
     def test_raid_weekend_runs_from_friday_to_monday_0700_utc(self) -> None:
@@ -38,7 +38,7 @@ class TestRaidWeekendClock(unittest.TestCase):
                 (datetime(2026, 11, 2, 6, 59), True),
                 (datetime(2026, 11, 2, 7, 0, 1), False),
         ):
-            with self.subTest(now=now), patch("common.utils.datetime", frozen_utc(now)):
+            with self.subTest(now=now), patch("elobot.core.raid_weekend.datetime", frozen_utc(now)):
                 self.assertIs(is_raid_weekend(), expected)
 
 
@@ -55,7 +55,7 @@ class TestGetExtensions(unittest.TestCase):
         ]
 
         # When extension modules are discovered
-        with patch("common.utils.os.listdir", return_value=directory_entries):
+        with patch("elobot.app.extensions.os.listdir", return_value=directory_entries):
             extensions = get_extensions("cogs")
 
         # Then only public command modules are returned

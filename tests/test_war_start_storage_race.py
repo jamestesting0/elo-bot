@@ -7,7 +7,7 @@ from pymongo.results import UpdateResult
 import cogs.match_commands as match_commands
 from cogs.base_store import preparation
 from cogs.war_hosting import war_start
-from database_models import BaseStore
+from elobot.db import BaseStore
 from tests._war_start_fixture import WarStartFixture
 
 

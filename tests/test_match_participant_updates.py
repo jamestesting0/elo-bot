@@ -8,7 +8,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
 from cogs.match_commands import MatchCommands
-from database_models import BaseLink, BaseStore, Match, Participant
+from elobot.db import BaseLink, BaseStore, Match, Participant
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ASUBMITTED"

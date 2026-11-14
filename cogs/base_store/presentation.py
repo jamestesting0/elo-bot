@@ -1,7 +1,8 @@
 import interactions as ipy
 
-from common.constants import COLOR, ERROR_EMOJI, FOOTER_IMAGE, FOOTER_TEXT
-from common.utils import format_base_store_slot_status
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.features.base_store.slots import format_base_store_slot_status
 from cogs.base_store.models import BaseStorePresentationRequest
 
 

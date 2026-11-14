@@ -10,8 +10,8 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
 from cogs import match_commands
-from common.constants import MATCH_CHANNEL, STAFF_ROLE
-from database_models import BaseLink, BaseStore, Match, Participant
+from elobot.config.ids import MATCH_CHANNEL, STAFF_ROLE
+from elobot.db import BaseLink, BaseStore, Match, Participant
 
 
 class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):

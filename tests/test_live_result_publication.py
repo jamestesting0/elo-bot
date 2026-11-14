@@ -7,7 +7,9 @@ from pymongo.errors import OperationFailure
 
 from cogs.self_commands import SelfCommands
 from cogs.war_hosting import helper_store, result_store
-from common.constants import MATCH_CHANNEL, RED_COLOR, SUCCESS_EMOJI
+from elobot.config.ids import MATCH_CHANNEL
+from elobot.config.presentation import RED_COLOR
+from elobot.config.emojis import SUCCESS_EMOJI
 from common.matches.recovery import _repair_message
 from tests import _helper_score_fixture as helper_fixture
 from tests import _result_retry_store as retry_fixture

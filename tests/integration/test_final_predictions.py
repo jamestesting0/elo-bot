@@ -5,7 +5,7 @@ from common.finals.lifecycle import confirm_bracket, resolve_final
 from common.finals.predictions import PredictionAction, apply_prediction_action, begin_prediction, change_prediction_state
 from common.finals.prediction_ui import prediction_view
 from common.finals.types import FinalError, NODE_IDS
-from database_models.final_models import FinalPrediction
+from elobot.db.final_models import FinalPrediction
 from common.finals.results import FinalResultSubmission, submit_result
 from common.finals.recovery import recover_final
 

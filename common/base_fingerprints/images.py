@@ -11,7 +11,7 @@ from interactions.api.http.route import Route
 from common.base_fingerprints.artifacts import MAX_IMAGE_BYTES
 from common.base_fingerprints.extractor import decode_image
 from common.base_fingerprints.types import FingerprintError, ImageAttachment
-from common.constants import ERROR_EMOJI
+from elobot.config.emojis import ERROR_EMOJI
 
 
 BROWSER_HEADERS = {

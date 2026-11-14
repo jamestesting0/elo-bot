@@ -16,7 +16,7 @@ from common.base_fingerprints.types import (
     FingerprintError,
     utcnow,
 )
-from database_models import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 
 REMOVAL_REASON: Final = "unextracted"
 

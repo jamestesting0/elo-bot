@@ -5,10 +5,11 @@ from cogs.base_store.models import BaseStorePreparationFailure, BaseStoreRuntime
 from cogs.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 import cogs.live_hosting.helper_live as helper_live
 from common.base_store.live import live_base_snapshot_filter
-from common.constants import BASE_STORE_SLOTS, ERROR_EMOJI
+from elobot.config.game import BASE_STORE_SLOTS
+from elobot.config.emojis import ERROR_EMOJI
 from common.results.operations import result_input_error
 from common.results.validation import is_match_finished
-from database_models import BaseStore, Match
+from elobot.db import BaseStore, Match
 
 
 def live_storage_error(match: Match) -> str | None:

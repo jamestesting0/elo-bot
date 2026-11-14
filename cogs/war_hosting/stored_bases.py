@@ -4,7 +4,7 @@ import aiohttp
 import interactions as ipy
 from pydantic import Field, ValidationError
 
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperHostWarMatchOnStoredPayload,
     HelperJob,
     HelperJobCreateAcceptedInvalid,

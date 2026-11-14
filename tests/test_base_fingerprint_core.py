@@ -14,7 +14,7 @@ from common.base_fingerprints.extractor import decode_image, extract_batch
 from common.base_fingerprints.runtime import selected_device
 from common.base_fingerprints.search import eligible
 from common.base_fingerprints.types import BaseFingerprint, Building, DISTRICTS, ExtractionState, FingerprintError, ImageInput
-from database_models import BaseLayout
+from elobot.db import BaseLayout
 
 
 from tests._base_fingerprint_fixture import fingerprint

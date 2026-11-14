@@ -5,9 +5,9 @@ from common.finals.recovery import recover_final
 from common.finals.results import FinalResultSubmission, submit_result
 from common.finals.types import FinalError, ROUND_NODES
 from common.tokens.bets import BetAction, apply_bet, open_market
-from database_models import EloFinal, Match, Player, RecordedMatch, Season
-from database_models.final_models import FinalMatchResult, FinalPlayerProfile
-from database_models.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elobot.db import EloFinal, Match, Player, RecordedMatch, Season
+from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile
+from elobot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 class TestFinalRecovery(FinalScenarioCase):

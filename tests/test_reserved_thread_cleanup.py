@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from database_models import Match
+from elobot.db import Match
 
 
 from tests._match_cleanup_fixture import ReservedThreadStateMixin

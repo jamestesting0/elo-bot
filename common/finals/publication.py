@@ -5,13 +5,13 @@ from io import BytesIO
 import anyio
 import interactions as ipy
 
-from common.constants import COLOR, FOOTER_IMAGE, FOOTER_TEXT
-from common.discord.message_edits import edit_channel_message
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.discord.message_edits import edit_channel_message
 from common.finals.lifecycle import resolve_final
 from common.finals.rendering import bracket_text, render_bracket
 from common.finals.types import FinalError
-from common.utils import mention_user
-from database_models import EloFinal
+from elobot.discord.mentions import mention_user
+from elobot.db import EloFinal
 
 
 PUBLICATION_LOCKS: dict[str, anyio.Lock] = {}

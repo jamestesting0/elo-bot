@@ -9,10 +9,10 @@ from beanie import Link
 from interactions.api.http.route import Route
 from pymongo.errors import PyMongoError
 
-from common.constants import AUTOMATIC_MATCH_THREAD, LVL2_ROLES
+from elobot.config.ids import AUTOMATIC_MATCH_THREAD, LVL2_ROLES
 from common.results.validation import is_valid_complete_match_result
-from database_models import Match, Player, RecordedMatch
-from database_models.final_models import FinalPlayerProfile
+from elobot.db import Match, Player, RecordedMatch
+from elobot.db.final_models import FinalPlayerProfile
 
 
 INVITATION_LOCKS: dict[str, anyio.Lock] = {}

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aiohttp import web
 import anyio
 import interactions as ipy
-from cogs.war_hosting.helper_api import HelperHostWarMatchOnStoredPayload, HelperRemoveBasesPayload, HelperStoreBasesPayload
+from elobot.integrations.helper_api import HelperHostWarMatchOnStoredPayload, HelperRemoveBasesPayload, HelperStoreBasesPayload
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

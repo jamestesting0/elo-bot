@@ -5,9 +5,10 @@ import anyio
 import interactions as ipy
 
 import cogs.match_commands as match_commands
-from common.constants import MAIN_GUILD, STAR_EMOJI
-from database_models import HelperHistory, Match
-from database_models.result_models import MatchResultOperation
+from elobot.config.ids import MAIN_GUILD
+from elobot.config.emojis import STAR_EMOJI
+from elobot.db import HelperHistory, Match
+from elobot.db.result_models import MatchResultOperation
 from tests._result_finalization_fixture import (
     PLAYER2_RESULTS, VALID_RESULTS, RecordArgument, ResultFinalizationFixture,
     make_result_match, record_result, release_result_stores,

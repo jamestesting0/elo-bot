@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 import cogs.giveaway_commands as giveaway_module
-from database_models import Giveaway
+from elobot.db import Giveaway
 from cogs.giveaway_commands import GiveawayCommands
 
 

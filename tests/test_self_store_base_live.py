@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.self_commands import SelfCommands
-from common.constants import BOT_ID
+from elobot.config.ids import BOT_ID
 
 
 class TestSelfStoreBaseLive(unittest.IsolatedAsyncioTestCase):

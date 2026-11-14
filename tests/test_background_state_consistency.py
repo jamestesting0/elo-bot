@@ -14,7 +14,7 @@ import beta
 import main
 import cogs.final_commands as final_commands
 import cogs.leaderboard_commands as leaderboards
-from database_models import EloFinal, Player, PlayerSeasonData, RecordedMatch
+from elobot.db import EloFinal, Player, PlayerSeasonData, RecordedMatch
 
 
 class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):

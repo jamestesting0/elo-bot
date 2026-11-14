@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from cogs.match_commands import MatchCommands
-from database_models import BaseLink, Match, OverrideCode, Participant
+from elobot.db import BaseLink, Match, OverrideCode, Participant
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AHELPER"

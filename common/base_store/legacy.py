@@ -1,7 +1,7 @@
 import interactions as ipy
 
-from common.constants import BASE_STORE_SLOTS
-from database_models import Match
+from elobot.config.game import BASE_STORE_SLOTS
+from elobot.db import Match
 
 
 async def resolve_stored_base_message_ids(

@@ -4,7 +4,7 @@ from typing import Protocol, assert_never
 import aiohttp
 import interactions as ipy
 
-from cogs.war_hosting.helper_api import (
+from elobot.integrations.helper_api import (
     HelperJob,
     HelperJobCreateAcceptedInvalid,
     HelperJobCreateRejected,
@@ -17,7 +17,7 @@ from cogs.war_hosting.helper_api import (
     HelperTrackingFailure,
     helper_job_notification,
 )
-from common.constants import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
 
 @dataclass(frozen=True, slots=True)

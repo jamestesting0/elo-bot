@@ -9,8 +9,8 @@ import cogs.match_commands as match_commands
 import cogs.war_hosting.helper_base_store_availability as helper_base_store_availability
 from cogs.match_commands import MatchCommands
 from cogs.war_hosting import stored_bases
-from common.constants import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
-from database_models import BaseLink, BaseStore, Participant
+from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elobot.db import BaseLink, BaseStore, Participant
 
 
 HUMAN_ID = "123456789012345678"

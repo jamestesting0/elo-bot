@@ -4,7 +4,7 @@ from unittest.mock import call
 from bson import DBRef
 
 from cogs import match_commands
-from database_models import Player
+from elobot.db import Player
 
 
 from tests._result_retry_store import RecordStateMixin

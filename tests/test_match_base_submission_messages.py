@@ -8,8 +8,8 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
 from cogs.match_commands import MatchCommands
-from common.constants import ERROR_EMOJI, SUCCESS_EMOJI
-from database_models import BaseStore, Match, Participant
+from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elobot.db import BaseStore, Match, Participant
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ASUBMITTED"
 

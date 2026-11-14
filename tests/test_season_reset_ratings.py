@@ -6,8 +6,8 @@ import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 
 from cogs.season_commands import SeasonCommands
-from common.constants import SUCCESS_EMOJI
-from database_models import Player, Season
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.db import Player, Season
 
 
 class TestSeasonResetRatings(unittest.IsolatedAsyncioTestCase):

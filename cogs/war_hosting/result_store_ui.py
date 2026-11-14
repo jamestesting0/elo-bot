@@ -3,14 +3,9 @@ from dataclasses import dataclass
 
 import interactions as ipy
 
-from common.constants import (
-    CLASHING_SWORD_EMOJI,
-    COLOR,
-    FOOTER_IMAGE,
-    FOOTER_TEXT,
-    STAR_EMOJI,
-)
-from database_models import Match
+from elobot.config.emojis import CLASHING_SWORD_EMOJI, STAR_EMOJI
+from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elobot.db import Match
 
 
 type MessageComponents = ipy.BaseComponent | list[ipy.BaseComponent] | None

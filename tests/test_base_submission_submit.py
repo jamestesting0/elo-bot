@@ -8,7 +8,7 @@ import interactions as ipy
 sys.path.append(os.getcwd())
 
 import cogs.base_commands as base_commands
-from common.constants import CROSS_EMOJI, TICK_EMOJI
+from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"

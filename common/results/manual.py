@@ -5,7 +5,7 @@ import secrets
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from common.results.operations import ResultOperationConflict
-from database_models import RecordedMatch
+from elobot.db import RecordedMatch
 
 
 class ManualResultConfirmationUnknown(RuntimeError):

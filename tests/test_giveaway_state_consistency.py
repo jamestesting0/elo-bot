@@ -9,7 +9,7 @@ from beanie.odm.fields import ExpressionField
 from pymongo.errors import OperationFailure
 
 import cogs.giveaway_commands as commands
-from database_models import Giveaway
+from elobot.db import Giveaway
 
 
 class TestGiveawayStateConsistency(unittest.IsolatedAsyncioTestCase):

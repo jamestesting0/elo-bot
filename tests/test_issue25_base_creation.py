@@ -18,8 +18,8 @@ from pymongo.results import InsertOneResult, UpdateResult
 
 import cogs.base_commands as commands
 import cogs.preset_commands as presets
-from common.constants import SUCCESS_EMOJI
-from database_models import BaseLayout, PendingBaseSubmission
+from elobot.config.emojis import SUCCESS_EMOJI
+from elobot.db import BaseLayout, PendingBaseSubmission
 
 
 BASE_LINK: Final = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"

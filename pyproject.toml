@@ -2,9 +2,14 @@
 line-length = 120
 target-version = "py312"
 extend-exclude = ["venv", "temp", "data", "models", "assets"]
+force-exclude = true
 
 [tool.ruff.lint]
 select = ["F"]
 # Unused locals that still perform reads are kept on purpose: removing them would change the
 # observable call sequence. Tracked as follow-ups in the architecture plan.
 ignore = ["F841"]
+
+[tool.ruff.format]
+# The project has no formatter; keep existing layout so refactor diffs stay reviewable.
+exclude = ["**/*.py"]

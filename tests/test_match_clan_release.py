@@ -5,7 +5,7 @@ import interactions as ipy
 
 import cogs.match_commands as match_commands
 from cogs.match_commands import MatchCommands
-from database_models import Match
+from elobot.db import Match
 
 
 class TestMatchClanRelease(unittest.IsolatedAsyncioTestCase):

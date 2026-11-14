@@ -5,8 +5,9 @@ import interactions as ipy
 
 from cogs.base_store.models import SelfBaseStoreRequest
 from cogs.match_commands import MatchCommands
-from common.constants import ERROR_EMOJI, LVL2_ROLES, PLAYER_ROLE
-from database_models import Match, Participant
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.config.ids import LVL2_ROLES, PLAYER_ROLE
+from elobot.db import Match, Participant
 
 
 class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):

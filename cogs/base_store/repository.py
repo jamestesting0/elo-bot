@@ -2,14 +2,12 @@ import interactions as ipy
 
 from common.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
 from common.base_store.legacy import resolve_stored_base_message_ids
-from common.constants import BASE_STORE_SLOTS
-from common.utils import (
-    collect_base_store_slot_owners,
-    get_participant_base_store,
-    is_unmapped_base_store_reservation,
-    latest_completed_raid_weekend_end_timestamp,
+from elobot.config.game import BASE_STORE_SLOTS
+from elobot.features.base_store.slots import (
+    collect_base_store_slot_owners, get_participant_base_store, is_unmapped_base_store_reservation,
 )
-from database_models import Clan, Match, Participant
+from elobot.core.raid_weekend import latest_completed_raid_weekend_end_timestamp
+from elobot.db import Clan, Match, Participant
 
 
 def collect_occupied_base_store_slots(matches: list[Match]) -> dict[str, set[str]]:

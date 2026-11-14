@@ -10,7 +10,9 @@ import interactions as ipy
 sys.path.append(os.getcwd())
 
 import cogs.base_commands as base_commands
-from common.constants import BASE_TIERS, COMMAND_CHANNEL, CROSS_EMOJI, TICK_EMOJI
+from elobot.config.game import BASE_TIERS
+from elobot.config.ids import COMMAND_CHANNEL
+from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 from tests._base_submission_fixtures import configure_pending_resolution
 
 

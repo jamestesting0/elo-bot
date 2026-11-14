@@ -2,7 +2,7 @@ import re
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
-    from database_models import Match
+    from elobot.db import Match
 
 
 MATCH_RESULT_ENTRY_COUNT: Final = 3

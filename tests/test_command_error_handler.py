@@ -5,7 +5,7 @@ import interactions as ipy
 
 import beta
 import main
-from common.constants import ERROR_EMOJI
+from elobot.config.emojis import ERROR_EMOJI
 
 
 class TestCommandErrorHandler(unittest.IsolatedAsyncioTestCase):

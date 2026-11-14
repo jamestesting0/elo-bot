@@ -1,6 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock
 
-from database_models.base_submission_models import SubmissionAcceptance, SubmissionResolution
+from elobot.db.base_submission_models import SubmissionAcceptance, SubmissionResolution
 
 
 def configure_pending_resolution(pending: MagicMock) -> None:

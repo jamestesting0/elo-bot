@@ -8,7 +8,7 @@ from beanie.odm.settings.document import DocumentSettings
 
 from cogs import match_commands
 from common.matches import base_selection
-from database_models import BaseLink, Match, Participant
+from elobot.db import BaseLink, Match, Participant
 
 
 DISTRICTS = ['Barbarian Camp', 'Balloon Lagoon', 'Dragon Cliffs']

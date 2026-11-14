@@ -5,8 +5,8 @@ from typing import assert_never
 
 import interactions as ipy
 
-from common.constants import CROSS_EMOJI, ERROR_EMOJI
-from database_models import Match
+from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI
+from elobot.db import Match
 
 
 class HelperQueueDecision(StrEnum):

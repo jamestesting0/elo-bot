@@ -7,8 +7,9 @@ import interactions as ipy
 from pydantic import JsonValue
 
 from cogs.self_commands import SelfCommands
-from common.constants import ERROR_EMOJI, LOADING_EMOJI, MATCH_CHANNEL, SUCCESS_EMOJI
-from database_models import Match, Participant
+from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elobot.config.ids import MATCH_CHANNEL
+from elobot.db import Match, Participant
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -62,7 +63,7 @@ class TestLiveSpectate(unittest.IsolatedAsyncioTestCase):
             ("cogs.war_hosting.helper_spectate.Player.find_one", self.find_player),
             ("cogs.war_hosting.helper_spectate.Match.find_one", self.find_match),
             ("cogs.war_hosting.helper_spectate.Match.find", self.find_candidates),
-            ("cogs.war_hosting.helper_api.HELPER_POLL_INTERVAL_SECONDS", 0),
+            ("elobot.integrations.helper_api.HELPER_POLL_INTERVAL_SECONDS", 0),
         ):
             patcher = patch(target, new=replacement)
             patcher.start()

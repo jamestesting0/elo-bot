@@ -10,7 +10,7 @@ from common.matches.season_stats import (
     SeasonWindow,
     StatsAccumulator,
 )
-from database_models import Match, RecordedMatch
+from elobot.db import Match, RecordedMatch
 
 
 class RecordIdentity(BaseModel):

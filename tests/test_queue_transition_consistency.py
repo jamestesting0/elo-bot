@@ -11,7 +11,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
 from cogs import match_commands
-from database_models import Match, Player, Queue, ServerState
+from elobot.db import Match, Player, Queue, ServerState
 
 
 class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):

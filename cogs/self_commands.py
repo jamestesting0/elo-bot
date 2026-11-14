@@ -27,19 +27,14 @@ from cogs.war_hosting.helper_host import (
     AutomaticWarHost,
     host_war_automatically,
 )
-from common.constants import (
-    AUTOMATIC_MATCH_THREAD,
-    BOT_ID,
-    ERROR_EMOJI,
-    HELPER_API_BASE_URL,
-    HELPER_API_KEY,
-    LVL2_ROLES,
-)
+from elobot.config.ids import AUTOMATIC_MATCH_THREAD, BOT_ID, LVL2_ROLES
+from elobot.config.emojis import ERROR_EMOJI
+from elobot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 from common.base_store.start import held_store
-from common.discord.checks import has_any
+from elobot.discord.checks import has_any
 from common.matches.timing import hosting_started
-from common.utils import is_raid_weekend
-from database_models import Clan, Match, Player
+from elobot.core.raid_weekend import is_raid_weekend
+from elobot.db import Clan, Match, Player
 
 
 async def is_automatic_match_thread_member(ctx: ipy.BaseContext) -> bool:

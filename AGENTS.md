@@ -56,11 +56,10 @@ temp/                    # Disposable command/download scratch space
 - `VERSION` follows the launcher filename; main uses `elo_bot`, beta uses `elo_beta`.
 - `main.py` and `beta.py` are byte-identical (CI runs `cmp`). Startup changes go in `elo_bot/app/`, never in a launcher.
 - Discord handlers and persistence are async-first. Beanie calls and interaction responses must be awaited.
-- Wrap embed titles and field names in bold Markdown (`**...**`), following the existing bot styling.
-- Omit optional statistics with no recorded samples and avoid repeated empty-state text; preserve meaningful zeroes,
-  coverage context, and failure or recovery information.
-- Match existing pagination: primary `◀️️` / `▶️` buttons, disabled at page boundaries, and the shared secondary page-number button for views with page jumps. Use Back / Next for form steps.
-- Keep Final correction/refund notes in audit storage and private staff confirmation. Player match pages show current official results without staff notes or duplicate correction entries.
+- Before any change users see (message text, embeds, buttons, selects, modals, DMs, thread names), read
+  [docs/bot-ui.md](docs/bot-ui.md) and [docs/copy-style.md](docs/copy-style.md) and follow them. They record the
+  established look and wording (status emojis, embed anatomy, pagination, ownership checks, recurring messages)
+  and take precedence over generic style advice.
 - Imports stay at module level (ruff PLC0415); only the ML loaders in `features/bases/fingerprints` and `scripts/` defer imports.
 - Mutable JSON state defaults to `data/`; file-writing handlers coordinate through `bot.file_locks`.
 - `assets/embeds/*.md` and `assets/tips/*.json` are user-facing runtime inputs, not incidental documentation.

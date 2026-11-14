@@ -26,7 +26,7 @@ PIPELINE_MANIFESTS = {
 MODEL_DIR = Path(os.environ.get("BASE_FINDER_MODEL_DIR", "models/base_finder"))
 if not MODEL_DIR.is_absolute():
     MODEL_DIR = ROOT / MODEL_DIR
-MODEL_PATH = MODEL_DIR / MANIFEST["upstream_commit"] / "best.pt"
+MODEL_PATH = MODEL_DIR / "best.pt"
 WORKER_PYTHON = Path(sys.executable)
 SCRATCH = ROOT / "temp" / "base_fingerprints"
 MAX_IMAGE_BYTES = 12 * 1024 * 1024

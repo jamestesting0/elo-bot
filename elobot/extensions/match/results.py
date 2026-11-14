@@ -79,6 +79,8 @@ from elobot.core.finals import FinalError
 from elobot.db.season_models import EloFinal
 from elobot.features.finals.results import FinalResultSubmission, automatic_operation_key, submit_result
 from elobot.features.finals.recovery import recover_final
+from beanie import PydanticObjectId
+from pydantic import ValidationError
 
 
 class MatchResultCommands:
@@ -218,8 +220,6 @@ class MatchResultCommands:
 
         mongo_match: Match | None = await Match.find_one(Match.token == token)
         if mongo_match is not None and is_final_match(mongo_match):
-            from beanie import PydanticObjectId
-            from pydantic import ValidationError
 
             try:
                 final = await EloFinal.get(PydanticObjectId(mongo_match.final_id))

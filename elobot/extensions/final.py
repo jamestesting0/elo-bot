@@ -38,6 +38,9 @@ from elobot.core.finals import ROUND_NODES
 from elobot.features.finals.predictions import change_prediction_state, begin_prediction, PredictionAction, apply_prediction_action
 from elobot.features.finals.prediction_ui import prediction_view
 from elobot.features.finals.prediction_display import finished_results, prediction_alt_text, prediction_statuses
+from pymongo.errors import PyMongoError
+from beanie import PydanticObjectId
+from pydantic import ValidationError
 
 
 async def get_current_elo_final_season():
@@ -114,7 +117,6 @@ class FinalCommands(Extension):
 
     @ipy.Task.create(ipy.IntervalTrigger(minutes=2))
     async def recover_pending_finals(self):
-        from pymongo.errors import PyMongoError
         for edition in await EloFinal.find({"schema_version": 2}).to_list():
             if edition.active or edition.repair_pending or edition.publication_pending or edition.reopening_pending:
                 try:
@@ -242,7 +244,6 @@ class FinalCommands(Extension):
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
     async def _market(self, ctx, market_id, *, registered=False):
-        from beanie import PydanticObjectId
         market = await FinalBettingMarket.get(market_id)
         if market is None:
             raise FinalError("This betting market is unavailable.")
@@ -693,7 +694,6 @@ class FinalCommands(Extension):
                   choices=[ipy.SlashCommandChoice(name=name, value=name) for name in
                            ("Quarterfinals", "Semifinals", "Final")])
     async def final_round_start(self, ctx: SlashContext, round: str):
-        from pymongo.errors import PyMongoError
         await ctx.defer(ephemeral=True)
         completed = []
         try:
@@ -751,8 +751,6 @@ class FinalCommands(Extension):
 
     @ipy.modal_callback(re.compile(r"^finalres\|.+$"))
     async def final_result_modal(self, ctx: ipy.ModalContext, **response):
-        from pydantic import ValidationError
-        from pymongo.errors import PyMongoError
         _, season, node_id, owner, version, revision, attempt, winner, forfeit = ctx.custom_id.split("|")
         await ctx.defer(ephemeral=True)
         try:

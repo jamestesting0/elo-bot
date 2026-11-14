@@ -5,7 +5,7 @@ extend-exclude = ["venv", "temp", "data", "models", "assets"]
 force-exclude = true
 
 [tool.ruff.lint]
-select = ["F"]
+select = ["F", "PLC0415"]
 # Unused locals that still perform reads are kept on purpose: removing them would change the
 # observable call sequence. Tracked as follow-ups in the architecture plan.
 ignore = ["F841"]
@@ -13,3 +13,30 @@ ignore = ["F841"]
 [tool.ruff.format]
 # The project has no formatter; keep existing layout so refactor diffs stay reviewable.
 exclude = ["**/*.py"]
+
+[tool.ruff.lint.per-file-ignores]
+# Deferred imports keep the heavy ML stack (numpy, scipy, ultralytics, sahi) out of bot startup.
+"elobot/features/bases/fingerprints/*" = ["PLC0415"]
+"scripts/*" = ["PLC0415"]
+"tests/**" = ["PLC0415"]
+
+[tool.importlinter]
+root_package = "elobot"
+exclude_type_checking_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Layers: app > extensions > features > db | discord | integrations > core > config"
+type = "layers"
+layers = [
+    "elobot.app",
+    "elobot.extensions",
+    "elobot.features",
+    "elobot.db | elobot.discord | elobot.integrations",
+    "elobot.core",
+    "elobot.config",
+]
+
+[[tool.importlinter.contracts]]
+name = "Extensions do not import each other"
+type = "independence"
+modules = ["elobot.extensions.*"]

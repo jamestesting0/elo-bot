@@ -25,6 +25,7 @@ from elobot.db.final_models import FinalMatchResult
 from elobot.db.token_models import FinalBettingMarket
 from elobot.features.base_store.storage import BaseStoreReleaseConflict, BaseStoreReleaseDenied
 from elobot.features.finals.matches import bind_thread
+from pymongo.errors import DuplicateKeyError
 
 
 async def select_financial_work(final_id: PydanticObjectId) -> tuple[EloFinal, list[str]]:
@@ -204,7 +205,6 @@ async def recover_final(final: EloFinal, *, bot=None,
             await collection.update_one({"_id": final.id, "state": "CANCELLING", "repair_pending": False},
                 {"$set": {"state": "CANCELLED", "active": False}, "$inc": {"revision": 1}})
     if final.reopening_pending:
-        from pymongo.errors import DuplicateKeyError
         try:
             other = await EloFinal.find_one({"active": True, "_id": {"$ne": final.id}})
             if other is None:

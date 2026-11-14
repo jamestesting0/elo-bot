@@ -1,8 +1,8 @@
 import unittest
 
-from elobot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket, require_round_ready
-from elobot.core.finals import FinalError
-from elobot.db import EloFinal
+from elo_bot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket, require_round_ready
+from elo_bot.core.finals import FinalError
+from elo_bot.db import EloFinal
 
 
 class TestFinalBracket(unittest.TestCase):

@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from elobot.extensions.self_service import SelfCommands
-from elobot.features.hosting.war import result_store
-from elobot.features.hosting.war import helper_store
-from elobot.config.ids import MATCH_CHANNEL
-from elobot.config.presentation import RED_COLOR
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.features.matches.recovery import _repair_message
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.features.hosting.war import result_store
+from elo_bot.features.hosting.war import helper_store
+from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.config.presentation import RED_COLOR
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.matches.recovery import _repair_message
 from tests import _helper_score_fixture as helper_fixture
 from tests import _result_retry_store as retry_fixture
 

@@ -6,10 +6,10 @@ import coc
 import interactions as ipy
 from pydantic import JsonValue
 
-from elobot.extensions.self_service import SelfCommands
-from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
-from elobot.config.ids import MATCH_CHANNEL
-from elobot.db import Match, Participant
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.db import Match, Participant
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"
@@ -60,10 +60,10 @@ class TestLiveSpectate(unittest.IsolatedAsyncioTestCase):
             side_effect=lambda: [self.match] if self.candidate_matches is None else self.candidate_matches,
         )
         for target, replacement in (
-            ("elobot.features.hosting.war.helper_spectate.Player.find_one", self.find_player),
-            ("elobot.features.hosting.war.helper_spectate.Match.find_one", self.find_match),
-            ("elobot.features.hosting.war.helper_spectate.Match.find", self.find_candidates),
-            ("elobot.integrations.helper_api.HELPER_POLL_INTERVAL_SECONDS", 0),
+            ("elo_bot.features.hosting.war.helper_spectate.Player.find_one", self.find_player),
+            ("elo_bot.features.hosting.war.helper_spectate.Match.find_one", self.find_match),
+            ("elo_bot.features.hosting.war.helper_spectate.Match.find", self.find_candidates),
+            ("elo_bot.integrations.helper_api.HELPER_POLL_INTERVAL_SECONDS", 0),
         ):
             patcher = patch(target, new=replacement)
             patcher.start()

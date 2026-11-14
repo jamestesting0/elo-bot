@@ -8,12 +8,12 @@ import unittest
 from unittest.mock import MagicMock, AsyncMock, patch
 import interactions as ipy
 
-from elobot.extensions.match import MatchCommands
-from elobot.features.matches.attack_bases import choose_bases
-from elobot.db import Player, Queue
-from elobot.config.ids import BOT_ID
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.matches.attack_bases import choose_bases
+from elo_bot.db import Player, Queue
+from elo_bot.config.ids import BOT_ID
 from tests._patch_sites import patch_sites
-import elobot.features.matches.resources as resources_module
+import elo_bot.features.matches.resources as resources_module
 
 
 
@@ -68,11 +68,11 @@ class MatchCommandsCase(unittest.IsolatedAsyncioTestCase):
         self.cog = MatchCommands(self.bot)
         self.enterContext(patch.dict(resources_module.RESOURCE_MATCH_SIDE_LOCKS, clear=True))
         self.enterContext(patch.dict(resources_module.RESOURCE_CLAN_LOCKS, clear=True))
-        self.enterContext(patch("elobot.features.base_store.preparation.BASE_STORE_RESERVATION_LOCK", new=asyncio.Lock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.extensions.match.result_store.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
+        self.enterContext(patch("elo_bot.features.base_store.preparation.BASE_STORE_RESERVATION_LOCK", new=asyncio.Lock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.results.invite_eligible_players', 'elo_bot.extensions.match.result_store.invite_eligible_players', 'elo_bot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
         self.queue_docs = {}
-        self.enterContext(patch('elobot.extensions.match.queue.find_attempt_match', new=AsyncMock(return_value=None)))
-        self.enterContext(patch_sites(('elobot.extensions.match.queue.find_attempt_queue', 'elobot.features.queue.state.find_attempt_queue'), new=AsyncMock(
+        self.enterContext(patch('elo_bot.extensions.match.queue.find_attempt_match', new=AsyncMock(return_value=None)))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.queue.find_attempt_queue', 'elo_bot.features.queue.state.find_attempt_queue'), new=AsyncMock(
             side_effect=lambda user_id, attempt_id, _tiers: next(
                 (queue for queue in self.queue_docs.values()
                  if user_id in queue.district_selections
@@ -132,13 +132,13 @@ class MatchCommandsCase(unittest.IsolatedAsyncioTestCase):
         matches_query = MagicMock()
         matches_query.to_list = AsyncMock(return_value=[])
 
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as mock_player, \
-                patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as mock_match, \
-                patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout')) as mock_base_layout, \
-                patch('elobot.features.matches.attack_bases.NotIn', side_effect=lambda *args: args), \
-                patch_sites(('elobot.features.matches.lifecycle.get_base_quality', 'elobot.features.matches.attack_bases.get_base_quality'), return_value=qualities), \
-                patch_sites(('elobot.features.matches.lifecycle.random.randint', 'elobot.features.matches.attack_bases.random.randint'), return_value=2), \
-                patch_sites(('elobot.features.matches.lifecycle.random.choices', 'elobot.features.matches.attack_bases.random.choices'), wraps=random.Random(1).choices) as mock_choices:
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as mock_player, \
+                patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as mock_match, \
+                patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')) as mock_base_layout, \
+                patch('elo_bot.features.matches.attack_bases.NotIn', side_effect=lambda *args: args), \
+                patch_sites(('elo_bot.features.matches.lifecycle.get_base_quality', 'elo_bot.features.matches.attack_bases.get_base_quality'), return_value=qualities), \
+                patch_sites(('elo_bot.features.matches.lifecycle.random.randint', 'elo_bot.features.matches.attack_bases.random.randint'), return_value=2), \
+                patch_sites(('elo_bot.features.matches.lifecycle.random.choices', 'elo_bot.features.matches.attack_bases.random.choices'), wraps=random.Random(1).choices) as mock_choices:
             mock_player.find_one = AsyncMock(side_effect=[MagicMock(), MagicMock()])
             mock_match.find_one = AsyncMock(return_value=match)
             mock_match.find.return_value = matches_query

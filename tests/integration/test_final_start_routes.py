@@ -3,18 +3,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.features.base_store.controls import start_stored_bases
-from elobot.features.base_store.models import StoredBaseActionRequest
-from elobot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
-from elobot.features.hosting.war.war_start import SelfHostedWarStartReply, WarStart, start_war
-from elobot.integrations.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
-from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elobot.features.finals.matches import bind_thread
-from elobot.core.finals import FINAL_DISTRICTS
-from elobot.features.tokens.bets import open_market
-from elobot.db import BaseStore, Clan, Match
-from elobot.db.token_models import FinalBettingMarket
-import elobot.extensions.match as match_module
+from elo_bot.features.base_store.controls import start_stored_bases
+from elo_bot.features.base_store.models import StoredBaseActionRequest
+from elo_bot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
+from elo_bot.features.hosting.war.war_start import SelfHostedWarStartReply, WarStart, start_war
+from elo_bot.integrations.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import bind_thread
+from elo_bot.core.finals import FINAL_DISTRICTS
+from elo_bot.features.tokens.bets import open_market
+from elo_bot.db import BaseStore, Clan, Match
+from elo_bot.db.token_models import FinalBettingMarket
+import elo_bot.extensions.match as match_module
 
 
 class TestFinalStartRoutes(FinalScenarioCase):

@@ -3,20 +3,20 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.extensions.final import FinalCommands
-from elobot.extensions.leaderboard import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
-from elobot.extensions.tokens import TokenCommands
-from elobot.config.ids import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES
-from elobot.config.presentation import LB_ENTRIES_PER_PAGE
-from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
-from elobot.features.finals.predictions import change_prediction_state
-from elobot.features.tokens.bets import open_market
-from elobot.db.final_models import FinalPrediction
-from elobot.db.token_models import FinalBet, TokenWallet
-from elobot.db import Player
-from elobot.db.final_models import FinalMatchResult
+from elo_bot.extensions.final import FinalCommands
+from elo_bot.extensions.leaderboard import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
+from elo_bot.extensions.tokens import TokenCommands
+from elo_bot.config.ids import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES
+from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elo_bot.features.finals.predictions import change_prediction_state
+from elo_bot.features.tokens.bets import open_market
+from elo_bot.db.final_models import FinalPrediction
+from elo_bot.db.token_models import FinalBet, TokenWallet
+from elo_bot.db import Player
+from elo_bot.db.final_models import FinalMatchResult
 
 
 class TestFinalCallbacks(FinalScenarioCase):

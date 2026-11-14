@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import interactions as ipy
 
-from elobot.extensions.match import MatchCommands
+from elo_bot.extensions.match import MatchCommands
 
 
 class TestMatchAutomationConcurrency(unittest.IsolatedAsyncioTestCase):

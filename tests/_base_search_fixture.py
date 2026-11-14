@@ -2,11 +2,11 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
-from elobot.features.bases.fingerprints.types import MatchScore
-from elobot.config.ids import BASE_SUBMISSION_CHANNEL
-from elobot.db import BaseLayout, PendingBaseSubmission
+from elo_bot.features.bases.fingerprints.types import MatchScore
+from elo_bot.config.ids import BASE_SUBMISSION_CHANNEL
+from elo_bot.db import BaseLayout, PendingBaseSubmission
 from tests._base_fingerprint_fixture import fingerprint
-import elobot.extensions.base as base_module
+import elo_bot.extensions.base as base_module
 
 
 class FingerprintSearchStateMixin:
@@ -33,7 +33,7 @@ class FingerprintSearchStateMixin:
             return next((base for base in self.bases if base.id == query["_id"] and base.quality != "Private"), None)
 
         self.enterContext(patch.object(BaseLayout, "find_one", new=AsyncMock(side_effect=visible)))
-        self.find = self.enterContext(patch('elobot.extensions.base.search.find_matches', new=AsyncMock(
+        self.find = self.enterContext(patch('elo_bot.extensions.base.search.find_matches', new=AsyncMock(
             return_value=(self.scores, 3, 3))))
 
     def context(self, owner=123, message=9001):

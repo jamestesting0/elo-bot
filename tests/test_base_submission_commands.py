@@ -9,10 +9,10 @@ import interactions as ipy
 
 sys.path.append(os.getcwd())
 
-import elobot.extensions.base as base_commands
-from elobot.config.game import BASE_TIERS
-from elobot.config.ids import COMMAND_CHANNEL
-from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI
+import elo_bot.extensions.base as base_commands
+from elo_bot.config.game import BASE_TIERS
+from elo_bot.config.ids import COMMAND_CHANNEL
+from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 from tests._base_submission_fixtures import configure_pending_resolution
 from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 

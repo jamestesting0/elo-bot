@@ -1,17 +1,17 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from elobot.features.hosting.war import helper_host
+from elo_bot.features.hosting.war import helper_host
 from tests._patch_sites import patch_sites
 
 
 class TestHelperHostSlotSelection(unittest.IsolatedAsyncioTestCase):
     async def test_selects_first_available_slot_or_none(self) -> None:
-        from elobot.features.hosting.war.helper_slot import get_available_helper_slot
+        from elo_bot.features.hosting.war.helper_slot import get_available_helper_slot
 
         for available, expected in ((["Slot 1", "Slot 2"], 1), (["Slot 2"], 2), ([], None)):
             with self.subTest(available=available), patch(
-                    "elobot.features.hosting.war.helper_slot.base_store_storage.sync_base_store_slots",
+                    "elo_bot.features.hosting.war.helper_slot.base_store_storage.sync_base_store_slots",
                     new=AsyncMock(return_value={"#CLAN": available}),
             ) as sync_slots:
                 slot = await get_available_helper_slot("#CLAN")
@@ -51,7 +51,7 @@ class TestAutomaticWarHostSlots(unittest.IsolatedAsyncioTestCase):
         with (
                 patch.object(helper_host, "get_available_helper_slot", new=AsyncMock(return_value=None)) as slot,
                 patch.object(helper_host, "Player") as player_model,
-                patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock) as choose_bases,
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock) as choose_bases,
                 patch.object(helper_host, "confirm_helper_availability", new_callable=AsyncMock) as confirm,
                 patch.object(helper_host.war_start, "start_war", new_callable=AsyncMock) as start,
                 patch.object(helper_host, "run_helper_host_job", new_callable=AsyncMock) as run_job,

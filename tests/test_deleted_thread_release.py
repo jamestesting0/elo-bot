@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.features.base_store import storage
-from elobot.features.base_store import repository
-from elobot.db import BaseStore
-from elobot.db.result_models import MatchResultOperation
+from elo_bot.features.base_store import storage
+from elo_bot.features.base_store import repository
+from elo_bot.db import BaseStore
+from elo_bot.db.result_models import MatchResultOperation
 from tests import _match_cleanup_fixture as fixtures
 
 

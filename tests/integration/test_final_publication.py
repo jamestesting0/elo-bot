@@ -3,22 +3,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elobot.features.finals.matches import bind_thread
-from elobot.features.finals.publication import publish_bracket
-from elobot.core.finals import FinalError
-from elobot.db import EloFinal
-from elobot.features.tokens.bets import close_market, open_market
-from elobot.features.tokens.presentation import publish_market, market_signature
-from elobot.features.finals.recovery import recover_final
-from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.db.token_models import FinalBettingMarket
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import bind_thread
+from elo_bot.features.finals.publication import publish_bracket
+from elo_bot.core.finals import FinalError
+from elo_bot.db import EloFinal
+from elo_bot.features.tokens.bets import close_market, open_market
+from elo_bot.features.tokens.presentation import publish_market, market_signature
+from elo_bot.features.finals.recovery import recover_final
+from elo_bot.features.finals.results import FinalResultSubmission, submit_result
+from elo_bot.db.token_models import FinalBettingMarket
 
 
 class TestFinalPublication(FinalScenarioCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
-        rendering = patch("elobot.features.finals.publication.render_bracket", return_value=b"bracket-image")
+        rendering = patch("elo_bot.features.finals.publication.render_bracket", return_value=b"bracket-image")
         rendering.start()
         self.addCleanup(rendering.stop)
         self.final = await confirm_bracket(await self.roster(8), "manager")

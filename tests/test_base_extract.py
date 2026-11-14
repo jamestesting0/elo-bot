@@ -6,14 +6,14 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.errors import AutoReconnect
 
-from elobot.db.fingerprint_types import ExtractionState
-from elobot.features.bases.fingerprints.types import FingerprintError
-from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
-from elobot.config.ids import WHITELISTED_STAFFS
+from elo_bot.db.fingerprint_types import ExtractionState
+from elo_bot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.ids import WHITELISTED_STAFFS
 
 
 from tests._base_extract_fixture import BaseExtractStateMixin
-import elobot.extensions.base.extraction as base_extraction_module
+import elo_bot.extensions.base.extraction as base_extraction_module
 
 class TestBaseExtract(BaseExtractStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_command_registers_staff_check_and_string_autocomplete(self):

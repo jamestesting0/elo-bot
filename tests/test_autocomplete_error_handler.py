@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 import coc
 import interactions as ipy
 
-from elobot.app import errors
+from elo_bot.app import errors
 
 
 class TestAutocompleteErrorHandler(unittest.IsolatedAsyncioTestCase):

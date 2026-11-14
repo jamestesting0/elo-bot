@@ -8,15 +8,15 @@ from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
-from elobot.db import Helper, Match, Participant, Player
+from elo_bot.db import Helper, Match, Participant, Player
 from tests._result_retry_store import read_field, write_field
 from pymongo.results import DeleteResult
-from elobot.extensions import data as data_commands
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.db import RecordedMatch
+from elo_bot.extensions import data as data_commands
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import RecordedMatch
 from tests._result_retry_store import matches
 from tests._patch_sites import patch_sites
-import elobot.extensions.match as match_module
+import elo_bot.extensions.match as match_module
 
 
 class AutowinStateMixin:
@@ -108,11 +108,11 @@ class AutowinStateMixin:
         self.enterContext(patch.object(Player, "set", new=legacy_set))
         self.enterContext(patch.object(Match, "set", new=legacy_set))
         self.enterContext(patch.object(Helper, "find_one", return_value=MagicMock(upsert=AsyncMock(side_effect=legacy_credit))))
-        self.free_clans = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new=AsyncMock()))
-        self.cleanup = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task', 'elobot.extensions.final.remove_helper_task'), new=AsyncMock()))
-        self.autoqueue = self.enterContext(patch_sites(('elobot.extensions.match.results.autoqueue_completed_match_participants', 'elobot.extensions.match.result_store.autoqueue_completed_match_participants'), new=AsyncMock()))
-        self.schedule = self.enterContext(patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit', 'elobot.extensions.match.settings.schedule_channel_name_edit'), new=MagicMock()))
-        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.extensions.match.result_store.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
+        self.free_clans = self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.free_match_clans', 'elo_bot.extensions.match.results.free_match_clans'), new=AsyncMock()))
+        self.cleanup = self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new=AsyncMock()))
+        self.autoqueue = self.enterContext(patch_sites(('elo_bot.extensions.match.results.autoqueue_completed_match_participants', 'elo_bot.extensions.match.result_store.autoqueue_completed_match_participants'), new=AsyncMock()))
+        self.schedule = self.enterContext(patch_sites(('elo_bot.extensions.match.results.schedule_channel_name_edit', 'elo_bot.extensions.match.hosting.schedule_channel_name_edit', 'elo_bot.extensions.match.settings.schedule_channel_name_edit'), new=MagicMock()))
+        self.invite = self.enterContext(patch_sites(('elo_bot.extensions.match.results.invite_eligible_players', 'elo_bot.extensions.match.result_store.invite_eligible_players', 'elo_bot.features.results.recording.invite_eligible_players'), new=AsyncMock()))
 
     @staticmethod
     def value(row, path):

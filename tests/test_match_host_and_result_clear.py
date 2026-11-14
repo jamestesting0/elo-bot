@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from elobot.config.ids import MATCH_CHANNEL, STAFF_ROLE
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.db import Match
+from elo_bot.config.ids import MATCH_CHANNEL, STAFF_ROLE
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import Match
 from tests import _result_retry_store as fixture
 
 
@@ -125,7 +125,7 @@ class TestMatchHostAndResultClear(unittest.IsolatedAsyncioTestCase):
 
     async def test_clear_rejects_finalization_claim_at_write_boundary(self) -> None:
         async def claim(_query, _updates):
-            from elobot.features.results.operations import begin_result_operation
+            from elo_bot.features.results.operations import begin_result_operation
             self.runtime.before_match_write = AsyncMock()
             match = await Match.find_one({"token": "TOKEN"})
             assert match is not None
@@ -165,7 +165,7 @@ class TestMatchHostAndResultClear(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.match["participants"][0]["result"], [None] * 3)
 
     async def test_clear_rejects_pending_completed_and_cancelled_operations(self) -> None:
-        from elobot.features.results.operations import begin_result_operation
+        from elo_bot.features.results.operations import begin_result_operation
         match = await Match.find_one({"token": "TOKEN"})
         assert match is not None
         await begin_result_operation(match, fixture.RESULTS)

@@ -4,11 +4,11 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests._patch_sites import patch_sites
-import elobot.features.matches.resources as resources_module
-import elobot.features.base_store.match_adapters as match_adapters_module
-import elobot.extensions.match.base_store as match_base_store_module
-import elobot.extensions.match.dashboards as match_dashboards_module
-import elobot.extensions.match.hosting as match_hosting_module
+import elo_bot.features.matches.resources as resources_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.base_store as match_base_store_module
+import elo_bot.extensions.match.dashboards as match_dashboards_module
+import elo_bot.extensions.match.hosting as match_hosting_module
 
 
 class OccupancyFailure(RuntimeError):
@@ -62,8 +62,8 @@ class TestResourceClanClaimRollback(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
                 patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(return_value=clan)), \
-                patch('elobot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=occupy_then_fail)), \
-                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
+                patch('elo_bot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=occupy_then_fail)), \
+                patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             # When the durable match claim is visible while occupancy remains unfinished.
             claim_task = asyncio.create_task(run_claim())
             await asyncio.wait_for(occupancy_started.wait(), timeout=5)

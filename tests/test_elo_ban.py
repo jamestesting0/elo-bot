@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.app.client import create_client
-from elobot.features.admin import commands as admin_commands
-from elobot.config.ids import ELO_BLACKLIST_ROLE
+from elo_bot.app.client import create_client
+from elo_bot.features.admin import commands as admin_commands
+from elo_bot.config.ids import ELO_BLACKLIST_ROLE
 
 
 class TestEloBan(unittest.IsolatedAsyncioTestCase):

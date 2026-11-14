@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 from aiohttp import web
 import interactions as ipy
 
-from elobot.extensions.base import BaseCommands
-from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
+from elo_bot.extensions.base import BaseCommands
+from elo_bot.config.ids import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
 from tests._patch_sites import patch_sites
 
 
@@ -97,9 +97,9 @@ class TestBaseExpirationAutorenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = NOW
 
         with (
-                patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as base_layout,
-                patch_sites(('elobot.extensions.base.submissions.datetime', 'elobot.extensions.base.manage.datetime', 'elobot.extensions.base.private.datetime'), new=clock),
-                patch("elobot.features.hosting.war.helper_preserve.datetime", new=clock),
+                patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout')) as base_layout,
+                patch_sites(('elo_bot.extensions.base.submissions.datetime', 'elo_bot.extensions.base.manage.datetime', 'elo_bot.extensions.base.private.datetime'), new=clock),
+                patch("elo_bot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.expiration_date.__le__.return_value = "expiring"
             base_layout.find.return_value.to_list = AsyncMock(return_value=[base])

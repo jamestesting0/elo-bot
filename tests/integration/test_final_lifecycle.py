@@ -2,10 +2,10 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.features.finals.lifecycle import add_entrant, confirm_bracket, reset_bracket, resolve_final, save_pairing_draft, start_final
-from elobot.core.finals import FinalError
-from elobot.db import EloFinal, Player
-from elobot.db.final_models import FinalPlayerProfile
+from elo_bot.features.finals.lifecycle import add_entrant, confirm_bracket, reset_bracket, resolve_final, save_pairing_draft, start_final
+from elo_bot.core.finals import FinalError
+from elo_bot.db import EloFinal, Player
+from elo_bot.db.final_models import FinalPlayerProfile
 
 
 class TestFinalLifecycle(FinalScenarioCase):
@@ -23,7 +23,7 @@ class TestFinalLifecycle(FinalScenarioCase):
 
     async def test_failed_profile_write_does_not_confirm_half_a_bracket(self):
         final = await self.roster(5)
-        with patch('elobot.features.finals.lifecycle.rebuild_profiles', AsyncMock(side_effect=RuntimeError("profile unavailable"))):
+        with patch('elo_bot.features.finals.lifecycle.rebuild_profiles', AsyncMock(side_effect=RuntimeError("profile unavailable"))):
             with self.assertRaisesRegex(RuntimeError, "profile unavailable"):
                 await confirm_bracket(final, "manager")
         saved = await resolve_final()
@@ -32,7 +32,7 @@ class TestFinalLifecycle(FinalScenarioCase):
         self.assertEqual(await FinalPlayerProfile.count(), 0)
 
     async def test_recovery_repairs_missing_bye_projection_without_ranked_changes(self):
-        from elobot.features.finals.recovery import recover_final
+        from elo_bot.features.finals.recovery import recover_final
         final = await confirm_bracket(await self.roster(5), "manager")
         await FinalPlayerProfile.get_pymongo_collection().delete_many({})
         await recover_final(final)

@@ -3,19 +3,19 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-from elobot.extensions import thread as thread_commands
-from elobot.extensions import match as match_commands
-from elobot.features.results.autowin import claim_autowin
-from elobot.config.ids import LVL2_ROLES, MATCH_CHANNEL
-from elobot.features.matches.cleanup import delete_unreserved_match
-from elobot.features.results.operations import begin_result_operation
-from elobot.db import Match
-from elobot.db.result_models import MatchResultOperation
+from elo_bot.extensions import thread as thread_commands
+from elo_bot.extensions import match as match_commands
+from elo_bot.features.results.autowin import claim_autowin
+from elo_bot.config.ids import LVL2_ROLES, MATCH_CHANNEL
+from elo_bot.features.matches.cleanup import delete_unreserved_match
+from elo_bot.features.results.operations import begin_result_operation
+from elo_bot.db import Match
+from elo_bot.db.result_models import MatchResultOperation
 from tests import _result_finalization_fixture as result_fixture
 
 
 from tests._match_cleanup_fixture import PendingMatchStateMixin
-import elobot.extensions.match.lifecycle as match_lifecycle_module
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 class TestPendingMatchCleanup(PendingMatchStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_thread_event_preserves_pending_second_player_write(self) -> None:

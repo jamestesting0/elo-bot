@@ -16,27 +16,27 @@ exclude = ["**/*.py"]
 
 [tool.ruff.lint.per-file-ignores]
 # Deferred imports keep the heavy ML stack (numpy, scipy, ultralytics, sahi) out of bot startup.
-"elobot/features/bases/fingerprints/*" = ["PLC0415"]
+"elo_bot/features/bases/fingerprints/*" = ["PLC0415"]
 "scripts/*" = ["PLC0415"]
 "tests/**" = ["PLC0415"]
 
 [tool.importlinter]
-root_package = "elobot"
+root_package = "elo_bot"
 exclude_type_checking_imports = true
 
 [[tool.importlinter.contracts]]
 name = "Layers: app > extensions > features > db | discord | integrations > core > config"
 type = "layers"
 layers = [
-    "elobot.app",
-    "elobot.extensions",
-    "elobot.features",
-    "elobot.db | elobot.discord | elobot.integrations",
-    "elobot.core",
-    "elobot.config",
+    "elo_bot.app",
+    "elo_bot.extensions",
+    "elo_bot.features",
+    "elo_bot.db | elo_bot.discord | elo_bot.integrations",
+    "elo_bot.core",
+    "elo_bot.config",
 ]
 
 [[tool.importlinter.contracts]]
 name = "Extensions do not import each other"
 type = "independence"
-modules = ["elobot.extensions.*"]
+modules = ["elo_bot.extensions.*"]

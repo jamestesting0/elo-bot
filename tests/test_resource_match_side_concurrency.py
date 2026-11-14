@@ -3,13 +3,13 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from elobot.extensions.match import MatchCommands
+from elo_bot.extensions.match import MatchCommands
 from tests._patch_sites import patch_sites
-import elobot.features.matches.resources as resources_module
-import elobot.features.base_store.match_adapters as match_adapters_module
-import elobot.extensions.match.base_store as match_base_store_module
-import elobot.extensions.match.dashboards as match_dashboards_module
-import elobot.extensions.match.hosting as match_hosting_module
+import elo_bot.features.matches.resources as resources_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.base_store as match_base_store_module
+import elo_bot.extensions.match.dashboards as match_dashboards_module
+import elo_bot.extensions.match.hosting as match_hosting_module
 
 
 class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
@@ -65,7 +65,7 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
                 patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(side_effect=find_clan)), \
-                patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
+                patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
             # When both ready requests are released to claim simultaneously.
             reservations = [
                 await match_base_store_module.try_reserve_resource_clan("#A"),
@@ -118,7 +118,7 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=canonical_match)), \
                 patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(side_effect=find_clan)), \
-                patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
+                patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
             # When each side claims its own clan.
             reservations = [
                 await match_base_store_module.try_reserve_resource_clan("#A"),
@@ -175,7 +175,7 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(side_effect=find_match)), \
                 patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(side_effect=find_clan)), \
-                patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
+                patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock) as occupy:
             # When both matches claim their unrelated clans.
             reservations = [
                 await match_base_store_module.try_reserve_resource_clan("#A"),
@@ -222,9 +222,9 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
         )
 
         try:
-            with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
-                    patch_sites(('elobot.extensions.match.dashboards.Clan', 'elobot.features.matches.resources.Clan')) as clan_model, \
-                    patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+            with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model, \
+                    patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
                     patch.object(match_hosting_module.helper_host, "host_war_automatically", new_callable=AsyncMock) as host:
                 match_model.find_one = AsyncMock(return_value=match)
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])

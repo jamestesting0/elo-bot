@@ -2,9 +2,9 @@ import unittest
 from collections import Counter
 from unittest.mock import patch
 
-from elobot.extensions import match as match_commands
-import elobot.features.matches.tips as tips_module
-import elobot.extensions.match.results as match_results_module
+from elo_bot.extensions import match as match_commands
+import elo_bot.features.matches.tips as tips_module
+import elo_bot.extensions.match.results as match_results_module
 
 
 class TestTipRotation(unittest.IsolatedAsyncioTestCase):
@@ -23,7 +23,7 @@ class TestTipRotation(unittest.IsolatedAsyncioTestCase):
             last_index = (last_index + 1) % count
             return last_index
 
-        with patch('elobot.features.matches.tips.read_json', side_effect=read_content), \
+        with patch('elo_bot.features.matches.tips.read_json', side_effect=read_content), \
                 patch.object(match_commands.ServerState, "advance_tip_index", side_effect=advance):
             messages = [await match_results_module.choose_tip() for _ in range(10)]
 

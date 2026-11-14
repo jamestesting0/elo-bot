@@ -6,9 +6,9 @@ import interactions as ipy
 import unittest
 from unittest.mock import MagicMock, patch, AsyncMock
 
-from elobot.features.bases.layouts.queries import BaseAutocompleteRow
-from elobot.extensions.base import BaseCommands
-from elobot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.bases.layouts.queries import BaseAutocompleteRow
+from elo_bot.extensions.base import BaseCommands
+from elo_bot.config.emojis import SUCCESS_EMOJI
 from tests._patch_sites import patch_sites
 
 BASE_SET_LINK_CALLBACK = BaseCommands.base_set_link.callback
@@ -23,10 +23,10 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.builder_names = {}
         self.cog = BaseCommands(self.bot)
 
-    @patch_sites(('elobot.extensions.base.submissions.validators.url', 'elobot.extensions.base.manage.validators.url', 'elobot.extensions.base.private.validators.url'))
-    @patch_sites(('elobot.extensions.base.submissions.download_base_screenshot', 'elobot.extensions.base.manage.download_base_screenshot', 'elobot.extensions.base.private.download_base_screenshot'))
-    @patch_sites(('elobot.extensions.base.submissions.delete_file', 'elobot.extensions.base.manage.delete_file', 'elobot.extensions.base.private.delete_file'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.submissions.validators.url', 'elo_bot.extensions.base.manage.validators.url', 'elo_bot.extensions.base.private.validators.url'))
+    @patch_sites(('elo_bot.extensions.base.submissions.download_base_screenshot', 'elo_bot.extensions.base.manage.download_base_screenshot', 'elo_bot.extensions.base.private.download_base_screenshot'))
+    @patch_sites(('elo_bot.extensions.base.submissions.delete_file', 'elo_bot.extensions.base.manage.delete_file', 'elo_bot.extensions.base.private.delete_file'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_add_success(self, mock_base_layout, mock_delete_file, mock_download_screenshot, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -66,8 +66,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
                         "Fingerprint extraction pending.")
         ctx.send.assert_awaited_once_with(expected_msg, ephemeral=True)
 
-    @patch_sites(('elobot.extensions.base.manage.construct_base_embed', 'elobot.extensions.base.listing.construct_base_embed', 'elobot.extensions.base.private.construct_base_embed', 'elobot.features.bases.layouts.private.construct_base_embed'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.manage.construct_base_embed', 'elo_bot.extensions.base.listing.construct_base_embed', 'elo_bot.extensions.base.private.construct_base_embed', 'elo_bot.features.bases.layouts.private.construct_base_embed'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_info_success(self, mock_base_layout, mock_construct_embed):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -96,9 +96,9 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         )
         ctx.send.assert_called_with(embed=mock_embed, ephemeral=True)
 
-    @patch_sites(('elobot.extensions.base.submissions.validators.url', 'elobot.extensions.base.manage.validators.url', 'elobot.extensions.base.private.validators.url'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
-    @patch_sites(('elobot.extensions.base.manage.DISTRICT_CODES_REVERSED', 'elobot.extensions.base.private.DISTRICT_CODES_REVERSED'), {"3A1": "Barbarian Camp"})
+    @patch_sites(('elo_bot.extensions.base.submissions.validators.url', 'elo_bot.extensions.base.manage.validators.url', 'elo_bot.extensions.base.private.validators.url'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.manage.DISTRICT_CODES_REVERSED', 'elo_bot.extensions.base.private.DISTRICT_CODES_REVERSED'), {"3A1": "Barbarian Camp"})
     async def test_base_remove_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -121,8 +121,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.delete.assert_called_once()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have successfully removed a base for `Barbarian Camp`.")
 
-    @patch_sites(('elobot.extensions.base.submissions.validators.url', 'elobot.extensions.base.manage.validators.url', 'elobot.extensions.base.private.validators.url'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.submissions.validators.url', 'elo_bot.extensions.base.manage.validators.url', 'elo_bot.extensions.base.private.validators.url'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_set_link_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -143,7 +143,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         # Execute
         clock = MagicMock()
         clock.now.return_value.timestamp.return_value = 2_000_000_000
-        with patch_sites(('elobot.extensions.base.submissions.datetime', 'elobot.extensions.base.manage.datetime', 'elobot.extensions.base.private.datetime'), clock):
+        with patch_sites(('elo_bot.extensions.base.submissions.datetime', 'elo_bot.extensions.base.manage.datetime', 'elo_bot.extensions.base.private.datetime'), clock):
             await BASE_SET_LINK_CALLBACK(self.cog, ctx, old_base_link, new_base_link)
 
         # Verify
@@ -154,8 +154,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.cog.send_base_renewal_log.assert_awaited_once_with(mock_base)
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have successfully renewed a base for `Barbarian Camp`.")
 
-    @patch_sites(('elobot.extensions.base.manage.construct_base_embed', 'elobot.extensions.base.listing.construct_base_embed', 'elobot.extensions.base.private.construct_base_embed', 'elobot.features.bases.layouts.private.construct_base_embed'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.manage.construct_base_embed', 'elo_bot.extensions.base.listing.construct_base_embed', 'elo_bot.extensions.base.private.construct_base_embed', 'elo_bot.features.bases.layouts.private.construct_base_embed'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_list_success(self, mock_base_layout, mock_construct_embed):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -203,8 +203,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(page_number_button.custom_id, "base_page|Any|Performance|Any|Any")
         self.assertFalse(page_number_button.disabled)
 
-    @patch_sites(('elobot.extensions.base.manage.construct_base_embed', 'elobot.extensions.base.listing.construct_base_embed', 'elobot.extensions.base.private.construct_base_embed', 'elobot.features.bases.layouts.private.construct_base_embed'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.manage.construct_base_embed', 'elo_bot.extensions.base.listing.construct_base_embed', 'elo_bot.extensions.base.private.construct_base_embed', 'elo_bot.features.bases.layouts.private.construct_base_embed'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_list_elobot_filters_unknown_builder(self, mock_base_layout, mock_construct_embed):
         # Given: Elo Bot is selected as the builder filter.
         self.bot.user = MagicMock(id=42)
@@ -239,8 +239,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         components = ctx.send.await_args.kwargs["components"]
         self.assertEqual(components[2].components[1].custom_id, "base_page|Any|Performance|Any|42")
 
-    @patch_sites(('elobot.extensions.base.submissions.validators.url', 'elobot.extensions.base.manage.validators.url', 'elobot.extensions.base.private.validators.url'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.submissions.validators.url', 'elo_bot.extensions.base.manage.validators.url', 'elo_bot.extensions.base.private.validators.url'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_set_expired_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -263,8 +263,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.save_changes.assert_called_once()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} This is base is now marked as expired.")
 
-    @patch_sites(('elobot.extensions.base.submissions.validators.url', 'elobot.extensions.base.manage.validators.url', 'elobot.extensions.base.private.validators.url'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.submissions.validators.url', 'elo_bot.extensions.base.manage.validators.url', 'elo_bot.extensions.base.private.validators.url'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_set_quality_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -291,8 +291,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             f"{SUCCESS_EMOJI} You have successfully set the quality of the base as **{base_quality}**."
         )
 
-    @patch_sites(('elobot.extensions.base.submissions.validators.url', 'elobot.extensions.base.manage.validators.url', 'elobot.extensions.base.private.validators.url'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.submissions.validators.url', 'elo_bot.extensions.base.manage.validators.url', 'elo_bot.extensions.base.private.validators.url'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_set_builder_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -319,9 +319,9 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.set.assert_awaited_once_with({"builder_id": "12345"})
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have successfully set {builder.mention} as the builder.")
 
-    @patch_sites(('elobot.extensions.base.submissions.download_base_screenshot', 'elobot.extensions.base.manage.download_base_screenshot', 'elobot.extensions.base.private.download_base_screenshot'))
-    @patch_sites(('elobot.extensions.base.submissions.validators.url', 'elobot.extensions.base.manage.validators.url', 'elobot.extensions.base.private.validators.url'))
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.submissions.download_base_screenshot', 'elo_bot.extensions.base.manage.download_base_screenshot', 'elo_bot.extensions.base.private.download_base_screenshot'))
+    @patch_sites(('elo_bot.extensions.base.submissions.validators.url', 'elo_bot.extensions.base.manage.validators.url', 'elo_bot.extensions.base.private.validators.url'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_set_image_success(self, mock_base_layout, mock_validate_url, mock_download_screenshot):
         # Setup
         mock_validate_url.return_value = True
@@ -359,10 +359,10 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.save_changes.assert_not_called()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} Screenshot saved. Fingerprint extraction pending.", ephemeral=True)
 
-    @patch('elobot.extensions.base.leaderboard.construct_base_leaderboard_string')
-    @patch('elobot.extensions.base.leaderboard.sort_bases')
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
-    @patch('elobot.extensions.base.leaderboard.LB_ENTRIES_PER_PAGE', 5)
+    @patch('elo_bot.extensions.base.leaderboard.construct_base_leaderboard_string')
+    @patch('elo_bot.extensions.base.leaderboard.sort_bases')
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
+    @patch('elo_bot.extensions.base.leaderboard.LB_ENTRIES_PER_PAGE', 5)
     async def test_base_leaderboard_success(self, mock_base_layout, mock_sort_bases, mock_construct_lb_string):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -417,7 +417,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
     async def _run_base_autocomplete(self, ctx):
         await self.cog.base_autocomplete(ctx)
 
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_autocomplete_uses_cached_builder_and_sends_once(self, mock_base_layout):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="12345"),
@@ -437,7 +437,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Barbarian Camp by @BuilderOne (1)", "value": 0},
         ])
 
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_autocomplete_owner_sees_all_bases_without_fetching_users(self, mock_base_layout):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="111"),
@@ -457,7 +457,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Dragon Cliffs by @anonymous (2)", "value": 1},
         ])
 
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_autocomplete_matches_input_and_keeps_global_index(self, mock_base_layout):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="111"),
@@ -475,7 +475,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Wizard Valley by @BuilderOne (2)", "value": 1},
         ])
 
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_autocomplete_uses_builder_name_cache(self, mock_base_layout):
         rows = [MagicMock(district="Barbarian Camp", builder_id="12345")]
         self._mock_autocomplete_query(mock_base_layout, rows)
@@ -491,7 +491,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Barbarian Camp by @CachedBuilder (1)", "value": 0},
         ])
 
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_base_autocomplete_remembers_resolved_builder_names(self, mock_base_layout):
         rows = [MagicMock(district="Barbarian Camp", builder_id="12345")]
         self._mock_autocomplete_query(mock_base_layout, rows)
@@ -504,8 +504,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.bot.builder_names["12345"], "@BuilderOne")
 
-    @patch_sites(('elobot.extensions.base.anyio.sleep', 'elobot.extensions.base.search.anyio.sleep', 'elobot.extensions.base.submissions.anyio.sleep', 'elobot.extensions.base.manage.anyio.sleep'), new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.anyio.sleep', 'elo_bot.extensions.base.search.anyio.sleep', 'elo_bot.extensions.base.submissions.anyio.sleep', 'elo_bot.extensions.base.manage.anyio.sleep'), new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_warm_builder_names_fetches_only_missing_users(self, mock_base_layout, mock_sleep):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="111"),

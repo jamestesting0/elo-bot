@@ -2,7 +2,7 @@ import unittest
 
 import interactions as ipy
 
-from elobot.discord.pagination import (
+from elo_bot.discord.pagination import (
     InvalidPageError,
     build_page_button,
     build_page_jump_modal,

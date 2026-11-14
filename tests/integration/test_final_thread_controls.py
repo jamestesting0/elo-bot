@@ -4,11 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.features.matches.lifecycle import confirm_match
-from elobot.config.ids import STAFF_ROLE
-from elobot.features.finals.lifecycle import confirm_bracket
-from elobot.features.finals.matches import prepare_match
-from elobot.db import Match
+from elo_bot.features.matches.lifecycle import confirm_match
+from elo_bot.config.ids import STAFF_ROLE
+from elo_bot.features.finals.lifecycle import confirm_bracket
+from elo_bot.features.finals.matches import prepare_match
+from elo_bot.db import Match
 
 
 class TestFinalThreadControls(FinalScenarioCase):

@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, call
 
 import interactions as ipy
 
-from elobot.extensions.self_service import SelfCommands
-from elobot.config.ids import AUTOMATIC_MATCH_THREAD, LVL2_ROLES
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.config.ids import AUTOMATIC_MATCH_THREAD, LVL2_ROLES
 
 
 class TestSelfCommandAccess(unittest.IsolatedAsyncioTestCase):

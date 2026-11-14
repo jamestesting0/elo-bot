@@ -1,13 +1,13 @@
 from datetime import datetime
 from unittest.mock import MagicMock, AsyncMock, patch, ANY
 import interactions as ipy
-from elobot.features.queue.policy import (
+from elo_bot.features.queue.policy import (
     QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUEUE_TIER_PRIORITY, QUEUE_TIER_NORMAL, QUEUE_TIER1_AGED_AFTER_SECONDS,
 )
-from elobot.db import Player, Queue, ServerState
-from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.db import Player, Queue, ServerState
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests._patch_sites import patch_sites
-import elobot.extensions.match.queue as match_queue_module
+import elo_bot.extensions.match.queue as match_queue_module
 from tests._match_commands_case import MatchCommandsCase
 
 
@@ -32,9 +32,9 @@ class TestMatchCommands(MatchCommandsCase):
                 # Then: it returns the exact announced groups allowed by the snapshot
                 self.assertEqual(actual, expected)
 
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
-    @patch('elobot.features.queue.matching.is_player_occupied')
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
+    @patch('elo_bot.features.queue.matching.is_player_occupied')
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_success_add_to_tier3(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -86,9 +86,9 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
-    @patch('elobot.features.queue.matching.is_player_occupied')
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
+    @patch('elo_bot.features.queue.matching.is_player_occupied')
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_adds_to_tier2_when_closest_over_100_without_eligible_match(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -121,9 +121,9 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
-    @patch('elobot.features.queue.matching.is_player_occupied')
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
+    @patch('elo_bot.features.queue.matching.is_player_occupied')
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_with_empty_queue_adds_to_tier3(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -155,10 +155,10 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch('elobot.features.queue.matching.get_last_opponent')
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
-    @patch('elobot.features.queue.matching.is_player_occupied')
+    @patch('elo_bot.features.queue.matching.get_last_opponent')
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
+    @patch('elo_bot.features.queue.matching.is_player_occupied')
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_closest_within_100_uses_normal_queue(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player, mock_get_last_opponent):
@@ -192,10 +192,10 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch('elobot.features.queue.matching.initiate_match')
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
-    @patch('elobot.features.queue.matching.is_player_occupied')
+    @patch('elo_bot.features.queue.matching.initiate_match')
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
+    @patch('elo_bot.features.queue.matching.is_player_occupied')
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_matches_immediately_within_150(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player, mock_initiate_match):
@@ -232,9 +232,9 @@ class TestMatchCommands(MatchCommandsCase):
         tier3.save_changes.assert_called()
         self.assertIn("A match has been found", ctx.send.call_args[0][0])
 
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
-    @patch('elobot.features.queue.matching.is_player_occupied')
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
+    @patch('elo_bot.features.queue.matching.is_player_occupied')
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_already_in_queue(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -269,8 +269,8 @@ class TestMatchCommands(MatchCommandsCase):
         # Verify
         ctx.send.assert_called_with(f"{ERROR_EMOJI} You are already in the match-making queue.", ephemeral=True)
 
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
     async def test_match_dequeue_success(self, mock_queue, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -301,8 +301,8 @@ class TestMatchCommands(MatchCommandsCase):
         mock_queue_doc.save_changes.assert_called_once()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have been removed from the match-making queue.", ephemeral=True)
 
-    @patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))
-    @patch_sites(('elobot.extensions.match.queue.Queue', 'elobot.features.queue.state.Queue', 'elobot.features.queue.matching.Queue'))
+    @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
+    @patch_sites(('elo_bot.extensions.match.queue.Queue', 'elo_bot.features.queue.state.Queue', 'elo_bot.features.queue.matching.Queue'))
     async def test_match_dequeue_not_in_queue(self, mock_queue, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -329,8 +329,8 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send.assert_called_with(f"{ERROR_EMOJI} You are not currently in the match-making queue.", ephemeral=True)
 
     @patch.object(ServerState, "update_fields", new_callable=AsyncMock)
-    @patch('elobot.features.queue.matching.match_players')
-    @patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'))
+    @patch('elo_bot.features.queue.matching.match_players')
+    @patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'))
     async def test_create_matches_promotes_15_hour_tier1_players_to_tier0(
             self, mock_get_match_queue, mock_match_players, mock_update_fields):
         now = datetime.now().timestamp()
@@ -366,8 +366,8 @@ class TestMatchCommands(MatchCommandsCase):
         mock_update_fields.assert_awaited_once_with(last_matching=ANY)
 
     @patch.object(ServerState, "update_fields", new_callable=AsyncMock)
-    @patch('elobot.features.queue.matching.match_players')
-    @patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'))
+    @patch('elo_bot.features.queue.matching.match_players')
+    @patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'))
     async def test_create_matches_moves_each_queue_down_one_tier(
             self, mock_get_match_queue, mock_match_players, mock_update_fields):
         now = datetime.now().timestamp()

@@ -4,10 +4,10 @@ from beanie import PydanticObjectId
 from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import UpdateResult
-from elobot.features.hosting.war import helper_base_store_availability
-from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
-from elobot.db import BaseStore, Match, Participant
-import elobot.extensions.match as match_module
+from elo_bot.features.hosting.war import helper_base_store_availability
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.db import BaseStore, Match, Participant
+import elo_bot.extensions.match as match_module
 
 
 class StoredBaseControlsStateMixin:

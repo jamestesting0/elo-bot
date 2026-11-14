@@ -4,12 +4,12 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.results import UpdateResult
-from elobot.extensions.match import MatchCommands
-from elobot.features.hosting.war import result_store
-from elobot.config.ids import MATCH_CHANNEL
-from elobot.db import BaseStore, Match, Participant
-from elobot.db.player_models import MatchPlayerStats
-from elobot.db.result_models import ResultRecordSnapshot
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.hosting.war import result_store
+from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.db import BaseStore, Match, Participant
+from elo_bot.db.player_models import MatchPlayerStats
+from elo_bot.db.result_models import ResultRecordSnapshot
 
 
 
@@ -111,9 +111,9 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
         self._async_boundary("fetch_user_match_id_choices")
         self._async_boundary("choose_tip").return_value = "tip"
         self.match = make_result_match(stored_bases=True)
-        self.match_model = self.enterContext(patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')))
+        self.match_model = self.enterContext(patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')))
         self.match_model.find_one = AsyncMock(side_effect=lambda _query: self.match)
-        self.player_model = self.enterContext(patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')))
+        self.player_model = self.enterContext(patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')))
         self.record = self._async_boundary("record_match")
 
         def record(*_args: RecordArgument) -> tuple[str, str]:
@@ -155,11 +155,11 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
 
 from copy import deepcopy
 from pymongo.results import DeleteResult, InsertOneResult
-from elobot.extensions import data as data_commands
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
-from elobot.features.results.manual import manual_result_key
-from elobot.db import Player, RecordedMatch
+from elo_bot.extensions import data as data_commands
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elo_bot.features.results.manual import manual_result_key
+from elo_bot.db import Player, RecordedMatch
 from tests._result_retry_store import apply_operations, matches
 from tests._result_retry_store import apply_update
 from tests import _result_retry_store as result_fixture

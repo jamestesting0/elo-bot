@@ -6,12 +6,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.features.base_submission.presentation import build_review_components
-from elobot.features.bases.fingerprints.search import SearchSession
-from elobot.features.bases.fingerprints.types import FingerprintError
-from elobot.config.ids import BASE_SUBMISSION_CHANNEL
-from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
-from elobot.db import PendingBaseSubmission
+from elo_bot.features.base_submission.presentation import build_review_components
+from elo_bot.features.bases.fingerprints.search import SearchSession
+from elo_bot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.config.ids import BASE_SUBMISSION_CHANNEL
+from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elo_bot.db import PendingBaseSubmission
 from tests._base_fingerprint_fixture import fingerprint
 from tests._base_finder_lock_fixture import ContendedLock
 
@@ -280,7 +280,7 @@ class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsynci
                     response=SimpleNamespace(status=403, reason="Forbidden"),
                     response_data={"code": 50013, "message": "Missing Permissions"})
                 with (patch.object(PendingBaseSubmission, "find", return_value=query),
-                      patch_sites(('elobot.extensions.base.extraction.time', 'elobot.extensions.base.search.time')) as clock):
+                      patch_sites(('elo_bot.extensions.base.extraction.time', 'elo_bot.extensions.base.search.time')) as clock):
                     started = 10000 + index * 7200
                     clock.monotonic.return_value = started
                     with self.assertLogs(level="WARNING") as logs:

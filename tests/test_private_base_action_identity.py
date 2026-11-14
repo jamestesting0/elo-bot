@@ -8,14 +8,14 @@ from beanie import Document, PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
 
-import elobot.extensions.preset as preset_commands
-import elobot.features.bases.layouts.private as layouts_private
-import elobot.features.bases.layouts.queries as layouts_queries
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.db import BaseLayout, Player
-import elobot.extensions.base as base_module
-import elobot.extensions.base.manage as base_manage_module
-import elobot.extensions.base.private as base_private_module
+import elo_bot.extensions.preset as preset_commands
+import elo_bot.features.bases.layouts.private as layouts_private
+import elo_bot.features.bases.layouts.queries as layouts_queries
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import BaseLayout, Player
+import elo_bot.extensions.base as base_module
+import elo_bot.extensions.base.manage as base_manage_module
+import elo_bot.extensions.base.private as base_private_module
 from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 
 
@@ -78,7 +78,7 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
         self.cog = base_module.BaseCommands(MagicMock())
 
     async def click_private(self, command: str) -> None:
-        with patch('elobot.extensions.base.private.update_private_base_message', new=AsyncMock()):
+        with patch('elo_bot.extensions.base.private.update_private_base_message', new=AsyncMock()):
             await getattr(self.cog, command).callback.func(self.cog, self.ctx)
 
     def enable_player_write_boundary(self) -> None:
@@ -259,7 +259,7 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
                 })
                 suffix = "|remove" if command == "p_base_preset" else ""
                 self.ctx.custom_id = f"{command}|Any|0|{self.shown.id}{suffix}"
-                with patch('elobot.extensions.base.private.update_private_base_message', new=AsyncMock()):
+                with patch('elo_bot.extensions.base.private.update_private_base_message', new=AsyncMock()):
                     # When: the actual model reaches its Mongo write boundary.
                     await getattr(self.cog, command).callback.func(self.cog, self.ctx)
                 # Then: removal of A cannot clear the replacement B.
@@ -284,7 +284,7 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
 
         self.player_model.find_one.side_effect = fetch_snapshot
         self.ctx.custom_id = f"p_base_preset|Any|0|{self.shown.id}|add"
-        with patch('elobot.extensions.base.private.update_private_base_message', new=AsyncMock()):
+        with patch('elo_bot.extensions.base.private.update_private_base_message', new=AsyncMock()):
             # When: the user explicitly requests Add A.
             await self.cog.p_base_preset.callback.func(self.cog, self.ctx)
         # Then: the callback writes A despite the stale same-base snapshot.
@@ -306,7 +306,7 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
                     self.persisted_player["base_presets"][self.shown.district] = self.shown.to_ref()
                 self.persisted_player["base_presets"]["Skeleton Park"] = self.replacement.to_ref()
                 self.ctx.custom_id = f"p_base_preset|Any|0|{self.shown.id}|remove"
-                with patch('elobot.extensions.base.private.update_private_base_message', new=AsyncMock()):
+                with patch('elo_bot.extensions.base.private.update_private_base_message', new=AsyncMock()):
                     await self.cog.p_base_preset.callback.func(self.cog, self.ctx)
                 self.assertIsNone(self.persisted_player["base_presets"][self.shown.district])
                 self.assertEqual(self.persisted_player["base_presets"]["Skeleton Park"], self.replacement.to_ref())
@@ -328,7 +328,7 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
                 self.collection.delete_one.side_effect = delete_one
                 self.ctx.send.reset_mock()
                 self.ctx.custom_id = f"p_base_delete|Any|0|{self.shown.id}"
-                with patch('elobot.extensions.base.private.update_private_base_message', new=AsyncMock()):
+                with patch('elo_bot.extensions.base.private.update_private_base_message', new=AsyncMock()):
                     # When: the old owner clicks the bound Delete control.
                     await self.cog.p_base_delete.callback.func(self.cog, self.ctx)
                 # Then: the changed base survives and the callback does not report deletion.

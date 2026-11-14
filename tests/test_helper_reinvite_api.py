@@ -1,6 +1,6 @@
 import unittest
 
-from elobot.integrations import helper_api
+from elo_bot.integrations import helper_api
 
 
 class TestHelperKickAndReinviteContract(unittest.TestCase):

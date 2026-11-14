@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-from elobot.extensions.challenge import ChallengeCommands
-from elobot.db import Player
+from elo_bot.extensions.challenge import ChallengeCommands
+from elo_bot.db import Player
 
 
 class TestChallengeStateConsistency(unittest.IsolatedAsyncioTestCase):
@@ -52,7 +52,7 @@ class TestChallengeStateConsistency(unittest.IsolatedAsyncioTestCase):
                 self.persisted = [user_id for user_id in self.persisted if user_id != fields["$pull"]["blocked_users"]]
             return document
 
-        with (patch("elobot.extensions.challenge.Player") as model, patch.object(Player, "update", new=update)):
+        with (patch("elo_bot.extensions.challenge.Player") as model, patch.object(Player, "update", new=update)):
             model.find_one = AsyncMock(
                 side_effect=lambda *_args: self.player.model_copy(deep=True) if self.registered else None,
             )

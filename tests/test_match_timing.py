@@ -1,7 +1,7 @@
 import unittest
 
-from elobot.features.matches.timing import hosting_started
-from elobot.db import Match
+from elo_bot.features.matches.timing import hosting_started
+from elo_bot.db import Match
 
 
 class TestMatchTiming(unittest.TestCase):

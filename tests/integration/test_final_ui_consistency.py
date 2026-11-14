@@ -5,23 +5,23 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.extensions.final import FinalCommands
-from elobot.extensions.match import MatchCommands
-from elobot.extensions.tokens import TokenCommands
-from elobot.config.ids import FINAL_CHANNEL, LVL1_ROLES, LVL2_ROLES
-from elobot.config.game import DISTRICT_CODES
-from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
-from elobot.features.finals.profile_ui import profile_view
-from elobot.features.finals.pairing_ui import pairing_view
-from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.features.finals.leaderboards import FinalBoardRow, final_board_text
-from elobot.features.tokens.bets import BetAction, apply_bet, open_market, void_market
-from elobot.features.tokens.presentation import bet_review, market_controls, market_embed, publish_market
-from elobot.db import EloFinal, Match, Player
-from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile
-from elobot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elo_bot.extensions.final import FinalCommands
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.extensions.tokens import TokenCommands
+from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES, LVL2_ROLES
+from elo_bot.config.game import DISTRICT_CODES
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elo_bot.features.finals.profile_ui import profile_view
+from elo_bot.features.finals.pairing_ui import pairing_view
+from elo_bot.features.finals.results import FinalResultSubmission, submit_result
+from elo_bot.features.finals.leaderboards import FinalBoardRow, final_board_text
+from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market, void_market
+from elo_bot.features.tokens.presentation import bet_review, market_controls, market_embed, publish_market
+from elo_bot.db import EloFinal, Match, Player
+from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile
+from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 class TestFinalUIConsistency(FinalScenarioCase):

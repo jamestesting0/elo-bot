@@ -6,12 +6,12 @@ import anyio
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from elobot.extensions import data as data_commands
-from elobot.features.hosting.war import result_store
-from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.features.results.operations import ResultOperationConflict, begin_result_operation
-from elobot.db import Match
+from elo_bot.extensions import data as data_commands
+from elo_bot.features.hosting.war import result_store
+from elo_bot.features.hosting.war.helper_store import HelperScoreStoreOutcome
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.results.operations import ResultOperationConflict, begin_result_operation
+from elo_bot.db import Match
 from tests import _result_retry_store as retry_fixture
 
 

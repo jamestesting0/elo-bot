@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from elobot.config.ids import MATCH_CHANNEL
+from elo_bot.config.ids import MATCH_CHANNEL
 from tests import _result_retry_store as retry_fixture
 from tests._patch_sites import patch_sites
 
@@ -16,7 +16,7 @@ class TestResubmitEmbedPublication(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.runtime = retry_fixture.ResultRetryState(self)
         self.runtime.setUp()
-        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip'), new=AsyncMock(return_value="tip")))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip'), new=AsyncMock(return_value="tip")))
         self.summary = MagicMock(id=901, edit=AsyncMock())
         self.public = MagicMock(id=902, edit=AsyncMock())
         self.channel = MagicMock(send=AsyncMock(return_value=self.public),

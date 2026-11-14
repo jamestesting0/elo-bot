@@ -5,16 +5,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie import PydanticObjectId
 
-from elobot.features.finals.publication import publish_bracket
-from elobot.features.finals.bracket import automatic_pairs, build_bracket
-from elobot.features.finals.recovery import publish_result
-from elobot.features.finals.rendering import render_bracket
-from elobot.extensions.final import FinalCommands
-from elobot.core.finals import FinalError
-from elobot.db import EloFinal, EloFinalMatch
-from elobot.db.final_models import FinalMatchResult, FinalPrediction, FinalResultSnapshot
-from elobot.db.season_models import FinalResultProgress
-from elobot.db import Match
+from elo_bot.features.finals.publication import publish_bracket
+from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
+from elo_bot.features.finals.recovery import publish_result
+from elo_bot.features.finals.rendering import render_bracket
+from elo_bot.extensions.final import FinalCommands
+from elo_bot.core.finals import FinalError
+from elo_bot.db import EloFinal, EloFinalMatch
+from elo_bot.db.final_models import FinalMatchResult, FinalPrediction, FinalResultSnapshot
+from elo_bot.db.season_models import FinalResultProgress
+from elo_bot.db import Match
 from tests._patch_sites import patch_sites
 
 
@@ -44,8 +44,8 @@ class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):
 
         cog._edition = AsyncMock(side_effect=lookup)
         ctx = MagicMock(defer=AsyncMock(side_effect=defer), send=AsyncMock(side_effect=send))
-        with patch_sites(('elobot.features.finals.publication.bracket_embed', 'elobot.extensions.final.bracket_embed'), return_value=embed), \
-                patch('elobot.extensions.final.render_bracket', side_effect=render):
+        with patch_sites(('elo_bot.features.finals.publication.bracket_embed', 'elo_bot.extensions.final.bracket_embed'), return_value=embed), \
+                patch('elo_bot.extensions.final.render_bracket', side_effect=render):
             await cog.final_bracket_view.callback.func(cog, ctx, 13)
         self.assertEqual(events, ["acknowledged", "loaded", "rendered", "sent"])
         ctx.defer.assert_awaited_once_with()
@@ -60,7 +60,7 @@ class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):
         ctx.guild.fetch_member = AsyncMock(
             side_effect=lambda user: SimpleNamespace(id=1, display_name="Player A") if user == "1" else None,
         )
-        with patch('elobot.extensions.final.render_bracket', side_effect=FinalError("Image unavailable.")):
+        with patch('elo_bot.extensions.final.render_bracket', side_effect=FinalError("Image unavailable.")):
             await cog.final_bracket_view.callback.func(cog, ctx, 13)
         ctx.defer.assert_awaited_once_with()
         ctx.send.assert_awaited_once()
@@ -137,7 +137,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
                 query = MagicMock(to_list=AsyncMock(return_value=[]))
                 with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
                         patch.object(FinalMatchResult, "find", return_value=query), \
-                        patch('elobot.extensions.final.render_bracket', return_value=b"image"):
+                        patch('elo_bot.extensions.final.render_bracket', return_value=b"image"):
                     await cog.final_prediction_view.callback.func(cog, ctx, 13)
                 payload = ctx.send.await_args.kwargs
                 description = payload["file"].description
@@ -163,7 +163,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
         ctx.guild.fetch_member = AsyncMock(return_value=None)
         with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
-                patch('elobot.extensions.final.render_bracket', side_effect=FinalError("Image unavailable.")):
+                patch('elo_bot.extensions.final.render_bracket', side_effect=FinalError("Image unavailable.")):
             await cog.final_prediction_view.callback.func(cog, ctx, 13)
         payload = ctx.send.await_args.kwargs
         self.assertTrue(payload["ephemeral"])
@@ -331,9 +331,9 @@ class TestFinalPublicationNames(unittest.IsolatedAsyncioTestCase):
                 )
                 bot = MagicMock(fetch_channel=AsyncMock(return_value=channel))
                 collection = MagicMock(update_one=AsyncMock(return_value=SimpleNamespace(matched_count=1)))
-                with patch("elobot.features.finals.publication.resolve_final", new=AsyncMock(return_value=final)), \
+                with patch("elo_bot.features.finals.publication.resolve_final", new=AsyncMock(return_value=final)), \
                         patch.object(EloFinal, "get_pymongo_collection", return_value=collection), \
-                        patch("elobot.features.finals.publication.render_bracket", return_value=b"bracket-image"):
+                        patch("elo_bot.features.finals.publication.render_bracket", return_value=b"bracket-image"):
                     await publish_bracket(bot, final)
                 publication = message.edit if message_id else channel.send
                 self.assertEqual(publication.await_args.kwargs["embed"].description,
@@ -361,7 +361,7 @@ class TestFinalPublicationNames(unittest.IsolatedAsyncioTestCase):
                         ipy.errors.NotFound(MagicMock(status=404, reason="Not Found")), channel,
                     ]
                 collection = MagicMock(update_one=AsyncMock())
-                with patch("elobot.features.finals.recovery.resolve_final", new=AsyncMock(return_value=final)), \
+                with patch("elo_bot.features.finals.recovery.resolve_final", new=AsyncMock(return_value=final)), \
                         patch.object(EloFinal, "get_pymongo_collection", return_value=collection):
                     await publish_result(bot, final, result)
                 publication = message.edit if message_id else channel.send

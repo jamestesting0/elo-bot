@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-import elobot.extensions.base as base_commands
-from elobot.discord.contexts import ComponentsV2ModalContext
+import elo_bot.extensions.base as base_commands
+from elo_bot.discord.contexts import ComponentsV2ModalContext
 from tests._base_submission_fixtures import configure_pending_resolution
 from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 

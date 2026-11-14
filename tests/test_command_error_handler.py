@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.app import errors
-from elobot.config.emojis import ERROR_EMOJI
+from elo_bot.app import errors
+from elo_bot.config.emojis import ERROR_EMOJI
 
 
 class TestCommandErrorHandler(unittest.IsolatedAsyncioTestCase):

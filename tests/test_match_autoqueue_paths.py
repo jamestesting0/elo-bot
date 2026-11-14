@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from elobot.extensions.match import MatchCommands
-from elobot.db import Match
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.db import Match
 
 
 class TestAutoqueueTerminalPaths(unittest.IsolatedAsyncioTestCase):

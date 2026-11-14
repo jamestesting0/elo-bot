@@ -5,10 +5,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions import self_service as self_commands
-from elobot.extensions.self_service import SelfCommands
-from elobot.config.ids import BOT_ID
-from elobot.config.emojis import ERROR_EMOJI
+from elo_bot.extensions import self_service as self_commands
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.config.ids import BOT_ID
+from elo_bot.config.emojis import ERROR_EMOJI
 
 
 CALLER_ID = "123456789012345678"
@@ -54,8 +54,8 @@ class TestSelfStoreBase(unittest.IsolatedAsyncioTestCase):
             available: bool = True,
     ) -> MagicMock:
         with (
-            patch("elobot.extensions.self_service.is_self_store_available", return_value=available, create=True),
-            patch("elobot.extensions.self_service.Match") as match_model,
+            patch("elo_bot.extensions.self_service.is_self_store_available", return_value=available, create=True),
+            patch("elo_bot.extensions.self_service.Match") as match_model,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             await self.cog.self_store_base.callback.func(self.cog, ctx)

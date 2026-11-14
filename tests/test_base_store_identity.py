@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from elobot.db import BaseStore, Match, Participant
+from elo_bot.db import BaseStore, Match, Participant
 
 
 class TestBaseStoreIdentity(unittest.IsolatedAsyncioTestCase):

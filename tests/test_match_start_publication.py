@@ -5,20 +5,20 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from elobot.features.hosting.live import live_start
-from elobot.features.base_store import storage as base_store_storage
-from elobot.features.hosting.war import war_start
-from elobot.features.matches.messages import MatchMessagePublicationError, mark_match_message_ended
-from elobot.discord.embeds import embed_edit_payload
+from elo_bot.features.hosting.live import live_start
+from elo_bot.features.base_store import storage as base_store_storage
+from elo_bot.features.hosting.war import war_start
+from elo_bot.features.matches.messages import MatchMessagePublicationError, mark_match_message_ended
+from elo_bot.discord.embeds import embed_edit_payload
 from interactions.models.discord.message import process_message_payload
-from elobot.db import Match
+from elo_bot.db import Match
 
 
 from tests._match_publication_fixture import MatchPublicationStateMixin
 from tests._patch_sites import patch_sites
-import elobot.extensions.match as match_module
-import elobot.features.base_store.match_adapters as match_adapters_module
-import elobot.extensions.match.bases as match_bases_module
+import elo_bot.extensions.match as match_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.bases as match_bases_module
 
 class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_war_binding_failure_never_publishes_started_controls(self) -> None:
@@ -127,7 +127,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         public = MagicMock(id=80, _channel_id=90, components=[], embeds=[ipy.Embed(fields=[ipy.EmbedField("Players", "100 vs 200"),
                                                   ipy.EmbedField("Time", "1000")])], edit=AsyncMock())
         self.bot.fetch_channel = AsyncMock(return_value=MagicMock(id=90, fetch_message=AsyncMock(return_value=public)))
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))), \
+        with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             # When: the live completion publishes its bound thread message.
             message = await live_start.complete_live_start(self.bot, self.ctx, request)
@@ -160,8 +160,8 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             return await self.update_message_binding(query, update)
 
         with (
-            patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
-            patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
+            patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
             patch.object(self.collection, "update_one", new=AsyncMock(side_effect=bind_public)),
             patch.object(live_start, "schedule_channel_name_edit"),
         ):
@@ -183,9 +183,9 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             return await self.update_message_binding(query, update)
 
         with (
-            patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
+            patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.match))),
             patch.object(live_start, "schedule_channel_name_edit"),
-            patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
+            patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Tip")),
             patch.object(self.collection, "update_one", new=AsyncMock(side_effect=fail_public_binding)),
         ):
             with self.assertRaises(PyMongoError):
@@ -250,7 +250,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.bot.http.delete_message.assert_not_awaited()
 
     async def test_finishing_side_clears_stale_publication_description(self) -> None:
-        self.enterContext(patch("elobot.discord.message_edits._now", side_effect=range(100)))
+        self.enterContext(patch("elo_bot.discord.message_edits._now", side_effect=range(100)))
         # Given: a real Discord message still contains the old placeholder.
         for title in ("**Match Started**", "**Match Ended**"):
             for description in ("Updating…", "Updating...", "Loading…", "Loading..."):
@@ -265,9 +265,9 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
                     # When: completed results update the initiation message.
                     with (
                         patch.object(Match, "find_one", new=AsyncMock(return_value=self.match)),
-                        patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                        patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task', 'elobot.extensions.final.remove_helper_task'), new_callable=AsyncMock),
-                        patch_sites(('elobot.extensions.match.results.autoqueue_completed_match_participants', 'elobot.extensions.match.result_store.autoqueue_completed_match_participants'), new_callable=AsyncMock),
+                        patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock),
+                        patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock),
+                        patch_sites(('elo_bot.extensions.match.results.autoqueue_completed_match_participants', 'elo_bot.extensions.match.result_store.autoqueue_completed_match_participants'), new_callable=AsyncMock),
                     ):
                         await match_module.MatchCommands._finish_stored_result_side(cog, self.match, 0)
                     # Then: both newly ended and already-ended messages lose the placeholder.
@@ -304,7 +304,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             await war_start.complete_war_start(self.bot, self.ctx, self.war_request())
         message = self.bot.cache.place_message_data(deepcopy(self.message_data))
         self.bot.http.edit_message.side_effect = self.edit_message
-        from elobot.features.matches.publication_state import restore_match_publication
+        from elo_bot.features.matches.publication_state import restore_match_publication
         # When: recovery replays the still-current publication.
         restored = await restore_match_publication(message, self.match, 0)
         # Then: exact final instructions and controls survive the failed initial edit.
@@ -318,7 +318,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         message = await war_start.complete_war_start(self.bot, self.ctx, self.war_request())
         self.persisted["times.0"] = 2000
         self.bot.http.edit_message.reset_mock()
-        from elobot.features.matches.publication_state import restore_match_publication
+        from elo_bot.features.matches.publication_state import restore_match_publication
         # When: recovery attempts the stale model's final payload.
         restored = await restore_match_publication(message, self.match, 0)
         # Then: stale controls are never republished.
@@ -358,14 +358,14 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
 
     async def test_replay_rejects_other_live_side_change(self) -> None:
         # Given: a live payload was bound with both participants' original run details.
-        from elobot.features.matches.messages import MatchMessageState, publish_match_message
+        from elo_bot.features.matches.messages import MatchMessageState, publish_match_message
         self.live_request()
         message = await publish_match_message(
             self.ctx, self.match, MatchMessageState.capture(self.match, 0), embed=ipy.Embed(title="**Match Started**"),
         )
         self.match.times[1] = 2000
         self.bot.http.edit_message.reset_mock()
-        from elobot.features.matches.publication_state import restore_match_publication
+        from elo_bot.features.matches.publication_state import restore_match_publication
         # When: recovery considers the old live payload.
         restored = await restore_match_publication(message, self.match, 0)
         # Then: a changed opponent run also disqualifies that payload.

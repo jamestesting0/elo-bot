@@ -9,13 +9,13 @@ from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 from pymongo.results import UpdateResult
-from elobot.features.hosting.live import live_start
-from elobot.features.base_store import storage as base_store_storage
-from elobot.features.hosting.war import war_start
-from elobot.db import Match, Participant
-from elobot.features.base_store import publication
-from elobot.features.base_store.models import BaseStorePresentationRequest
-from elobot.db import BaseStore
+from elo_bot.features.hosting.live import live_start
+from elo_bot.features.base_store import storage as base_store_storage
+from elo_bot.features.hosting.war import war_start
+from elo_bot.db import Match, Participant
+from elo_bot.features.base_store import publication
+from elo_bot.features.base_store.models import BaseStorePresentationRequest
+from elo_bot.db import BaseStore
 from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 

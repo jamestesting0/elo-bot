@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 from beanie import PydanticObjectId
 from pymongo.errors import PyMongoError
 
-from elobot.features.seasons.stats import SeasonStatsError, SeasonWindow
-from elobot.features.seasons.stats_data import load_season_stats
+from elo_bot.features.seasons.stats import SeasonStatsError, SeasonWindow
+from elo_bot.features.seasons.stats_data import load_season_stats
 
 PARENT = PydanticObjectId("000000000000000000000001")
 
@@ -39,9 +39,9 @@ class TestSeasonStatsLoader(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.records = MagicMock()
         self.matches = MagicMock()
-        self.patch_records = patch("elobot.features.seasons.stats_data.RecordedMatch.get_pymongo_collection",
+        self.patch_records = patch("elo_bot.features.seasons.stats_data.RecordedMatch.get_pymongo_collection",
                                    return_value=self.records)
-        self.patch_matches = patch("elobot.features.seasons.stats_data.Match.get_pymongo_collection",
+        self.patch_matches = patch("elo_bot.features.seasons.stats_data.Match.get_pymongo_collection",
                                    return_value=self.matches)
         self.patch_records.start()
         self.patch_matches.start()

@@ -9,11 +9,11 @@ from bson import DBRef
 from pymongo.errors import OperationFailure
 from pymongo.results import DeleteResult, UpdateResult
 
-from elobot.extensions import data as data_commands
+from elo_bot.extensions import data as data_commands
 from tests import _data_reset_fixture as reset_fixture
-from elobot.config.game import BASE_STORE_SLOTS
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.db import Match, MatchPlayerStats, Player, RecordedMatch
+from elo_bot.config.game import BASE_STORE_SLOTS
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.db import Match, MatchPlayerStats, Player, RecordedMatch
 
 
 def context() -> MagicMock:

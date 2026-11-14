@@ -1,58 +1,58 @@
 # Architecture
 
-EloBot is one Python package, `elobot`, started by two identical launchers (`main.py`, `beta.py`). The launcher's
+EloBot is one Python package, `elo_bot`, started by two identical launchers (`main.py`, `beta.py`). The launcher's
 file name picks the deployment (`main` -> `elo_bot`, `beta` -> `elo_beta`).
 
 ## Layers
 
 ```text
-elobot.app          startup sequence, client, extension registry, root callbacks, error listeners, backups
+elo_bot.app          startup sequence, client, extension registry, root callbacks, error listeners, backups
    |
-elobot.extensions   one interactions.py Extension per slash command (decorators, checks, thin handlers)
+elo_bot.extensions   one interactions.py Extension per slash command (decorators, checks, thin handlers)
    |
-elobot.features     domain logic per feature: queue, matches, results, base_store, hosting, bases, finals, ...
+elo_bot.features     domain logic per feature: queue, matches, results, base_store, hosting, bases, finals, ...
    |
-elobot.db | elobot.discord | elobot.integrations
+elo_bot.db | elo_bot.discord | elo_bot.integrations
    |        Beanie models   Discord helpers   Helper API, HTTP, files
-elobot.core         pure logic: Elo, parsing, raid weekend, links, finals vocabulary, match results
+elo_bot.core         pure logic: Elo, parsing, raid weekend, links, finals vocabulary, match results
    |
-elobot.config       env settings, Discord IDs, emojis, game tables, presentation constants
+elo_bot.config       env settings, Discord IDs, emojis, game tables, presentation constants
 ```
 
 A layer imports only layers below it. `db`, `discord` and `integrations` are peers and do not import each other.
 Extensions never import each other. Both rules are import-linter contracts in `pyproject.toml`, checked in CI
 (`lint-imports`). Imports that exist only for type checking are exempt; module-level imports are the rule
-(ruff `PLC0415`), except the deferred ML loaders in `elobot/features/bases/fingerprints` and `scripts/`.
+(ruff `PLC0415`), except the deferred ML loaders in `elo_bot/features/bases/fingerprints` and `scripts/`.
 
 ## Startup
 
-`main.py` -> `elobot.app.bootstrap.run(__file__)`: derive `VERSION` and build the client
-(`elobot.app.client.create_client`, which publishes `elobot.discord.runtime.bot`), then in `main()`: log in to the
+`main.py` -> `elo_bot.app.bootstrap.run(__file__)`: derive `VERSION` and build the client
+(`elo_bot.app.client.create_client`, which publishes `elo_bot.discord.runtime.bot`), then in `main()`: log in to the
 CoC API, connect MongoDB, `init_beanie` and create the indexes, start the backup tasks (main only), set the shared
 bot fields (`coc_client`, `file_locks`, `coc_client_lock`, `match_id_choices`, `builder_names`,
-`base_fingerprints`), load `EXTENSIONS` in order, register the root callbacks (`elobot.app.root_callbacks`) and
+`base_fingerprints`), load `EXTENSIONS` in order, register the root callbacks (`elo_bot.app.root_callbacks`) and
 start the client. The order is part of the behavior; change it only deliberately.
 
 ## Where new code goes
 
 | You are adding | Put it in |
 |---|---|
-| A slash command, subcommand, button, modal or Task | the matching module in `elobot/extensions` (a mixin for `/match` and `/base`) |
-| A new top-level slash command | a new module in `elobot/extensions` plus an entry in `elobot/app/extensions.py:EXTENSIONS` |
-| Logic a handler needs that touches the database, Discord or Helper | the feature package in `elobot/features` |
+| A slash command, subcommand, button, modal or Task | the matching module in `elo_bot/extensions` (a mixin for `/match` and `/base`) |
+| A new top-level slash command | a new module in `elo_bot/extensions` plus an entry in `elo_bot/app/extensions.py:EXTENSIONS` |
+| Logic a handler needs that touches the database, Discord or Helper | the feature package in `elo_bot/features` |
 | Embed/component builders and custom IDs | the feature's `presentation.py`/`ui.py` (or the extension, if only it uses them) |
-| Named thresholds and tuning values | the feature's `policy.py`, or `elobot/config/game.py` for game-wide tables |
-| A Beanie document or embedded model | `elobot/db`, registered with its indexes in `elobot/app/bootstrap.py` |
-| A pure calculation with no I/O | `elobot/core` |
-| A Discord-wide helper (checks, pagination, edits) | `elobot/discord` |
-| A deployment ID, emoji or env setting | `elobot/config` |
+| Named thresholds and tuning values | the feature's `policy.py`, or `elo_bot/config/game.py` for game-wide tables |
+| A Beanie document or embedded model | `elo_bot/db`, registered with its indexes in `elo_bot/app/bootstrap.py` |
+| A pure calculation with no I/O | `elo_bot/core` |
+| A Discord-wide helper (checks, pagination, edits) | `elo_bot/discord` |
+| A deployment ID, emoji or env setting | `elo_bot/config` |
 
 A feature never imports an extension: if two extensions need the same code, it belongs in a feature.
 
 ## Extensions as mixin packages
 
-`MatchCommands` and `BaseCommands` are composed from mixins (`elobot/extensions/match/*.py`,
-`elobot/extensions/base/*.py`). interactions.py registers the callbacks it finds on the class with
+`MatchCommands` and `BaseCommands` are composed from mixins (`elo_bot/extensions/match/*.py`,
+`elo_bot/extensions/base/*.py`). interactions.py registers the callbacks it finds on the class with
 `inspect.getmembers`, sorted by attribute name, so the split does not change registration. The slash command and
 its groups are defined in the package's `groups.py` and bound as class attributes on the composed class and on each
 mixin that decorates with them.

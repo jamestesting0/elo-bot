@@ -2,15 +2,15 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from elobot.features.base_store.models import BaseStorePresentationRequest
-from elobot.features.base_store.presentation import (
+from elo_bot.features.base_store.models import BaseStorePresentationRequest
+from elo_bot.features.base_store.presentation import (
     build_helper_store_components,
     build_manual_store_components,
     build_store_embed,
     construct_occupied_slots_error,
     format_opponent_bases,
 )
-from elobot.db import BaseLink, Participant
+from elo_bot.db import BaseLink, Participant
 
 
 class TestBaseStorePresentation(unittest.TestCase):

@@ -6,7 +6,7 @@ import interactions as ipy
 from pymongo.errors import OperationFailure
 
 from tests._patch_sites import patch_sites
-import elobot.extensions.base as base_module
+import elo_bot.extensions.base as base_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -22,9 +22,9 @@ class TestBaseSubmissionDuplicates(unittest.IsolatedAsyncioTestCase):
                 bot.fetch_channel = AsyncMock()
                 cog = base_module.BaseCommands(bot)
                 ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
-                with patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as bases, \
-                        patch_sites(('elobot.extensions.base.submissions.download_base_screenshot', 'elobot.extensions.base.manage.download_base_screenshot', 'elobot.extensions.base.private.download_base_screenshot'), new=AsyncMock()) as download, \
-                        patch_sites(('elobot.extensions.base.search.PendingBaseSubmission', 'elobot.extensions.base.submissions.PendingBaseSubmission')) as pending:
+                with patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout')) as bases, \
+                        patch_sites(('elo_bot.extensions.base.submissions.download_base_screenshot', 'elo_bot.extensions.base.manage.download_base_screenshot', 'elo_bot.extensions.base.private.download_base_screenshot'), new=AsyncMock()) as download, \
+                        patch_sites(('elo_bot.extensions.base.search.PendingBaseSubmission', 'elo_bot.extensions.base.submissions.PendingBaseSubmission')) as pending:
                     bases.find_one = AsyncMock(return_value=SimpleNamespace(quality=quality))
                     # When the user submits the same link.
                     await cog.base_submit.callback.func(
@@ -42,8 +42,8 @@ class TestBaseSubmissionDuplicates(unittest.IsolatedAsyncioTestCase):
         bot.ext = {}
         cog = base_module.BaseCommands(bot)
         ctx = MagicMock(defer=AsyncMock(), send=AsyncMock())
-        with patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')) as bases, \
-                patch_sites(('elobot.extensions.base.submissions.download_base_screenshot', 'elobot.extensions.base.manage.download_base_screenshot', 'elobot.extensions.base.private.download_base_screenshot'), new=AsyncMock()) as download:
+        with patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout')) as bases, \
+                patch_sites(('elo_bot.extensions.base.submissions.download_base_screenshot', 'elo_bot.extensions.base.manage.download_base_screenshot', 'elo_bot.extensions.base.private.download_base_screenshot'), new=AsyncMock()) as download:
             bases.find_one = AsyncMock(side_effect=OperationFailure("lookup failed"))
             await cog.base_submit.callback.func(
                 cog, ctx, BASE_LINK, SimpleNamespace(url="https://cdn.example/base.webp"), "Good",

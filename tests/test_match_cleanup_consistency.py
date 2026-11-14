@@ -4,16 +4,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-from elobot.features.base_store import storage
-from elobot.features.hosting.war import war_start
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.features.matches.cleanup import delete_unreserved_match
-from elobot.db import BaseStore
+from elo_bot.features.base_store import storage
+from elo_bot.features.hosting.war import war_start
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.matches.cleanup import delete_unreserved_match
+from elo_bot.db import BaseStore
 
 
 from tests._match_cleanup_fixture import MatchCleanupStateMixin
 from tests._patch_sites import patch_sites
-import elobot.extensions.match.lifecycle as match_lifecycle_module
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_manual_thread_delete_retains_match_when_discord_delete_fails(self) -> None:
@@ -149,7 +149,7 @@ class TestMatchCleanupConsistency(MatchCleanupStateMixin, unittest.IsolatedAsync
         store = self.match.participants[0].base_store
         self.collection.update_one.side_effect = [UpdateResult({"n": 1}, True)]
         message = MagicMock(id=77, delete=AsyncMock(), edit=AsyncMock(), embeds=[])
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free, \
                 patch.object(war_start, "schedule_channel_name_edit") as rename:
             # When: abort commits but cannot update the retained reservation's controls.
             with self.assertRaises(war_start.BaseStoreMessageConflict):

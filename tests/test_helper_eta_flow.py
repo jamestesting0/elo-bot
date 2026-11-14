@@ -8,10 +8,10 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from elobot.features.hosting.war.confirmation import confirm_helper_queue
-from elobot.integrations.helper_api import HelperEtaReader, HelperJobCanceller, HelperTrackingFailure
-from elobot.features.hosting.war.helper_host import AutomaticWarHost, host_war_automatically
-from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI
+from elo_bot.features.hosting.war.confirmation import confirm_helper_queue
+from elo_bot.integrations.helper_api import HelperEtaReader, HelperJobCanceller, HelperTrackingFailure
+from elo_bot.features.hosting.war.helper_host import AutomaticWarHost, host_war_automatically
+from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI
 from tests._patch_sites import patch_sites
 
 
@@ -152,16 +152,16 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
             clan=MagicMock(tag="#2RY0QP8GY"),
             host=MagicMock(id=300),
         )
-        with patch("elobot.features.hosting.war.helper_host.Player") as player_model, \
-                patch("elobot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
-                patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
+        with patch("elo_bot.features.hosting.war.helper_host.Player") as player_model, \
+                patch("elo_bot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
+                patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new=AsyncMock(return_value=match)), \
                 patch(
-                    "elobot.features.hosting.war.helper_host_job.time",
+                    "elo_bot.features.hosting.war.helper_host_job.time",
                     new=MagicMock(time=MagicMock(return_value=1000.0)),
                 ), \
-                patch("elobot.features.hosting.war.war_start.start_war", new=self.start_war), \
-                patch("elobot.features.hosting.war.war_start.abort_war_start", new=self.abort_war_start), \
-                patch("elobot.features.hosting.war.helper_host_job.HelperJobPoller.wait", new=self.poll):
+                patch("elo_bot.features.hosting.war.war_start.start_war", new=self.start_war), \
+                patch("elo_bot.features.hosting.war.war_start.abort_war_start", new=self.abort_war_start), \
+                patch("elo_bot.features.hosting.war.helper_host_job.HelperJobPoller.wait", new=self.poll):
             player_model.find_one = AsyncMock(return_value=MagicMock(tag="#CALLER"))
             self.poll.return_value = outcome
             if not self.start_war.side_effect:
@@ -203,7 +203,7 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
         self.start_war.side_effect = lambda *_args: self.events.append("start") or None
 
         with patch_sites(
-                ('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.extensions.match.settings.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'),
+                ('elo_bot.extensions.match.hosting.available_resource_clans_text', 'elo_bot.extensions.match.settings.available_resource_clans_text', 'elo_bot.features.matches.resources.available_resource_clans_text'),
                 new=AsyncMock(return_value="Available clans:\n- None"),
         ) as available_clans:
             # When automatic hosting tries to commit the local start.

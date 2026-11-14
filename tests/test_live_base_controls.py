@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from elobot.features.base_store import storage
-from elobot.features.base_store import live_controls
-from elobot.features.hosting.live.request import parse_live_request_id
-from elobot.extensions.self_service import SelfCommands
+from elo_bot.features.base_store import storage
+from elo_bot.features.base_store import live_controls
+from elo_bot.features.hosting.live.request import parse_live_request_id
+from elo_bot.extensions.self_service import SelfCommands
 from tests._live_base_fixture import CLAN, PAIR, LiveBaseFixture
 
 
@@ -79,7 +79,7 @@ class TestLiveBaseControls(unittest.IsolatedAsyncioTestCase):
         self.f.ctx.author.id = 222
         self.f.ctx.author.mention = "<@222>"
         expiry = parse_live_request_id(self.f.ctx.custom_id).identity.expires_at
-        with patch("elobot.features.hosting.live.request.time.time", return_value=expiry + 1):
+        with patch("elo_bot.features.hosting.live.request.time.time", return_value=expiry + 1):
             await self.cog.self_host_live_accept.callback.func(self.cog, self.f.ctx)
         self.f.runtime._start_live.assert_not_awaited()
         self.assertTrue(all(p["base_store"] for p in self.f.document["participants"]))

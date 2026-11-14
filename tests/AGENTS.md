@@ -27,13 +27,13 @@
 | `test_thread_commands.py` | Thread deletion and match/base-store cleanup |
 | `test_embed_commands.py` | Clan availability embed rendering |
 | `test_autocomplete_error_handler.py` | Interaction availability and fallback HTTP errors |
-| `elobot/extensions/` | Several extensions remain untested; add focused coverage when changing them |
+| `elo_bot/extensions/` | Several extensions remain untested; add focused coverage when changing them |
 
 ## Test conventions
 
 - Build bot, context, user, query, and model doubles with `MagicMock`.
 - Use `AsyncMock` for awaited methods; assert with `assert_awaited_*` where relevant.
-- Patch symbols at their import site: `elobot.<package>.<module>.<symbol>`. When several modules look the name up
+- Patch symbols at their import site: `elo_bot.<package>.<module>.<symbol>`. When several modules look the name up
   (the mixins of `/match` or `/base`), use `_patch_sites.patch_sites` or `patch_family(MATCH_MODULE_FAMILY |
   BASE_MODULE_FAMILY, ...)` so every site shares one mock.
 - Test modules are flat in `tests/`: discovery imports them as top-level modules, so a feature subfolder name could

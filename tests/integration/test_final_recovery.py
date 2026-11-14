@@ -1,13 +1,13 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.features.finals.lifecycle import confirm_bracket, end_final, request_cancellation, resolve_final, reset_bracket, start_final
-from elobot.features.finals.matches import prepare_match
-from elobot.features.finals.recovery import recover_final
-from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.core.finals import FinalError, ROUND_NODES
-from elobot.features.tokens.bets import BetAction, apply_bet, open_market
-from elobot.db import EloFinal, Match, Player, RecordedMatch, Season
-from elobot.db.final_models import FinalMatchResult, FinalPlayerProfile
-from elobot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elo_bot.features.finals.lifecycle import confirm_bracket, end_final, request_cancellation, resolve_final, reset_bracket, start_final
+from elo_bot.features.finals.matches import prepare_match
+from elo_bot.features.finals.recovery import recover_final
+from elo_bot.features.finals.results import FinalResultSubmission, submit_result
+from elo_bot.core.finals import FinalError, ROUND_NODES
+from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market
+from elo_bot.db import EloFinal, Match, Player, RecordedMatch, Season
+from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile
+from elo_bot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 class TestFinalRecovery(FinalScenarioCase):

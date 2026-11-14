@@ -1,5 +1,5 @@
-from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
-from elobot.db import BaseLink, Match, Participant
+from elo_bot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
+from elo_bot.db import BaseLink, Match, Participant
 
 from copy import deepcopy
 from unittest import IsolatedAsyncioTestCase
@@ -11,13 +11,13 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import UpdateResult
 
-from elobot.features.base_store import self_service
-from elobot.features.base_store import raid_task
-from elobot.features.base_store import preparation
-from elobot.features.base_store.channel_context import ScheduledBaseStoreContext
-from elobot.features.base_store.models import SelfBaseStoreRequest
-from elobot.extensions.match import MatchCommands
-from elobot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
+from elo_bot.features.base_store import self_service
+from elo_bot.features.base_store import raid_task
+from elo_bot.features.base_store import preparation
+from elo_bot.features.base_store.channel_context import ScheduledBaseStoreContext
+from elo_bot.features.base_store.models import SelfBaseStoreRequest
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
 from tests._stored_start_fixture import terminal_job
 
 

@@ -4,19 +4,19 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
-from elobot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
-from elobot.extensions.match import MatchCommands
-from elobot.features.finals.hosting import accept_final_start
-from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
-from elobot.features.finals.recovery import mark_deleted_attempt, recover_final
-from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.core.finals import FinalError
-from elobot.features.matches.messages import MatchMessageState
-from elobot.db import Clan, EloFinal, Match
-from elobot.db.final_models import FinalMatchResult
-from elobot.db.token_models import FinalBettingMarket
-from elobot.features.tokens.bets import open_market
+from elo_bot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elo_bot.features.finals.recovery import mark_deleted_attempt, recover_final
+from elo_bot.features.finals.results import FinalResultSubmission, submit_result
+from elo_bot.core.finals import FinalError
+from elo_bot.features.matches.messages import MatchMessageState
+from elo_bot.db import Clan, EloFinal, Match
+from elo_bot.db.final_models import FinalMatchResult
+from elo_bot.db.token_models import FinalBettingMarket
+from elo_bot.features.tokens.bets import open_market
 from tests.integration._final_fixture import FinalScenarioCase
 from tests._patch_sites import patch_sites
 
@@ -106,9 +106,9 @@ class TestFinalTiming(FinalScenarioCase):
     async def test_each_war_side_keeps_its_accepted_start_without_reclosing_market(self):
         source = await self.scheduled_pairing(self.final, "QF1")
         market = await open_market(await resolve_final(), "QF1")
-        with patch("elobot.features.finals.hosting.time.time", return_value=1800000000):
+        with patch("elo_bot.features.finals.hosting.time.time", return_value=1800000000):
             await accept_final_start(source, "host", player=1)
-        with patch("elobot.features.finals.hosting.time.time", return_value=1800000300):
+        with patch("elo_bot.features.finals.hosting.time.time", return_value=1800000300):
             await accept_final_start(source, "host", player=0)
             await accept_final_start(source, "host", player=1)
         saved = await Match.get(source.id)
@@ -186,7 +186,7 @@ class TestFinalTiming(FinalScenarioCase):
 
     async def test_correction_retains_official_timing_after_mutation_and_source_deletion(self):
         source = await schedule_final_match(self.source, 1700000000)
-        with patch("elobot.features.finals.hosting.time.time", return_value=1800000000):
+        with patch("elo_bot.features.finals.hosting.time.time", return_value=1800000000):
             await accept_final_start(source, "host", player=None)
         initial = await submit_result(await self.request())
         await source.delete()
@@ -235,8 +235,8 @@ class TestFinalTiming(FinalScenarioCase):
                     self.assertEqual((await resolve_final()).nodes[node_id].scheduled_times, expected)
                     raise ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
 
-                with patch_sites(('elobot.extensions.match.lifecycle.append_helper_task', 'elobot.extensions.match.hosting.append_helper_task'), new=AsyncMock()), \
-                        patch_sites(('elobot.extensions.match.hosting.publish_match_message', 'elobot.extensions.match.settings.publish_match_message'), new=AsyncMock(side_effect=fail)):
+                with patch_sites(('elo_bot.extensions.match.lifecycle.append_helper_task', 'elo_bot.extensions.match.hosting.append_helper_task'), new=AsyncMock()), \
+                        patch_sites(('elo_bot.extensions.match.hosting.publish_match_message', 'elo_bot.extensions.match.settings.publish_match_message'), new=AsyncMock(side_effect=fail)):
                     with self.assertRaises(ipy.errors.Forbidden):
                         if player is None:
                             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")

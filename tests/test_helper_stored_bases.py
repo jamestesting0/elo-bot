@@ -9,16 +9,16 @@ from aiohttp import ClientSession
 import anyio
 import interactions as ipy
 
-import elobot.features.hosting.war.helper_base_store as helper_base_store
-import elobot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
-from elobot.integrations.helper_api import HelperEta, HelperHostWarMatchOnStoredPayload, HelperJob, HelperJobCreateAcceptedInvalid, HelperJobCreateRejected, HelperJobCreateUnavailable, HelperJobPoller, HelperTrackingFailure
-from elobot.features.hosting.war.stored_bases import (
+import elo_bot.features.hosting.war.helper_base_store as helper_base_store
+import elo_bot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
+from elo_bot.integrations.helper_api import HelperEta, HelperHostWarMatchOnStoredPayload, HelperJob, HelperJobCreateAcceptedInvalid, HelperJobCreateRejected, HelperJobCreateUnavailable, HelperJobPoller, HelperTrackingFailure
+from elo_bot.features.hosting.war.stored_bases import (
     HelperStoredBaseTerminalJob,
     host_war_match_on_stored,
     remove_bases,
     store_bases,
 )
-from elobot.config.emojis import SUCCESS_EMOJI
+from elo_bot.config.emojis import SUCCESS_EMOJI
 
 
 from tests._helper_stored_bases_fixture import StoredBaseJobStateMixin

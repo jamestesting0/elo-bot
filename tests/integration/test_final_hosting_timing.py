@@ -4,34 +4,34 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.features.base_store.controls import start_stored_bases
-from elobot.features.base_store.models import StoredBaseActionRequest
-from elobot.features.hosting.live.live_start import (
+from elo_bot.features.base_store.controls import start_stored_bases
+from elo_bot.features.base_store.models import StoredBaseActionRequest
+from elo_bot.features.hosting.live.live_start import (
     LiveAbort, LiveStart, LiveStartBusy, LiveStartClanUnavailable, ManualLiveStartReply, abort_live_start,
     start_live_match,
 )
-from elobot.extensions.self_service import SelfCommands
-from elobot.integrations.helper_api import (
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.integrations.helper_api import (
     HelperEta, HelperEtaReader, HelperHostLiveMatchPayload, HelperHostWarMatchPayload,
     HelperJobCreateRequest, HelperJobCreator, HelperJobCreateRejected,
 )
-from elobot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
-from elobot.features.hosting.war.war_start import WarAbort, abort_war_start
-from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elobot.features.finals.hosting import accept_final_start
-from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
-from elobot.core.finals import FinalError
-from elobot.features.matches.messages import MatchMessageState
-from elobot.features.matches.timing import hosting_started
-from elobot.features.tokens.bets import open_market
-from elobot.db import BaseStore, Clan, Match
-from elobot.db.match_models import ExpectedLiveStartState
-from elobot.db.token_models import FinalBettingMarket
+from elo_bot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
+from elo_bot.features.hosting.war.war_start import WarAbort, abort_war_start
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elo_bot.core.finals import FinalError
+from elo_bot.features.matches.messages import MatchMessageState
+from elo_bot.features.matches.timing import hosting_started
+from elo_bot.features.tokens.bets import open_market
+from elo_bot.db import BaseStore, Clan, Match
+from elo_bot.db.match_models import ExpectedLiveStartState
+from elo_bot.db.token_models import FinalBettingMarket
 from tests.integration._final_fixture import FinalScenarioCase
 from tests._patch_sites import patch_sites
-import elobot.extensions.match as match_module
-import elobot.extensions.match.base_store as match_base_store_module
-import elobot.extensions.match.hosting as match_hosting_module
+import elo_bot.extensions.match as match_module
+import elo_bot.extensions.match.base_store as match_base_store_module
+import elo_bot.extensions.match.hosting as match_hosting_module
 
 
 class TestFinalHostingTiming(FinalScenarioCase):
@@ -97,13 +97,13 @@ class TestFinalHostingTiming(FinalScenarioCase):
                                                 base_links_for_player_1=["one"], base_links_for_player_2=["two"])
             async def abort(msg):
                 return await abort_live_start(ctx, LiveAbort(match=original, message=msg))
-            module = "elobot.features.hosting.live.live_start"
+            module = "elo_bot.features.hosting.live.live_start"
             job_type = "host_live_match"
         else:
             payload = HelperHostWarMatchPayload(host_clan_tag="#REVIEW", player_tag="#P1", base_links=["one"], slot=1)
             async def abort(msg):
                 return await abort_war_start(ctx, WarAbort(match=original, player=0, message=msg))
-            module = "elobot.features.hosting.war.war_start"
+            module = "elo_bot.features.hosting.war.war_start"
             job_type = "host_war_match"
         request = HelperHostJobRequest(
             create_request=HelperJobCreateRequest(job_type=job_type, requested_by="1", payload=payload),
@@ -188,9 +188,9 @@ class TestFinalHostingTiming(FinalScenarioCase):
         with patch.object(HelperEtaReader, "read", new=AsyncMock(return_value=HelperEta(
                 estimate_start_at=1, estimate_end_at=2))), patch.object(HelperJobCreator, "create",
                 new=AsyncMock(return_value=HelperJobCreateRejected(error="Test rejection"))) as create:
-            with patch("elobot.features.finals.hosting.time.time", return_value=1800000000):
+            with patch("elo_bot.features.finals.hosting.time.time", return_value=1800000000):
                 await start_stored_bases(runtime, ctx, request)
-            with patch("elobot.features.finals.hosting.time.time", return_value=1800003600):
+            with patch("elo_bot.features.finals.hosting.time.time", return_value=1800003600):
                 await start_stored_bases(runtime, ctx, request)
         self.assertEqual(create.await_count, 2)
         saved = await Match.get(source.id)
@@ -209,7 +209,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
+        with patch_sites(('elo_bot.extensions.match.hosting.claim_resource_clan', 'elo_bot.extensions.match.settings.claim_resource_clan', 'elo_bot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
             first = await start_live_match(bot, ctx, start)
         self.assertIsInstance(first, LiveStartClanUnavailable)
         accepted_at = (await Match.get(source.id)).final_started_at
@@ -235,7 +235,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch('elobot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=RuntimeError("occupancy failed"))):
+        with patch('elo_bot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=RuntimeError("occupancy failed"))):
             with self.assertRaisesRegex(RuntimeError, "occupancy failed"):
                 await start_live_match(bot, ctx, start)
         saved = await Match.get(source.id)
@@ -255,7 +255,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
             await accept_final_start(*args, **kwargs)
             await Match.get_pymongo_collection().update_one({"_id": source.id}, {"$set": {"old_msgs.0": 123}})
 
-        with patch("elobot.features.hosting.live.live_start.accept_final_start", new=accept_then_change):
+        with patch("elo_bot.features.hosting.live.live_start.accept_final_start", new=accept_then_change):
             outcome = await start_live_match(bot, ctx, start)
         self.assertIsInstance(outcome, LiveStartClanUnavailable)
         saved = await Match.get(source.id)
@@ -272,7 +272,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch("elobot.features.hosting.live.live_start.datetime") as clock:
+        with patch("elo_bot.features.hosting.live.live_start.datetime") as clock:
             clock.now.return_value.timestamp.return_value = source.scheduled_times[0]
             with self.assertRaises(ipy.errors.Forbidden):
                 await start_live_match(bot, ctx, start)

@@ -3,8 +3,8 @@ import unittest
 
 import numpy as np
 
-from elobot.features.bases.fingerprints.geometry import geometry
-from elobot.features.bases.fingerprints.matcher import assign, refine, score_layout, supported
+from elo_bot.features.bases.fingerprints.geometry import geometry
+from elo_bot.features.bases.fingerprints.matcher import assign, refine, score_layout, supported
 from tests._relative_geometry_fixture import layout, points
 
 

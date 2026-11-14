@@ -8,9 +8,9 @@ import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import ValidationError
 
-from elobot.discord import runtime
-from elobot.features.sticky import commands as sticky_commands
-from elobot.db.sticky_models import StickyMessage
+from elo_bot.discord import runtime
+from elo_bot.features.sticky import commands as sticky_commands
+from elo_bot.db.sticky_models import StickyMessage
 
 
 def guild_text(channel_id="10"):

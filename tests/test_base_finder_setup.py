@@ -6,8 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
 
-from elobot.features.bases.fingerprints import artifacts
-from elobot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.features.bases.fingerprints import artifacts
+from elo_bot.features.bases.fingerprints.types import FingerprintError
 from scripts import setup_base_finder as setup
 
 

@@ -9,11 +9,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from PIL import Image
 
-import elobot.extensions.preset as presets
-from elobot.features.bases.fingerprints import images
-import elobot.extensions.base as base_module
+import elo_bot.extensions.preset as presets
+from elo_bot.features.bases.fingerprints import images
+import elo_bot.extensions.base as base_module
 from tests._patch_sites import patch_sites
-import elobot.extensions.base.submissions as base_submissions_module
+import elo_bot.extensions.base.submissions as base_submissions_module
 from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 
 
@@ -46,7 +46,7 @@ class TestBaseScreenshotValidation(unittest.IsolatedAsyncioTestCase):
         self.pending.return_value.insert = AsyncMock()
         self.enterContext(patch_family(BASE_MODULE_FAMILY, "BaseLayout", self.bases))
         self.enterContext(patch.object(presets, "BaseLayout", self.bases))
-        self.enterContext(patch_sites(('elobot.extensions.base.search.PendingBaseSubmission', 'elobot.extensions.base.submissions.PendingBaseSubmission'), self.pending))
+        self.enterContext(patch_sites(('elo_bot.extensions.base.search.PendingBaseSubmission', 'elo_bot.extensions.base.submissions.PendingBaseSubmission'), self.pending))
         self.enterContext(patch_family(BASE_MODULE_FAMILY, "Player", SimpleNamespace(
             user_id="user_id", find_one=AsyncMock(return_value=self.player),
         )))

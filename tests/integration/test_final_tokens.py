@@ -1,14 +1,14 @@
 import asyncio
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.features.finals.hosting import accept_final_start
-from elobot.features.finals.lifecycle import confirm_bracket
-from elobot.core.finals import FinalError
-from elobot.features.tokens.bets import BetAction, apply_bet, open_market, projected_return
-from elobot.features.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
-from elobot.features.tokens.wallets import ensure_wallet, wallet_summary
-from elobot.db import Player
-from elobot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.finals.lifecycle import confirm_bracket
+from elo_bot.core.finals import FinalError
+from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market, projected_return
+from elo_bot.features.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
+from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
+from elo_bot.db import Player
+from elo_bot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
 
 class TestFinalTokens(FinalScenarioCase):
@@ -56,7 +56,7 @@ class TestFinalTokens(FinalScenarioCase):
         await self.bet(9, 2000, side=self.market.contestants[1], version=1)
         market = await FinalBettingMarket.get(self.market.id)
         self.assertEqual(list(market.pools.values()), [0, 2000])
-        from elobot.db.token_models import FinalBet
+        from elo_bot.db.token_models import FinalBet
         self.assertEqual(projected_return(market, await FinalBet.get(f"{market.id}:9"), market.contestants[0], 100),
                          (100, 0))
         await self.bet(9, 0, version=2)
@@ -88,7 +88,7 @@ class TestFinalTokens(FinalScenarioCase):
         await self.assert_conserved()
 
     async def test_edit_cancel_and_accepted_start_race_has_one_valid_balance_and_pool(self):
-        from elobot.db.token_models import FinalBet
+        from elo_bot.db.token_models import FinalBet
         await self.bet(9, 1000)
         source = await self.scheduled_pairing(self.final, "QF1")
         barrier = asyncio.Event()

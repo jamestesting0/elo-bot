@@ -5,14 +5,14 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions.match import MatchCommands
-from elobot.config.ids import BOT_ID
-from elobot.db import Player, Queue, ServerState
-from elobot.features.queue.policy import QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUEUE_TIER_NORMAL, QUEUE_TIER_PRIORITY
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.config.ids import BOT_ID
+from elo_bot.db import Player, Queue, ServerState
+from elo_bot.features.queue.policy import QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUEUE_TIER_NORMAL, QUEUE_TIER_PRIORITY
 from tests._patch_sites import patch_sites
-import elobot.features.matches.occupancy as occupancy_module
-import elobot.features.queue.state as state_module
-import elobot.extensions.match.queue as match_queue_module
+import elo_bot.features.matches.occupancy as occupancy_module
+import elo_bot.features.queue.state as state_module
+import elo_bot.extensions.match.queue as match_queue_module
 
 
 class TestQueueCore(unittest.IsolatedAsyncioTestCase):
@@ -22,8 +22,8 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_guild = AsyncMock()
         self.command_owner = MatchCommands(self.bot)
         self.queues = {}
-        self.enterContext(patch('elobot.extensions.match.queue.find_attempt_match', new=AsyncMock(return_value=None)))
-        self.enterContext(patch_sites(('elobot.extensions.match.queue.find_attempt_queue', 'elobot.features.queue.state.find_attempt_queue'), new=AsyncMock(
+        self.enterContext(patch('elo_bot.extensions.match.queue.find_attempt_match', new=AsyncMock(return_value=None)))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.queue.find_attempt_queue', 'elo_bot.features.queue.state.find_attempt_queue'), new=AsyncMock(
             side_effect=lambda user_id, attempt_id, _tiers: next(
                 (queue for queue in self.queues.values()
                  if user_id in queue.district_selections
@@ -81,9 +81,9 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
         queues = self.queue_fixture(player)
         queues[QUEUE_TIER_AGED].players = [player]
         queues[QUEUE_TIER_AGED].entered_at = entered_at
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
-                patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]):
+                patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]):
             player_model.find_one = AsyncMock(return_value=player)
             # When
             outcome = await match_queue_module.queue_player(self.bot, member, priority=False)
@@ -98,10 +98,10 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
         member = self.make_member()
         queues = self.queue_fixture(player)
         occupied = occupancy_module.PlayerOccupied("unfinished", MagicMock(spec=ipy.Button))
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
-                patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
-                patch('elobot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=occupied)):
+                patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
+                patch('elo_bot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=occupied)):
             player_model.find_one = AsyncMock(return_value=player)
             # When
             outcome = await match_queue_module.queue_player(self.bot, member, priority=False)
@@ -128,7 +128,7 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
 
     async def test_unregistered_player_returns_structured_status(self):
         member = self.make_member()
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))):
             player_model.find_one = AsyncMock(return_value=None)
             outcome = await match_queue_module.queue_player(self.bot, member, priority=False)
@@ -145,11 +145,11 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
         async def insert_match(_bot, _player, _opponent, *, on_inserted):
             await on_inserted()
 
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
-                patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
-                patch('elobot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)), \
-                patch('elobot.features.queue.matching.initiate_match', new=AsyncMock(side_effect=insert_match)) as initiate_match:
+                patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
+                patch('elo_bot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)), \
+                patch('elo_bot.features.queue.matching.initiate_match', new=AsyncMock(side_effect=insert_match)) as initiate_match:
             player_model.find_one = AsyncMock(return_value=player)
             player_model.find_all.return_value.to_list = AsyncMock(return_value=[player, opponent])
 
@@ -166,10 +166,10 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
         beta_member = self.make_member(789)
         beta_player = self.make_player("789", 1000)
         beta_queues = self.queue_fixture(beta_player)
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
-                patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'), side_effect=lambda tier: beta_queues[tier]), \
-                patch('elobot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)):
+                patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'), side_effect=lambda tier: beta_queues[tier]), \
+                patch('elo_bot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)):
             player_model.find_one = AsyncMock(return_value=beta_player)
             # When
             beta_outcome = await match_queue_module.queue_player(beta_bot, beta_member, priority=False)
@@ -187,10 +187,10 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
         queues = self.queue_fixture(player)
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
-                patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
-                patch('elobot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)):
+                patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
+                patch('elo_bot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)):
             player_model.find_one = AsyncMock(return_value=player)
             # When
             await self.unbound_callback(MatchCommands.match_queue.callback)(self.command_owner, ctx)
@@ -209,7 +209,7 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
         ctx.send = AsyncMock()
         component = MagicMock(spec=ipy.Button)
         occupied = occupancy_module.PlayerOccupied("unfinished", component)
-        with patch_sites(('elobot.extensions.match.queue.queue_player', 'elobot.features.queue.matching.queue_player'), new=AsyncMock(return_value=state_module.QueueOutcome(
+        with patch_sites(('elo_bot.extensions.match.queue.queue_player', 'elo_bot.features.queue.matching.queue_player'), new=AsyncMock(return_value=state_module.QueueOutcome(
                 match_queue_module.QueueOutcomeStatus.OCCUPIED,
                 occupied,
         ))):
@@ -235,11 +235,11 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
             queues[QUEUE_TIER_NORMAL].players.remove(player)
             queues[QUEUE_TIER_NORMAL].entered_at.pop(player.user_id)
 
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
-                patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
-                patch('elobot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)), \
-                patch_sites(('elobot.extensions.match.queue.run_queue_matching_trigger', 'elobot.features.queue.matching.run_queue_matching_trigger'), new=AsyncMock(side_effect=remove_queued_player)) as trigger:
+                patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
+                patch('elo_bot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)), \
+                patch_sites(('elo_bot.extensions.match.queue.run_queue_matching_trigger', 'elo_bot.features.queue.matching.run_queue_matching_trigger'), new=AsyncMock(side_effect=remove_queued_player)) as trigger:
             player_model.find_one = AsyncMock(return_value=player)
             outcome = await match_queue_module.queue_player(self.bot, member, priority=False)
 
@@ -260,10 +260,10 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
                 await release.wait()
             return player
 
-        with patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
+        with patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
-                patch_sites(('elobot.features.queue.state.get_match_queue', 'elobot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
-                patch('elobot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)):
+                patch_sites(('elo_bot.features.queue.state.get_match_queue', 'elo_bot.features.queue.matching.get_match_queue'), side_effect=lambda tier: queues[tier]), \
+                patch('elo_bot.features.queue.matching.is_player_occupied', new=AsyncMock(return_value=None)):
             player_model.find_one = AsyncMock(side_effect=blocked_find_one)
             # When
             async with asyncio.timeout(5):
@@ -282,8 +282,8 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
 
     async def test_scheduled_matching_uses_queue_operation_lock(self):
         lock = asyncio.Lock()
-        with patch_sites(('elobot.extensions.match.queue.QUEUE_OPERATION_LOCK', 'elobot.extensions.match.lifecycle.QUEUE_OPERATION_LOCK', 'elobot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elobot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elobot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), lock), \
-                patch_sites(('elobot.extensions.match.queue.run_queue_matching_trigger', 'elobot.features.queue.matching.run_queue_matching_trigger'), new=AsyncMock()) as trigger, \
+        with patch_sites(('elo_bot.extensions.match.queue.QUEUE_OPERATION_LOCK', 'elo_bot.extensions.match.lifecycle.QUEUE_OPERATION_LOCK', 'elo_bot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elo_bot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elo_bot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), lock), \
+                patch_sites(('elo_bot.extensions.match.queue.run_queue_matching_trigger', 'elo_bot.features.queue.matching.run_queue_matching_trigger'), new=AsyncMock()) as trigger, \
                 patch.object(ServerState, "update_fields", new=AsyncMock()):
             async with lock:
                 callback = self.unbound_callback(MatchCommands.create_matches.callback)

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 
-from elobot.db import AuditLogEntry, Giveaway
+from elo_bot.db import AuditLogEntry, Giveaway
 
 
 class TestAuditLogEntryContract(unittest.TestCase):
@@ -70,7 +70,7 @@ class TestGiveawayAddEntry(unittest.IsolatedAsyncioTestCase):
         # When: that entrant is added
         with (
             patch.object(Giveaway, "get_pymongo_collection", return_value=collection),
-            patch("elobot.db.giveaway_models.time", return_value=1.0),
+            patch("elo_bot.db.giveaway_models.time", return_value=1.0),
         ):
             result = await Giveaway.add_entry("100", "400")
 

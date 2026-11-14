@@ -7,14 +7,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
 
-from elobot.features.bases.fingerprints.search import SearchSession, render_page
-from elobot.features.bases.fingerprints.types import MatchScore
-from elobot.config.emojis import ERROR_EMOJI
-from elobot.db import BaseLayout
+from elo_bot.features.bases.fingerprints.search import SearchSession, render_page
+from elo_bot.features.bases.fingerprints.types import MatchScore
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.db import BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._base_finder_lock_fixture import ContendedLock
-import elobot.extensions.base as base_module
-import elobot.extensions.base.listing as base_listing_module
+import elo_bot.extensions.base as base_module
+import elo_bot.extensions.base.listing as base_listing_module
 
 
 class TestSimilarPagination(unittest.IsolatedAsyncioTestCase):

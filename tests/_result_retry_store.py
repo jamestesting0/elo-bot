@@ -6,16 +6,16 @@ from beanie.odm.fields import ExpressionField, LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from bson import DBRef
 from pymongo.results import UpdateResult
-from elobot.db import BaseLayout, BaseLink, Match, MatchDistrictStats, MatchPlayerStats, Participant, Player, RecordedMatch
+from elo_bot.db import BaseLayout, BaseLink, Match, MatchDistrictStats, MatchPlayerStats, Participant, Player, RecordedMatch
 from pymongo.errors import DuplicateKeyError
 from pymongo.results import DeleteResult
-from elobot.config.ids import MATCH_CHANNEL
-from elobot.db import Helper
-from elobot.db.result_models import MatchResultOperation, ResultRecordSnapshot
+from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.db import Helper
+from elo_bot.db.result_models import MatchResultOperation, ResultRecordSnapshot
 from tests._patch_sites import patch_sites
-import elobot.extensions.match as match_module
+import elo_bot.extensions.match as match_module
 from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
-import elobot.extensions.match.results as match_results_module
+import elo_bot.extensions.match.results as match_results_module
 
 
 
@@ -176,9 +176,9 @@ class RecordStateMixin:
         query.sort.return_value.first_or_none = AsyncMock(return_value=self.records["10"])
         self.enterContext(patch.object(RecordedMatch, "find_all", return_value=query))
         self.enterContext(patch.object(Match, "find_one", new=AsyncMock(return_value=None)))
-        self.enterContext(patch('elobot.features.results.recording.fetch_member_otherwise_user', new=AsyncMock(side_effect=self.users)))
-        self.choice_refresh = self.enterContext(patch_sites(('elobot.extensions.match.results.fetch_user_match_id_choices', 'elobot.features.results.recording.fetch_user_match_id_choices'), new_callable=AsyncMock))
-        self.invite = self.enterContext(patch_sites(('elobot.extensions.match.results.invite_eligible_players', 'elobot.extensions.match.result_store.invite_eligible_players', 'elobot.features.results.recording.invite_eligible_players'), new_callable=AsyncMock))
+        self.enterContext(patch('elo_bot.features.results.recording.fetch_member_otherwise_user', new=AsyncMock(side_effect=self.users)))
+        self.choice_refresh = self.enterContext(patch_sites(('elo_bot.extensions.match.results.fetch_user_match_id_choices', 'elo_bot.features.results.recording.fetch_user_match_id_choices'), new_callable=AsyncMock))
+        self.invite = self.enterContext(patch_sites(('elo_bot.extensions.match.results.invite_eligible_players', 'elo_bot.extensions.match.result_store.invite_eligible_players', 'elo_bot.features.results.recording.invite_eligible_players'), new_callable=AsyncMock))
 
     def make_record(self, record_id: str) -> RecordedMatch:
         return RecordedMatch.model_construct(id=record_id, time=1, players={
@@ -270,11 +270,11 @@ class RecordStateMixin:
         self.enterContext(patch.object(BaseLayout, "update", new=legacy_base_update))
         self.enterContext(patch.object(BaseLayout, "get_pymongo_collection", return_value=MagicMock(
             update_one=AsyncMock(side_effect=update_base))))
-        self.enterContext(patch('elobot.extensions.match.results.record_match', new=AsyncMock(side_effect=replace_record)))
-        self.enterContext(patch('elobot.extensions.match.results.record_base_stats', new=AsyncMock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=AsyncMock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new=AsyncMock()))
-        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Test tip")))
+        self.enterContext(patch('elo_bot.extensions.match.results.record_match', new=AsyncMock(side_effect=replace_record)))
+        self.enterContext(patch('elo_bot.extensions.match.results.record_base_stats', new=AsyncMock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new=AsyncMock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.free_match_clans', 'elo_bot.extensions.match.results.free_match_clans'), new=AsyncMock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="Test tip")))
         channel = MagicMock(fetch_message=AsyncMock(return_value=MagicMock(edit=AsyncMock())),
                             send=AsyncMock(return_value=MagicMock(id=901, edit=AsyncMock())))
         self.bot.fetch_channel = AsyncMock(return_value=channel)
@@ -379,13 +379,13 @@ class ResultRetryStateMixin:
         self.state.bot.fetch_guild = AsyncMock(return_value=MagicMock(fetch_member=AsyncMock(
             side_effect=lambda user_id: MagicMock(id=int(user_id), display_name=f"Player {user_id}"),
         )))
-        self.enterContext(patch('elobot.features.results.recording.fetch_member_otherwise_user', new=AsyncMock(
+        self.enterContext(patch('elo_bot.features.results.recording.fetch_member_otherwise_user', new=AsyncMock(
             side_effect=lambda _guild, _bot, user_id: self.state.users[0 if user_id == "111" else 1])))
         for name in ("free_match_clans", "clear_match_base_stores", "remove_helper_task", "fetch_user_match_id_choices",
                      "autoqueue_completed_match_participants", "choose_tip"):
             self.enterContext(patch_family(MATCH_MODULE_FAMILY, name, new=AsyncMock()))
         match_results_module.choose_tip.return_value = "tip"
-        self.enterContext(patch_sites(('elobot.extensions.match.results.schedule_channel_name_edit', 'elobot.extensions.match.hosting.schedule_channel_name_edit', 'elobot.extensions.match.settings.schedule_channel_name_edit'), return_value=MagicMock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.results.schedule_channel_name_edit', 'elo_bot.extensions.match.hosting.schedule_channel_name_edit', 'elo_bot.extensions.match.settings.schedule_channel_name_edit'), return_value=MagicMock()))
         self.cog = match_module.MatchCommands(self.state.bot)
 
     async def invoke_record(self) -> None:

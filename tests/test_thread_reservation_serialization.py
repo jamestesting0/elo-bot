@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch
 
 import anyio
 
-from elobot.extensions import match as match_commands
-from elobot.features.base_store.models import BaseStorePreparationFailure, PreparedBaseStore
+from elo_bot.extensions import match as match_commands
+from elo_bot.features.base_store.models import BaseStorePreparationFailure, PreparedBaseStore
 
 
 from tests._match_cleanup_fixture import ThreadReservationStateMixin

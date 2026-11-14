@@ -7,19 +7,19 @@ import interactions as ipy
 from beanie.odm.fields import ExpressionField
 from pymongo.errors import PyMongoError
 
-from elobot.features.hosting.live import live_start
-from elobot.features.hosting.live import helper_live
-from elobot.extensions.self_service import SelfCommands
-from elobot.features.hosting.war import war_start
-from elobot.features.hosting.war import helper_host
-from elobot.features.hosting.war import helper_base_store_availability
-from elobot.features.base_store.start import held_store, ready_store, shared_store_clan
-from elobot.config.ids import BOT_ID
+from elo_bot.features.hosting.live import live_start
+from elo_bot.features.hosting.live import helper_live
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.features.hosting.war import war_start
+from elo_bot.features.hosting.war import helper_host
+from elo_bot.features.hosting.war import helper_base_store_availability
+from elo_bot.features.base_store.start import held_store, ready_store, shared_store_clan
+from elo_bot.config.ids import BOT_ID
 from tests._live_base_fixture import CLAN, DISTRICTS, PAIR, LiveBaseFixture
 from tests._patch_sites import patch_sites
-import elobot.features.base_store.match_adapters as match_adapters_module
-import elobot.extensions.match.hosting as match_hosting_module
-import elobot.extensions.match.lifecycle as match_lifecycle_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.hosting as match_hosting_module
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 
 class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
@@ -50,30 +50,30 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         public.embeds = [ipy.Embed(fields=[ipy.EmbedField("Players", "111 vs 222"), ipy.EmbedField("Time", "Pending")])]
         self.f.document["msg"] = str(public.id)
         self.f.document["persistent_host_clans"] = [None, None]
-        self.enterContext(patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=True))
-        self.enterContext(patch("elobot.extensions.self_service.is_raid_weekend", return_value=True))
-        self.enterContext(patch_sites(('elobot.extensions.match.base_store.confirm_pending_opponent_bases', 'elobot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)))
-        self.enterContext(patch("elobot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
+        self.enterContext(patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=True))
+        self.enterContext(patch("elo_bot.extensions.self_service.is_raid_weekend", return_value=True))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.base_store.confirm_pending_opponent_bases', 'elo_bot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)))
+        self.enterContext(patch("elo_bot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
         clan_stub = SimpleNamespace(tag=CLAN, name="Helper Clan", availability_str="Available")
-        self.enterContext(patch_sites(('elobot.extensions.match.dashboards.Clan', 'elobot.features.matches.resources.Clan'), new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
-        self.enterContext(patch("elobot.extensions.self_service.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
-        self.enterContext(patch('elobot.features.matches.resources.occupy_clan', new_callable=AsyncMock))
-        self.enterContext(patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock))
-        self.enterContext(patch_sites(('elobot.extensions.match.hosting.available_resource_clans_text', 'elobot.extensions.match.settings.available_resource_clans_text', 'elobot.features.matches.resources.available_resource_clans_text'), new=AsyncMock(return_value="Available")))
-        self.enterContext(patch_sites(('elobot.extensions.match.bases.send_bases', 'elobot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock))
-        self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.remove_helper_task', 'elobot.extensions.match.results.remove_helper_task', 'elobot.extensions.match.result_store.remove_helper_task', 'elobot.features.matches.resources.remove_helper_task', 'elobot.extensions.final.remove_helper_task'), new_callable=AsyncMock))
-        self.enterContext(patch_sites(('elobot.extensions.match.results.choose_tip', 'elobot.extensions.match.hosting.choose_tip', 'elobot.extensions.match.settings.choose_tip', 'elobot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
-        self.enterContext(patch('elobot.extensions.match.hosting.get_start_base_store_slot_availability', new=AsyncMock(return_value=(["Slot 1", "Slot 2"], {}))))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan'), new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
+        self.enterContext(patch("elo_bot.extensions.self_service.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
+        self.enterContext(patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.hosting.available_resource_clans_text', 'elo_bot.extensions.match.settings.available_resource_clans_text', 'elo_bot.features.matches.resources.available_resource_clans_text'), new=AsyncMock(return_value="Available")))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
+        self.enterContext(patch('elo_bot.extensions.match.hosting.get_start_base_store_slot_availability', new=AsyncMock(return_value=(["Slot 1", "Slot 2"], {}))))
         self.enterContext(patch.object(live_start, "schedule_channel_name_edit"))
         self.enterContext(patch.object(war_start, "schedule_channel_name_edit"))
         player_model = MagicMock(find_one=AsyncMock(return_value=SimpleNamespace(tag="#PLAYER", elo=1000)))
-        self.enterContext(patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'), new=player_model))
+        self.enterContext(patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'), new=player_model))
         self.enterContext(patch.object(helper_host, "Player", new=player_model))
-        self.enterContext(patch("elobot.features.base_store.controls.Player", new=player_model))
+        self.enterContext(patch("elo_bot.features.base_store.controls.Player", new=player_model))
         self.f.runtime.coc_client.get_player = AsyncMock(return_value=SimpleNamespace(
             tag="#PLAYER", town_hall=3, share_link="https://player.example",
         ))
-        self.choose = self.enterContext(patch_sites(('elobot.extensions.match.base_store.choose_bases', 'elobot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock))
+        self.choose = self.enterContext(patch_sites(('elo_bot.extensions.match.base_store.choose_bases', 'elo_bot.features.matches.attack_bases.choose_bases'), new_callable=AsyncMock))
         self.empty_slot = self.enterContext(patch.object(helper_host, "get_available_helper_slot", new_callable=AsyncMock))
         self.enterContext(patch.object(helper_host, "confirm_helper_availability", new=AsyncMock(return_value=True)))
         self.enterContext(patch.object(helper_base_store_availability,

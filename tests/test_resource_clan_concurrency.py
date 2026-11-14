@@ -1,16 +1,16 @@
 import unittest
 
-import elobot.features.matches.resources as matches_resources_module
+import elo_bot.features.matches.resources as matches_resources_module
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from elobot.extensions.match import MatchCommands
+from elo_bot.extensions.match import MatchCommands
 from tests._patch_sites import patch_sites
-import elobot.features.matches.resources as resources_module
-import elobot.features.base_store.match_adapters as match_adapters_module
-import elobot.extensions.match.dashboards as match_dashboards_module
-import elobot.extensions.match.hosting as match_hosting_module
-import elobot.extensions.match.result_store as match_result_store_module
+import elo_bot.features.matches.resources as resources_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.dashboards as match_dashboards_module
+import elo_bot.extensions.match.hosting as match_hosting_module
+import elo_bot.extensions.match.result_store as match_result_store_module
 
 
 class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
@@ -125,8 +125,8 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         set_ctx.channel.id = 101
 
         try:
-            with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
-                    patch_sites(('elobot.extensions.match.dashboards.Clan', 'elobot.features.matches.resources.Clan')) as clan_model:
+            with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model:
                 match_model.find_one = AsyncMock(return_value=match)
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])
 
@@ -172,10 +172,10 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         )
 
         try:
-            with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
-                    patch_sites(('elobot.extensions.match.dashboards.Clan', 'elobot.features.matches.resources.Clan')) as clan_model, \
-                    patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False), \
-                    patch_sites(('elobot.extensions.match.base_store.is_clan_available', 'elobot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=False)), \
+            with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model, \
+                    patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                    patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new=AsyncMock(return_value=False)), \
                     patch.object(match_hosting_module.helper_host, "host_war_automatically", new_callable=AsyncMock) as host:
                 match_model.find_one = AsyncMock(return_value=match)
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])
@@ -217,11 +217,11 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         ctx.channel.id = 101
 
         try:
-            with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')) as match_model, \
-                    patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player')) as player_model, \
-                    patch_sites(('elobot.extensions.match.dashboards.Clan', 'elobot.features.matches.resources.Clan')) as clan_model, \
-                    patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False), \
-                    patch('elobot.extensions.match.hosting.get_start_base_store_slot_availability', new_callable=AsyncMock) as slots:
+            with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model, \
+                    patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player')) as player_model, \
+                    patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan')) as clan_model, \
+                    patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False), \
+                    patch('elo_bot.extensions.match.hosting.get_start_base_store_slot_availability', new_callable=AsyncMock) as slots:
                 match_model.find_one = AsyncMock(return_value=match)
                 player_model.find_one = AsyncMock(side_effect=[MagicMock(tag="#P1"), MagicMock(tag="#P2")])
                 clan_model.find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])

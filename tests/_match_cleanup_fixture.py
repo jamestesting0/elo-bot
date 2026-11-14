@@ -3,23 +3,23 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
-from elobot.extensions import thread as thread_commands
-from elobot.extensions import match as match_commands
-from elobot.config.ids import LVL2_ROLES, MATCH_CHANNEL
-from elobot.db import Match
+from elo_bot.extensions import thread as thread_commands
+from elo_bot.extensions import match as match_commands
+from elo_bot.config.ids import LVL2_ROLES, MATCH_CHANNEL
+from elo_bot.db import Match
 from tests import _result_finalization_fixture as result_fixture
 from copy import deepcopy
-from elobot.features.base_store import storage
-from elobot.db import BaseStore
-from elobot.features.base_store import preparation
-from elobot.features.base_store.models import BaseStorePreparationFailure, BaseStorePreparationRequest, PreparedBaseStore
+from elo_bot.features.base_store import storage
+from elo_bot.db import BaseStore
+from elo_bot.features.base_store import preparation
+from elo_bot.features.base_store.models import BaseStorePreparationFailure, BaseStorePreparationRequest, PreparedBaseStore
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
-from elobot.extensions import challenge as challenge_commands
-from elobot.db import Participant
+from elo_bot.extensions import challenge as challenge_commands
+from elo_bot.db import Participant
 from tests._patch_sites import patch_sites
-import elobot.extensions.match as match_module
+import elo_bot.extensions.match as match_module
 from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 
 
@@ -72,7 +72,7 @@ class ReservedThreadStateMixin:
             author=MagicMock(id=999, roles=[MagicMock(id=LVL2_ROLES[0])]))
         confirm = MagicMock(custom_id="confirm", channel=self.channel, edit_origin=AsyncMock())
         self.runtime.fixture.state.bot.wait_for_component = AsyncMock(return_value=MagicMock(ctx=confirm))
-        self.clear = self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=AsyncMock(wraps=storage.clear_match_base_stores)))
+        self.clear = self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new=AsyncMock(wraps=storage.clear_match_base_stores)))
         self.enterContext(patch.object(thread_commands, "clear_match_base_stores", new=self.clear))
         self.enterContext(patch.object(storage, "sync_base_store_slots", new=AsyncMock()))
 
@@ -156,7 +156,7 @@ class MatchCleanupStateMixin:
         for module in (thread_commands, challenge_commands):
             self.enterContext(patch.object(module, "Match", new=model))
         self.enterContext(patch_family(MATCH_MODULE_FAMILY, "Match", new=model))
-        self.enterContext(patch_sites(("elobot.features.hosting.live.live_start.Match", "elobot.features.hosting.war.war_start.Match"), new=model))
+        self.enterContext(patch_sites(("elo_bot.features.hosting.live.live_start.Match", "elo_bot.features.hosting.war.war_start.Match"), new=model))
         self.bot = MagicMock()
         self.bot.fetch_user = AsyncMock(return_value=MagicMock(send=AsyncMock()))
         self.bot.fetch_guild = AsyncMock(return_value=MagicMock(fetch_thread=AsyncMock(return_value=None)))
@@ -175,13 +175,13 @@ class MatchCleanupStateMixin:
                                  edit_origin=AsyncMock(), send=AsyncMock())
         self.bot.wait_for_component = AsyncMock(return_value=MagicMock(ctx=self.confirm))
         self.free = self.enterContext(patch.object(thread_commands, "free_match_clans", new_callable=AsyncMock))
-        self.enterContext(patch_sites(('elobot.extensions.match.lifecycle.free_match_clans', 'elobot.extensions.match.results.free_match_clans'), new=self.free))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.free_match_clans', 'elo_bot.extensions.match.results.free_match_clans'), new=self.free))
         self.enterContext(patch.object(thread_commands, "remove_helper_task", new_callable=AsyncMock))
         self.enterContext(patch.object(thread_commands.asyncio, "sleep", new_callable=AsyncMock))
         self.enterContext(patch.object(storage, "retire_stored_base_message", new_callable=AsyncMock))
         self.enterContext(patch.object(storage, "sync_base_store_slots", new_callable=AsyncMock))
         self.player = MagicMock(last_cancel=None, save_changes=AsyncMock())
-        self.enterContext(patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'), new=MagicMock(
+        self.enterContext(patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'), new=MagicMock(
             find_one=AsyncMock(return_value=self.player),
         )))
 

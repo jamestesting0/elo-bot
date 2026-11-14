@@ -3,9 +3,9 @@ import unittest
 import anyio
 from pymongo.results import UpdateResult
 
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
-from elobot.db import Match, Player
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
+from elo_bot.db import Match, Player
 
 
 from tests._autowin_fixture import AutowinResetStateMixin

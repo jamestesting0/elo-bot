@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
 
-from elobot.features.bases.fingerprints.matcher import score_layout
-from elobot.config.ids import BASE_SUBMISSION_CHANNEL
-from elobot.db import BaseLayout, PendingBaseSubmission
+from elo_bot.features.bases.fingerprints.matcher import score_layout
+from elo_bot.config.ids import BASE_SUBMISSION_CHANNEL
+from elo_bot.db import BaseLayout, PendingBaseSubmission
 from tests._relative_geometry_fixture import layout, points
 from tests.integration import _fingerprint_fixture as fixture
 from tests._relative_geometry_fixture import summary
-import elobot.extensions.base as base_module
+import elo_bot.extensions.base as base_module
 
 
 class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
@@ -39,7 +39,7 @@ class TestRelativeSearch(unittest.IsolatedAsyncioTestCase):
 
         async def worker(payload):
             self.assertEqual(len(payload["candidates"]), 1)
-            from elobot.db.fingerprint_types import BaseFingerprint
+            from elo_bot.db.fingerprint_types import BaseFingerprint
             query = BaseFingerprint.model_validate(payload["query"])
             candidates = [BaseFingerprint.model_validate(value) for value in payload["candidates"]]
             return {"scores": [(await asyncio.to_thread(score_layout, query, value,

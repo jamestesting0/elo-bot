@@ -5,10 +5,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
-from elobot.features.matches.message_lock import match_message_lock
-from elobot.features.matches.messages import MatchMessageState, publish_match_message
-from elobot.features.matches.recovery import _repair_match, _repair_message, repair_match_messages
-from elobot.db import Match, Participant
+from elo_bot.features.matches.message_lock import match_message_lock
+from elo_bot.features.matches.messages import MatchMessageState, publish_match_message
+from elo_bot.features.matches.recovery import _repair_match, _repair_message, repair_match_messages
+from elo_bot.db import Match, Participant
 
 
 class TestMatchMessageRecovery(unittest.IsolatedAsyncioTestCase):
@@ -98,7 +98,7 @@ class TestMatchMessageRecovery(unittest.IsolatedAsyncioTestCase):
                 await entered.wait()
                 with patch.object(Match, "find", return_value=snapshots()), \
                         patch.object(Match, "get", new=AsyncMock(return_value=fresh)) as get, \
-                        patch("elobot.features.matches.recovery._repair_match", new_callable=AsyncMock) as repair:
+                        patch("elo_bot.features.matches.recovery._repair_match", new_callable=AsyncMock) as repair:
                     await repair_match_messages(SimpleNamespace())
                     get.assert_awaited_once_with("id")
                     repair.assert_not_awaited()

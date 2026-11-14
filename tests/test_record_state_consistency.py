@@ -3,14 +3,14 @@ from unittest.mock import call
 
 from bson import DBRef
 
-from elobot.db import Player
+from elo_bot.db import Player
 
 
 from tests._result_retry_store import RecordStateMixin
 
 
 from tests._result_retry_store import apply_update
-import elobot.features.results.recording as recording_module
+import elo_bot.features.results.recording as recording_module
 
 class TestRecordStateConsistency(RecordStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_record_refreshes_autocomplete_after_the_match_is_stored(self) -> None:

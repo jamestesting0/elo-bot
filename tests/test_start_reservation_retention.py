@@ -4,16 +4,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.features.base_store import storage
-from elobot.features.base_store.publication import mark_store_reserved
-from elobot.features.hosting.live import live_start
-from elobot.features.hosting.war import war_start
-from elobot.config.ids import MATCH_CHANNEL
-from elobot.db import BaseStore
+from elo_bot.features.base_store import storage
+from elo_bot.features.base_store.publication import mark_store_reserved
+from elo_bot.features.hosting.live import live_start
+from elo_bot.features.hosting.war import war_start
+from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.db import BaseStore
 from tests import _match_publication_fixture as publication_tests
 from tests._patch_sites import patch_sites
-import elobot.features.base_store.match_adapters as match_adapters_module
-import elobot.extensions.match.lifecycle as match_lifecycle_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 
 
 class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
@@ -86,7 +86,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
             {"name": "Players", "value": "100 vs 200"}, {"name": "Time", "value": "1000"},
         ]}]})
         self.messages[80] = public
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
+        with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             await live_start.complete_live_start(self.case.bot, self.case.ctx, request)
 
@@ -122,7 +122,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
         self.case.match.persistent_host_clans = list(self.case.match.host_clans)
         ctx = MagicMock(spec=ipy.ComponentContext, bot=self.case.bot, channel=self.case.ctx.channel)
         message = self.case.bot.cache.place_message_data(deepcopy(self.case.message_data))
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()) as free, \
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()) as free, \
                 patch.object(war_start, "schedule_channel_name_edit"):
             self.assertTrue(await war_start.abort_war_start(ctx, war_start.WarAbort(self.case.match, 0, message)))
         self.assert_store_retained(0, store, "helper_stored_undo", ready=True)
@@ -153,7 +153,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
                                     "host_clans": list(self.case.match.host_clans), "old_msgs": list(self.case.match.old_msgs)})
         ctx = MagicMock(spec=ipy.ComponentContext, bot=self.case.bot, channel=self.case.ctx.channel)
         message = self.case.bot.cache.place_message_data(deepcopy(self.case.message_data))
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()) as free, \
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()) as free, \
                 patch.object(live_start, "schedule_channel_name_edit"):
             self.assertTrue(await live_start.abort_live_start(ctx, live_start.LiveAbort(self.case.match, message)))
         self.assert_store_retained(0, stores[0], "helper_stored_undo", ready=True)
@@ -176,7 +176,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
             return await original_edit(payload, channel_id, message_id, **kwargs)
 
         self.case.bot.http.edit_message.side_effect = assert_committed_edit
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()), \
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             self.assertTrue(await live_start.abort_live_start(ctx, live_start.LiveAbort(self.case.match, message)))
         for data in (self.case.message_data, self.messages[80]):
@@ -202,7 +202,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
             return await original_edit(payload, channel_id, message_id, **kwargs)
 
         self.case.bot.http.edit_message.side_effect = reject_initiation
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()), \
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             with self.assertRaises(ipy.errors.HTTPException):
                 await live_start.abort_live_start(ctx, live_start.LiveAbort(self.case.match, message))
@@ -229,7 +229,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
             return await original_edit(payload, channel_id, message_id, **kwargs)
 
         self.case.bot.http.edit_message.side_effect = reject_initiation
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()), \
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()), \
                 patch.object(war_start, "schedule_channel_name_edit"):
             with self.assertRaises(ipy.errors.HTTPException):
                 await war_start.abort_war_start(ctx, war_start.WarAbort(self.case.match, 0, message))
@@ -245,7 +245,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
         message = self.case.bot.cache.place_message_data(deepcopy(self.case.message_data))
         ctx = MagicMock(spec=ipy.ComponentContext, bot=self.case.bot, channel=self.case.ctx.channel)
         self.case.bot.http.edit_message.reset_mock()
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()) as free:
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()) as free:
             self.assertFalse(await live_start.abort_live_start(ctx, live_start.LiveAbort(self.case.match, message)))
         self.case.bot.http.edit_message.assert_not_awaited()
         free.assert_not_awaited()
@@ -257,7 +257,7 @@ class TestStartReservationRetention(unittest.IsolatedAsyncioTestCase):
                                                "color": 0xBE0000})
         self.messages[80]["components"] = []
         request = self.case.live_request()
-        with patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
+        with patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=self.case.match))), \
                 patch.object(live_start, "schedule_channel_name_edit"):
             await live_start.complete_live_start(self.case.bot, self.case.ctx, request)
         self.assertEqual(self.messages[80]["embeds"][0]["title"], "**Match Started**")

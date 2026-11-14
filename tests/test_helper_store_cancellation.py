@@ -8,11 +8,11 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from elobot.features.hosting.war import helper_base_store
-from elobot.integrations import helper_api
-from elobot.integrations.helper_api import HelperStoreBasesPayload, HelperTrackingFailure
-from elobot.features.hosting.war.stored_bases import HelperStoredBaseTerminalJob
-from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
+from elo_bot.features.hosting.war import helper_base_store
+from elo_bot.integrations import helper_api
+from elo_bot.integrations.helper_api import HelperStoreBasesPayload, HelperTrackingFailure
+from elo_bot.features.hosting.war.stored_bases import HelperStoredBaseTerminalJob
+from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
 
 JOB_ID = "0123456789abcdef0123456789abcdef"

@@ -2,9 +2,9 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie import PydanticObjectId
-from elobot.db.fingerprint_types import ExtractionState
+from elo_bot.db.fingerprint_types import ExtractionState
 from tests._patch_sites import patch_sites
-import elobot.extensions.base as base_module
+import elo_bot.extensions.base as base_module
 
 
 class BaseExtractStateMixin:
@@ -21,11 +21,11 @@ class BaseExtractStateMixin:
         self.query = MagicMock()
         self.query.find.return_value.first_or_none = AsyncMock(return_value=self.base)
         self.query.sort.return_value.project.return_value.to_list = AsyncMock(return_value=[self.base])
-        self.model = self.enterContext(patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout')))
+        self.model = self.enterContext(patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout')))
         self.model.find.return_value = self.query
         self.model.find_all.return_value = self.query
-        self.tasks = self.enterContext(patch('elobot.extensions.base.extraction.BaseFingerprintTask', MagicMock(get=AsyncMock(return_value=None))))
-        self.runs = self.enterContext(patch('elobot.extensions.base.extraction.BaseExtractionRun', MagicMock(get=AsyncMock(return_value=None))))
+        self.tasks = self.enterContext(patch('elo_bot.extensions.base.extraction.BaseFingerprintTask', MagicMock(get=AsyncMock(return_value=None))))
+        self.runs = self.enterContext(patch('elo_bot.extensions.base.extraction.BaseExtractionRun', MagicMock(get=AsyncMock(return_value=None))))
 
     def context(self, *, staff=True, input_text=""):
         author = SimpleNamespace(id=123, has_any_role=lambda roles: staff, has_role=lambda role: staff)

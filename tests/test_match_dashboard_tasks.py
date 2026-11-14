@@ -3,13 +3,13 @@ from datetime import datetime
 from unittest.mock import MagicMock, AsyncMock, patch
 import anyio
 import interactions as ipy
-from elobot.db import BaseStore, ServerState
+from elo_bot.db import BaseStore, ServerState
 from tests._patch_sites import patch_sites
 from tests._match_commands_case import MatchCommandsCase
 
 
 class TestMatchCommands(MatchCommandsCase):
-    @patch_sites(('elobot.extensions.match.dashboards.HelperTask', 'elobot.features.matches.resources.HelperTask'))
+    @patch_sites(('elo_bot.extensions.match.dashboards.HelperTask', 'elo_bot.features.matches.resources.HelperTask'))
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_update_hosting_queue_embed_shows_only_helper_tasks(
             self, mock_server_state_current, mock_helper_task):
@@ -34,7 +34,7 @@ class TestMatchCommands(MatchCommandsCase):
         self.assertEqual(message.edit.await_args.kwargs["embed"]["description"],
                          f"<#987> **[Player](<https://discordapp.com/users/111>)** {timestamp}\n")
 
-    @patch_sites(('elobot.extensions.match.dashboards.HelperTask', 'elobot.features.matches.resources.HelperTask'))
+    @patch_sites(('elo_bot.extensions.match.dashboards.HelperTask', 'elo_bot.features.matches.resources.HelperTask'))
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_update_hosting_queue_embed_avoids_concurrent_message_fetches(
             self, mock_server_state_current, mock_helper_task):
@@ -82,10 +82,10 @@ class TestMatchCommands(MatchCommandsCase):
         self.assertFalse(overlap_detected.is_set())
         queue_channel.fetch_message.assert_awaited_once_with(456)
 
-    @patch_sites(('elobot.extensions.match.sync_base_store_slots', 'elobot.extensions.match.base_store.sync_base_store_slots', 'elobot.extensions.match.dashboards.sync_base_store_slots'), new_callable=AsyncMock)
-    @patch('elobot.extensions.match.hosting.is_raid_weekend', return_value=False)
-    @patch_sites(('elobot.extensions.match.dashboards.Clan', 'elobot.features.matches.resources.Clan'))
-    @patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match'))
+    @patch_sites(('elo_bot.extensions.match.sync_base_store_slots', 'elo_bot.extensions.match.base_store.sync_base_store_slots', 'elo_bot.extensions.match.dashboards.sync_base_store_slots'), new_callable=AsyncMock)
+    @patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False)
+    @patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan'))
+    @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_update_clan_availability_embed_shows_slots_outside_raid_weekend(
             self, mock_server_state_current, mock_match, mock_clan, mock_is_raid_weekend, mock_sync_slots):

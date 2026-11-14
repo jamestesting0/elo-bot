@@ -5,11 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions.embed import EmbedCommands
-from elobot.db import BaseStore, ServerState
-import elobot.features.matches.resources as resources_module
-import elobot.extensions.match.base_store as match_base_store_module
-import elobot.extensions.match.dashboards as match_dashboards_module
+from elo_bot.extensions.embed import EmbedCommands
+from elo_bot.db import BaseStore, ServerState
+import elo_bot.features.matches.resources as resources_module
+import elo_bot.extensions.match.base_store as match_base_store_module
+import elo_bot.extensions.match.dashboards as match_dashboards_module
 
 
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
@@ -51,8 +51,8 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         ]
 
         with (
-                patch("elobot.extensions.embed.Clan") as mock_clan,
-                patch("elobot.extensions.embed.Match") as mock_match,
+                patch("elo_bot.extensions.embed.Clan") as mock_clan,
+                patch("elo_bot.extensions.embed.Match") as mock_match,
                 patch.object(
                     ServerState,
                     "update_fields",
@@ -88,7 +88,7 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         reservation = await match_base_store_module.try_reserve_resource_clan("#A")
 
         try:
-            with patch("elobot.extensions.embed.Clan") as clan_model, \
+            with patch("elo_bot.extensions.embed.Clan") as clan_model, \
                     patch.object(match_dashboards_module.Clan, "find_all") as find_all:
                 clan_model.find_one = AsyncMock(return_value=clan_a)
                 find_all.return_value.to_list = AsyncMock(return_value=[clan_a, clan_b])

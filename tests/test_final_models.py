@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 from pydantic import ValidationError
 
-from elobot.db import Match, Participant
-from elobot.core.finals import FinalError
+from elo_bot.db import Match, Participant
+from elo_bot.core.finals import FinalError
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Builder's Workshop", "Dragon Cliffs",

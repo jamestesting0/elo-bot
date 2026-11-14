@@ -13,12 +13,12 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import AutoReconnect, DuplicateKeyError, OperationFailure, PyMongoError
 from pymongo.results import InsertOneResult, UpdateResult
 
-from elobot.db import BaseLayout, PendingBaseSubmission
-from elobot.db.base_submission_models import SubmissionRejection
-import elobot.extensions.base as base_module
+from elo_bot.db import BaseLayout, PendingBaseSubmission
+from elo_bot.db.base_submission_models import SubmissionRejection
+import elo_bot.extensions.base as base_module
 from tests._patch_sites import patch_sites
-import elobot.extensions.base.extraction as base_extraction_module
-import elobot.extensions.base.submissions as base_submissions_module
+import elo_bot.extensions.base.extraction as base_extraction_module
+import elo_bot.extensions.base.submissions as base_submissions_module
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -281,7 +281,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
 
         # When: the actual slash callback submits the review.
         with (
-            patch_sites(('elobot.extensions.base.submissions.download_base_screenshot', 'elobot.extensions.base.manage.download_base_screenshot', 'elobot.extensions.base.private.download_base_screenshot'), new=AsyncMock(return_value=True)),
+            patch_sites(('elo_bot.extensions.base.submissions.download_base_screenshot', 'elo_bot.extensions.base.manage.download_base_screenshot', 'elo_bot.extensions.base.private.download_base_screenshot'), new=AsyncMock(return_value=True)),
             patch.object(base_submissions_module.os.path, "exists", return_value=False),
             suppress(PyMongoError),
         ):

@@ -124,8 +124,8 @@ def collect_surface() -> dict:
     import interactions as ipy
     from interactions.models.internal.application_commands import application_commands_to_dict
 
-    from elobot.app import backups, root_callbacks
-    from elobot.app.extensions import EXTENSIONS
+    from elo_bot.app import backups, root_callbacks
+    from elo_bot.app.extensions import EXTENSIONS
 
     bot = ipy.Client()
     for name in EXTENSIONS:
@@ -171,13 +171,13 @@ def collect_surface() -> dict:
 def collect_persistence() -> dict:
     from beanie import Document
 
-    import elobot
-    from elobot.app.extensions import EXTENSIONS
+    import elo_bot
+    from elo_bot.app.extensions import EXTENSIONS
 
     for name in EXTENSIONS:
         importlib.import_module(name)
     modules = {info.name: importlib.import_module(info.name)
-               for info in pkgutil.walk_packages(elobot.__path__, "elobot.")}
+               for info in pkgutil.walk_packages(elo_bot.__path__, "elo_bot.")}
     documents = {}
     for module in modules.values():
         for name, cls in vars(module).items():

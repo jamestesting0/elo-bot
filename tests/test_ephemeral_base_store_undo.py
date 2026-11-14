@@ -5,17 +5,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.features.base_store import storage
-from elobot.features.base_store import publication
-from elobot.features.base_store import controls
-from elobot.features.base_store.presentation import build_helper_store_components, build_manual_store_components
-from elobot.features.hosting.war import helper_base_store
-from elobot.features.hosting.war import helper_base_store_availability
-from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.features.base_store import storage
+from elo_bot.features.base_store import publication
+from elo_bot.features.base_store import controls
+from elo_bot.features.base_store.presentation import build_helper_store_components, build_manual_store_components
+from elo_bot.features.hosting.war import helper_base_store
+from elo_bot.features.hosting.war import helper_base_store_availability
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from tests import _match_publication_fixture as recovery_tests
 from tests._stored_start_fixture import terminal_job
-import elobot.extensions.match as match_module
-import elobot.extensions.match.base_store as match_base_store_module
+import elo_bot.extensions.match as match_module
+import elo_bot.extensions.match.base_store as match_base_store_module
 from tests._patch_sites import patch_sites
 
 
@@ -36,7 +36,7 @@ class TestEphemeralBaseStoreUndo(unittest.IsolatedAsyncioTestCase):
         self.bot.http.edit_interaction_message = AsyncMock(side_effect=self.edit_interaction)
         self.enterContext(patch.object(controls, "Match", new=MagicMock(find_one=AsyncMock(return_value=self.case.match))))
         self.enterContext(patch_sites(
-            ('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match'),
+            ('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match'),
             new=MagicMock(find_one=AsyncMock(return_value=self.case.match)),
         ))
         self.enterContext(patch.object(storage, "clear_participant_base_store", new=REAL_CLEAR))

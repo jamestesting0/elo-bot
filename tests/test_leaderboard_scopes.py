@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions.leaderboard import LeaderboardCommands
-from elobot.config.presentation import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
-from elobot.features.finals.leaderboards import final_board_rows
-from elobot.features.seasons.selection import interpret_season_string
+from elo_bot.extensions.leaderboard import LeaderboardCommands
+from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
+from elo_bot.features.finals.leaderboards import final_board_rows
+from elo_bot.features.seasons.selection import interpret_season_string
 
 
 def player(user_id, times=()):
@@ -49,9 +49,9 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         self.cog = LeaderboardCommands(MagicMock())
         self.cog._player_cache = self.players
         self.cog._seasons_cache = self.seasons
-        clock = self.enterContext(patch("elobot.features.seasons.selection.datetime"))
+        clock = self.enterContext(patch("elo_bot.features.seasons.selection.datetime"))
         clock.now.return_value.timestamp.return_value = 1000
-        self.player_model = self.enterContext(patch("elobot.extensions.leaderboard.Player"))
+        self.player_model = self.enterContext(patch("elo_bot.extensions.leaderboard.Player"))
         self.query = self.player_model.find_all.return_value
         self.query.count = AsyncMock(side_effect=lambda: len(self.players))
         self.query.to_list = AsyncMock(side_effect=lambda: self.players)
@@ -232,10 +232,10 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
                 ctx.message.edit.assert_awaited_once()
 
     async def test_autocomplete_respects_type_restrictions_and_no_archives(self):
-        from elobot.extensions.season import SeasonCommands
+        from elo_bot.extensions.season import SeasonCommands
 
         season_cog = SeasonCommands(MagicMock())
-        with patch("elobot.extensions.season.Season") as model:
+        with patch("elo_bot.extensions.season.Season") as model:
             for seasons in (self.seasons, []):
                 model.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=seasons)
                 for lb_type in ("Elo", "Elo Reversed", "Highest Elo", "Tokens", "Addiction", "Predictions", None):
@@ -269,8 +269,8 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
             for number in (3, 7, 9)
         ]
         self.predictions = []
-        final_model = self.enterContext(patch("elobot.features.finals.leaderboards.EloFinal"))
-        self.enterContext(patch("elobot.features.finals.lifecycle.EloFinal", final_model))
+        final_model = self.enterContext(patch("elo_bot.features.finals.leaderboards.EloFinal"))
+        self.enterContext(patch("elo_bot.features.finals.lifecycle.EloFinal", final_model))
         final_model.find_all.return_value.to_list = AsyncMock(side_effect=lambda: self.finals)
         final_model.find_all.return_value.sort.return_value.first_or_none = AsyncMock(
             side_effect=lambda: self.finals[-1] if self.finals else None
@@ -278,7 +278,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         final_model.find_one = AsyncMock(side_effect=lambda query: next(
             (final for final in self.finals if all(getattr(final, key) == value for key, value in query.items())), None
         ))
-        predictions_model = self.enterContext(patch("elobot.features.finals.leaderboards.FinalPrediction"))
+        predictions_model = self.enterContext(patch("elo_bot.features.finals.leaderboards.FinalPrediction"))
 
         def find_predictions(query):
             final_ids = query["final_id"]
@@ -290,18 +290,18 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
 
         predictions_model.find.side_effect = find_predictions
         self.wallets = [SimpleNamespace(id="wallet", user_id="token-user", initialized=True, balance=8765)]
-        players = self.enterContext(patch("elobot.features.finals.leaderboards.Player"))
+        players = self.enterContext(patch("elo_bot.features.finals.leaderboards.Player"))
         players.find_all.return_value.to_list = AsyncMock(side_effect=lambda: [
             SimpleNamespace(user_id=wallet.user_id) for wallet in self.wallets
         ])
-        wallets = self.enterContext(patch("elobot.features.finals.leaderboards.TokenWallet"))
+        wallets = self.enterContext(patch("elo_bot.features.finals.leaderboards.TokenWallet"))
         wallets.find.return_value.to_list = AsyncMock(side_effect=lambda: self.wallets)
-        ledger = self.enterContext(patch("elobot.features.finals.leaderboards.TokenLedgerEntry"))
+        ledger = self.enterContext(patch("elo_bot.features.finals.leaderboards.TokenLedgerEntry"))
         ledger.find.return_value.to_list = AsyncMock(side_effect=lambda: [
             SimpleNamespace(operation_key=f"grant:{wallet.id}") for wallet in self.wallets
         ])
         self.ensure_wallet = self.enterContext(patch(
-            "elobot.features.finals.leaderboards.ensure_wallet", new_callable=AsyncMock
+            "elo_bot.features.finals.leaderboards.ensure_wallet", new_callable=AsyncMock
         ))
 
     def prediction(self, season, user, points, eligible, submitted_at=1):

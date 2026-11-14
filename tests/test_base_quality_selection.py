@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from elobot.features.matches import base_selection
-from elobot.db import BaseLink, Match, Participant
+from elo_bot.features.matches import base_selection
+from elo_bot.db import BaseLink, Match, Participant
 from tests._patch_sites import patch_sites
-import elobot.features.matches.lifecycle as lifecycle_module
-import elobot.extensions.match.base_store as match_base_store_module
+import elo_bot.features.matches.lifecycle as lifecycle_module
+import elo_bot.extensions.match.base_store as match_base_store_module
 
 
 DISTRICTS = ['Barbarian Camp', 'Balloon Lagoon', 'Dragon Cliffs']
@@ -38,18 +38,18 @@ class TestBaseQualitySelection(unittest.IsolatedAsyncioTestCase):
         async def save_match(match, *args, **kwargs):
             return await self.save(match, *args, **kwargs)
         self.enterContext(patch.object(Match, 'save_changes', new=save_match))
-        self.match_model = self.enterContext(patch_sites(('elobot.features.hosting.live.live_start.Match', 'elobot.features.hosting.war.war_start.Match', 'elobot.features.base_store.match_adapters.Match', 'elobot.extensions.match.lifecycle.Match', 'elobot.extensions.match.bases.Match', 'elobot.extensions.match.base_store.Match', 'elobot.extensions.match.results.Match', 'elobot.extensions.match.result_store.Match', 'elobot.extensions.match.hosting.Match', 'elobot.extensions.match.settings.Match', 'elobot.extensions.match.dashboards.Match', 'elobot.features.queue.state.Match', 'elobot.features.matches.occupancy.Match', 'elobot.features.matches.resources.Match', 'elobot.features.matches.lifecycle.Match', 'elobot.features.matches.attack_bases.Match', 'elobot.features.results.recording.Match')))
+        self.match_model = self.enterContext(patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')))
         self.match_model.find_one = AsyncMock(side_effect=self.load)
         self.match_model.find.return_value.to_list = AsyncMock(side_effect=self.all_matches)
-        self.base_model = self.enterContext(patch_sites(('elobot.extensions.match.bases.BaseLayout', 'elobot.features.matches.attack_bases.BaseLayout', 'elobot.features.results.recording.BaseLayout')))
+        self.base_model = self.enterContext(patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout')))
         self.base_model.district.__eq__.side_effect = lambda v: {'district': v}
         self.base_model.quality.__eq__.side_effect = lambda v: {'quality': v}
         self.base_model.builder_id.__ne__.side_effect = lambda v: {'builder_id': {'$ne': v}}
         self.base_model.expiration_date.__gt__.side_effect = lambda v: {'expiration_date': {'$gt': v}}
         self.base_model.find.side_effect = self.find_layouts
         self.enterContext(patch.object(base_selection, 'BaseLayout', self.base_model))
-        self.enterContext(patch('elobot.features.matches.attack_bases.NotIn', side_effect=lambda _, links: {'link': {'$nin': links}}))
-        self.enterContext(patch_sites(('elobot.features.hosting.war.war_start.Player', 'elobot.extensions.match.queue.Player', 'elobot.extensions.match.lifecycle.Player', 'elobot.extensions.match.results.Player', 'elobot.extensions.match.hosting.Player', 'elobot.features.queue.state.Player', 'elobot.features.queue.matching.Player', 'elobot.features.matches.lifecycle.Player', 'elobot.features.matches.attack_bases.Player', 'elobot.features.results.recording.Player'))).find_one = AsyncMock(return_value=None)
+        self.enterContext(patch('elo_bot.features.matches.attack_bases.NotIn', side_effect=lambda _, links: {'link': {'$nin': links}}))
+        self.enterContext(patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))).find_one = AsyncMock(return_value=None)
         self.requests = []
 
     def get(self, key):

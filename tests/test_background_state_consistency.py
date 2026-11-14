@@ -10,11 +10,11 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from elobot.app import errors
-from elobot.discord import runtime
-import elobot.extensions.final as final_commands
-import elobot.extensions.leaderboard as leaderboards
-from elobot.db import EloFinal, Player, PlayerSeasonData, RecordedMatch
+from elo_bot.app import errors
+from elo_bot.discord import runtime
+import elo_bot.extensions.final as final_commands
+import elo_bot.extensions.leaderboard as leaderboards
+from elo_bot.db import EloFinal, Player, PlayerSeasonData, RecordedMatch
 
 
 class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):

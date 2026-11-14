@@ -1,14 +1,14 @@
 """Synthetic geometry with known correspondences; never image accuracy evidence."""
 from types import SimpleNamespace
-from elobot.features.bases.fingerprints.artifacts import MANIFEST
-from elobot.features.bases.fingerprints.matcher import score_layout
-from elobot.features.bases.fingerprints.types import ComparisonSummary
-from elobot.db.fingerprint_types import PIPELINE_ID
+from elo_bot.features.bases.fingerprints.artifacts import MANIFEST
+from elo_bot.features.bases.fingerprints.matcher import score_layout
+from elo_bot.features.bases.fingerprints.types import ComparisonSummary
+from elo_bot.db.fingerprint_types import PIPELINE_ID
 
 from datetime import UTC, datetime
 import random
 
-from elobot.db.fingerprint_types import BaseFingerprint, PIPELINE_IDENTITIES
+from elo_bot.db.fingerprint_types import BaseFingerprint, PIPELINE_IDENTITIES
 
 
 def points(count=30, seed=41):

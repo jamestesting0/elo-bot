@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from elobot.features.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
+from elo_bot.features.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
 
 
 class TestBaseStoreMessageRetirement(unittest.IsolatedAsyncioTestCase):

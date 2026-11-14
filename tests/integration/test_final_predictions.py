@@ -1,13 +1,13 @@
 import asyncio
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elobot.features.finals.predictions import PredictionAction, apply_prediction_action, begin_prediction, change_prediction_state
-from elobot.features.finals.prediction_ui import prediction_view
-from elobot.core.finals import FinalError, NODE_IDS
-from elobot.db.final_models import FinalPrediction
-from elobot.features.finals.results import FinalResultSubmission, submit_result
-from elobot.features.finals.recovery import recover_final
+from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.predictions import PredictionAction, apply_prediction_action, begin_prediction, change_prediction_state
+from elo_bot.features.finals.prediction_ui import prediction_view
+from elo_bot.core.finals import FinalError, NODE_IDS
+from elo_bot.db.final_models import FinalPrediction
+from elo_bot.features.finals.results import FinalResultSubmission, submit_result
+from elo_bot.features.finals.recovery import recover_final
 
 
 class TestFinalPredictions(FinalScenarioCase):

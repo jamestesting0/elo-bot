@@ -3,10 +3,10 @@ from unittest.mock import AsyncMock
 
 import anyio
 
-from elobot.features.hosting.war import helper_reinvite
-from elobot.features.hosting.war import helper_host_job
-from elobot.integrations.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest
-from elobot.config.emojis import LOADING_EMOJI, SUCCESS_EMOJI
+from elo_bot.features.hosting.war import helper_reinvite
+from elo_bot.features.hosting.war import helper_host_job
+from elo_bot.integrations.helper_api import HelperHostWarMatchPayload, HelperJobCreateRequest
+from elo_bot.config.emojis import LOADING_EMOJI, SUCCESS_EMOJI
 from tests import _helper_stored_bases_fixture as http_fixture
 
 

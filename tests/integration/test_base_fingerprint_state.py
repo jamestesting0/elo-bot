@@ -7,24 +7,24 @@ import interactions as ipy
 from bson import ObjectId
 from pymongo.errors import AutoReconnect
 
-from elobot.features.bases.fingerprints.ingestion import replace_source
-from elobot.features.bases.fingerprints.jobs import claim_tasks, commit_result, enroll_batch, materialize_outbox, run_counts
-from elobot.features.bases.fingerprints.search import eligible, find_matches, visibility_filter
-from elobot.features.bases.fingerprints.service import FingerprintService
-from elobot.features.bases.fingerprints.types import ExtractionResult
-from elobot.db.fingerprint_types import ExtractionState, utcnow
-from elobot.features.bases.fingerprints.types import FingerprintError
-from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
+from elo_bot.features.bases.fingerprints.ingestion import replace_source
+from elo_bot.features.bases.fingerprints.jobs import claim_tasks, commit_result, enroll_batch, materialize_outbox, run_counts
+from elo_bot.features.bases.fingerprints.search import eligible, find_matches, visibility_filter
+from elo_bot.features.bases.fingerprints.service import FingerprintService
+from elo_bot.features.bases.fingerprints.types import ExtractionResult
+from elo_bot.db.fingerprint_types import ExtractionState, utcnow
+from elo_bot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
-from elobot.db.fingerprint_types import PIPELINE_ID
+from elo_bot.db.fingerprint_types import PIPELINE_ID
 from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
-import elobot.extensions.preset as preset_commands
+import elo_bot.extensions.preset as preset_commands
 from unittest.mock import MagicMock
 
 
 from tests.integration._fingerprint_fixture import FingerprintPersistenceStateMixin
-import elobot.extensions.base as base_module
+import elo_bot.extensions.base as base_module
 
 class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_outbox_restart_duplicate_and_atomic_commit_preserve_metadata(self):
@@ -42,7 +42,7 @@ class TestFingerprintPersistence(FingerprintPersistenceStateMixin, unittest.Isol
 
     async def test_crash_after_base_commit_recovers_receipt(self):
         task = await self.claim()
-        with patch("elobot.features.bases.fingerprints.jobs.finish_task", new=AsyncMock(side_effect=AutoReconnect("crash"))):
+        with patch("elo_bot.features.bases.fingerprints.jobs.finish_task", new=AsyncMock(side_effect=AutoReconnect("crash"))):
             with self.assertRaises(AutoReconnect):
                 await commit_result(task, ExtractionResult(fingerprint=fingerprint()))
         await BaseFingerprintTask.get_pymongo_collection().update_one({"_id": task.id},

@@ -39,8 +39,8 @@ def render() -> str:
     sys.path.insert(0, str(REPO))
     import interactions as ipy
 
-    from elobot.app import backups, root_callbacks
-    from elobot.app.extensions import EXTENSIONS
+    from elo_bot.app import backups, root_callbacks
+    from elo_bot.app.extensions import EXTENSIONS
 
     bot = ipy.Client()
     for name in EXTENSIONS:

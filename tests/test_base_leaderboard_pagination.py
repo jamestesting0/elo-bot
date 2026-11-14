@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions.base import BaseCommands
-from elobot.config.presentation import LB_ENTRIES_PER_PAGE
+from elo_bot.extensions.base import BaseCommands
+from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
 from tests._patch_sites import patch_sites
 
 
@@ -32,9 +32,9 @@ class TestBaseLeaderboardPagination(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(modal.components[0].custom_id, "page")
         ctx.send.assert_not_awaited()
 
-    @patch('elobot.extensions.base.leaderboard.construct_base_leaderboard_string', new_callable=AsyncMock)
-    @patch('elobot.extensions.base.leaderboard.sort_bases', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch('elo_bot.extensions.base.leaderboard.construct_base_leaderboard_string', new_callable=AsyncMock)
+    @patch('elo_bot.extensions.base.leaderboard.sort_bases', new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_page_modal_jumps_and_preserves_selects(
             self, mock_base_layout, mock_sort_bases, mock_construct_leaderboard):
         # Given: eleven freshly sorted bases and two existing filter rows
@@ -73,8 +73,8 @@ class TestBaseLeaderboardPagination(unittest.IsolatedAsyncioTestCase):
         ctx.defer.assert_not_awaited()
         ctx.send.assert_not_awaited()
 
-    @patch('elobot.extensions.base.leaderboard.sort_bases', new_callable=AsyncMock)
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch('elo_bot.extensions.base.leaderboard.sort_bases', new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_page_modal_rejects_stale_page(self, mock_base_layout, mock_sort_bases):
         # Given: a modal opened for page two after the dataset shrank to one page
         mock_sort_bases.return_value = [MagicMock()]

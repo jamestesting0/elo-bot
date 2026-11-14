@@ -5,11 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from elobot.features.base_store import storage
-from elobot.features.results.operations import ResultOperationConflict, begin_result_operation
-from elobot.features.seasons.stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
-from elobot.db import Match
-from elobot.db.result_models import MatchResultOperation
+from elo_bot.features.base_store import storage
+from elo_bot.features.results.operations import ResultOperationConflict, begin_result_operation
+from elo_bot.features.seasons.stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
+from elo_bot.db import Match
+from elo_bot.db.result_models import MatchResultOperation
 from tests import _result_retry_store as record_fixture
 
 
@@ -17,7 +17,7 @@ from tests._result_retry_store import ResultRetryStateMixin
 
 from tests._result_retry_store import RESULTS
 from tests._patch_sites import patch_sites
-import elobot.extensions.match.results as match_results_module
+import elo_bot.extensions.match.results as match_results_module
 
 class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncioTestCase):
     async def test_result_tiers_follow_defenders_and_survive_checkpoint_retry(self) -> None:
@@ -251,7 +251,7 @@ class TestResultRetryConsistency(ResultRetryStateMixin, unittest.IsolatedAsyncio
         # Given: starting the match consumed the store and retained its stored flag.
         self.match["participants"][0]["opponent_bases_stored"] = True
         # When
-        with patch_sites(('elobot.extensions.match.lifecycle.clear_match_base_stores', 'elobot.extensions.match.results.clear_match_base_stores'), new=storage.clear_match_base_stores), \
+        with patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new=storage.clear_match_base_stores), \
                 patch.object(storage, "sync_base_store_slots", new=AsyncMock()):
             await self.cog._finalize_match_results_locked("TOKEN", RESULTS)
         # Then: durable result completion permits releasing the consumed marker.

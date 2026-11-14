@@ -3,29 +3,29 @@ import sys
 import textwrap
 import unittest
 
-from elobot.app.extensions import EXTENSIONS
+from elo_bot.app.extensions import EXTENSIONS
 
 
 class TestCogImports(unittest.TestCase):
     def test_extensions_and_hosting_helpers_import_independently(self) -> None:
         modules = sorted(set(EXTENSIONS) | {
-            "elobot.features.hosting.war.result_store",
-            "elobot.features.hosting.war.result_store_task",
-            "elobot.features.hosting.war.result_store_ui",
-            "elobot.features.hosting.war.helper_store",
-            "elobot.features.hosting.war.stored_bases",
-            "elobot.features.hosting.war.helper_base_store",
-            "elobot.features.hosting.war.helper_base_store_availability",
-            "elobot.features.hosting.war.helper_reinvite",
-            "elobot.features.hosting.war.war_start",
-            "elobot.features.hosting.war.helper_host",
-            "elobot.features.base_submission.models",
-            "elobot.features.base_submission.parsing",
-            "elobot.features.base_submission.presentation",
-            "elobot.features.base_store",
-            "elobot.features.base_store.models",
-            "elobot.features.base_store.storage",
-            "elobot.features.base_store.presentation",
+            "elo_bot.features.hosting.war.result_store",
+            "elo_bot.features.hosting.war.result_store_task",
+            "elo_bot.features.hosting.war.result_store_ui",
+            "elo_bot.features.hosting.war.helper_store",
+            "elo_bot.features.hosting.war.stored_bases",
+            "elo_bot.features.hosting.war.helper_base_store",
+            "elo_bot.features.hosting.war.helper_base_store_availability",
+            "elo_bot.features.hosting.war.helper_reinvite",
+            "elo_bot.features.hosting.war.war_start",
+            "elo_bot.features.hosting.war.helper_host",
+            "elo_bot.features.base_submission.models",
+            "elo_bot.features.base_submission.parsing",
+            "elo_bot.features.base_submission.presentation",
+            "elo_bot.features.base_store",
+            "elo_bot.features.base_store.models",
+            "elo_bot.features.base_store.storage",
+            "elo_bot.features.base_store.presentation",
         })
         script = textwrap.dedent("""
             import importlib
@@ -36,7 +36,7 @@ class TestCogImports(unittest.TestCase):
             for name in ("interactions", "coc", "beanie", "numpy", "PIL.Image"):
                 importlib.import_module(name)
             assert not any(
-                name.split(".")[0] in {"cogs", "common", "elobot"}
+                name.split(".")[0] in {"cogs", "common", "elo_bot"}
                 for name in sys.modules
             )
             for name in sys.argv[1:]:

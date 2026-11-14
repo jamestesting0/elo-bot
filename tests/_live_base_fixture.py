@@ -10,13 +10,13 @@ from bson import BSON
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from elobot.features.base_store import live_service
-from elobot.extensions.match import MatchCommands
-from elobot.features.hosting.war import helper_base_store_availability
-from elobot.config.game import HOST_CLAN_CHOICES
-from elobot.db import BaseLink, BaseStore, Match, Participant
+from elo_bot.features.base_store import live_service
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.hosting.war import helper_base_store_availability
+from elo_bot.config.game import HOST_CLAN_CHOICES
+from elo_bot.db import BaseLink, BaseStore, Match, Participant
 from tests import _helper_stored_bases_fixture as transport
-import elobot.features.matches.resources as resources_module
+import elo_bot.features.matches.resources as resources_module
 
 
 CLAN = str(HOST_CLAN_CHOICES[0].value)

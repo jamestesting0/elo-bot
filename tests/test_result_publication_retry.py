@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
-from elobot.discord import message_edits
+from elo_bot.discord import message_edits
 from tests._result_finalization_fixture import ResultFinalizationFixture
 from tests._patch_sites import patch_sites
 
@@ -41,7 +41,7 @@ class TestResultPublicationRetry(ResultFinalizationFixture):
         self.assertEqual(self.match.msg, "902")
         self.assertIn("recorded", self.ctx.send.await_args.args[0])
         self.second.edit.side_effect = None
-        with patch_sites(('elobot.extensions.match.results.completed_result_changes', 'elobot.features.results.recording.completed_result_changes'), new=AsyncMock(return_value=("+5", "-5"))):
+        with patch_sites(('elo_bot.extensions.match.results.completed_result_changes', 'elo_bot.features.results.recording.completed_result_changes'), new=AsyncMock(return_value=("+5", "-5"))):
             self.assertTrue(await self.cog._finalize_match_results_locked("TOKEN"))
         self.assertTrue(self.match.result_operation.published)
         self.record.assert_awaited_once()
@@ -99,7 +99,7 @@ class TestResultPublicationRetry(ResultFinalizationFixture):
         self.public.edit.side_effect = [
             ipy.errors.HTTPException(response=MagicMock(status=500)), None,
         ]
-        with patch_sites(('elobot.extensions.match.results.completed_result_changes', 'elobot.features.results.recording.completed_result_changes'), new=AsyncMock(return_value=("+5", "-5"))):
+        with patch_sites(('elo_bot.extensions.match.results.completed_result_changes', 'elo_bot.features.results.recording.completed_result_changes'), new=AsyncMock(return_value=("+5", "-5"))):
             self.assertFalse(await self.cog._finalize_match_results_locked("TOKEN"))
             self.assertEqual(self.public.edit.await_args.kwargs["embed"].title, "**Result Publication Incomplete**")
             self.public.edit.side_effect = None
@@ -117,7 +117,7 @@ class TestResultPublicationRetry(ResultFinalizationFixture):
 
     async def test_stored_side_http_failure_keeps_cleanup_and_logs_recovery(self) -> None:
         self.first.edit.side_effect = ipy.errors.HTTPException(response=MagicMock(status=500))
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock) as free_clan:
             with self.assertLogs(level="ERROR") as logs:
                 await self.cog._finish_stored_result_side(self.match, 0)
         free_clan.assert_awaited_once()
@@ -127,7 +127,7 @@ class TestResultPublicationRetry(ResultFinalizationFixture):
     async def test_stored_side_stale_message_does_not_edit_new_run(self) -> None:
         snapshot = self.match.model_copy(deep=True)
         self.match.old_msgs[0] = 99
-        with patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new_callable=AsyncMock):
+        with patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock):
             await self.cog._finish_stored_result_side(snapshot, 0)
         self.thread.fetch_message.assert_not_awaited()
         self.first.edit.assert_not_awaited()

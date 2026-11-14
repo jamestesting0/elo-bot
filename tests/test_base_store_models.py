@@ -1,6 +1,6 @@
 import unittest
 
-from elobot.features.base_store.models import numeric_base_store_slot
+from elo_bot.features.base_store.models import numeric_base_store_slot
 
 
 class TestBaseStoreModels(unittest.TestCase):

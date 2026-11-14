@@ -6,14 +6,14 @@ import anyio
 import interactions as ipy
 from pymongo.errors import AutoReconnect
 
-from elobot.features.bases.fingerprints.removal import (
+from elo_bot.features.bases.fingerprints.removal import (
     BulkRemovalError,
     FingerprintRemoval,
     FingerprintRemovalProgress,
 )
-from elobot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.features.bases.fingerprints.types import FingerprintError
 from tests import _base_extract_fixture as fixture
-import elobot.extensions.base.extraction as base_extraction_module
+import elo_bot.extensions.base.extraction as base_extraction_module
 
 
 class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
@@ -26,9 +26,9 @@ class TestBaseUnextract(unittest.IsolatedAsyncioTestCase):
         fixture.BaseExtractStateMixin.setUp(self)
         self.bot.base_fingerprints.run_lock = anyio.Lock()
         self.bot.base_fingerprints.gpu = SimpleNamespace(close=AsyncMock())
-        self.single = self.enterContext(patch('elobot.extensions.base.extraction.remove_fingerprint', new=AsyncMock(
+        self.single = self.enterContext(patch('elo_bot.extensions.base.extraction.remove_fingerprint', new=AsyncMock(
             return_value=FingerprintRemoval(removed=1, cancelled=1))))
-        self.bulk = self.enterContext(patch('elobot.extensions.base.extraction.remove_all_fingerprints', new=AsyncMock(
+        self.bulk = self.enterContext(patch('elo_bot.extensions.base.extraction.remove_all_fingerprints', new=AsyncMock(
             return_value=FingerprintRemoval(removed=7, cancelled=2))))
 
     async def invoke(self, ctx: ipy.SlashContext, selection: str | None = None) -> None:

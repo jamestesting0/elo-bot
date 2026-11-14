@@ -3,9 +3,9 @@ import unittest
 
 import numpy as np
 
-from elobot.features.bases.fingerprints.geometry import Geometry
-from elobot.features.bases.fingerprints.matcher import assign, score_layout
-from elobot.db.fingerprint_types import BaseFingerprint, PREVIOUS_SAHI_PIPELINE_ID
+from elo_bot.features.bases.fingerprints.geometry import Geometry
+from elo_bot.features.bases.fingerprints.matcher import assign, score_layout
+from elo_bot.db.fingerprint_types import BaseFingerprint, PREVIOUS_SAHI_PIPELINE_ID
 from tests._relative_geometry_fixture import layout, points
 
 

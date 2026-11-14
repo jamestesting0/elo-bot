@@ -29,8 +29,8 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 from interactions.models.discord.message import process_message_payload
 
-from elobot.extensions.base import BaseCommands
-from elobot.config.game import DISTRICT_CHOICES
+from elo_bot.extensions.base import BaseCommands
+from elo_bot.config.game import DISTRICT_CHOICES
 from tests._patch_sites import patch_sites
 
 OWNER_ID = 111
@@ -305,7 +305,7 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
         }
         self.assertTrue(published_ids.isdisjoint(LEADERBOARD_SELECT_IDS))
 
-    @patch_sites(('elobot.extensions.base.extraction.BaseLayout', 'elobot.extensions.base.submissions.BaseLayout', 'elobot.extensions.base.manage.BaseLayout', 'elobot.extensions.base.private.BaseLayout', 'elobot.extensions.base.leaderboard.BaseLayout', 'elobot.features.bases.layouts.queries.BaseLayout', 'elobot.features.bases.layouts.ui.BaseLayout', 'elobot.features.bases.layouts.private.BaseLayout'))
+    @patch_sites(('elo_bot.extensions.base.extraction.BaseLayout', 'elo_bot.extensions.base.submissions.BaseLayout', 'elo_bot.extensions.base.manage.BaseLayout', 'elo_bot.extensions.base.private.BaseLayout', 'elo_bot.extensions.base.leaderboard.BaseLayout', 'elo_bot.features.bases.layouts.queries.BaseLayout', 'elo_bot.features.bases.layouts.ui.BaseLayout', 'elo_bot.features.bases.layouts.private.BaseLayout'))
     async def test_list_district_and_embed_selects_keep_filters_and_pagination(self, mock_base_layout):
         # Given: public Excellent bases for builder 111 across two districts, plus
         # quality, builder, and private rows that must never appear.

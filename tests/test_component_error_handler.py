@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.app import errors
-from elobot.config.emojis import ERROR_EMOJI
-from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
+from elo_bot.app import errors
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 
 
 class TestComponentErrorHandler(unittest.IsolatedAsyncioTestCase):

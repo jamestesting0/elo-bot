@@ -4,12 +4,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import anyio
 
-from elobot.extensions import data as data_commands
-from elobot.features.hosting.war import result_store
-from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
-from elobot.config.emojis import SUCCESS_EMOJI
-from elobot.features.players.data_boundary import PlayerDataBoundary
-from elobot.db import Match
+from elo_bot.extensions import data as data_commands
+from elo_bot.features.hosting.war import result_store
+from elo_bot.features.hosting.war.helper_store import HelperScoreStoreOutcome
+from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.features.players.data_boundary import PlayerDataBoundary
+from elo_bot.db import Match
 from tests import _result_retry_store as retry_fixture
 from tests._patch_sites import MATCH_MODULE_FAMILY, patch_family
 

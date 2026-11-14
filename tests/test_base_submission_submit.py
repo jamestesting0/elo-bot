@@ -7,12 +7,12 @@ import interactions as ipy
 
 sys.path.append(os.getcwd())
 
-import elobot.extensions.base as base_commands
-from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI
+import elo_bot.extensions.base as base_commands
+from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 import validators
-from elobot.config.ids import BASE_SUBMISSION_CHANNEL
-from elobot.features.base_submission.presentation import build_review_components
+from elo_bot.config.ids import BASE_SUBMISSION_CHANNEL
+from elo_bot.features.base_submission.presentation import build_review_components
 
 
 BASE_LINK = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"

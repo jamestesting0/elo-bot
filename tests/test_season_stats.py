@@ -4,10 +4,10 @@ import re
 from interactions.models.discord.message import process_message_payload
 from tests._season_stats_fixture import row, timestamp
 
-from elobot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
-from elobot.config.emojis import DISTRICT_EMOJI
-from elobot.features.seasons.presentation import stats_controls, stats_embed
-from elobot.features.seasons.stats import SeasonWindow, StatsAccumulator
+from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.emojis import DISTRICT_EMOJI
+from elo_bot.features.seasons.presentation import stats_controls, stats_embed
+from elo_bot.features.seasons.stats import SeasonWindow, StatsAccumulator
 
 
 class TestSeasonStatsRendering(unittest.TestCase):

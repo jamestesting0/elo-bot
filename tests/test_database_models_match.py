@@ -2,7 +2,7 @@ import unittest
 
 from pymongo import DESCENDING
 
-from elobot.db import match_models
+from elo_bot.db import match_models
 
 
 class TestDatabaseMatchModels(unittest.TestCase):

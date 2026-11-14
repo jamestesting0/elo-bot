@@ -10,11 +10,11 @@ from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 from pymongo.results import UpdateResult
 
-from elobot.features.base_store.models import BaseStorePresentationRequest
-from elobot.features.base_store.presentation import build_helper_store_components, build_manual_store_components
-from elobot.features.base_store.publication import publish_base_store_message
-from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
-from elobot.db import BaseStore, Match, Participant
+from elo_bot.features.base_store.models import BaseStorePresentationRequest
+from elo_bot.features.base_store.presentation import build_helper_store_components, build_manual_store_components
+from elo_bot.features.base_store.publication import publish_base_store_message
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.db import BaseStore, Match, Participant
 
 
 class TestBaseStorePublication(unittest.IsolatedAsyncioTestCase):

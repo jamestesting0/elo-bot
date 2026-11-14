@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions.self_service import SelfCommands
-from elobot.config.emojis import ERROR_EMOJI
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.config.emojis import ERROR_EMOJI
 
 
 CALLER_ID = "123456789012345678"
@@ -43,7 +43,7 @@ class TestSelfStoreResult(unittest.IsolatedAsyncioTestCase):
         )
 
     async def invoke(self, ctx: ipy.SlashContext, match: SimpleNamespace | None) -> MagicMock:
-        with patch("elobot.extensions.self_service.Match") as match_model:
+        with patch("elo_bot.extensions.self_service.Match") as match_model:
             match_model.find_one = AsyncMock(return_value=match)
             await self.cog.self_store_result.callback.func(self.cog, ctx)
             return match_model

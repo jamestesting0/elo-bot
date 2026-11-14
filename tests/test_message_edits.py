@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
-from elobot.discord import message_edits
-from elobot.discord.message_edits import edit_channel_message
+from elo_bot.discord import message_edits
+from elo_bot.discord.message_edits import edit_channel_message
 
 
 class TestChannelMessageEdits(unittest.IsolatedAsyncioTestCase):

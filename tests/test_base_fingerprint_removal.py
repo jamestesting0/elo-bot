@@ -7,10 +7,10 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 from pymongo.errors import AutoReconnect
 
-from elobot.features.bases.fingerprints import removal
-from elobot.db.fingerprint_types import ExtractionState
-from elobot.features.bases.fingerprints.types import FingerprintError
-from elobot.db import BaseLayout
+from elo_bot.features.bases.fingerprints import removal
+from elo_bot.db.fingerprint_types import ExtractionState
+from elo_bot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.db import BaseLayout
 from tests._relative_geometry_fixture import layout
 
 

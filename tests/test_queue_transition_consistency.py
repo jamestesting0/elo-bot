@@ -10,13 +10,13 @@ from beanie.odm.fields import ExpressionField, LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-from elobot.extensions import match as match_commands
-from elobot.db import Match, Player, Queue, ServerState
+from elo_bot.extensions import match as match_commands
+from elo_bot.db import Match, Player, Queue, ServerState
 from tests._patch_sites import patch_sites
-import elobot.extensions.match as match_module
-import elobot.features.queue.matching as matching_module
-import elobot.features.queue.state as state_module
-import elobot.extensions.match.queue as match_queue_module
+import elo_bot.extensions.match as match_module
+import elo_bot.features.queue.matching as matching_module
+import elo_bot.features.queue.state as state_module
+import elo_bot.extensions.match.queue as match_queue_module
 
 
 class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
@@ -53,7 +53,7 @@ class TestQueueTransitionConsistency(unittest.IsolatedAsyncioTestCase):
         self.bot = MagicMock(user=MagicMock(id=match_commands.BOT_ID), fetch_user=AsyncMock())
         self.bot.fetch_user.side_effect = lambda user_id: MagicMock(id=int(user_id), send=AsyncMock())
         self.cog = match_module.MatchCommands(self.bot)
-        self.enterContext(patch_sites(('elobot.extensions.match.queue.QUEUE_OPERATION_LOCK', 'elobot.extensions.match.lifecycle.QUEUE_OPERATION_LOCK', 'elobot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elobot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elobot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), anyio.Lock()))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.queue.QUEUE_OPERATION_LOCK', 'elo_bot.extensions.match.lifecycle.QUEUE_OPERATION_LOCK', 'elo_bot.features.queue.policy.QUEUE_OPERATION_LOCK', 'elo_bot.features.queue.matching.QUEUE_OPERATION_LOCK', 'elo_bot.features.matches.lifecycle.QUEUE_OPERATION_LOCK'), anyio.Lock()))
 
         async def find_queue(query, **_kwargs) -> Queue:
             return self.snapshot(query["tier"])

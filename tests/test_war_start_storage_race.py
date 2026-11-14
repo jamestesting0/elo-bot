@@ -4,15 +4,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie.odm.fields import ExpressionField
 from pymongo.results import UpdateResult
 
-from elobot.features.base_store import preparation
-from elobot.features.hosting.war import war_start
-from elobot.db import BaseStore
+from elo_bot.features.base_store import preparation
+from elo_bot.features.hosting.war import war_start
+from elo_bot.db import BaseStore
 from tests._war_start_fixture import WarStartFixture
 from tests._patch_sites import patch_sites
-import elobot.extensions.match as match_module
-import elobot.features.matches.resources as resources_module
-import elobot.features.base_store.match_adapters as match_adapters_module
-import elobot.extensions.match.dashboards as match_dashboards_module
+import elo_bot.extensions.match as match_module
+import elo_bot.features.matches.resources as resources_module
+import elo_bot.features.base_store.match_adapters as match_adapters_module
+import elo_bot.extensions.match.dashboards as match_dashboards_module
 
 
 class TestWarStartStorageRace(unittest.IsolatedAsyncioTestCase):
@@ -38,7 +38,7 @@ class TestWarStartStorageRace(unittest.IsolatedAsyncioTestCase):
         runtime = match_module.MatchCommands(self.case.bot)
         with patch.object(match_adapters_module.Match, "thread", ExpressionField("thread"), create=True), \
                 patch.object(match_adapters_module.Match, "find_one", new=AsyncMock(return_value=match)), \
-                patch_sites(('elobot.extensions.match.base_store.try_reserve_resource_clan', 'elobot.extensions.match.hosting.try_reserve_resource_clan', 'elobot.extensions.match.settings.try_reserve_resource_clan', 'elobot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock()) as claim:
+                patch_sites(('elo_bot.extensions.match.base_store.try_reserve_resource_clan', 'elo_bot.extensions.match.hosting.try_reserve_resource_clan', 'elo_bot.extensions.match.settings.try_reserve_resource_clan', 'elo_bot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock()) as claim:
             await runtime.match_war_start.callback.func(runtime, self.case.ctx, player=0, clan="#STORE")
 
         self.case.ctx.send.assert_awaited_once()
@@ -56,7 +56,7 @@ class TestWarStartStorageRace(unittest.IsolatedAsyncioTestCase):
             clan_tag="#STORE", slot="Slot 1", reservation_id="PENDING", ready=False,
         )
         match.participants[0].opponent_bases_stored = True
-        with patch_sites(('elobot.extensions.match.hosting.claim_resource_clan', 'elobot.extensions.match.settings.claim_resource_clan', 'elobot.features.matches.resources.claim_resource_clan'), new=AsyncMock()) as claim, \
+        with patch_sites(('elo_bot.extensions.match.hosting.claim_resource_clan', 'elo_bot.extensions.match.settings.claim_resource_clan', 'elo_bot.features.matches.resources.claim_resource_clan'), new=AsyncMock()) as claim, \
                 patch.object(war_start, "complete_war_start", new=AsyncMock()) as publish:
             # When a manual Start Match tries to start this side.
             message = await war_start.start_war(self.case.bot, self.case.ctx, self.case.war_request())
@@ -113,8 +113,8 @@ class TestWarStartStorageRace(unittest.IsolatedAsyncioTestCase):
                 patch.object(match_dashboards_module.Clan, "find_one", new=AsyncMock(return_value=MagicMock(
                     availability_str="Available",
                 ))), \
-                patch('elobot.features.matches.resources.occupy_clan', new=AsyncMock()) as occupy, \
-                patch_sites(('elobot.extensions.match.result_store.free_clan', 'elobot.extensions.match.dashboards.free_clan', 'elobot.features.matches.resources.free_clan'), new=AsyncMock()), \
+                patch('elo_bot.features.matches.resources.occupy_clan', new=AsyncMock()) as occupy, \
+                patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new=AsyncMock()), \
                 patch.object(war_start, "complete_war_start", new=AsyncMock(return_value=MagicMock(id=700))) as publish:
             # When the real start tries to commit against that newer reservation.
             message = await war_start.start_war(self.case.bot, self.case.ctx, self.case.war_request())

@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch
 
-from elobot.features.base_store.live_publication import publish_live_storage
-from elobot.features.base_store.publication import mark_store_reserved, mark_store_unavailable
-from elobot.features.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
-from elobot.discord import message_edits
+from elo_bot.features.base_store.live_publication import publish_live_storage
+from elo_bot.features.base_store.publication import mark_store_reserved, mark_store_unavailable
+from elo_bot.features.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
+from elo_bot.discord import message_edits
 from tests._live_base_fixture import LiveBaseFixture
 
 

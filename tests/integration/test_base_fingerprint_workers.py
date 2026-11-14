@@ -6,9 +6,9 @@ import select
 import sys
 import unittest
 
-from elobot.features.bases.fingerprints.artifacts import MODEL_DIR, ROOT
-from elobot.features.bases.fingerprints.runtime import InferenceWorker
-from elobot.features.bases.fingerprints.types import FingerprintError
+from elo_bot.features.bases.fingerprints.artifacts import MODEL_DIR, ROOT
+from elo_bot.features.bases.fingerprints.runtime import InferenceWorker
+from elo_bot.features.bases.fingerprints.types import FingerprintError
 from tests._relative_geometry_fixture import layout, points
 
 
@@ -44,7 +44,7 @@ class TestFingerprintWorkers(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(worker.process)
 
     async def test_parent_death_terminates_worker(self):
-        code = ("import asyncio; from elobot.features.bases.fingerprints.runtime import InferenceWorker\n"
+        code = ("import asyncio; from elo_bot.features.bases.fingerprints.runtime import InferenceWorker\n"
                 "async def main():\n"
                 " w=InferenceWorker('cpu','test-parent'); await w.start(); "
                 "print(w.process.pid,flush=True)\n"

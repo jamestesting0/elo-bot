@@ -4,9 +4,9 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elobot.extensions.self_service import SelfCommands
-from elobot.config.emojis import ERROR_EMOJI
-from elobot.config.ids import LVL2_ROLES
+from elo_bot.extensions.self_service import SelfCommands
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.config.ids import LVL2_ROLES
 
 
 class TestSelfStoreResultLive(unittest.IsolatedAsyncioTestCase):
@@ -29,7 +29,7 @@ class TestSelfStoreResultLive(unittest.IsolatedAsyncioTestCase):
         )
 
     async def invoke(self) -> None:
-        with patch("elobot.extensions.self_service.Match") as model:
+        with patch("elo_bot.extensions.self_service.Match") as model:
             model.find_one = AsyncMock(return_value=self.match)
             await self.cog.self_store_result_live.callback.func(self.cog, self.ctx)
 

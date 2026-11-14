@@ -8,7 +8,7 @@ from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
 
-from cogs import data_commands
+from elobot.extensions import data as data_commands
 from elobot.config.game import BASE_STORE_SLOTS
 from elobot.db import BaseStore, Clan, Match, Participant, Player, RecordedMatch
 

@@ -9,7 +9,7 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.config.ids import MATCH_CHANNEL, STAFF_ROLE
 from elobot.db import BaseLink, BaseStore, Match, Participant
 

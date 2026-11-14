@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.preset_commands import PresetCommands
+from elobot.extensions.preset import PresetCommands
 from elobot.config.emojis import ERROR_EMOJI
 
 
@@ -40,7 +40,7 @@ class TestPresetBaseView(unittest.IsolatedAsyncioTestCase):
             ["Dragon Cliffs", "Goblin Mines"],
         )
 
-    @patch("cogs.preset_commands.Player")
+    @patch("elobot.extensions.preset.Player")
     async def test_district_add_persists_secondary_fallbacks(self, player_model) -> None:
         # Given: a registered player and both optional fallback choices
         player = MagicMock(
@@ -75,7 +75,7 @@ class TestPresetBaseView(unittest.IsolatedAsyncioTestCase):
         )
         player.save_changes.assert_awaited_once_with()
 
-    @patch("cogs.preset_commands.Player")
+    @patch("elobot.extensions.preset.Player")
     async def test_district_add_omitted_secondaries_replace_existing_with_none(self, player_model) -> None:
         # Given: a registered player with stale secondary fallbacks
         player = MagicMock(
@@ -101,7 +101,7 @@ class TestPresetBaseView(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(player.secondary_district_presets, [None, None, None])
         player.save_changes.assert_awaited_once_with()
 
-    @patch("cogs.preset_commands.Player")
+    @patch("elobot.extensions.preset.Player")
     async def test_district_remove_clears_secondary_fallbacks(self, player_model) -> None:
         # Given: a player with primary and secondary district presets
         player = MagicMock(
@@ -122,7 +122,7 @@ class TestPresetBaseView(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(player.secondary_district_presets, [None, None, None])
         player.save_changes.assert_awaited_once_with()
 
-    @patch("cogs.preset_commands.Player")
+    @patch("elobot.extensions.preset.Player")
     async def test_view_skips_missing_link_and_sends_remaining_preset(self, player_model) -> None:
         # Given: one removed preset and one linked base remain in the stored mapping
         linked_base = MagicMock(
@@ -149,7 +149,7 @@ class TestPresetBaseView(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(embeds[0].title, "**Wizard Valley**")
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
-    @patch("cogs.preset_commands.Player")
+    @patch("elobot.extensions.preset.Player")
     async def test_view_reports_no_presets_when_only_missing_links_remain(self, player_model) -> None:
         # Given: every stored preset entry points to a removed base
         player_model.find_one = AsyncMock(
@@ -170,8 +170,8 @@ class TestPresetBaseView(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("embeds", ctx.send.await_args.kwargs)
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
-    @patch("cogs.preset_commands.datetime")
-    @patch("cogs.preset_commands.Player")
+    @patch("elobot.extensions.preset.datetime")
+    @patch("elobot.extensions.preset.Player")
     async def test_view_marks_missing_expiration_as_ninety_days_expired(
             self,
             player_model,

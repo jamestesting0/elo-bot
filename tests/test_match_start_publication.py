@@ -6,7 +6,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 from elobot.features.hosting.live import live_start
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 from elobot.features.base_store import storage as base_store_storage
 from elobot.features.hosting.war import war_start
 from elobot.features.matches.messages import MatchMessagePublicationError, mark_match_message_ended

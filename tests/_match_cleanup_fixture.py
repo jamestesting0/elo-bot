@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
-from cogs import match_commands, thread_commands
+from elobot.extensions import thread as thread_commands
+from elobot.extensions import match as match_commands
 from elobot.config.ids import LVL2_ROLES, MATCH_CHANNEL
 from elobot.db import Match
 from tests import _result_finalization_fixture as result_fixture
@@ -15,7 +16,7 @@ from elobot.features.base_store.models import BaseStorePreparationFailure, BaseS
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
-from cogs import challenge_commands
+from elobot.extensions import challenge as challenge_commands
 from elobot.db import Participant
 
 

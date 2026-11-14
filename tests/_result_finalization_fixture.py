@@ -4,8 +4,8 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.results import UpdateResult
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
+import elobot.extensions.match as match_commands
+from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import result_store
 from elobot.config.ids import MATCH_CHANNEL
 from elobot.db import BaseStore, Match, Participant
@@ -156,7 +156,7 @@ class ResultFinalizationFixture(unittest.IsolatedAsyncioTestCase):
 
 from copy import deepcopy
 from pymongo.results import DeleteResult, InsertOneResult
-from cogs import data_commands
+from elobot.extensions import data as data_commands
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
 from elobot.features.results.manual import manual_result_key

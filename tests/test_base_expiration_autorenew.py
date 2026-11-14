@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 from aiohttp import web
 import interactions as ipy
 
-from cogs.base_commands import BaseCommands
+from elobot.extensions.base import BaseCommands
 from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL, BASE_RENEWAL_THREAD
 
 
@@ -96,8 +96,8 @@ class TestBaseExpirationAutorenew(unittest.IsolatedAsyncioTestCase):
         clock.now.return_value.timestamp.return_value = NOW
 
         with (
-                patch("cogs.base_commands.BaseLayout") as base_layout,
-                patch("cogs.base_commands.datetime", new=clock),
+                patch("elobot.extensions.base.BaseLayout") as base_layout,
+                patch("elobot.extensions.base.datetime", new=clock),
                 patch("elobot.features.hosting.war.helper_preserve.datetime", new=clock),
         ):
             base_layout.expiration_date.__le__.return_value = "expiring"

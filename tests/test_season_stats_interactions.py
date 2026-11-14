@@ -6,7 +6,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 from tests._season_stats_fixture import row
 
-import cogs.season_commands as commands
+import elobot.extensions.season as commands
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.discord.season_stats import stats_controls, stats_embed
 from elobot.features.seasons.stats import SeasonWindow, StatsAccumulator
@@ -28,8 +28,8 @@ class TestSeasonStatsInteractions(unittest.IsolatedAsyncioTestCase):
             SimpleNamespace(season_number=3, start=10, end=20),
         ])
         self.patch_seasons = patch.object(commands.Season, "find_all", return_value=self.seasons)
-        self.patch_time = patch("cogs.season_commands.unix_time", return_value=30)
-        self.patch_stats = patch("cogs.season_commands.load_season_stats", new_callable=AsyncMock,
+        self.patch_time = patch("elobot.extensions.season.unix_time", return_value=30)
+        self.patch_stats = patch("elobot.extensions.season.load_season_stats", new_callable=AsyncMock,
                                  return_value=self.stats)
         self.patch_seasons.start()
         self.patch_time.start()

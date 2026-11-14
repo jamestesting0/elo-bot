@@ -4,7 +4,7 @@ from typing import Protocol
 import coc
 import interactions as ipy
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 import elobot.features.hosting.war.result_store_task as result_store_task
 import elobot.features.hosting.war.war_start as war_start
 from elobot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag

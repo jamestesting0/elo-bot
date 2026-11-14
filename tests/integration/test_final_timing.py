@@ -5,7 +5,7 @@ import anyio
 import interactions as ipy
 
 from elobot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.features.finals.hosting import accept_final_start
 from elobot.features.finals.lifecycle import confirm_bracket, resolve_final
 from elobot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
@@ -234,8 +234,8 @@ class TestFinalTiming(FinalScenarioCase):
                     self.assertEqual((await resolve_final()).nodes[node_id].scheduled_times, expected)
                     raise ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
 
-                with patch("cogs.match_commands.append_helper_task", new=AsyncMock()), \
-                        patch("cogs.match_commands.publish_match_message", new=AsyncMock(side_effect=fail)):
+                with patch("elobot.extensions.match.append_helper_task", new=AsyncMock()), \
+                        patch("elobot.extensions.match.publish_match_message", new=AsyncMock(side_effect=fail)):
                     with self.assertRaises(ipy.errors.Forbidden):
                         if player is None:
                             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")

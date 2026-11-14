@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from cogs.final_commands import FinalCommands
-from cogs.match_commands import MatchCommands
-from cogs.token_commands import TokenCommands
+from elobot.extensions.final import FinalCommands
+from elobot.extensions.match import MatchCommands
+from elobot.extensions.tokens import TokenCommands
 from elobot.config.ids import FINAL_CHANNEL, LVL1_ROLES, LVL2_ROLES
 from elobot.config.game import DISTRICT_CODES
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI

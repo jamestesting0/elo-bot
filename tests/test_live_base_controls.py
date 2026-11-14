@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from elobot.features.base_store import storage
 from elobot.features.base_store import live_controls
 from elobot.features.hosting.live.request import parse_live_request_id
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 from tests._live_base_fixture import CLAN, PAIR, LiveBaseFixture
 
 

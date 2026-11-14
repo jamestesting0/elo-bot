@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
-from cogs import match_commands, thread_commands
+from elobot.extensions import thread as thread_commands
+from elobot.extensions import match as match_commands
 from elobot.features.results.autowin import claim_autowin
 from elobot.config.ids import LVL2_ROLES, MATCH_CHANNEL
 from elobot.features.matches.cleanup import delete_unreserved_match

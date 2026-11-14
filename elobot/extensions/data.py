@@ -1,9 +1,9 @@
 import anyio
 from beanie.odm.operators.update.general import Set
 
-from cogs.leaderboard_commands import request_leaderboard_player_reload
-from cogs.match_commands import free_match_clans
-from cogs.player_commands import clear_match_id_choices, forget_match_id_choice
+from elobot.extensions.leaderboard import request_leaderboard_player_reload
+from elobot.extensions.match import free_match_clans
+from elobot.extensions.player import clear_match_id_choices, forget_match_id_choice
 from elobot.features.hosting.war import result_store
 from elobot.features.results.operations import cancel_result_operation
 from elobot.features.matches.cleanup import delete_unreserved_match, has_reserved_match_slots

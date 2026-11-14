@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie import PydanticObjectId
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
+import elobot.extensions.match as match_commands
+from elobot.extensions.match import MatchCommands
 from elobot.db import Match, Participant
 
 
@@ -246,7 +246,7 @@ class TestWarAbort(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(match_commands.RESOURCE_MATCH_SIDE_LOCKS[("TOKEN", 0)].locked())
 
     @patch("elobot.features.hosting.war.war_start.abort_war_start", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_abort_match_button_delegates_to_shared_war_abort(self, mock_match, abort) -> None:
         bot = MagicMock()
         cog = MatchCommands(bot)

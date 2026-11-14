@@ -9,7 +9,7 @@ from elobot.features.finals.publication import publish_bracket
 from elobot.features.finals.bracket import automatic_pairs, build_bracket
 from elobot.features.finals.recovery import publish_result
 from elobot.features.finals.rendering import render_bracket
-from cogs.final_commands import FinalCommands
+from elobot.extensions.final import FinalCommands
 from elobot.features.finals.types import FinalError
 from elobot.db import EloFinal, EloFinalMatch
 from elobot.db.final_models import FinalMatchResult, FinalPrediction, FinalResultSnapshot

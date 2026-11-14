@@ -8,11 +8,11 @@ from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.db import Helper, Match, Participant, Player
 from tests._result_retry_store import read_field, write_field
 from pymongo.results import DeleteResult
-from cogs import data_commands
+from elobot.extensions import data as data_commands
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import RecordedMatch
 from tests._result_retry_store import matches

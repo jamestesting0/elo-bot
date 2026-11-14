@@ -14,7 +14,7 @@ from elobot.app import root_callbacks, runtime
 from elobot.app.backups import backup_database1, backup_database2, sync_database
 from elobot.app.client import create_client
 from elobot.app.events import on_raid_weekend_end
-from elobot.app.extensions import get_extensions
+from elobot.app.extensions import EXTENSIONS
 from elobot.config.settings import COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWORD, DATA_BASES, MONGO_DB_URL
 from elobot.db import (
     AUDIT_LOG_INDEXES,
@@ -144,7 +144,7 @@ async def main():
     # load cogs
     print("➤ Loading cogs...")
     cogs_start = time.time()
-    for extension in get_extensions("cogs"):
+    for extension in EXTENSIONS:
         runtime.bot.load_extension(extension)
     print(f"  ✓ Cogs loaded in {time.time() - cogs_start:.2f}s")
 

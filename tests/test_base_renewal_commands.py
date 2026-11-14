@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.base_commands import BaseCommands
+from elobot.extensions.base import BaseCommands
 from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
 from elobot.config.presentation import COLOR
 
@@ -43,8 +43,8 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("base autorenew", command_paths)
 
-    @patch("cogs.base_commands.utils.misc_utils.disable_components", return_value=[])
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.utils.misc_utils.disable_components", return_value=[])
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_renewal_modal_logs_success(self, mock_base_layout, _mock_disable_components) -> None:
         # Given
         old_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
@@ -62,7 +62,7 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         # When
         clock = MagicMock()
         clock.now.return_value.timestamp.return_value = 2_000_000_000
-        with patch("cogs.base_commands.datetime", clock):
+        with patch("elobot.extensions.base.datetime", clock):
             await BASE_RENEW_MODAL_CALLBACK(self.cog, ctx, renewed_link=new_link)
 
         # Then

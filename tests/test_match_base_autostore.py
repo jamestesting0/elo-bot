@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from elobot.features.base_store.models import SelfBaseStoreRequest
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.config.emojis import ERROR_EMOJI
 from elobot.config.ids import LVL2_ROLES, PLAYER_ROLE
 from elobot.db import Match, Participant
@@ -27,8 +27,8 @@ class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
 
     async def _invoke(self, player: int) -> AsyncMock:
         with (
-            patch("cogs.match_commands.Match") as match_model,
-            patch("cogs.match_commands.base_store_storage.store_self_bases", new_callable=AsyncMock) as store,
+            patch("elobot.extensions.match.Match") as match_model,
+            patch("elobot.extensions.match.base_store_storage.store_self_bases", new_callable=AsyncMock) as store,
         ):
             match_model.find_one = AsyncMock(return_value=self.match)
             await self.cog.match_base_autostore.callback.func(self.cog, self.ctx, player=player)
@@ -127,7 +127,7 @@ class TestMatchBaseAutostore(unittest.IsolatedAsyncioTestCase):
         self.ctx.author.has_role.side_effect = lambda role_id: role_id == LVL2_ROLES[-1]
 
         with (
-            patch("cogs.match_commands.Match") as match_model,
+            patch("elobot.extensions.match.Match") as match_model,
             patch.object(self.cog, "_prepare_base_store", new_callable=AsyncMock) as prepare,
         ):
             match_model.find_one = AsyncMock(return_value=self.match)

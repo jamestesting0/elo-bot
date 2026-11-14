@@ -15,7 +15,7 @@ from elobot.db import Match, Player, RecordedMatch, Queue, Season
 from elobot.features.seasons.selection import interpret_season_string
 from elobot.discord.members import fetch_member_otherwise_user, member_guild
 from elobot.discord.mentions import mention_user
-from cogs.leaderboard_commands import (
+from elobot.extensions.leaderboard import (
     get_season_matches,
     get_winrate,
     get_avg_stars,

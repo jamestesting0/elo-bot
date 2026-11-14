@@ -8,7 +8,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 from pymongo.results import InsertOneResult
 
-from cogs import season_commands
+from elobot.extensions import season as season_commands
 from elobot.features.hosting.war import result_store
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY

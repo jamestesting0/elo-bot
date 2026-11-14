@@ -7,7 +7,7 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.db import BaseLink, BaseStore, Match, Participant
 
 
@@ -70,8 +70,8 @@ class TestMatchParticipantUpdates(unittest.IsolatedAsyncioTestCase):
 
                 database_set = AsyncMock(return_value=snapshot)
                 with (
-                    patch("cogs.match_commands.Match") as match_model,
-                    patch("cogs.match_commands.BaseLayout") as base_model,
+                    patch("elobot.extensions.match.Match") as match_model,
+                    patch("elobot.extensions.match.BaseLayout") as base_model,
                     patch.object(Match, "set", new=database_set),
                 ):
                     match_model.find_one = AsyncMock(return_value=snapshot)

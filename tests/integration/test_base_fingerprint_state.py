@@ -16,8 +16,8 @@ from elobot.db import BaseExtractionRun, BaseFingerprintTask, BaseLayout
 from tests._base_fingerprint_fixture import fingerprint
 from tests._relative_geometry_fixture import layout
 from elobot.features.bases.fingerprints.types import PIPELINE_ID
-import cogs.base_commands as base_commands
-import cogs.preset_commands as preset_commands
+import elobot.extensions.base as base_commands
+import elobot.extensions.preset as preset_commands
 from unittest.mock import MagicMock
 
 

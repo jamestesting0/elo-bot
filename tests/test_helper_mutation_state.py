@@ -9,7 +9,7 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
-import cogs.helper_commands as helper_commands
+import elobot.extensions.helper as helper_commands
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.config.ids import STAFF_ROLE
 from elobot.db import Helper

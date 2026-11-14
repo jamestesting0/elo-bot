@@ -7,10 +7,10 @@ import interactions as ipy
 from beanie.odm.fields import ExpressionField
 from pymongo.errors import PyMongoError
 
-import cogs.match_commands as commands
+import elobot.extensions.match as commands
 from elobot.features.hosting.live import live_start
 from elobot.features.hosting.live import helper_live
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.features.hosting.war import war_start
 from elobot.features.hosting.war import helper_host
 from elobot.features.hosting.war import helper_base_store_availability
@@ -48,12 +48,12 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         self.f.document["msg"] = str(public.id)
         self.f.document["persistent_host_clans"] = [None, None]
         self.enterContext(patch.object(commands, "is_raid_weekend", return_value=True))
-        self.enterContext(patch("cogs.self_commands.is_raid_weekend", return_value=True))
+        self.enterContext(patch("elobot.extensions.self_service.is_raid_weekend", return_value=True))
         self.enterContext(patch.object(commands, "confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
-        self.enterContext(patch("cogs.self_commands.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
+        self.enterContext(patch("elobot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
         clan_stub = SimpleNamespace(tag=CLAN, name="Helper Clan", availability_str="Available")
         self.enterContext(patch.object(commands, "Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
-        self.enterContext(patch("cogs.self_commands.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
+        self.enterContext(patch("elobot.extensions.self_service.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
         self.enterContext(patch.object(commands, "occupy_clan", new_callable=AsyncMock))
         self.enterContext(patch.object(commands, "free_clan", new_callable=AsyncMock))
         self.enterContext(patch.object(commands, "available_resource_clans_text", new=AsyncMock(return_value="Available")))

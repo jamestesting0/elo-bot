@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.base_commands import BaseCommands
+from elobot.extensions.base import BaseCommands
 
 
 def _mock_listed_page(mock_base_layout, bases, index):
@@ -22,8 +22,8 @@ class TestBasePagination(unittest.IsolatedAsyncioTestCase):
         self.bot.ext = {}
         self.cog = BaseCommands(self.bot)
 
-    @patch("cogs.base_commands.construct_base_embed")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.construct_base_embed")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_navigation_keeps_enabled_page_button(self, mock_base_layout, mock_construct_embed):
         for direction, source, target in (("right", 0, 1), ("left", 1, 0)):
             with self.subTest(direction=direction):
@@ -98,8 +98,8 @@ class TestBasePagination(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
         ctx.send_modal.assert_not_awaited()
 
-    @patch("cogs.base_commands.construct_base_embed")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.construct_base_embed")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_page_modal_jumps_to_last_fresh_page(self, mock_base_layout, mock_construct_embed):
         # Given: the modal submit sees three freshly queried bases
         bases = [MagicMock(), MagicMock(), MagicMock()]
@@ -135,7 +135,7 @@ class TestBasePagination(unittest.IsolatedAsyncioTestCase):
         ctx.defer.assert_not_awaited()
         ctx.send.assert_not_awaited()
 
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_page_modal_rejects_stale_page(self, mock_base_layout):
         # Given: page three existed when opened but only two bases remain at submit time
         _mock_listed_page(mock_base_layout, [MagicMock(), MagicMock()], 2)

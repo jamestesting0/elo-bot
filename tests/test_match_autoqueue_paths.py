@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.db import Match
 
 

@@ -3,7 +3,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 
 
 class OccupancyFailure(RuntimeError):

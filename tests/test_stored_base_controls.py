@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 from elobot.features.base_store.controls import resolve_stored_base_control
 from elobot.features.base_store.models import StoredBaseActionRequest, StoredBaseControlFailure, StoredBaseControlState
 from elobot.features.hosting.war import war_start

@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 from elobot.discord import message_edits
 from tests._result_finalization_fixture import ResultFinalizationFixture
 

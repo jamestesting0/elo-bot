@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.season_commands import SeasonCommands
+from elobot.extensions.season import SeasonCommands
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import Player, Season
 

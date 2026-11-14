@@ -1,11 +1,21 @@
-import os
-
-
-def get_extensions(ext_folder: str) -> list[str]:
-    extensions = [
-        f"{ext_folder}.{f[:-3]}"
-        for f in os.listdir(ext_folder)
-        if f.endswith("_commands.py") and not f.startswith("_")
-    ]
-
-    return extensions
+EXTENSIONS = (
+    "elobot.extensions.auditlog",
+    "elobot.extensions.base",
+    "elobot.extensions.challenge",
+    "elobot.extensions.data",
+    "elobot.extensions.embed",
+    "elobot.extensions.final",
+    "elobot.extensions.giveaway",
+    "elobot.extensions.help",
+    "elobot.extensions.helper",
+    "elobot.extensions.leaderboard",
+    "elobot.extensions.match",
+    "elobot.extensions.player",
+    "elobot.extensions.preset",
+    "elobot.extensions.queue",
+    "elobot.extensions.raid",
+    "elobot.extensions.season",
+    "elobot.extensions.self_service",
+    "elobot.extensions.thread",
+    "elobot.extensions.tokens",
+)

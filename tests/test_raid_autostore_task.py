@@ -6,7 +6,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 from elobot.features.base_store import raid_task
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
 from elobot.config.presentation import COLOR
 from elobot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
@@ -117,7 +117,7 @@ class TestRaidAutostoreTask(unittest.IsolatedAsyncioTestCase):
         trigger = cog.raid_weekend_auto_store.trigger
         trigger.last_call_time = datetime(2026, 10, 8, 12, tzinfo=UTC)
 
-        with patch("cogs.match_commands.store_before_raid_weekend", new_callable=AsyncMock) as store:
+        with patch("elobot.extensions.match.store_before_raid_weekend", new_callable=AsyncMock) as store:
             await cog.raid_weekend_auto_store.callback.func(cog)
 
         self.assertEqual(trigger.next_fire(), datetime(2026, 10, 9, 6, tzinfo=UTC))

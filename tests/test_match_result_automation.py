@@ -9,8 +9,8 @@ import anyio
 from beanie import PydanticObjectId
 from pymongo.errors import OperationFailure
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
+import elobot.extensions.match as match_commands
+from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war import result_store_ui
 from elobot.features.hosting.war import result_store_task

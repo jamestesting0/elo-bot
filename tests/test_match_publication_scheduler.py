@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 
 
 class TestMatchPublicationScheduler(unittest.IsolatedAsyncioTestCase):

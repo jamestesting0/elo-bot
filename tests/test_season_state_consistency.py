@@ -7,7 +7,7 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-import cogs.season_commands as commands
+import elobot.extensions.season as commands
 from elobot.db import BaseLayout, Player, Season
 
 

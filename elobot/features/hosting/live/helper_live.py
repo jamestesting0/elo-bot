@@ -6,7 +6,7 @@ from typing import Protocol, assert_never
 import coc
 import interactions as ipy
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 import elobot.features.hosting.live.eligibility as live_eligibility
 import elobot.features.hosting.live.live_reservations as live_reservations
 import elobot.features.hosting.live.live_start as live_start

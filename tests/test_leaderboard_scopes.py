@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.leaderboard_commands import LeaderboardCommands
+from elobot.extensions.leaderboard import LeaderboardCommands
 from elobot.config.presentation import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
 from elobot.features.finals.leaderboards import final_board_rows
 from elobot.features.seasons.selection import interpret_season_string
@@ -51,7 +51,7 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         self.cog._seasons_cache = self.seasons
         clock = self.enterContext(patch("elobot.features.seasons.selection.datetime"))
         clock.now.return_value.timestamp.return_value = 1000
-        self.player_model = self.enterContext(patch("cogs.leaderboard_commands.Player"))
+        self.player_model = self.enterContext(patch("elobot.extensions.leaderboard.Player"))
         self.query = self.player_model.find_all.return_value
         self.query.count = AsyncMock(side_effect=lambda: len(self.players))
         self.query.to_list = AsyncMock(side_effect=lambda: self.players)
@@ -232,10 +232,10 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
                 ctx.message.edit.assert_awaited_once()
 
     async def test_autocomplete_respects_type_restrictions_and_no_archives(self):
-        from cogs.season_commands import SeasonCommands
+        from elobot.extensions.season import SeasonCommands
 
         season_cog = SeasonCommands(MagicMock())
-        with patch("cogs.season_commands.Season") as model:
+        with patch("elobot.extensions.season.Season") as model:
             for seasons in (self.seasons, []):
                 model.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=seasons)
                 for lb_type in ("Elo", "Elo Reversed", "Highest Elo", "Tokens", "Addiction", "Predictions", None):

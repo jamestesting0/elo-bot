@@ -7,8 +7,8 @@ from beanie import PydanticObjectId
 from pymongo.errors import PyMongoError
 
 from elobot.features.hosting.live import result_store as live_store
-from cogs.match_commands import MatchCommands
-from cogs.self_commands import SelfCommands
+from elobot.extensions.match import MatchCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war import helper_store
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
@@ -70,7 +70,7 @@ class TestLiveResultStorage(unittest.IsolatedAsyncioTestCase):
 
     async def invoke(self) -> None:
         with (
-            patch("cogs.self_commands.Match") as command_model,
+            patch("elobot.extensions.self_service.Match") as command_model,
             patch.object(live_store, "Match") as model,
             patch.object(helper_store, "Player") as players,
             patch.object(helper_store.time, "time", return_value=200),

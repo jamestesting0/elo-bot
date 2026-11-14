@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.match_commands import MatchCommands, Player, autoqueue_expiry, is_autoqueue_active
+from elobot.extensions.match import MatchCommands, Player, autoqueue_expiry, is_autoqueue_active
 
 
 class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
@@ -48,8 +48,8 @@ class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
         ):
             with self.subTest(enabled=enabled, duration=duration):
                 player = self.make_player()
-                with patch("cogs.match_commands.Player") as player_model, \
-                        patch("cogs.match_commands.datetime") as datetime_model:
+                with patch("elobot.extensions.match.Player") as player_model, \
+                        patch("elobot.extensions.match.datetime") as datetime_model:
                     player_model.find_one = AsyncMock(return_value=player)
                     datetime_model.now.return_value.timestamp.return_value = 2_000_000_000
 
@@ -60,7 +60,7 @@ class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
 
     async def test_enable_without_duration_is_rejected_without_persistence(self) -> None:
         player = self.make_player()
-        with patch("cogs.match_commands.Player") as player_model:
+        with patch("elobot.extensions.match.Player") as player_model:
             player_model.find_one = AsyncMock(return_value=player)
 
             await self.invoke_autoqueue(enabled=True, duration=None)
@@ -70,7 +70,7 @@ class TestAutoqueueCommand(unittest.IsolatedAsyncioTestCase):
         player.save_changes.assert_not_awaited()
 
     async def test_unregistered_user_is_rejected_without_persistence(self) -> None:
-        with patch("cogs.match_commands.Player") as player_model:
+        with patch("elobot.extensions.match.Player") as player_model:
             player_model.find_one = AsyncMock(return_value=None)
 
             await self.invoke_autoqueue(enabled=False, duration=None)

@@ -9,7 +9,7 @@ from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-from cogs.challenge_commands import ChallengeCommands, available_challenges
+from elobot.extensions.challenge import ChallengeCommands, available_challenges
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.features.matches.challenges import weekly_challenge_balance
 from elobot.features.seasons.stats import RecordedStatsRow, SeasonWindow, StatsAccumulator
@@ -24,7 +24,7 @@ DISTRICTS: Final = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]
 
 class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.enterContext(patch("cogs.challenge_commands.CHALLENGE_ACCEPT_LOCK", new=asyncio.Lock()))
+        self.enterContext(patch("elobot.extensions.challenge.CHALLENGE_ACCEPT_LOCK", new=asyncio.Lock()))
         for model in (Match, Player):
             self.enterContext(patch.object(model, "_document_settings", DocumentSettings(name=model.__name__)))
         self.enterContext(patch.object(Player, "user_id", ExpressionField("user_id"), create=True))
@@ -50,8 +50,8 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         )))
         self.override = self.enterContext(patch.object(OverrideCode, "is_valid", new=AsyncMock(return_value=False)))
         self.enterContext(patch.object(OverrideCode, "consume", new=AsyncMock(return_value=True)))
-        self.enterContext(patch("cogs.challenge_commands.is_player_occupied", new=AsyncMock(return_value=None)))
-        self.enterContext(patch("cogs.challenge_commands.datetime")).now.return_value = NOW
+        self.enterContext(patch("elobot.extensions.challenge.is_player_occupied", new=AsyncMock(return_value=None)))
+        self.enterContext(patch("elobot.extensions.challenge.datetime")).now.return_value = NOW
         self.enterContext(patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(return_value=[]))))
         self.matches = self.enterContext(patch.object(Match, "find_one", new=AsyncMock(return_value=None)))
         self.persisted: list[Match] = []
@@ -143,7 +143,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
             self.sender if query == {"user_id": "111"} else self.recipient
         )
         accepted_at = NOW.timestamp() + 120
-        self.enterContext(patch("cogs.challenge_commands.datetime")).now.side_effect = [
+        self.enterContext(patch("elobot.extensions.challenge.datetime")).now.side_effect = [
             NOW, datetime.fromtimestamp(accepted_at, tz=timezone.utc),
         ]
         saved = []
@@ -154,7 +154,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
 
         with (patch.object(Match, "save_changes", new=save_match),
               patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
-              patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42"))):
+              patch("elobot.extensions.challenge.confirm_match", new=AsyncMock(return_value="42"))):
             await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
 
         self.assertEqual(len(saved), 1)
@@ -338,7 +338,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         # When: the actual acceptance callback persists the sender's allowance.
         with (patch.object(Match, "save_changes", new=AsyncMock(return_value=match)),
               patch.object(Player, "save_changes", new=save_player),
-              patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42"))):
+              patch("elobot.extensions.challenge.confirm_match", new=AsyncMock(return_value="42"))):
             callback = self.cog.challenge_accept_button.callback
             await getattr(callback, "func", callback)(self.cog, self.ctx)
         # Then: only the sender has one consumed slot in storage.
@@ -372,7 +372,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
                 self.ctx.send.reset_mock()
                 with (patch.object(Match, "save_changes", new_callable=AsyncMock) as save,
                       patch.object(Player, "save_changes", new_callable=AsyncMock) as save_player,
-                      patch("cogs.challenge_commands.confirm_match", new_callable=AsyncMock) as confirm):
+                      patch("elobot.extensions.challenge.confirm_match", new_callable=AsyncMock) as confirm):
                     # When: the recipient accepts.
                     await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
                 # Then: neither storage, confirmation, nor success controls are changed.
@@ -390,7 +390,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         self.recipient.matches = []
         with (patch.object(Match, "save_changes", new=AsyncMock(return_value=match)),
               patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
-              patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+              patch("elobot.extensions.challenge.confirm_match", new=AsyncMock(return_value="42")) as confirm):
             # When: the invitation is accepted without reusing the consumed code.
             await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
         # Then: the persisted override authorizes acceptance and consumes the sender's weekly slot.
@@ -403,7 +403,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         match = self.pending_acceptance(override=True)
         self.sender.last_challenged = [f"{NOW.year}.{NOW.strftime('%U')}"] * 2
         with (patch.object(Match, "save_changes", new_callable=AsyncMock) as save,
-              patch("cogs.challenge_commands.confirm_match", new_callable=AsyncMock) as confirm):
+              patch("elobot.extensions.challenge.confirm_match", new_callable=AsyncMock) as confirm):
             # When: the recipient accepts this older invitation.
             await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
         # Then: an override cannot bypass the weekly cap or commit acceptance.
@@ -441,7 +441,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
               patch.object(Match, "save_changes", new=save_match),
               patch.object(Player, "save_changes", new=save_player),
               patch.object(Match, "find", return_value=MagicMock(to_list=AsyncMock(side_effect=lambda: accepted))),
-              patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+              patch("elobot.extensions.challenge.confirm_match", new=AsyncMock(return_value="42")) as confirm):
             # When: both acceptances overlap before the first challenge has results.
             await wait_for(gather(
                 self.cog.challenge_accept_button.callback.func(self.cog, self.ctx),
@@ -469,7 +469,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
                     save.side_effect = OperationFailure("write failed")
                 with (patch.object(Match, "save_changes", new=save),
                       patch.object(Player, "save_changes", new_callable=AsyncMock) as save_player,
-                      patch("cogs.challenge_commands.confirm_match", new_callable=AsyncMock) as confirm):
+                      patch("elobot.extensions.challenge.confirm_match", new_callable=AsyncMock) as confirm):
                     # When: the real acceptance callback reaches the failing boundary.
                     with self.assertRaises(RuntimeError if publication_failure else OperationFailure):
                         await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
@@ -489,7 +489,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         match.participants[1].confirmed = True
         with (patch.object(Match, "save_changes", new_callable=AsyncMock) as save,
               patch.object(Player, "save_changes", new_callable=AsyncMock) as save_player,
-              patch("cogs.challenge_commands.confirm_match", new_callable=AsyncMock) as confirm):
+              patch("elobot.extensions.challenge.confirm_match", new_callable=AsyncMock) as confirm):
             # When: a stale acceptance button is clicked.
             await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
         # Then: neither acceptance, quota, nor thread creation runs again.
@@ -511,7 +511,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
 
                 with (patch.object(Match, "save_changes", new=save_match),
                       patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
-                      patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+                      patch("elobot.extensions.challenge.confirm_match", new=AsyncMock(return_value="42")) as confirm):
                     await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
                     await self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
                 self.assertEqual(len(stored), 1)
@@ -545,7 +545,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         with (patch.object(Match, "find_one", new=AsyncMock(side_effect=find_match)),
               patch.object(Match, "save_changes", new=save_match),
               patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
-              patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+              patch("elobot.extensions.challenge.confirm_match", new=AsyncMock(return_value="42")) as confirm):
             await wait_for(gather(
                 self.cog.challenge_accept_button.callback.func(self.cog, self.ctx),
                 self.cog.challenge_accept_button.callback.func(self.cog, second_ctx),
@@ -607,8 +607,8 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
                     with (patch.object(Match, "find_one", new=AsyncMock(side_effect=find_match)),
                           patch.object(Match, "save_changes", new=save_match),
                           patch.object(Player, "save_changes", new=AsyncMock(return_value=self.sender)),
-                          patch("cogs.challenge_commands.delete_unreserved_match", new=delete_match),
-                          patch("cogs.challenge_commands.confirm_match", new=AsyncMock(return_value="42")) as confirm):
+                          patch("elobot.extensions.challenge.delete_unreserved_match", new=delete_match),
+                          patch("elobot.extensions.challenge.confirm_match", new=AsyncMock(return_value="42")) as confirm):
                         accept = lambda: self.cog.challenge_accept_button.callback.func(self.cog, self.ctx)
                         terminal_callback = getattr(self.cog, f"challenge_{action}_button").callback.func
                         if accept_first:

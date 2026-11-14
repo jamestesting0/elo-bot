@@ -6,7 +6,7 @@ from typing import Literal
 
 from pymongo.errors import PyMongoError
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 import interactions as ipy
 from elobot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
 from elobot.config.presentation import BANNER_IMAGE, COLOR, FOOTER_IMAGE, REWARDS_IMAGE

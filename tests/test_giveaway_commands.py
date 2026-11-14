@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import cogs.giveaway_commands as giveaway_module
+import elobot.extensions.giveaway as giveaway_module
 from elobot.db import Giveaway
-from cogs.giveaway_commands import GiveawayCommands
+from elobot.extensions.giveaway import GiveawayCommands
 
 
 NOW = datetime(2026, 1, 1, tzinfo=timezone.utc)
@@ -64,16 +64,16 @@ class TestGiveawayCreate(unittest.IsolatedAsyncioTestCase):
         self.channel.id = 400
         self.channel.mention = "<#400>"
         self.channel.send = AsyncMock(return_value=self.message)
-        self.mock_datetime = self.enterContext(patch("cogs.giveaway_commands.datetime"))
+        self.mock_datetime = self.enterContext(patch("elobot.extensions.giveaway.datetime"))
         self.mock_datetime.now.return_value = NOW
         self.mock_datetime.fromtimestamp.side_effect = datetime.fromtimestamp
         self.trigger_datetime = self.enterContext(patch("interactions.models.internal.tasks.triggers.datetime"))
         self.trigger_datetime.now.return_value = NOW.replace(tzinfo=None)
         self.insert = self.enterContext(
-            patch("cogs.giveaway_commands.Giveaway.insert", new_callable=AsyncMock)
+            patch("elobot.extensions.giveaway.Giveaway.insert", new_callable=AsyncMock)
         )
-        self.enterContext(patch("cogs.giveaway_commands.Giveaway.get_pymongo_collection"))
-        self.task = self.enterContext(patch("cogs.giveaway_commands.ipy.Task"))
+        self.enterContext(patch("elobot.extensions.giveaway.Giveaway.get_pymongo_collection"))
+        self.task = self.enterContext(patch("elobot.extensions.giveaway.ipy.Task"))
 
     async def create_giveaway(
             self, *, days: int | None = None, hours: int | None = None, timestamp: str | None = None,
@@ -220,11 +220,11 @@ class TestGiveawayRuntime(unittest.IsolatedAsyncioTestCase):
         seasons.to_list = AsyncMock(return_value=[])
 
         # When: the first entry succeeds and the second atomic update rejects a duplicate
-        with (patch("cogs.giveaway_commands.Giveaway.get", new_callable=AsyncMock, return_value=stored),
+        with (patch("elobot.extensions.giveaway.Giveaway.get", new_callable=AsyncMock, return_value=stored),
               patch.object(giveaway_module.Player, "user_id", MagicMock(), create=True),
-              patch("cogs.giveaway_commands.Player.find_one", new_callable=AsyncMock, return_value=player),
-              patch("cogs.giveaway_commands.Season.find_all", return_value=seasons),
-              patch("cogs.giveaway_commands.Giveaway.add_entry", new_callable=AsyncMock,
+              patch("elobot.extensions.giveaway.Player.find_one", new_callable=AsyncMock, return_value=player),
+              patch("elobot.extensions.giveaway.Season.find_all", return_value=seasons),
+              patch("elobot.extensions.giveaway.Giveaway.add_entry", new_callable=AsyncMock,
                     side_effect=[updated, None]) as add_entry):
             await self.cog.enter_giveaway.callback(ctx)
             await self.cog.enter_giveaway.callback(ctx)
@@ -250,7 +250,7 @@ class TestGiveawayRuntime(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel = AsyncMock(return_value=channel)
 
         # When: the giveaway is ended
-        with patch("cogs.giveaway_commands.Giveaway.get", new_callable=AsyncMock, return_value=giveaway):
+        with patch("elobot.extensions.giveaway.Giveaway.get", new_callable=AsyncMock, return_value=giveaway):
             await self.cog.end_giveaway("300")
 
         # Then: Discord is updated and the ended flag is persisted
@@ -269,7 +269,7 @@ class TestGiveawayRuntime(unittest.IsolatedAsyncioTestCase):
         reroll_ctx = MagicMock(spec=ipy.SlashContext)
         reroll_ctx.send = AsyncMock()
 
-        with (patch("cogs.giveaway_commands.Giveaway.get", new_callable=AsyncMock,
+        with (patch("elobot.extensions.giveaway.Giveaway.get", new_callable=AsyncMock,
                     side_effect=[active, ended]),
               patch.object(self.cog, "end_giveaway", new_callable=AsyncMock) as end):
             await self.cog.giveaway_end.callback.func(self.cog, end_ctx, "300")
@@ -282,16 +282,16 @@ class TestGiveawayRuntime(unittest.IsolatedAsyncioTestCase):
     async def test_message_delete_deletes_persisted_document(self) -> None:
         giveaway = giveaway_document()
         event = SimpleNamespace(message=SimpleNamespace(id=300))
-        with patch("cogs.giveaway_commands.Giveaway.get", new_callable=AsyncMock, return_value=giveaway):
+        with patch("elobot.extensions.giveaway.Giveaway.get", new_callable=AsyncMock, return_value=giveaway):
             await self.cog.on_message_delete.callback(self.cog, event)
         giveaway.delete.assert_awaited_once_with()
 
     async def test_cleanup_queries_old_rows_and_deletes_each(self) -> None:
         rows = [giveaway_document(), giveaway_document()]
         query = giveaway_query(rows)
-        with (patch("cogs.giveaway_commands.datetime") as clock,
+        with (patch("elobot.extensions.giveaway.datetime") as clock,
               patch.object(giveaway_module.Giveaway, "end_timestamp", QueryField(), create=True),
-              patch("cogs.giveaway_commands.Giveaway.find", return_value=query) as find):
+              patch("elobot.extensions.giveaway.Giveaway.find", return_value=query) as find):
             clock.now.return_value = NOW.replace(tzinfo=None)
             await self.cog.finished_giveaway_delete.callback()
         find.assert_called_once()
@@ -301,9 +301,9 @@ class TestGiveawayRuntime(unittest.IsolatedAsyncioTestCase):
     async def test_scheduler_queries_due_unended_rows(self) -> None:
         rows = [giveaway_document(), giveaway_document()]
         query = giveaway_query(rows)
-        with (patch("cogs.giveaway_commands.datetime") as clock,
+        with (patch("elobot.extensions.giveaway.datetime") as clock,
               patch.object(giveaway_module.Giveaway, "end_timestamp", QueryField(), create=True),
-              patch("cogs.giveaway_commands.Giveaway.find", return_value=query) as find,
+              patch("elobot.extensions.giveaway.Giveaway.find", return_value=query) as find,
               patch.object(GiveawayCommands, "end_giveaway", new_callable=AsyncMock) as end):
             clock.now.return_value = NOW.replace(tzinfo=None)
             await self.cog.giveaways_end.callback()

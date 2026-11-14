@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, patch
 
 from pymongo.errors import OperationFailure
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.db import BaseStore, Helper, Match, Player
 
 

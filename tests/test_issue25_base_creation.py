@@ -16,8 +16,8 @@ from beanie.odm.settings.document import DocumentSettings
 import interactions as ipy
 from pymongo.results import InsertOneResult, UpdateResult
 
-import cogs.base_commands as commands
-import cogs.preset_commands as presets
+import elobot.extensions.base as commands
+import elobot.extensions.preset as presets
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import BaseLayout, PendingBaseSubmission
 

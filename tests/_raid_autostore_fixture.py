@@ -16,7 +16,7 @@ from elobot.features.base_store import raid_task
 from elobot.features.base_store import preparation
 from elobot.features.base_store.channel_context import ScheduledBaseStoreContext
 from elobot.features.base_store.models import SelfBaseStoreRequest
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
 from tests._stored_start_fixture import terminal_job
 

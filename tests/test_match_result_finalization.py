@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import anyio
 import interactions as ipy
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 from elobot.config.ids import MAIN_GUILD
 from elobot.config.emojis import STAR_EMOJI
 from elobot.db import HelperHistory, Match

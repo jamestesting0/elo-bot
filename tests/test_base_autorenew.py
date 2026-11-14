@@ -6,7 +6,7 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 
-from cogs.base_commands import BaseCommands
+from elobot.extensions.base import BaseCommands
 from elobot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
 from elobot.config.emojis import LOADING_EMOJI
 from elobot.config.presentation import RED_COLOR

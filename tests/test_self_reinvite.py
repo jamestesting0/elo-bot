@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aiohttp import web
 import interactions as ipy
 
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
 
@@ -84,8 +84,8 @@ class TestSelfReinvite(unittest.IsolatedAsyncioTestCase):
 
     async def invoke(self, ctx: ipy.SlashContext, matches: list[MagicMock]) -> None:
         with (
-            patch("cogs.self_commands.Match") as match_model,
-            patch("cogs.self_commands.Player", create=True) as player_model,
+            patch("elobot.extensions.self_service.Match") as match_model,
+            patch("elobot.extensions.self_service.Player", create=True) as player_model,
         ):
             match_model.find.return_value.to_list = AsyncMock(return_value=matches)
             player_model.find_one = AsyncMock(return_value=MagicMock(tag="#PLAYER"))

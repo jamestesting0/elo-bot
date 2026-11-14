@@ -4,14 +4,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.features.base_store.controls import start_stored_bases
 from elobot.features.base_store.models import StoredBaseActionRequest
 from elobot.features.hosting.live.live_start import (
     LiveAbort, LiveStart, LiveStartBusy, LiveStartClanUnavailable, ManualLiveStartReply, abort_live_start,
     start_live_match,
 )
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.integrations.helper_api import (
     HelperEta, HelperEtaReader, HelperHostLiveMatchPayload, HelperHostWarMatchPayload,
     HelperJobCreateRequest, HelperJobCreator, HelperJobCreateRejected,
@@ -206,7 +206,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch("cogs.match_commands.claim_resource_clan", new=AsyncMock(return_value=False)):
+        with patch("elobot.extensions.match.claim_resource_clan", new=AsyncMock(return_value=False)):
             first = await start_live_match(bot, ctx, start)
         self.assertIsInstance(first, LiveStartClanUnavailable)
         accepted_at = (await Match.get(source.id)).final_started_at
@@ -232,7 +232,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
             scout=False, reply=ManualLiveStartReply(slot_instruction=""))
-        with patch("cogs.match_commands.occupy_clan", new=AsyncMock(side_effect=RuntimeError("occupancy failed"))):
+        with patch("elobot.extensions.match.occupy_clan", new=AsyncMock(side_effect=RuntimeError("occupancy failed"))):
             with self.assertRaisesRegex(RuntimeError, "occupancy failed"):
                 await start_live_match(bot, ctx, start)
         saved = await Match.get(source.id)

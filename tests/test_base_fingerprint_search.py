@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-import cogs.base_commands as commands
+import elobot.extensions.base as commands
 from elobot.features.base_submission.presentation import build_review_components
 from elobot.features.bases.fingerprints.search import SearchSession
 from elobot.features.bases.fingerprints.types import FingerprintError

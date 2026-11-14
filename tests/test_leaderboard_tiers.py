@@ -2,7 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from cogs.leaderboard_commands import LeaderboardCommands, sort_players
+from elobot.extensions.leaderboard import LeaderboardCommands, sort_players
 from elobot.config.presentation import LB_ENTRIES_PER_PAGE
 from elobot.db.player_models import MatchDistrictStats
 

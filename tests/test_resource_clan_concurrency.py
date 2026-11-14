@@ -2,8 +2,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
+import elobot.extensions.match as match_commands
+from elobot.extensions.match import MatchCommands
 
 
 class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):

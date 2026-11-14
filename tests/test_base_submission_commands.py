@@ -9,7 +9,7 @@ import interactions as ipy
 
 sys.path.append(os.getcwd())
 
-import cogs.base_commands as base_commands
+import elobot.extensions.base as base_commands
 from elobot.config.game import BASE_TIERS
 from elobot.config.ids import COMMAND_CHANNEL
 from elobot.config.emojis import CROSS_EMOJI, TICK_EMOJI

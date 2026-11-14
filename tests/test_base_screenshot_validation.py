@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from PIL import Image
 
-import cogs.base_commands as commands
-import cogs.preset_commands as presets
+import elobot.extensions.base as commands
+import elobot.extensions.preset as presets
 from elobot.features.bases.fingerprints import images
 
 

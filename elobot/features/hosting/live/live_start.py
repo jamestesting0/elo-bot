@@ -14,7 +14,7 @@ import interactions as ipy
 from elobot.discord.mentions import mention_user
 from elobot.discord.members import member_guild
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 import elobot.features.hosting.live.live_reservations as live_reservations
 from elobot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
 from elobot.features.base_store.live import live_pair_ready, live_stores

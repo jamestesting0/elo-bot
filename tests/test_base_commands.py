@@ -6,7 +6,7 @@ import interactions as ipy
 import unittest
 from unittest.mock import MagicMock, patch, AsyncMock
 
-from cogs.base_commands import BaseAutocompleteRow, BaseCommands
+from elobot.extensions.base import BaseAutocompleteRow, BaseCommands
 from elobot.config.emojis import SUCCESS_EMOJI
 
 BASE_SET_LINK_CALLBACK = BaseCommands.base_set_link.callback
@@ -21,10 +21,10 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.builder_names = {}
         self.cog = BaseCommands(self.bot)
 
-    @patch("cogs.base_commands.validators.url")
-    @patch("cogs.base_commands.download_base_screenshot")
-    @patch("cogs.base_commands.delete_file")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.validators.url")
+    @patch("elobot.extensions.base.download_base_screenshot")
+    @patch("elobot.extensions.base.delete_file")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_add_success(self, mock_base_layout, mock_delete_file, mock_download_screenshot, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -64,8 +64,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
                         "Fingerprint extraction pending.")
         ctx.send.assert_awaited_once_with(expected_msg, ephemeral=True)
 
-    @patch("cogs.base_commands.construct_base_embed")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.construct_base_embed")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_info_success(self, mock_base_layout, mock_construct_embed):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -94,9 +94,9 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         )
         ctx.send.assert_called_with(embed=mock_embed, ephemeral=True)
 
-    @patch("cogs.base_commands.validators.url")
-    @patch("cogs.base_commands.BaseLayout")
-    @patch("cogs.base_commands.DISTRICT_CODES_REVERSED", {"3A1": "Barbarian Camp"})
+    @patch("elobot.extensions.base.validators.url")
+    @patch("elobot.extensions.base.BaseLayout")
+    @patch("elobot.extensions.base.DISTRICT_CODES_REVERSED", {"3A1": "Barbarian Camp"})
     async def test_base_remove_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -119,8 +119,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.delete.assert_called_once()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have successfully removed a base for `Barbarian Camp`.")
 
-    @patch("cogs.base_commands.validators.url")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.validators.url")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_set_link_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -141,7 +141,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         # Execute
         clock = MagicMock()
         clock.now.return_value.timestamp.return_value = 2_000_000_000
-        with patch("cogs.base_commands.datetime", clock):
+        with patch("elobot.extensions.base.datetime", clock):
             await BASE_SET_LINK_CALLBACK(self.cog, ctx, old_base_link, new_base_link)
 
         # Verify
@@ -152,8 +152,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.cog.send_base_renewal_log.assert_awaited_once_with(mock_base)
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have successfully renewed a base for `Barbarian Camp`.")
 
-    @patch("cogs.base_commands.construct_base_embed")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.construct_base_embed")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_list_success(self, mock_base_layout, mock_construct_embed):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -201,8 +201,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(page_number_button.custom_id, "base_page|Any|Performance|Any|Any")
         self.assertFalse(page_number_button.disabled)
 
-    @patch("cogs.base_commands.construct_base_embed")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.construct_base_embed")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_list_elobot_filters_unknown_builder(self, mock_base_layout, mock_construct_embed):
         # Given: Elo Bot is selected as the builder filter.
         self.bot.user = MagicMock(id=42)
@@ -237,8 +237,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         components = ctx.send.await_args.kwargs["components"]
         self.assertEqual(components[2].components[1].custom_id, "base_page|Any|Performance|Any|42")
 
-    @patch("cogs.base_commands.validators.url")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.validators.url")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_set_expired_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -261,8 +261,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.save_changes.assert_called_once()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} This is base is now marked as expired.")
 
-    @patch("cogs.base_commands.validators.url")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.validators.url")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_set_quality_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -289,8 +289,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             f"{SUCCESS_EMOJI} You have successfully set the quality of the base as **{base_quality}**."
         )
 
-    @patch("cogs.base_commands.validators.url")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.validators.url")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_set_builder_success(self, mock_base_layout, mock_validate_url):
         # Setup
         mock_validate_url.return_value = True
@@ -317,9 +317,9 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.set.assert_awaited_once_with({"builder_id": "12345"})
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have successfully set {builder.mention} as the builder.")
 
-    @patch("cogs.base_commands.download_base_screenshot")
-    @patch("cogs.base_commands.validators.url")
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.download_base_screenshot")
+    @patch("elobot.extensions.base.validators.url")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_set_image_success(self, mock_base_layout, mock_validate_url, mock_download_screenshot):
         # Setup
         mock_validate_url.return_value = True
@@ -357,10 +357,10 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         mock_base.save_changes.assert_not_called()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} Screenshot saved. Fingerprint extraction pending.", ephemeral=True)
 
-    @patch("cogs.base_commands.construct_base_leaderboard_string")
-    @patch("cogs.base_commands.sort_bases")
-    @patch("cogs.base_commands.BaseLayout")
-    @patch("cogs.base_commands.LB_ENTRIES_PER_PAGE", 5)
+    @patch("elobot.extensions.base.construct_base_leaderboard_string")
+    @patch("elobot.extensions.base.sort_bases")
+    @patch("elobot.extensions.base.BaseLayout")
+    @patch("elobot.extensions.base.LB_ENTRIES_PER_PAGE", 5)
     async def test_base_leaderboard_success(self, mock_base_layout, mock_sort_bases, mock_construct_lb_string):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -415,7 +415,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
     async def _run_base_autocomplete(self, ctx):
         await self.cog.base_autocomplete(ctx)
 
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_autocomplete_uses_cached_builder_and_sends_once(self, mock_base_layout):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="12345"),
@@ -435,7 +435,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Barbarian Camp by @BuilderOne (1)", "value": 0},
         ])
 
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_autocomplete_owner_sees_all_bases_without_fetching_users(self, mock_base_layout):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="111"),
@@ -455,7 +455,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Dragon Cliffs by @anonymous (2)", "value": 1},
         ])
 
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_autocomplete_matches_input_and_keeps_global_index(self, mock_base_layout):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="111"),
@@ -473,7 +473,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Wizard Valley by @BuilderOne (2)", "value": 1},
         ])
 
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_autocomplete_uses_builder_name_cache(self, mock_base_layout):
         rows = [MagicMock(district="Barbarian Camp", builder_id="12345")]
         self._mock_autocomplete_query(mock_base_layout, rows)
@@ -489,7 +489,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
             {"name": "Barbarian Camp by @CachedBuilder (1)", "value": 0},
         ])
 
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_base_autocomplete_remembers_resolved_builder_names(self, mock_base_layout):
         rows = [MagicMock(district="Barbarian Camp", builder_id="12345")]
         self._mock_autocomplete_query(mock_base_layout, rows)
@@ -502,8 +502,8 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.bot.builder_names["12345"], "@BuilderOne")
 
-    @patch("cogs.base_commands.anyio.sleep", new_callable=AsyncMock)
-    @patch("cogs.base_commands.BaseLayout")
+    @patch("elobot.extensions.base.anyio.sleep", new_callable=AsyncMock)
+    @patch("elobot.extensions.base.BaseLayout")
     async def test_warm_builder_names_fetches_only_missing_users(self, mock_base_layout, mock_sleep):
         rows = [
             MagicMock(district="Barbarian Camp", builder_id="111"),

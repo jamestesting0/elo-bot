@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie import PydanticObjectId
-import cogs.base_commands as commands
+import elobot.extensions.base as commands
 from elobot.features.bases.fingerprints.types import ExtractionState
 
 

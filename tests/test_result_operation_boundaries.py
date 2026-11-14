@@ -6,7 +6,7 @@ import anyio
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from cogs import data_commands
+from elobot.extensions import data as data_commands
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome
 from elobot.config.emojis import SUCCESS_EMOJI

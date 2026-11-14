@@ -34,7 +34,7 @@ class FinalCommands(Extension):
 
     async def _recover(self, edition):
         from elobot.features.finals.recovery import recover_final
-        from cogs.match_commands import clear_match_base_stores, free_match_clans, remove_helper_task
+        from elobot.extensions.match import clear_match_base_stores, free_match_clans, remove_helper_task
         async def release(source):
             await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")
             await free_match_clans(source)
@@ -702,7 +702,7 @@ class FinalCommands(Extension):
                   choices=[ipy.SlashCommandChoice(name=name, value=name) for name in
                            ("Quarterfinals", "Semifinals", "Final")])
     async def final_round_start(self, ctx: SlashContext, round: str):
-        import cogs.match_commands as matches
+        import elobot.extensions.match as matches
         from elobot.features.finals.bracket import require_round_ready
         from elobot.features.finals.matches import bind_thread, prepare_match
         from pymongo.errors import PyMongoError

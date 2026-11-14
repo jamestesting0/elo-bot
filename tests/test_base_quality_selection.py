@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.features.matches import base_selection
 from elobot.db import BaseLink, Match, Participant
 

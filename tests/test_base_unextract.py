@@ -6,7 +6,7 @@ import anyio
 import interactions as ipy
 from pymongo.errors import AutoReconnect
 
-import cogs.base_commands as commands
+import elobot.extensions.base as commands
 from elobot.features.bases.fingerprints.removal import (
     BulkRemovalError,
     FingerprintRemoval,

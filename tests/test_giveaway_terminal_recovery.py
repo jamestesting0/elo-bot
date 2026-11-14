@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 
-from cogs.giveaway_commands import GiveawayCommands
+from elobot.extensions.giveaway import GiveawayCommands
 from elobot.db import Giveaway
 
 

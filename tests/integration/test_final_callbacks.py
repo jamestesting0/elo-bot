@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from cogs.final_commands import FinalCommands
-from cogs.leaderboard_commands import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
-from cogs.token_commands import TokenCommands
+from elobot.extensions.final import FinalCommands
+from elobot.extensions.leaderboard import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
+from elobot.extensions.tokens import TokenCommands
 from elobot.config.ids import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES
 from elobot.config.presentation import LB_ENTRIES_PER_PAGE
 from elobot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI

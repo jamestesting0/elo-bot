@@ -10,7 +10,7 @@ from elobot.features.finals.types import FINAL_DISTRICTS, FinalError
 from elobot.db import Match, Clan
 from elobot.db.token_models import FinalBettingMarket
 from elobot.features.hosting.war import result_store_task
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 
 
 class TestFinalHosting(FinalScenarioCase):

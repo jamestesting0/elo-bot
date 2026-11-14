@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.features.base_store import storage
 from elobot.features.results.operations import ResultOperationConflict, begin_result_operation
 from elobot.features.seasons.stats import RecordedStatsRow, SeasonWindow, StatsAccumulator

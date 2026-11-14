@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.features.base_store import storage
 from elobot.features.hosting.war import war_start
 from elobot.config.emojis import SUCCESS_EMOJI

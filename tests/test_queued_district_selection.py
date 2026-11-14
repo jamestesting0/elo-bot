@@ -10,7 +10,7 @@ from beanie.odm.fields import ExpressionField, LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-from cogs import match_commands as commands
+from elobot.extensions import match as commands
 from elobot.db import Match, Participant, Player, Queue, ServerState
 from elobot.db.player_models import QueueDistrictSelection
 

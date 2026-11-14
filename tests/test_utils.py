@@ -1,11 +1,12 @@
 import unittest
+from pathlib import Path
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions
 
 from elobot.discord.members import fetch_member_otherwise_user
-from elobot.app.extensions import get_extensions
+from elobot.app.extensions import EXTENSIONS
 from elobot.core.raid_weekend import is_raid_weekend, latest_completed_raid_weekend_end_timestamp
 
 
@@ -44,22 +45,18 @@ class TestRaidWeekendClock(unittest.TestCase):
 
 class TestGetExtensions(unittest.TestCase):
     def test_discovers_only_command_modules(self) -> None:
-        # Given a cog directory containing extensions, helpers, and unrelated files
-        directory_entries = [
-            "match_commands.py",
-            "self_commands.py",
-            "helper_api.py",
-            "_legacy_commands.py",
-            "__init__.py",
-            "notes.txt",
-        ]
+        # Given the extension package with its public modules, packages and private helpers
+        package = Path(__file__).resolve().parents[1] / "elobot" / "extensions"
 
-        # When extension modules are discovered
-        with patch("elobot.app.extensions.os.listdir", return_value=directory_entries):
-            extensions = get_extensions("cogs")
+        # When the public extension modules are listed
+        modules = sorted(
+            f"elobot.extensions.{path.stem}"
+            for path in package.iterdir()
+            if not path.name.startswith("_") and (path.suffix == ".py" or (path / "__init__.py").is_file())
+        )
 
-        # Then only public command modules are returned
-        self.assertEqual(extensions, ["cogs.match_commands", "cogs.self_commands"])
+        # Then the registry loads every one of them
+        self.assertEqual(sorted(EXTENSIONS), modules)
 
 
 class TestFetchMemberOtherwiseUser(unittest.IsolatedAsyncioTestCase):

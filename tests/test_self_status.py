@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import interactions as ipy
 
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 
 
 class TestSelfCommandSurface(unittest.TestCase):

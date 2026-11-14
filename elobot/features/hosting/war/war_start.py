@@ -8,7 +8,7 @@ import interactions as ipy
 from elobot.discord.mentions import mention_user
 
 from elobot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 from elobot.discord.channel_edits import schedule_channel_name_edit
 from elobot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
 from elobot.features.matches.message_lock import coordinated_match_message, match_message_lock

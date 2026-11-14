@@ -7,7 +7,7 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import JsonValue
 
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.db import BaseLink, Match, Participant
 
 
@@ -72,7 +72,7 @@ class TestMatchSlotUpdates(unittest.IsolatedAsyncioTestCase):
 
         # When: the second save finishes before the first save reaches Mongo.
         with (
-            patch("cogs.match_commands.Match") as match_model,
+            patch("elobot.extensions.match.Match") as match_model,
             patch.object(Match, "set", new=persist),
         ):
             match_model.find_one = AsyncMock(side_effect=lambda *_args: self.match.model_copy(deep=True))

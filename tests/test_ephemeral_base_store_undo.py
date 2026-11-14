@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.features.base_store import storage
 from elobot.features.base_store import publication
 from elobot.features.base_store import controls

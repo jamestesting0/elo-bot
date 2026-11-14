@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import anyio
 
-import cogs.match_commands as match_commands
-import cogs.self_commands as self_commands
+import elobot.extensions.match as match_commands
+import elobot.extensions.self_service as self_commands
 from elobot.features.base_store.models import SelfBaseStoreRequest
 from elobot.features.base_store.publication import BaseStoreMessageConflict
 from elobot.features.base_store.storage import store_self_bases

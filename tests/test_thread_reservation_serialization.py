@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, patch
 
 import anyio
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.features.base_store.models import BaseStorePreparationFailure, PreparedBaseStore
 
 

@@ -13,7 +13,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import AutoReconnect, DuplicateKeyError, OperationFailure, PyMongoError
 from pymongo.results import InsertOneResult, UpdateResult
 
-import cogs.base_commands as commands
+import elobot.extensions.base as commands
 from elobot.db import BaseLayout, PendingBaseSubmission
 from elobot.db.base_submission_models import SubmissionRejection
 

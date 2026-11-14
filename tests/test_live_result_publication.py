@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import OperationFailure
 
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war import helper_store
 from elobot.config.ids import MATCH_CHANNEL

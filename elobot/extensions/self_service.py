@@ -16,7 +16,7 @@ from elobot.features.base_store.models import StoredBaseActionRequest
 import elobot.features.hosting.war.helper_spectate as helper_spectate
 import elobot.features.hosting.self_hosted.hosting as self_hosting
 import elobot.features.hosting.war.helper_reinvite as helper_reinvite
-from cogs.match_commands import (
+from elobot.extensions.match import (
     format_available_resource_clans,
     is_match_finished,
     try_reserve_resource_clan,

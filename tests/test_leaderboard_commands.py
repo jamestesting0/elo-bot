@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.append(os.getcwd())
 
-from cogs.leaderboard_commands import LeaderboardCommands, sort_players
+from elobot.extensions.leaderboard import LeaderboardCommands, sort_players
 from elobot.config.presentation import LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
 from elobot.features.seasons.selection import InvalidSeasonSelectionError, interpret_season_string
 
@@ -54,10 +54,10 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
             return_value=[player]
         )
 
-        with patch("cogs.leaderboard_commands.construct_leaderboard_string", new_callable=AsyncMock) as \
-                mock_construct_leaderboard, patch("cogs.leaderboard_commands.interpret_season_string") as \
-                mock_interpret_season, patch("cogs.leaderboard_commands.Season") as mock_season, \
-                patch("cogs.leaderboard_commands.Player") as mock_player:
+        with patch("elobot.extensions.leaderboard.construct_leaderboard_string", new_callable=AsyncMock) as \
+                mock_construct_leaderboard, patch("elobot.extensions.leaderboard.interpret_season_string") as \
+                mock_interpret_season, patch("elobot.extensions.leaderboard.Season") as mock_season, \
+                patch("elobot.extensions.leaderboard.Player") as mock_player:
             mock_player.find_all.return_value = player_query
             mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
             mock_interpret_season.return_value = ("All Seasons", 0, float("inf"))
@@ -102,9 +102,9 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
                     SimpleNamespace(season_number=2, start=200, end=300, players=[]),
                 ]
 
-                with patch("cogs.leaderboard_commands.Season") as mock_season, \
-                        patch("cogs.leaderboard_commands.Player", side_effect=lambda **kwargs: SimpleNamespace(**kwargs)), \
-                        patch("cogs.leaderboard_commands.construct_leaderboard_string", new_callable=AsyncMock) as \
+                with patch("elobot.extensions.leaderboard.Season") as mock_season, \
+                        patch("elobot.extensions.leaderboard.Player", side_effect=lambda **kwargs: SimpleNamespace(**kwargs)), \
+                        patch("elobot.extensions.leaderboard.construct_leaderboard_string", new_callable=AsyncMock) as \
                         mock_construct_leaderboard:
                     mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=seasons)
                     mock_construct_leaderboard.return_value = "first-season player"
@@ -153,9 +153,9 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
                     ]
                     ctx.message.components = [MagicMock(), MagicMock(), MagicMock()]
 
-                    with patch("cogs.leaderboard_commands.Season") as mock_season, \
-                            patch("cogs.leaderboard_commands.Player", side_effect=lambda **kwargs: SimpleNamespace(**kwargs)), \
-                            patch("cogs.leaderboard_commands.construct_leaderboard_string", new_callable=AsyncMock) as \
+                    with patch("elobot.extensions.leaderboard.Season") as mock_season, \
+                            patch("elobot.extensions.leaderboard.Player", side_effect=lambda **kwargs: SimpleNamespace(**kwargs)), \
+                            patch("elobot.extensions.leaderboard.construct_leaderboard_string", new_callable=AsyncMock) as \
                             mock_construct_leaderboard:
                         mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=seasons)
                         mock_construct_leaderboard.return_value = "first-season player"
@@ -197,8 +197,8 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
         page_query.sort.return_value.skip.return_value.limit.return_value.to_list = AsyncMock(
             return_value=cog._player_cache[:LB_ENTRIES_PER_PAGE]
         )
-        with patch("cogs.leaderboard_commands.Season") as mock_season, \
-                patch("cogs.leaderboard_commands.Player") as mock_player:
+        with patch("elobot.extensions.leaderboard.Season") as mock_season, \
+                patch("elobot.extensions.leaderboard.Player") as mock_player:
             mock_player.find_all.return_value = page_query
             mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=[])
             await cog.lb_pagination.callback.func(cog, ctx)
@@ -234,10 +234,10 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
             SimpleNamespace(season_number=7, start=700, end=800, players=[]),
         ]
 
-        with patch("cogs.leaderboard_commands.Player") as mock_player, \
-                patch("cogs.leaderboard_commands.Season") as mock_season, \
-                patch("cogs.leaderboard_commands.interpret_season_string", return_value=("All Seasons", 0, 999)), \
-                patch("cogs.leaderboard_commands.construct_leaderboard_string", new_callable=AsyncMock, \
+        with patch("elobot.extensions.leaderboard.Player") as mock_player, \
+                patch("elobot.extensions.leaderboard.Season") as mock_season, \
+                patch("elobot.extensions.leaderboard.interpret_season_string", return_value=("All Seasons", 0, 999)), \
+                patch("elobot.extensions.leaderboard.construct_leaderboard_string", new_callable=AsyncMock, \
                       return_value="ranked player"):
             mock_player.find_all.return_value = player_query
             mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=seasons)
@@ -264,8 +264,8 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
             if option.value not in {"Elo", "Elo Reversed", "Highest Elo", "Tokens", "Predictions"}
         ]
 
-        with patch("cogs.leaderboard_commands.Player") as mock_player, \
-                patch("cogs.leaderboard_commands.Season") as mock_season:
+        with patch("elobot.extensions.leaderboard.Player") as mock_player, \
+                patch("elobot.extensions.leaderboard.Season") as mock_season:
             mock_player.find_all.return_value = player_query
             mock_season.find_all.return_value.sort.return_value.to_list = AsyncMock(return_value=seasons)
 
@@ -292,7 +292,7 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(cog._rankings[("Hitrate", "All Seasons", -1)], [])
             mock_player.find_all.assert_called_once_with(fetch_links=True)
 
-            with patch("cogs.leaderboard_commands.sort_players", new_callable=AsyncMock) as mock_sort:
+            with patch("elobot.extensions.leaderboard.sort_players", new_callable=AsyncMock) as mock_sort:
                 await cog._ranked_players(cog._player_cache, "Hitrate", "All Seasons", -1, 999)
                 mock_sort.assert_not_awaited()
 
@@ -312,7 +312,7 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
             cog._player_cache = []
             cog._rankings.clear()
 
-        with patch("cogs.leaderboard_commands.asyncio.sleep", side_effect=replace_player_cache):
+        with patch("elobot.extensions.leaderboard.asyncio.sleep", side_effect=replace_player_cache):
             # When: startup ranking reaches the next season
             await cog._warm_rankings()
 
@@ -431,7 +431,7 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
 
         query = MagicMock()
         query.to_list = load_players
-        with patch("cogs.leaderboard_commands.Player") as mock_player:
+        with patch("elobot.extensions.leaderboard.Player") as mock_player:
             mock_player.find_all.return_value = query
             cog.request_player_reload()
             getter = asyncio.create_task(cog.get_players())

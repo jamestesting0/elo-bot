@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 import elobot.features.base_store.storage as base_store_storage
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 import elobot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import stored_bases
 from elobot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
 from elobot.db import BaseLink, BaseStore, Participant

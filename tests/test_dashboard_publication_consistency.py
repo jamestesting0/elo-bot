@@ -7,8 +7,8 @@ import interactions as ipy
 from interactions.models.discord.message import process_message_payload
 from pymongo.errors import OperationFailure
 
-import cogs.embed_commands as commands
-import cogs.match_commands as match_commands
+import elobot.extensions.embed as commands
+import elobot.extensions.match as match_commands
 from elobot.db import ServerState
 
 

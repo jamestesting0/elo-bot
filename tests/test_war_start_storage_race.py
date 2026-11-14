@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from beanie.odm.fields import ExpressionField
 from pymongo.results import UpdateResult
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 from elobot.features.base_store import preparation
 from elobot.features.hosting.war import war_start
 from elobot.db import BaseStore

@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from elobot.features.hosting.live import helper_live
-from cogs.match_commands import MatchCommands
-from cogs.self_commands import SelfCommands
+from elobot.extensions.match import MatchCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.features.hosting.war import helper_host
 from elobot.integrations.helper_api import (
     HelperHostWarMatchPayload,
@@ -62,9 +62,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=True, started=False)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_host.host_war_district_automatically",
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch("elobot.extensions.match.helper_host.host_war_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -84,9 +84,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=True)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_host.host_war_district_automatically",
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch("elobot.extensions.match.helper_host.host_war_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -107,15 +107,15 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         clan = self.bot.coc_client.get_clan.return_value
         side = MagicMock()
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.try_reserve_resource_match_side",
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch("elobot.extensions.match.try_reserve_resource_match_side",
                       new=AsyncMock(return_value=side)),
-                patch("cogs.match_commands.try_reserve_resource_clan",
+                patch("elobot.extensions.match.try_reserve_resource_clan",
                       new_callable=AsyncMock) as reserve_clan,
-                patch("cogs.match_commands.confirm_pending_opponent_bases",
+                patch("elobot.extensions.match.confirm_pending_opponent_bases",
                       new_callable=AsyncMock) as confirm_bases,
-                patch("cogs.match_commands.helper_host.host_war_district_automatically",
+                patch("elobot.extensions.match.helper_host.host_war_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -141,9 +141,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=False, started=False)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_live.host_live_district_automatically",
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch("elobot.extensions.match.helper_live.host_live_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -162,9 +162,9 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         ctx = self.context()
         match = self.match(is_war=False)
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.helper_live.host_live_district_automatically",
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch("elobot.extensions.match.helper_live.host_live_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)
@@ -195,8 +195,8 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
                 ctx = self.context()
                 match = self.match(is_war=is_war)
                 with (
-                        patch("cogs.match_commands.Match") as match_model,
-                        patch("cogs.match_commands.is_match_finished", return_value=False),
+                        patch("elobot.extensions.match.Match") as match_model,
+                        patch("elobot.extensions.match.is_match_finished", return_value=False),
                 ):
                     match_model.find_one = AsyncMock(return_value=match)
                     if is_war:
@@ -224,16 +224,16 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         side0 = MagicMock()
         side1 = MagicMock()
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.Player") as player_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.try_reserve_resource_match_side",
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.Player") as player_model,
+                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch("elobot.extensions.match.try_reserve_resource_match_side",
                       new=AsyncMock(side_effect=[side0, side1])),
-                patch("cogs.match_commands.try_reserve_resource_clan",
+                patch("elobot.extensions.match.try_reserve_resource_clan",
                       new_callable=AsyncMock) as reserve_clan,
-                patch("cogs.match_commands.live_start.start_live_match",
+                patch("elobot.extensions.match.live_start.start_live_match",
                       new_callable=AsyncMock) as start_live,
-                patch("cogs.match_commands.helper_live.host_live_district_automatically",
+                patch("elobot.extensions.match.helper_live.host_live_district_automatically",
                       new_callable=AsyncMock) as host_district,
         ):
             match_model.find_one = AsyncMock(return_value=match)

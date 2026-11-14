@@ -15,7 +15,7 @@ from elobot.config.ids import GUILD_IDS, LVL1_ROLES
 from elobot.db import Giveaway, Player, Season
 from elobot.core.parsing import extract_integer
 from elobot.discord.mentions import mention_user
-from cogs.leaderboard_commands import get_season_matches
+from elobot.extensions.leaderboard import get_season_matches
 
 
 async def mark_giveaway_unavailable(message: ipy.Message, *, ending: bool = False) -> None:

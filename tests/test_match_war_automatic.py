@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import war_start
 from elobot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 
@@ -76,12 +76,12 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_raid_weekend", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)), \
+        with patch("elobot.extensions.match.Match") as match_model, \
+                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+                patch("elobot.extensions.match.is_raid_weekend", return_value=False), \
+                patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)), \
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    "elobot.extensions.match.get_start_base_store_slot_availability",
                     new=AsyncMock(return_value=([], {"Slot 1": ("111", "222")})),
                 ) as available_slots, \
                 patch(
@@ -108,19 +108,19 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         match = self.make_match()
         clan = self.bot.coc_client.get_clan.return_value
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_raid_weekend", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)), \
+        with patch("elobot.extensions.match.Match") as match_model, \
+                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+                patch("elobot.extensions.match.is_raid_weekend", return_value=False), \
+                patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)), \
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    "elobot.extensions.match.get_start_base_store_slot_availability",
                     new=AsyncMock(return_value=(["Slot 1"], {})),
                 ) as available_slots, \
                 patch(
-                    "cogs.match_commands.confirm_pending_opponent_bases",
+                    "elobot.extensions.match.confirm_pending_opponent_bases",
                     new=AsyncMock(return_value=True),
                 ), \
-                patch("cogs.match_commands.war_start.start_war", new_callable=AsyncMock) as start_war, \
+                patch("elobot.extensions.match.war_start.start_war", new_callable=AsyncMock) as start_war, \
                 patch(
                     "elobot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
@@ -153,9 +153,9 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         match = self.make_match()
         match.times[0] = 1000
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock) as clan_available, \
+        with patch("elobot.extensions.match.Match") as match_model, \
+                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+                patch("elobot.extensions.match.is_clan_available", new_callable=AsyncMock) as clan_available, \
                 patch(
                     "elobot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
@@ -179,11 +179,11 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.Clan") as clan_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.is_raid_weekend", return_value=False), \
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=False)), \
+        with patch("elobot.extensions.match.Match") as match_model, \
+                patch("elobot.extensions.match.Clan") as clan_model, \
+                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+                patch("elobot.extensions.match.is_raid_weekend", return_value=False), \
+                patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=False)), \
                 patch(
                     "elobot.features.hosting.war.helper_host.host_war_automatically",
                     new_callable=AsyncMock,

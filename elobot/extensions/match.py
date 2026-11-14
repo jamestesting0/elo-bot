@@ -44,9 +44,9 @@ from elobot.features.base_store.models import (
     stored_base_matches,
     bind_legacy_store_message,
 )
-from cogs.leaderboard_commands import get_wins, get_avg_destruction, get_opponent_avg_stars, \
+from elobot.extensions.leaderboard import get_wins, get_avg_destruction, get_opponent_avg_stars, \
     get_opponent_avg_destruction, get_avg_stars
-from cogs.player_commands import fetch_user_match_id_choices, forget_replaced_match_choice
+from elobot.extensions.player import fetch_user_match_id_choices, forget_replaced_match_choice
 import elobot.features.hosting.war.helper_host as helper_host
 import elobot.features.base_store.live_service as live_base_service
 import elobot.features.hosting.live.result_store as live_result_store

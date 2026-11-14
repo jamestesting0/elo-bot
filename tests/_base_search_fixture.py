@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from bson import ObjectId
-import cogs.base_commands as commands
+import elobot.extensions.base as commands
 from elobot.features.bases.fingerprints.types import MatchScore
 from elobot.config.ids import BASE_SUBMISSION_CHANNEL
 from elobot.db import BaseLayout, PendingBaseSubmission

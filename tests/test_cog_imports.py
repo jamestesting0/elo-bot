@@ -3,12 +3,12 @@ import sys
 import textwrap
 import unittest
 
-from elobot.app.extensions import get_extensions
+from elobot.app.extensions import EXTENSIONS
 
 
 class TestCogImports(unittest.TestCase):
     def test_extensions_and_hosting_helpers_import_independently(self) -> None:
-        modules = sorted(set(get_extensions("cogs")) | {
+        modules = sorted(set(EXTENSIONS) | {
             "elobot.features.hosting.war.result_store",
             "elobot.features.hosting.war.result_store_task",
             "elobot.features.hosting.war.result_store_ui",

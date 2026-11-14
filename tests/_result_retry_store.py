@@ -6,7 +6,7 @@ from beanie.odm.fields import ExpressionField, LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from bson import DBRef
 from pymongo.results import UpdateResult
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.db import BaseLayout, BaseLink, Match, MatchDistrictStats, MatchPlayerStats, Participant, Player, RecordedMatch
 from pymongo.errors import DuplicateKeyError
 from pymongo.results import DeleteResult

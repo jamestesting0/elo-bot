@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.results import UpdateResult
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands
+import elobot.extensions.match as match_commands
+from elobot.extensions.match import MatchCommands
 from elobot.features.hosting.war import result_store
 from elobot.features.hosting.war import result_store_ui
 from elobot.features.hosting.war.helper_store import HelperScoreStoreOutcome

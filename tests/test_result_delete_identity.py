@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import anyio
 
-from cogs import data_commands
+from elobot.extensions import data as data_commands
 from elobot.config.emojis import SUCCESS_EMOJI
 from tests import _result_retry_store as retry_fixture
 

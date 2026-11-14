@@ -7,8 +7,8 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
 
-import cogs.match_commands as match_commands
-import cogs.preset_commands as preset_commands
+import elobot.extensions.match as match_commands
+import elobot.extensions.preset as preset_commands
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import BaseLayout, Player
 

@@ -11,7 +11,7 @@ from elobot.features.matches.cleanup import delete_unreserved_match, has_pending
 from elobot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 from elobot.features.base_store.storage import clear_match_base_stores
 from elobot.features.hosting.war import result_store
-from cogs.match_commands import free_match_clans, remove_helper_task
+from elobot.extensions.match import free_match_clans, remove_helper_task
 
 
 class ThreadCommands(ipy.Extension):

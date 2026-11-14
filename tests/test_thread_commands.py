@@ -7,9 +7,9 @@ import interactions as ipy
 
 sys.path.append(os.getcwd())
 
-import cogs.match_commands as match_commands
-from cogs.match_commands import MatchCommands, confirm_match
-from cogs.thread_commands import ThreadCommands
+import elobot.extensions.match as match_commands
+from elobot.extensions.match import MatchCommands, confirm_match
+from elobot.extensions.thread import ThreadCommands
 from elobot.config.ids import LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
 from elobot.db import BaseStore, Participant
 
@@ -173,10 +173,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.wait_for_component.assert_awaited_once()
         response.edit_origin.assert_awaited_once()
 
-    @patch("cogs.thread_commands.remove_helper_task", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.remove_helper_task", new_callable=AsyncMock)
     @patch("elobot.features.base_store.storage.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.free_match_clans", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.Match")
+    @patch("elobot.extensions.thread.free_match_clans", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.Match")
     async def test_thread_delete_cleans_up_an_unreserved_match_without_releasing_slots(
             self, mock_match, mock_free_match_clans, mock_clear_base_stores, mock_remove_helper_task):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -202,7 +202,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         collection.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
         mock_match.find_one = AsyncMock(return_value=match)
 
-        with patch("cogs.thread_commands.asyncio.sleep", new=AsyncMock()):
+        with patch("elobot.extensions.thread.asyncio.sleep", new=AsyncMock()):
             await self.cog.thread_delete.callback.func(self.cog, ctx)
 
         mock_clear_base_stores.assert_not_awaited()
@@ -212,10 +212,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         ctx.channel.delete.assert_awaited_once()
         self.assertEqual(mock_remove_helper_task.await_count, 2)
 
-    @patch("cogs.thread_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.free_match_clans", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.Match")
+    @patch("elobot.extensions.thread.remove_helper_task", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.free_match_clans", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.Match")
     async def test_on_thread_delete_releases_reservations_before_cleanup(
             self, mock_match, mock_clear_base_stores, mock_free_match_clans, _mock_remove_helper_task):
         thread = MagicMock()
@@ -253,10 +253,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(match.participants[0].base_store)
         self.assertFalse(match.participants[0].opponent_bases_stored)
 
-    @patch("cogs.thread_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.free_match_clans", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.thread_commands.Match")
+    @patch("elobot.extensions.thread.remove_helper_task", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.free_match_clans", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elobot.extensions.thread.Match")
     async def test_on_thread_delete_accepts_uncached_thread_id(
             self, mock_match, mock_clear_base_stores, mock_free_match_clans, _mock_remove_helper_task):
         event = MagicMock(thread="987")

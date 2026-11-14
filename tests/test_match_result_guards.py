@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from cogs.match_commands import MatchCommands
+from elobot.extensions.match import MatchCommands
 from elobot.features.players.data_boundary import PLAYER_DATA_BOUNDARY
 from elobot.db import Match
 
@@ -63,8 +63,8 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
         # Then: the validated payload reaches result processing once.
         process_results.assert_awaited_once_with(ctx, response, data_generation=data_generation)
 
-    @patch("cogs.match_commands.record_match", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Player")
+    @patch("elobot.extensions.match.record_match", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Player")
     async def test_match_submit_rejects_invalid_result_for_either_player(
             self, mock_player, mock_record_match):
         for field in ("player1_result", "player2_result"):
@@ -103,8 +103,8 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
                     mock_record_match.assert_not_awaited()
                     self.assertIn("invalid", ctx.send.await_args.args[0].lower())
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Match")
     async def test_resubmit_modal_rejects_invalid_result_before_history_lookup(
             self, mock_match, mock_player):
         for field in ("player1", "player2"):
@@ -133,7 +133,7 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
                     mock_player.find_one.assert_not_awaited()
                     self.assertIn("invalid", ctx.send.await_args.args[0].lower())
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_result_store_modal_rejects_out_of_range_entry(self, mock_match):
         for invalid_entry in ("4.50", "3.101", "-1.50", "3.-1"):
             with self.subTest(invalid_entry=invalid_entry):

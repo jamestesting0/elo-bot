@@ -2,7 +2,7 @@ import unittest
 from collections import Counter
 from unittest.mock import patch
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 
 
 class TestTipRotation(unittest.IsolatedAsyncioTestCase):

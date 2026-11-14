@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from tests.integration._final_fixture import FinalScenarioCase
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.features.base_store.controls import start_stored_bases
 from elobot.features.base_store.models import StoredBaseActionRequest
 from elobot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match

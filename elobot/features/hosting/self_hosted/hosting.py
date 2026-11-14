@@ -5,7 +5,7 @@ import interactions as ipy
 
 import elobot.features.hosting.live.eligibility as live_eligibility
 from elobot.features.hosting.live.request import LiveRequestCoordinator, LiveRequestIdentity
-from cogs.match_commands import (
+from elobot.extensions.match import (
     LivePreflight,
     format_available_resource_clans,
     is_match_finished,

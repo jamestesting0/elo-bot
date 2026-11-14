@@ -9,7 +9,7 @@ import interactions as ipy
 
 import elobot.features.hosting.war.helper_host as helper_host
 from elobot.features.hosting.war import result_store_task
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.integrations.helper_api import HelperJob
 from elobot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 
@@ -155,13 +155,13 @@ class TestSelfHostPolling(unittest.IsolatedAsyncioTestCase):
 
     async def invoke_self_host(self, ctx: ipy.SlashContext, match: MagicMock) -> None:
         self.bot.fetch_user = AsyncMock(return_value=MagicMock(id=200))
-        with patch("cogs.self_commands.Match") as mock_match, \
-                patch("cogs.self_commands.Clan") as mock_clan, \
+        with patch("elobot.extensions.self_service.Match") as mock_match, \
+                patch("elobot.extensions.self_service.Clan") as mock_clan, \
                 patch("elobot.features.hosting.self_hosted.hosting.Player") as selection_player, \
-                patch("cogs.self_commands.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
+                patch("elobot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)), \
                 patch("elobot.features.hosting.war.helper_host.Player") as mock_player, \
                 patch("elobot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
-                patch("cogs.match_commands.choose_bases", new=AsyncMock(return_value=match)), \
+                patch("elobot.extensions.match.choose_bases", new=AsyncMock(return_value=match)), \
                 patch(
                     "elobot.features.hosting.war.war_start.start_war",
                     new=self.start_war,

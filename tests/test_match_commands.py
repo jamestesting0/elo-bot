@@ -12,14 +12,14 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 
-import cogs.match_commands as match_commands
-from cogs.challenge_commands import ChallengeCommands
-from cogs.match_commands import MatchCommands, QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUEUE_TIER_PRIORITY, \
+import elobot.extensions.match as match_commands
+from elobot.extensions.challenge import ChallengeCommands
+from elobot.extensions.match import MatchCommands, QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUEUE_TIER_PRIORITY, \
     QUEUE_TIER_NORMAL, QUEUE_TIER1_AGED_AFTER_SECONDS, collect_occupied_base_store_slots, \
     clear_participant_base_store, clear_match_base_stores, construct_start_slot_instruction, \
     get_start_base_store_slot_availability, is_match_finished, is_player_occupied, choose_bases, \
     initiate_match
-from cogs.preset_commands import PresetCommands
+from elobot.extensions.preset import PresetCommands
 from elobot.db import BaseStore, Match, OverrideCode, Participant, Player, Queue, ServerState
 from elobot.config.game import BASE_STORE_SLOTS
 from elobot.config.ids import BOT_ID
@@ -81,8 +81,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch("elobot.features.base_store.preparation.BASE_STORE_RESERVATION_LOCK", new=asyncio.Lock()))
         self.enterContext(patch.object(match_commands, "invite_eligible_players", new=AsyncMock()))
         self.queue_docs = {}
-        self.enterContext(patch("cogs.match_commands.find_attempt_match", new=AsyncMock(return_value=None)))
-        self.enterContext(patch("cogs.match_commands.find_attempt_queue", new=AsyncMock(
+        self.enterContext(patch("elobot.extensions.match.find_attempt_match", new=AsyncMock(return_value=None)))
+        self.enterContext(patch("elobot.extensions.match.find_attempt_queue", new=AsyncMock(
             side_effect=lambda user_id, attempt_id, _tiers: next(
                 (queue for queue in self.queue_docs.values()
                  if user_id in queue.district_selections
@@ -189,13 +189,13 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         matches_query = MagicMock()
         matches_query.to_list = AsyncMock(return_value=[])
 
-        with patch("cogs.match_commands.Player") as mock_player, \
-                patch("cogs.match_commands.Match") as mock_match, \
-                patch("cogs.match_commands.BaseLayout") as mock_base_layout, \
-                patch("cogs.match_commands.NotIn", side_effect=lambda *args: args), \
-                patch("cogs.match_commands.get_base_quality", return_value=qualities), \
-                patch("cogs.match_commands.random.randint", return_value=2), \
-                patch("cogs.match_commands.random.choices", wraps=random.Random(1).choices) as mock_choices:
+        with patch("elobot.extensions.match.Player") as mock_player, \
+                patch("elobot.extensions.match.Match") as mock_match, \
+                patch("elobot.extensions.match.BaseLayout") as mock_base_layout, \
+                patch("elobot.extensions.match.NotIn", side_effect=lambda *args: args), \
+                patch("elobot.extensions.match.get_base_quality", return_value=qualities), \
+                patch("elobot.extensions.match.random.randint", return_value=2), \
+                patch("elobot.extensions.match.random.choices", wraps=random.Random(1).choices) as mock_choices:
             mock_player.find_one = AsyncMock(side_effect=[MagicMock(), MagicMock()])
             mock_match.find_one = AsyncMock(return_value=match)
             mock_match.find.return_value = matches_query
@@ -396,10 +396,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 ]
                 match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-                with patch("cogs.match_commands.Match", return_value=match) as mock_match, \
-                        patch("cogs.match_commands.get_base_quality", return_value=("Good", "Good")), \
-                        patch("cogs.match_commands.confirm_match", new_callable=AsyncMock), \
-                        patch("cogs.match_commands.random.choice") as mock_choice:
+                with patch("elobot.extensions.match.Match", return_value=match) as mock_match, \
+                        patch("elobot.extensions.match.get_base_quality", return_value=("Good", "Good")), \
+                        patch("elobot.extensions.match.confirm_match", new_callable=AsyncMock), \
+                        patch("elobot.extensions.match.random.choice") as mock_choice:
                     # When: a regular Match is created
                     await initiate_match(bot, *players)
 
@@ -421,9 +421,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                       district_presets=[None, None, None]),
         ]
         match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
-        with patch("cogs.match_commands.Match", return_value=match) as match_type, \
-                patch("cogs.match_commands.get_base_quality", return_value=("Good", "Good")), \
-                patch("cogs.match_commands.datetime") as clock:
+        with patch("elobot.extensions.match.Match", return_value=match) as match_type, \
+                patch("elobot.extensions.match.get_base_quality", return_value=("Good", "Good")), \
+                patch("elobot.extensions.match.datetime") as clock:
             clock.now.return_value.timestamp.return_value = 1000.0
             await initiate_match(bot, *players)
 
@@ -451,10 +451,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ]
         match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-        with patch("cogs.match_commands.Match", return_value=match) as mock_match, \
-                patch("cogs.match_commands.get_base_quality", return_value=("Good", "Good")), \
-                patch("cogs.match_commands.confirm_match", new_callable=AsyncMock), \
-                patch("cogs.match_commands.random.choice",
+        with patch("elobot.extensions.match.Match", return_value=match) as mock_match, \
+                patch("elobot.extensions.match.get_base_quality", return_value=("Good", "Good")), \
+                patch("elobot.extensions.match.confirm_match", new_callable=AsyncMock), \
+                patch("elobot.extensions.match.random.choice",
                       side_effect=["Skeleton Park", "Goblin Mines", "Barbarian Camp", "Dragon Cliffs"]) as mock_choice:
             # When: a regular Match is created with unavailable conditional presets
             await initiate_match(bot, *players)
@@ -500,10 +500,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ]
         match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-        with patch("cogs.match_commands.Match", return_value=match) as mock_match, \
-                patch("cogs.match_commands.get_base_quality", return_value=("Good", "Good")), \
-                patch("cogs.match_commands.confirm_match", new_callable=AsyncMock), \
-                patch("cogs.match_commands.random.choice",
+        with patch("elobot.extensions.match.Match", return_value=match) as mock_match, \
+                patch("elobot.extensions.match.get_base_quality", return_value=("Good", "Good")), \
+                patch("elobot.extensions.match.confirm_match", new_callable=AsyncMock), \
+                patch("elobot.extensions.match.random.choice",
                       side_effect=["Barbarian Camp", "Dragon Cliffs"]) as mock_choice:
             # When: a regular match resolves the unavailable presets
             await initiate_match(bot, *players)
@@ -580,10 +580,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 ]
                 match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-                with patch("cogs.match_commands.Match", return_value=match), \
-                        patch("cogs.match_commands.get_base_quality", return_value=("Good", "Good")), \
-                        patch("cogs.match_commands.confirm_match", new_callable=AsyncMock), \
-                        patch("cogs.match_commands.random.choice",
+                with patch("elobot.extensions.match.Match", return_value=match), \
+                        patch("elobot.extensions.match.get_base_quality", return_value=("Good", "Good")), \
+                        patch("elobot.extensions.match.confirm_match", new_callable=AsyncMock), \
+                        patch("elobot.extensions.match.random.choice",
                               side_effect=random_values) as mock_choice:
                     # When: regular matching resolves each invalid secondary
                     await initiate_match(bot, *players)
@@ -634,10 +634,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 ]
                 match = MagicMock(token="TOKEN", base_submission=False, insert=AsyncMock())
 
-                with patch("cogs.match_commands.Match", return_value=match) as mock_match, \
-                        patch("cogs.match_commands.get_base_quality", return_value=("Good", "Good")), \
-                        patch("cogs.match_commands.confirm_match", new_callable=AsyncMock), \
-                        patch("cogs.match_commands.random.choice") as mock_choice:
+                with patch("elobot.extensions.match.Match", return_value=match) as mock_match, \
+                        patch("elobot.extensions.match.get_base_quality", return_value=("Good", "Good")), \
+                        patch("elobot.extensions.match.confirm_match", new_callable=AsyncMock), \
+                        patch("elobot.extensions.match.random.choice") as mock_choice:
                     # When: regular matching resolves the primary presets
                     await initiate_match(bot, *players)
 
@@ -646,7 +646,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(participant.districts, primary)
                 mock_choice.assert_not_called()
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_district_select_rejects_stale_or_forged_values(self, mock_match):
         # Given: unavailable conditional choices and a district forged into the wrong slot
         cases = [
@@ -677,8 +677,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(participant.districts, [None, None, None])
                 match.save_changes.assert_not_awaited()
 
-    @patch("cogs.preset_commands.Player")
-    @patch("cogs.preset_commands.BaseLayout")
+    @patch("elobot.extensions.preset.Player")
+    @patch("elobot.extensions.preset.BaseLayout")
     async def test_base_presets_accept_new_district_codes(self, mock_base, mock_player):
         # Given: valid private links for Wizard Valley and Capital Peak
         cog = PresetCommands(self.bot)
@@ -689,7 +689,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
         for district_code in ("3A2", "3A0"):
             with self.subTest(district_code=district_code), \
-                    patch("cogs.preset_commands.validators.url", return_value=True):
+                    patch("elobot.extensions.preset.validators.url", return_value=True):
                 mock_base.find_one.reset_mock()
                 link = f"https://link.clashofclans.com/en?action=OpenLayout&id=TH16%3ACC%{district_code}"
 
@@ -718,12 +718,12 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ]
         match = MagicMock(insert=AsyncMock())
 
-        with patch("cogs.challenge_commands.Player") as mock_player, \
-                patch("cogs.challenge_commands.Match") as mock_match, \
-                patch("cogs.challenge_commands.datetime") as mock_datetime, \
+        with patch("elobot.extensions.challenge.Player") as mock_player, \
+                patch("elobot.extensions.challenge.Match") as mock_match, \
+                patch("elobot.extensions.challenge.datetime") as mock_datetime, \
                 patch.object(ServerState, "current", new=AsyncMock(return_value=MagicMock(queue_disabled=False))), \
                 patch.object(OverrideCode, "is_valid", new=AsyncMock(return_value=False)), \
-                patch("cogs.challenge_commands.is_player_occupied", new=AsyncMock(return_value=None)):
+                patch("elobot.extensions.challenge.is_player_occupied", new=AsyncMock(return_value=None)):
             mock_player.find_one = AsyncMock(side_effect=players)
             mock_match.find.return_value.to_list = AsyncMock(return_value=[])
             mock_match.find_one = AsyncMock(return_value=None)
@@ -984,7 +984,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         legacy_match.save_changes.assert_not_awaited()
         clan.save_changes.assert_awaited_once()
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_match_list_success(self, mock_match):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1020,7 +1020,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_clan.share_link = "http://link"
         
         # Execute
-        with patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client_prop:
+        with patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client_prop:
              mock_coc_client_prop.return_value.get_clan = AsyncMock(return_value=mock_clan)
              await self.cog.match_list.callback(ctx, hidden=False)
 
@@ -1040,9 +1040,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                       "**[Player 444](<https://discordapp.com/users/444>)**", embed.description)
         self.assertIn("[Test Clan (#CLAN1)]", embed.description)
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
-    @patch("cogs.match_commands.is_player_occupied")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
+    @patch("elobot.extensions.match.is_player_occupied")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_success_add_to_tier3(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -1094,9 +1094,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
-    @patch("cogs.match_commands.is_player_occupied")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
+    @patch("elobot.extensions.match.is_player_occupied")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_adds_to_tier2_when_closest_over_100_without_eligible_match(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -1129,9 +1129,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
-    @patch("cogs.match_commands.is_player_occupied")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
+    @patch("elobot.extensions.match.is_player_occupied")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_with_empty_queue_adds_to_tier3(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -1163,10 +1163,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.get_last_opponent")
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
-    @patch("cogs.match_commands.is_player_occupied")
+    @patch("elobot.extensions.match.get_last_opponent")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
+    @patch("elobot.extensions.match.is_player_occupied")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_closest_within_100_uses_normal_queue(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player, mock_get_last_opponent):
@@ -1200,10 +1200,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("You are now added to the match-making queue", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.initiate_match")
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
-    @patch("cogs.match_commands.is_player_occupied")
+    @patch("elobot.extensions.match.initiate_match")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
+    @patch("elobot.extensions.match.is_player_occupied")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_priority_matches_immediately_within_150(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player, mock_initiate_match):
@@ -1240,9 +1240,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         tier3.save_changes.assert_called()
         self.assertIn("A match has been found", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
-    @patch("cogs.match_commands.is_player_occupied")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
+    @patch("elobot.extensions.match.is_player_occupied")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_match_queue_already_in_queue(
             self, mock_server_state_current, mock_is_occupied, mock_queue, mock_player):
@@ -1278,8 +1278,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called_with(f"{ERROR_EMOJI} You are already in the match-making queue.", ephemeral=True)
 
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
     async def test_match_dequeue_success(self, mock_queue, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1310,8 +1310,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_queue_doc.save_changes.assert_called_once()
         ctx.send.assert_called_with(f"{SUCCESS_EMOJI} You have been removed from the match-making queue.", ephemeral=True)
 
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Queue")
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Queue")
     async def test_match_dequeue_not_in_queue(self, mock_queue, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1338,8 +1338,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called_with(f"{ERROR_EMOJI} You are not currently in the match-making queue.", ephemeral=True)
 
     @patch.object(ServerState, "update_fields", new_callable=AsyncMock)
-    @patch("cogs.match_commands.match_players")
-    @patch("cogs.match_commands.get_match_queue")
+    @patch("elobot.extensions.match.match_players")
+    @patch("elobot.extensions.match.get_match_queue")
     async def test_create_matches_promotes_15_hour_tier1_players_to_tier0(
             self, mock_get_match_queue, mock_match_players, mock_update_fields):
         now = datetime.now().timestamp()
@@ -1375,8 +1375,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_update_fields.assert_awaited_once_with(last_matching=ANY)
 
     @patch.object(ServerState, "update_fields", new_callable=AsyncMock)
-    @patch("cogs.match_commands.match_players")
-    @patch("cogs.match_commands.get_match_queue")
+    @patch("elobot.extensions.match.match_players")
+    @patch("elobot.extensions.match.get_match_queue")
     async def test_create_matches_moves_each_queue_down_one_tier(
             self, mock_get_match_queue, mock_match_players, mock_update_fields):
         now = datetime.now().timestamp()
@@ -1403,8 +1403,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(tier3.players)
         mock_update_fields.assert_awaited_once_with(last_matching=ANY)
 
-    @patch("cogs.match_commands.record_match")
-    @patch("cogs.match_commands.Player")
+    @patch("elobot.extensions.match.record_match")
+    @patch("elobot.extensions.match.Player")
     async def test_match_submit_success(self, mock_player, mock_record_match):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1440,8 +1440,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("is submitted", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.record_match")
-    @patch("cogs.match_commands.Player")
+    @patch("elobot.extensions.match.record_match")
+    @patch("elobot.extensions.match.Player")
     async def test_match_submit_rejects_unavailable_conditional_districts(
             self, mock_player, mock_record_match):
         # Given: Wizard is at its Elo limit or either player has opted out of Peak
@@ -1483,7 +1483,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 mock_record_match.assert_not_awaited()
                 self.assertIn("not available", ctx.send.await_args.args[0].lower())
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_match_resubmit_success(self, mock_match):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1533,11 +1533,11 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             [("Delete Thread", "delete_thread|AUTOWIN")],
         )
 
-    @patch("cogs.match_commands.sync_base_store_slots")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots")
+    @patch("elobot.extensions.match.Match")
     @patch("elobot.features.base_store.preparation.Match")
-    @patch("cogs.match_commands.BaseLayout")
-    @patch("cogs.match_commands.choose_bases")
+    @patch("elobot.extensions.match.BaseLayout")
+    @patch("elobot.extensions.match.choose_bases")
     async def test_match_base_store_success(
             self, mock_choose_bases, mock_base_layout, mock_preparation_match, mock_match, mock_sync_slots):
         # Setup
@@ -1576,7 +1576,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         
         # Execute
         with (
-            patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+            patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
             patch("elobot.features.base_store.publication.Match.find_one", new=AsyncMock(return_value=mock_match_doc)),
         ):
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
@@ -1597,10 +1597,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("Please store the bases", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.sync_base_store_slots")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots")
+    @patch("elobot.extensions.match.Match")
     @patch("elobot.features.base_store.preparation.Match")
-    @patch("cogs.match_commands.choose_bases")
+    @patch("elobot.extensions.match.choose_bases")
     async def test_match_base_store_chooses_bases_before_reserving_slot(
             self, mock_choose_bases, mock_preparation_match, mock_match, mock_sync_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1638,7 +1638,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_choose_bases.side_effect = choose_bases_side_effect
 
         with (
-            patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+            patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
             patch("elobot.features.base_store.publication.Match.find_one", new=AsyncMock(return_value=mock_match_doc)),
         ):
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
@@ -1650,10 +1650,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("Please store the bases", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.sync_base_store_slots")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots")
+    @patch("elobot.extensions.match.Match")
     @patch("elobot.features.base_store.preparation.Match")
-    @patch("cogs.match_commands.choose_bases")
+    @patch("elobot.extensions.match.choose_bases")
     async def test_match_base_store_serializes_reservations_for_the_same_participant(
             self, mock_choose_bases, mock_preparation_match, mock_match, mock_sync_slots):
         state = {"stored": False, "base_store": None}
@@ -1728,7 +1728,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
         contexts = [make_ctx(), make_ctx()]
         with (
-            patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+            patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
             patch("elobot.features.base_store.publication.Match.find_one", new=AsyncMock(side_effect=lambda *_args: make_match())),
             patch.object(self.cog, "_prepare_base_store", new=AsyncMock(side_effect=prepare_store)),
         ):
@@ -1759,11 +1759,11 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         contexts[1].channel.send.assert_not_awaited()
         contexts[1].send.assert_awaited_once()
 
-    @patch("cogs.match_commands.sync_base_store_slots")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots")
+    @patch("elobot.extensions.match.Match")
     @patch("elobot.features.base_store.preparation.Match")
     @patch("elobot.features.base_store.storage.sync_base_store_slots", new_callable=AsyncMock)
-    @patch("cogs.match_commands.choose_bases")
+    @patch("elobot.extensions.match.choose_bases")
     async def test_match_base_store_does_not_claim_slot_when_choose_bases_fails(
             self, mock_choose_bases, _mock_storage_sync, mock_preparation_match, mock_match, mock_sync_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1791,7 +1791,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_preparation_match.find_one = mock_match.find_one
         mock_choose_bases.side_effect = RuntimeError("base selection failed")
 
-        with patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
+        with patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
             with self.assertRaises(RuntimeError):
                 await self.cog.match_base_store.callback(ctx, player=0, clan="#CLAN", slot="Slot 1")
@@ -1801,10 +1801,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_match_doc.save_changes.assert_not_awaited()
         mock_match_doc.clear_base_store.assert_not_awaited()
 
-    @patch("cogs.match_commands.sync_base_store_slots")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots")
+    @patch("elobot.extensions.match.Match")
     @patch("elobot.features.base_store.preparation.Match")
-    @patch("cogs.match_commands.choose_bases")
+    @patch("elobot.extensions.match.choose_bases")
     async def test_match_base_store_does_not_claim_slot_when_preclaim_resync_fails(
             self, mock_choose_bases, mock_preparation_match, mock_match, mock_sync_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1829,7 +1829,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
         mock_preparation_match.find_one = mock_match.find_one
 
-        with patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
+        with patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
             with self.assertRaisesRegex(RuntimeError, "slot synchronization failed"):
                 await self.cog.match_base_store.callback(ctx, player=0, clan="#CLAN", slot="Slot 1")
@@ -1840,10 +1840,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_match_doc.clear_base_store.assert_not_awaited()
         mock_choose_bases.assert_awaited_once()
 
-    @patch("cogs.match_commands.sync_base_store_slots")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots")
+    @patch("elobot.extensions.match.Match")
     @patch("elobot.features.base_store.preparation.Match")
-    @patch("cogs.match_commands.choose_bases")
+    @patch("elobot.extensions.match.choose_bases")
     async def test_match_base_store_blocks_unavailable_slot(
             self, mock_choose_bases, mock_preparation_match, mock_match, mock_sync_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1866,7 +1866,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_match.find_one = AsyncMock(return_value=mock_match_doc)
         mock_preparation_match.find_one = mock_match.find_one
 
-        with patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
+        with patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
             await self.cog.match_base_store.callback(ctx, player=0, clan="#CLAN", slot="Slot 1")
 
@@ -1874,10 +1874,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("already being used", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.sync_base_store_slots")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots")
+    @patch("elobot.extensions.match.Match")
     @patch("elobot.features.base_store.preparation.Match")
-    @patch("cogs.match_commands.choose_bases")
+    @patch("elobot.extensions.match.choose_bases")
     async def test_match_base_store_blocks_when_clan_slots_cannot_be_verified(
             self, mock_choose_bases, mock_preparation_match, mock_match, mock_sync_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1895,7 +1895,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ))
         mock_preparation_match.find_one = mock_match.find_one
 
-        with patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
+        with patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
             await self.cog.match_base_store.callback(ctx, player=0, clan="#CLAN", slot="Slot 1")
 
@@ -1903,12 +1903,12 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(participant.opponent_bases_stored)
         self.assertIn("Unable to verify", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.is_raid_weekend", return_value=False)
+    @patch("elobot.extensions.match.is_raid_weekend", return_value=False)
     @patch("elobot.features.base_store.repository.Clan")
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_tracks_occupancy_outside_raid_weekend(
             self, mock_match, mock_clan, mock_is_raid_weekend):
-        from cogs.match_commands import sync_base_store_slots
+        from elobot.extensions.match import sync_base_store_slots
 
         match = MagicMock(participants=[
             MagicMock(base_store=BaseStore(
@@ -1934,7 +1934,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_blocks_all_clans_for_pending_legacy_reservation(
             self, mock_match, mock_clan):
-        from cogs.match_commands import sync_base_store_slots
+        from elobot.extensions.match import sync_base_store_slots
 
         legacy_match = MagicMock(
             thread="987",
@@ -1961,7 +1961,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Clan")
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_ignores_orphaned_reservations(self, mock_match, mock_clan):
-        from cogs.match_commands import sync_base_store_slots
+        from elobot.extensions.match import sync_base_store_slots
 
         orphaned_match = MagicMock(
             thread=None,
@@ -1996,7 +1996,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_does_not_block_for_started_legacy_match(
             self, mock_match, mock_clan):
-        from cogs.match_commands import sync_base_store_slots
+        from elobot.extensions.match import sync_base_store_slots
 
         started_match = MagicMock(
             participants=[MagicMock(base_store=None, opponent_bases_stored=True)],
@@ -2019,7 +2019,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
     @patch("elobot.features.base_store.repository.Match")
     async def test_sync_base_store_slots_expires_reservations_from_completed_weekend(
             self, mock_match, mock_clan, _mock_latest_raid_end):
-        from cogs.match_commands import sync_base_store_slots
+        from elobot.extensions.match import sync_base_store_slots
 
         participant = MagicMock(
             base_store=BaseStore(clan_tag="#CLAN", slot="Slot 1", stored_at=100),
@@ -2042,7 +2042,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.save_changes.assert_not_awaited()
         self.assertEqual(available, {"#CLAN": list(BASE_STORE_SLOTS)})
 
-    @patch("cogs.match_commands.sync_base_store_slots", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.sync_base_store_slots", new_callable=AsyncMock)
     async def test_on_start_reconciles_base_store_slots_before_other_tasks(self, mock_sync_slots):
         with patch.object(
                 self.cog,
@@ -2054,8 +2054,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
         mock_sync_slots.assert_awaited_once_with(bot=self.bot)
 
-    @patch("cogs.match_commands.ServerState.current", new_callable=AsyncMock)
-    @patch("cogs.match_commands.sync_base_store_slots", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.ServerState.current", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.sync_base_store_slots", new_callable=AsyncMock)
     async def test_on_start_runs_inactive_thread_cleanup_only_on_main_bot(self, _mock_sync_slots, mock_state):
         mock_state.return_value = MagicMock(last_matching=None)
         task_names = (
@@ -2080,8 +2080,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 tasks["auto_match_confirm"].start.assert_called_once()
                 tasks["create_matches"].start.assert_called_once()
 
-    @patch("cogs.match_commands.clear_participant_base_store", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.clear_participant_base_store", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_undo_base_storage_button_releases_stored_slot(self, mock_match, mock_clear_base_store):
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.custom_id = "undo_base_storage|TOKEN|0"
@@ -2109,7 +2109,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("undone", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_failed_manual_store_recovery_does_not_claim_undo_was_restored(self, mock_match):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.channel.id = 12345
@@ -2131,9 +2131,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             return False
 
         with (
-                patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as coc_client,
+                patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as coc_client,
                 patch(
-                    "cogs.match_commands.base_store_publication.present_retained_base_store",
+                    "elobot.extensions.match.base_store_publication.present_retained_base_store",
                     new=AsyncMock(side_effect=fail_recovery),
                 ),
         ):
@@ -2144,15 +2144,15 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(messages, ["Stored-slot controls could not be confirmed."])
         self.assertTrue(all("has been restored" not in message for message in messages))
 
-    @patch("cogs.match_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Clan.find_one", new_callable=AsyncMock)
-    @patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.free_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.remove_helper_task", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Clan.find_one", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.free_clan", new_callable=AsyncMock)
     @patch("elobot.features.base_store.storage.clear_participant_base_store", new_callable=AsyncMock)
-    @patch("cogs.match_commands.send_bases", new_callable=AsyncMock)
-    @patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.send_bases", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.is_clan_available", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Match")
     async def test_match_war_start_from_stored_button_retains_slot_after_sending_bases(
             self, mock_match, mock_player, mock_is_clan_available, mock_send_bases,
             mock_clear_base_store, _mock_free_clan, _mock_occupy_clan, mock_clan_find,
@@ -2258,9 +2258,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         player_acc = MagicMock(tag="#PLAYER", share_link="http://player")
 
         with (
-                patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+                patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    "elobot.extensions.match.get_start_base_store_slot_availability",
                     new_callable=AsyncMock,
                     return_value=(["Slot 1"], {"Slot 2": ("987", "789")}),
                 ) as mock_start_slots,
@@ -2294,13 +2294,13 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_start_slots.assert_awaited_once_with("#CLAN", "12345", bot=self.bot)
 
     @patch(
-        "cogs.match_commands.get_start_base_store_slot_availability",
+        "elobot.extensions.match.get_start_base_store_slot_availability",
         new_callable=AsyncMock,
         return_value=([], {"Slot 1": ("200", "2"), "Slot 2": ("300", "3")}),
     )
-    @patch("cogs.match_commands.is_raid_weekend", return_value=False)
-    @patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock, return_value=True)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.is_raid_weekend", return_value=False)
+    @patch("elobot.extensions.match.is_clan_available", new_callable=AsyncMock, return_value=True)
+    @patch("elobot.extensions.match.Match")
     async def test_match_war_start_blocks_when_both_foreign_slots_are_occupied(
             self, mock_match, _mock_is_clan_available, _mock_is_raid_weekend, mock_start_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -2323,8 +2323,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         clan_obj = MagicMock(tag="#CLAN", name="Test Clan")
 
         with (
-                patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
-                patch("cogs.match_commands.send_bases", new_callable=AsyncMock) as mock_send_bases,
+                patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+                patch("elobot.extensions.match.send_bases", new_callable=AsyncMock) as mock_send_bases,
         ):
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
             await self.cog.match_war_start.callback(ctx, player=0, clan="#CLAN", scout=False)
@@ -2437,9 +2437,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         with patch.object(Match, "find_one", new=AsyncMock(return_value=legacy_match)), \
                 patch.object(Match, "get_pymongo_collection", return_value=collection), \
                 patch.object(Match, "set", new_callable=AsyncMock), \
-                patch("cogs.match_commands.Clan.find_one", new=AsyncMock(
+                patch("elobot.extensions.match.Clan.find_one", new=AsyncMock(
                     return_value=MagicMock(availability_str="Available"))), \
-                patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock):
+                patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock):
             claimed = await match_commands.claim_resource_clan(
                 reservation,
                 legacy_match,
@@ -2674,10 +2674,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.set = AsyncMock()
         match.abort_started_live_match = AsyncMock(return_value=True)
 
-        with patch("cogs.match_commands.Match") as match_model, \
-                patch("cogs.match_commands.is_match_finished", return_value=False), \
-                patch("cogs.match_commands.clear_match_base_stores", new_callable=AsyncMock), \
-                patch("cogs.match_commands.free_clan", new_callable=AsyncMock), \
+        with patch("elobot.extensions.match.Match") as match_model, \
+                patch("elobot.extensions.match.is_match_finished", return_value=False), \
+                patch("elobot.extensions.match.clear_match_base_stores", new_callable=AsyncMock), \
+                patch("elobot.extensions.match.free_clan", new_callable=AsyncMock), \
                 patch("elobot.features.hosting.live.live_start.schedule_channel_name_edit"):
             match_model.find_one = AsyncMock(return_value=match)
 
@@ -2723,28 +2723,28 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.bot.coc_client.get_clan = AsyncMock(return_value=clan)
 
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.is_match_finished", return_value=False),
-                patch("cogs.match_commands.is_raid_weekend", return_value=False),
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)),
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.is_match_finished", return_value=False),
+                patch("elobot.extensions.match.is_raid_weekend", return_value=False),
+                patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)),
                 patch(
-                    "cogs.match_commands.confirm_pending_opponent_bases",
+                    "elobot.extensions.match.confirm_pending_opponent_bases",
                     new=AsyncMock(return_value=True),
                 ),
                 patch(
-                    "cogs.match_commands.try_reserve_resource_match_side",
+                    "elobot.extensions.match.try_reserve_resource_match_side",
                     new=AsyncMock(return_value=side_reservation),
                 ),
                 patch(
-                    "cogs.match_commands.try_reserve_resource_clan",
+                    "elobot.extensions.match.try_reserve_resource_clan",
                     new=AsyncMock(return_value=clan_reservation),
                 ),
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    "elobot.extensions.match.get_start_base_store_slot_availability",
                     new_callable=AsyncMock,
                 ) as available_slots,
                 patch(
-                    "cogs.match_commands.helper_host.host_war_automatically",
+                    "elobot.extensions.match.helper_host.host_war_automatically",
                     new_callable=AsyncMock,
                 ) as automatic_host,
         ):
@@ -2839,12 +2839,12 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             events.append("runner")
 
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.Player") as player_model,
-                patch("cogs.match_commands.is_raid_weekend", return_value=False),
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)),
-                patch("cogs.match_commands.is_resource_clan_locked", return_value=False),
-                patch("cogs.match_commands.get_start_base_store_slot_availability", new_callable=AsyncMock) as slots,
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.Player") as player_model,
+                patch("elobot.extensions.match.is_raid_weekend", return_value=False),
+                patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)),
+                patch("elobot.extensions.match.is_resource_clan_locked", return_value=False),
+                patch("elobot.extensions.match.get_start_base_store_slot_availability", new_callable=AsyncMock) as slots,
                 patch("elobot.features.hosting.live.helper_live.Match.find_one", new=AsyncMock(return_value=match)),
                 patch(
                     "elobot.features.hosting.live.helper_live.live_eligibility.clan_has_all_base_store_slots",
@@ -3003,18 +3003,18 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                     participants=[MagicMock(user_id="100"), MagicMock(user_id="200")],
                 )
                 with (
-                        patch("cogs.match_commands.Match") as match_model,
-                        patch("cogs.match_commands.Player") as player_model,
-                        patch("cogs.match_commands.choose_bases", new_callable=AsyncMock) as choose,
-                        patch("cogs.match_commands.try_reserve_resource_match_side", new_callable=AsyncMock) as reserve,
-                        patch("cogs.match_commands.try_reserve_resource_clan",
+                        patch("elobot.extensions.match.Match") as match_model,
+                        patch("elobot.extensions.match.Player") as player_model,
+                        patch("elobot.extensions.match.choose_bases", new_callable=AsyncMock) as choose,
+                        patch("elobot.extensions.match.try_reserve_resource_match_side", new_callable=AsyncMock) as reserve,
+                        patch("elobot.extensions.match.try_reserve_resource_clan",
                               new_callable=AsyncMock) as reserve_clan,
-                        patch("cogs.match_commands.live_start.start_live_match", new_callable=AsyncMock) as start,
-                        patch("cogs.match_commands.helper_live.confirm_helper_availability",
+                        patch("elobot.extensions.match.live_start.start_live_match", new_callable=AsyncMock) as start,
+                        patch("elobot.extensions.match.helper_live.confirm_helper_availability",
                               new_callable=AsyncMock) as eta,
-                        patch("cogs.match_commands.helper_live.run_helper_host_job", new_callable=AsyncMock) as post_poll,
-                        patch("cogs.match_commands.live_start.abort_live_start", new_callable=AsyncMock) as abort,
-                        patch("cogs.match_commands.available_resource_clans_text",
+                        patch("elobot.extensions.match.helper_live.run_helper_host_job", new_callable=AsyncMock) as post_poll,
+                        patch("elobot.extensions.match.live_start.abort_live_start", new_callable=AsyncMock) as abort,
+                        patch("elobot.extensions.match.available_resource_clans_text",
                               new=AsyncMock(return_value="available clans")),
                 ):
                     match_model.find_one = AsyncMock(return_value=match)
@@ -3274,7 +3274,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         side1.release.assert_called_once_with()
         side0.release.assert_called_once_with()
 
-    @patch("cogs.match_commands.HelperTask")
+    @patch("elobot.extensions.match.HelperTask")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_update_hosting_queue_embed_shows_only_helper_tasks(
             self, mock_server_state_current, mock_helper_task):
@@ -3299,7 +3299,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(message.edit.await_args.kwargs["embed"]["description"],
                          f"<#987> **[Player](<https://discordapp.com/users/111>)** {timestamp}\n")
 
-    @patch("cogs.match_commands.HelperTask")
+    @patch("elobot.extensions.match.HelperTask")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_update_hosting_queue_embed_avoids_concurrent_message_fetches(
             self, mock_server_state_current, mock_helper_task):
@@ -3347,10 +3347,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(overlap_detected.is_set())
         queue_channel.fetch_message.assert_awaited_once_with(456)
 
-    @patch("cogs.match_commands.sync_base_store_slots", new_callable=AsyncMock)
-    @patch("cogs.match_commands.is_raid_weekend", return_value=False)
-    @patch("cogs.match_commands.Clan")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.sync_base_store_slots", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.is_raid_weekend", return_value=False)
+    @patch("elobot.extensions.match.Clan")
+    @patch("elobot.extensions.match.Match")
     @patch.object(ServerState, "current", new_callable=AsyncMock)
     async def test_update_clan_availability_embed_shows_slots_outside_raid_weekend(
             self, mock_server_state_current, mock_match, mock_clan, mock_is_raid_weekend, mock_sync_slots):
@@ -3394,10 +3394,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         message.edit.assert_awaited_once()
         mock_is_raid_weekend.assert_not_called()
 
-    @patch("cogs.match_commands.Clan.find_one", new_callable=AsyncMock)
-    @patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.free_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Clan.find_one", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.free_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_host_clan_select_updates_occupancy_before_discord_side_effects(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a started war side whose replacement clan can be persisted.
@@ -3449,7 +3449,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         async def publish_existing(_ctx, _match, _expected, *, embed, existing_message):
             await existing_message.edit(embed=embed)
 
-        with patch("cogs.match_commands.publish_match_message", new=AsyncMock(side_effect=publish_existing)) as publisher:
+        with patch("elobot.extensions.match.publish_match_message", new=AsyncMock(side_effect=publish_existing)) as publisher:
             await self.cog.host_clan_select.callback.func(self.cog, ctx)
         publisher.assert_awaited_once()
         self.assertIs(publisher.await_args.kwargs["existing_message"], ctx.message)
@@ -3474,10 +3474,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_free_clan.assert_awaited_once_with("#OLD", expected_thread=str(match.thread))
         mock_occupy_clan.assert_awaited_once_with(match, 0)
 
-    @patch("cogs.match_commands.Clan.find_one", new_callable=AsyncMock)
-    @patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.free_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Clan.find_one", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.free_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_host_clan_select_persistence_failure_skips_occupancy_and_discord(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a valid war-side clan selection whose durable write fails.
@@ -3520,10 +3520,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.edit.assert_not_awaited()
         ctx.send.assert_not_awaited()
 
-    @patch("cogs.match_commands.Clan.find_one", new_callable=AsyncMock)
-    @patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.free_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Clan.find_one", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.free_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_match_set_clan_updates_occupancy_before_discord_side_effects(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a scheduled match whose selected host clan can be persisted.
@@ -3580,7 +3580,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         async def publish_existing(_ctx, _match, _expected, *, embed, existing_message):
             await existing_message.edit(embed=embed)
 
-        with patch("cogs.match_commands.publish_match_message", new=AsyncMock(side_effect=publish_existing)) as publisher:
+        with patch("elobot.extensions.match.publish_match_message", new=AsyncMock(side_effect=publish_existing)) as publisher:
             await self.cog.match_set_clan.callback.func(self.cog, ctx, clan="#NEW")
         publisher.assert_awaited_once()
         self.assertIs(publisher.await_args.kwargs["existing_message"], old_message)
@@ -3603,10 +3603,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_free_clan.assert_awaited_once_with("#OLD", expected_thread=str(match.thread))
         mock_occupy_clan.assert_awaited_once_with(match, 0, 1)
 
-    @patch("cogs.match_commands.Clan.find_one", new_callable=AsyncMock)
-    @patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.free_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Clan.find_one", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.free_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_match_set_clan_persistence_failure_skips_occupancy_and_discord(
             self, mock_match, mock_free_clan, mock_occupy_clan, mock_clan_find):
         # Given a valid scheduled match whose host-clan write fails.
@@ -3650,17 +3650,17 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_not_awaited()
         self.bot.fetch_channel.assert_not_awaited()
 
-    @patch("cogs.match_commands.Clan.find_one", new_callable=AsyncMock)
-    @patch("cogs.match_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.free_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.match_commands.send_bases", new_callable=AsyncMock)
-    @patch("cogs.match_commands.choose_tip", new_callable=AsyncMock)
-    @patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock)
-    @patch("cogs.match_commands.is_raid_weekend", return_value=False)
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Clan.find_one", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.remove_helper_task", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.free_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.send_bases", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.choose_tip", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.is_clan_available", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.is_raid_weekend", return_value=False)
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Match")
     async def test_match_start_updates_occupancy_before_discord_side_effects(
             self, mock_match, mock_player, _mock_is_raid_weekend, mock_is_clan_available, mock_choose_tip,
             mock_send_bases, mock_clear_base_stores, mock_free_clan, mock_occupy_clan,
@@ -3786,9 +3786,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_choose_tip.return_value = "tip"
 
         with (
-                patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+                patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    "elobot.extensions.match.get_start_base_store_slot_availability",
                     new_callable=AsyncMock,
                     return_value=(["Slot 2"], {"Slot 1": ("987", "789")}),
                 ) as mock_start_slots,
@@ -3846,16 +3846,16 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         shared_start = AsyncMock(return_value=live_start.LiveStartSucceeded(message=MagicMock()))
 
         with (
-                patch("cogs.match_commands.Match") as match_model,
-                patch("cogs.match_commands.Player") as player_model,
-                patch("cogs.match_commands.is_raid_weekend", return_value=False),
-                patch("cogs.match_commands.is_clan_available", new=AsyncMock(return_value=True)),
-                patch("cogs.match_commands.is_resource_clan_locked", return_value=False),
-                patch("cogs.match_commands.get_start_base_store_slot_availability", new=AsyncMock(
+                patch("elobot.extensions.match.Match") as match_model,
+                patch("elobot.extensions.match.Player") as player_model,
+                patch("elobot.extensions.match.is_raid_weekend", return_value=False),
+                patch("elobot.extensions.match.is_clan_available", new=AsyncMock(return_value=True)),
+                patch("elobot.extensions.match.is_resource_clan_locked", return_value=False),
+                patch("elobot.extensions.match.get_start_base_store_slot_availability", new=AsyncMock(
                     return_value=(["Slot 2"], {"Slot 1": ("987", "789")}),
                 )),
-                patch("cogs.match_commands.live_start.start_live_match", new=shared_start),
-                patch("cogs.match_commands.claim_resource_clan", new_callable=AsyncMock) as direct_claim,
+                patch("elobot.extensions.match.live_start.start_live_match", new=shared_start),
+                patch("elobot.extensions.match.claim_resource_clan", new_callable=AsyncMock) as direct_claim,
         ):
             match_model.find_one = AsyncMock(return_value=match)
             player_model.find_one = AsyncMock(side_effect=[
@@ -3996,10 +3996,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                       new=AsyncMock(side_effect=[side0, side1])),
                 patch("elobot.features.hosting.live.live_start.match_commands.try_reserve_resource_clan",
                       new=AsyncMock(return_value=clan_reservation)),
-                patch("cogs.match_commands.Match.find_one", new=AsyncMock(return_value=match)),
-                patch("cogs.match_commands.Clan.find_one", new=AsyncMock(
+                patch("elobot.extensions.match.Match.find_one", new=AsyncMock(return_value=match)),
+                patch("elobot.extensions.match.Clan.find_one", new=AsyncMock(
                     return_value=MagicMock(availability_str="Available"))),
-                patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock) as occupy,
+                patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock) as occupy,
         ):
             with self.assertRaisesRegex(RuntimeError, "match write failed"):
                 await live_start.start_live_match(MagicMock(), ctx, request)
@@ -4007,16 +4007,16 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         occupy.assert_not_awaited()
         ctx.channel.send.assert_not_awaited()
 
-    @patch("cogs.match_commands.Clan.find_one", new_callable=AsyncMock)
-    @patch("cogs.match_commands.remove_helper_task", new_callable=AsyncMock)
-    @patch("cogs.match_commands.occupy_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.free_clan", new_callable=AsyncMock)
-    @patch("cogs.match_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.match_commands.send_bases", new_callable=AsyncMock)
-    @patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock, return_value=True)
-    @patch("cogs.match_commands.is_raid_weekend", return_value=False)
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Clan.find_one", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.remove_helper_task", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.occupy_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.free_clan", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.send_bases", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.is_clan_available", new_callable=AsyncMock, return_value=True)
+    @patch("elobot.extensions.match.is_raid_weekend", return_value=False)
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Match")
     async def test_match_start_persistence_failure_skips_occupancy_and_discord(
             self, mock_match, mock_player, _mock_is_raid_weekend, _mock_is_clan_available, mock_send_bases,
             mock_clear_base_stores, mock_free_clan, mock_occupy_clan, mock_remove_helper_task, mock_clan_find):
@@ -4056,9 +4056,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_clan_find.return_value = MagicMock(availability_str="Available")
 
         with (
-                patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+                patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
                 patch(
-                    "cogs.match_commands.get_start_base_store_slot_availability",
+                    "elobot.extensions.match.get_start_base_store_slot_availability",
                     new_callable=AsyncMock,
                     return_value=(["Slot 2"], {"Slot 1": ("987", "789")}),
                 ),
@@ -4082,14 +4082,14 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_remove_helper_task.assert_not_awaited()
 
     @patch(
-        "cogs.match_commands.get_start_base_store_slot_availability",
+        "elobot.extensions.match.get_start_base_store_slot_availability",
         new_callable=AsyncMock,
         return_value=([], {"Slot 1": ("200", "2"), "Slot 2": ("300", "3")}),
     )
-    @patch("cogs.match_commands.is_raid_weekend", return_value=False)
-    @patch("cogs.match_commands.is_clan_available", new_callable=AsyncMock, return_value=True)
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.is_raid_weekend", return_value=False)
+    @patch("elobot.extensions.match.is_clan_available", new_callable=AsyncMock, return_value=True)
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Match")
     async def test_match_start_blocks_when_both_foreign_slots_are_occupied(
             self, mock_match, mock_player, _mock_is_clan_available, _mock_is_raid_weekend, mock_start_slots):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4113,8 +4113,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         clan_obj = MagicMock(tag="#CLAN", name="Test Clan")
 
         with (
-                patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
-                patch("cogs.match_commands.send_bases", new_callable=AsyncMock) as mock_send_bases,
+                patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
+                patch("elobot.extensions.match.send_bases", new_callable=AsyncMock) as mock_send_bases,
         ):
             mock_coc_client.return_value.get_player = AsyncMock(side_effect=[
                 MagicMock(town_hall=3),
@@ -4131,8 +4131,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("<#200> <@2>", response)
         self.assertIn("<#300> <@3>", response)
 
-    @patch("cogs.match_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_match_data_clean_up_keeps_match_without_thread(
             self, mock_match, mock_clear_base_stores):
         match = MagicMock(thread=None)
@@ -4149,9 +4149,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_clear_base_stores.assert_not_awaited()
         match.delete.assert_not_awaited()
 
-    @patch("cogs.match_commands.free_match_clans", new_callable=AsyncMock)
-    @patch("cogs.match_commands.clear_match_base_stores", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.free_match_clans", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.clear_match_base_stores", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_match_data_clean_up_requires_confirmed_deletion_before_release(
             self, mock_match, mock_clear_base_stores, mock_free_match_clans):
         match = MagicMock()
@@ -4176,10 +4176,10 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.delete.assert_not_awaited()
         collection.delete_one.assert_not_awaited()
 
-    @patch("cogs.match_commands.clear_match_base_stores")
-    @patch("cogs.match_commands.is_raid_weekend", return_value=True)
-    @patch("cogs.match_commands.Player")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.clear_match_base_stores")
+    @patch("elobot.extensions.match.is_raid_weekend", return_value=True)
+    @patch("elobot.extensions.match.Player")
+    @patch("elobot.extensions.match.Match")
     async def test_match_start_blocks_without_stored_bases_during_raid_weekend(
             self, mock_match, mock_player, _mock_is_raid_weekend, mock_clear_base_stores):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4198,7 +4198,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         p2_doc = MagicMock(tag="#P2")
         mock_player.find_one = AsyncMock(side_effect=[p1_doc, p2_doc])
         player_acc = MagicMock(town_hall=3)
-        with patch("cogs.match_commands.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
+        with patch("elobot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client:
             mock_coc_client.return_value.get_player = AsyncMock(return_value=player_acc)
             await self.cog.match_start.callback(ctx, clan="#CLAN")
 
@@ -4207,7 +4207,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("separate slots in the same clan", ctx.send.call_args[0][0])
         mock_clear_base_stores.assert_not_called()
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_match_base_remove_success(self, mock_match):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4238,9 +4238,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("removed", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.validators")
-    @patch("cogs.match_commands.BaseLayout")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.validators")
+    @patch("elobot.extensions.match.BaseLayout")
+    @patch("elobot.extensions.match.Match")
     async def test_match_base_set_image_success(self, mock_match, mock_base_layout, mock_validators):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4270,12 +4270,12 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         mock_base_layout.find_one = AsyncMock(return_value=mock_base)
         
         # Execute
-        # Mock download_file (imported in cogs.match_commands)
+        # Mock download_file (imported in elobot.extensions.match)
         self.bot.owner.send = AsyncMock()
         self.bot.owner.send.return_value.attachments = [MagicMock(url="http://new_image")]
         
-        with patch("cogs.match_commands.download_file", new=AsyncMock(return_value=True)):
-             with patch("cogs.match_commands.delete_file", new=AsyncMock()):
+        with patch("elobot.extensions.match.download_file", new=AsyncMock(return_value=True)):
+             with patch("elobot.extensions.match.delete_file", new=AsyncMock()):
                  await self.cog.match_base_set_image.callback(ctx, player=0, district="Barbarian Camp", base_ss=attachment)
 
         # Verify
@@ -4283,9 +4283,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("set", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.validators")
-    @patch("cogs.match_commands.BaseLayout")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.validators")
+    @patch("elobot.extensions.match.BaseLayout")
+    @patch("elobot.extensions.match.Match")
     async def test_match_base_set_success(self, mock_match, mock_base_layout, mock_validators):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4315,9 +4315,9 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_called()
         self.assertIn("set", ctx.send.call_args[0][0])
 
-    @patch("cogs.match_commands.validators")
-    @patch("cogs.match_commands.BaseLayout")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.validators")
+    @patch("elobot.extensions.match.BaseLayout")
+    @patch("elobot.extensions.match.Match")
     async def test_match_base_submit_success(self, mock_match, mock_base_layout, mock_validators):
         for scheduled_time in (3000000000, None):
             with self.subTest(scheduled_time=scheduled_time):
@@ -4357,8 +4357,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
                 mock_match_doc.save_changes.assert_awaited()
                 self.assertIn("submitted", ctx.send.await_args.args[0])
 
-    @patch("cogs.match_commands.BaseLayout")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.BaseLayout")
+    @patch("elobot.extensions.match.Match")
     async def test_match_base_view_success(self, mock_match, mock_base_layout):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4408,7 +4408,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(is_match_finished(match))
         self.assertTrue(is_match_finished(match, player=0))
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_player_occupied_distinguishes_regular_and_war_completion(self, mock_match):
         match = MagicMock(spec=Match)
         match.is_autowin = False
@@ -4425,7 +4425,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.is_war = True
         self.assertIsNone(await is_player_occupied("111"))
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_player_occupied_offers_inline_confirmation_for_unconfirmed_match(self, mock_match):
         match = MagicMock(spec=Match)
         match.token = "abc123"
@@ -4448,7 +4448,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual("Confirm Match", occupied.component.label)
         self.assertEqual("confirm_occupied_match|abc123", occupied.component.custom_id)
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_confirm_occupied_match_opens_district_confirmation_modal(self, mock_match):
         match = MagicMock(wizard_valley_available=False, capital_peak_available=False)
         mock_match.find_one = AsyncMock(return_value=match)
@@ -4472,7 +4472,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
             [label["component"]["custom_id"] for label in components],
         )
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_inline_confirmation_modal_reuses_match_confirmation(self, mock_match):
         participant = MagicMock(
             user_id="111",
@@ -4510,7 +4510,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         )
         match.save_changes.assert_awaited_once()
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_original_dm_cannot_confirm_after_inline_modal_confirmation(self, mock_match):
         participant = MagicMock(
             user_id="111",
@@ -4536,7 +4536,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.edit.assert_not_awaited()
         self.assertIn("already confirmed", ctx.send.call_args.args[0])
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_match_start_blocks_finished_regular_match(self, mock_match):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 999
@@ -4557,7 +4557,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("finished", ctx.send.call_args[0][0].lower())
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_match_result_store_allows_finished_war_player_correction(self, mock_match):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 999
@@ -4615,7 +4615,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.set.assert_not_awaited()
         self.assertIn("recorded", ctx.send.call_args[0][0].lower())
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_result_store_button_allows_finished_war_player_correction(self, mock_match):
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.custom_id = "match_result_store|token|0"
@@ -4641,7 +4641,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send_modal.assert_awaited_once()
         self.assertEqual("store_modal|token|0", ctx.send_modal.call_args.args[0].custom_id)
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_result_store_button_modal_title_stays_within_discord_limits(self, mock_match):
         ctx = MagicMock(spec=ipy.ComponentContext)
         ctx.custom_id = "match_result_store|token|0"
@@ -4672,8 +4672,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         modal = ctx.send_modal.call_args.args[0]
         self.assertLessEqual(len(modal.title), 45)
 
-    @patch("cogs.match_commands.download_file", new_callable=AsyncMock)
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.download_file", new_callable=AsyncMock)
+    @patch("elobot.extensions.match.Match")
     async def test_match_base_set_image_checks_finished_opponent(self, mock_match, mock_download):
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 999
@@ -4704,8 +4704,8 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("finished", ctx.send.call_args[0][0].lower())
 
     @patch.object(OverrideCode, "is_valid", new_callable=AsyncMock)
-    @patch("cogs.match_commands.BaseLayout")
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.BaseLayout")
+    @patch("elobot.extensions.match.Match")
     async def test_match_base_remove_all_checks_effective_player_opponent(
             self, mock_match, mock_base_layout, mock_is_valid):
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -4759,7 +4759,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         fixture.autoqueue.assert_awaited_once_with(fixture.bot, fixture.match.token, ("111", "222"))
         ctx.channel.edit.assert_not_called()
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_result_store_modal_allows_finished_war_player_correction(self, mock_match):
         ctx = MagicMock(spec=ipy.ModalContext)
         ctx.custom_id = "store_modal|token|0"
@@ -4807,7 +4807,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         }})
         self.assertIn("stored", ctx.send.call_args[0][0].lower())
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_process_match_results_rechecks_finished_channel(self, mock_match):
         ctx = MagicMock(spec=ipy.ModalContext)
         ctx.custom_id = "result_modal|token"
@@ -4836,7 +4836,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
         match.save_changes.assert_not_awaited()
         self.assertIn("already ended", ctx.send.call_args[0][0].lower())
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_raid_weekend_start_notify_skips_ended_matches(self, mock_match):
         cases = [
             ("autowin", True, [None] * 3, "match-thread"),
@@ -4863,7 +4863,7 @@ class TestMatchCommands(unittest.IsolatedAsyncioTestCase):
 
                 thread.send.assert_not_called()
 
-    @patch("cogs.match_commands.Match")
+    @patch("elobot.extensions.match.Match")
     async def test_raid_weekend_start_notify_sends_to_active_match(self, mock_match):
         thread = AsyncMock(spec=ipy.ThreadChannel)
         thread.name = "match-thread"

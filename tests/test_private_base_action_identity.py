@@ -8,8 +8,8 @@ from beanie import Document, PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.results import DeleteResult, UpdateResult
 
-import cogs.base_commands as base_commands
-import cogs.preset_commands as preset_commands
+import elobot.extensions.base as base_commands
+import elobot.extensions.preset as preset_commands
 from elobot.config.emojis import SUCCESS_EMOJI
 from elobot.db import BaseLayout, Player
 

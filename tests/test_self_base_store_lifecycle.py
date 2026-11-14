@@ -8,7 +8,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 import elobot.features.base_store.self_service as self_service
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 import elobot.features.hosting.war.helper_base_store as helper_base_store
 import elobot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
 from elobot.features.hosting.war import war_start

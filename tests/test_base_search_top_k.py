@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from bson import ObjectId
 
-import cogs.base_commands as commands
+import elobot.extensions.base as commands
 from elobot.features.bases.fingerprints import matcher, search
 from elobot.features.bases.fingerprints.worker import WorkerRequest
 from elobot.db import BaseLayout

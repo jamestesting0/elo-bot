@@ -3,7 +3,7 @@ from unittest.mock import call
 
 from bson import DBRef
 
-from cogs import match_commands
+from elobot.extensions import match as match_commands
 from elobot.db import Player
 
 

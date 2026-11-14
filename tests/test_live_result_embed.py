@@ -6,7 +6,7 @@ from beanie import PydanticObjectId
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
-import cogs.match_commands as match_commands
+import elobot.extensions.match as match_commands
 from elobot.config.presentation import RED_COLOR
 from elobot.features.results.operations import ResultOperationConflict
 from elobot.db import Match, Participant

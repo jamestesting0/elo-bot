@@ -153,7 +153,7 @@ class TestHelperEtaFlow(unittest.IsolatedAsyncioTestCase):
         )
         with patch("elobot.features.hosting.war.helper_host.Player") as player_model, \
                 patch("elobot.features.hosting.war.helper_host.get_available_helper_slot", new=AsyncMock(return_value=1)), \
-                patch("cogs.match_commands.choose_bases", new=AsyncMock(return_value=match)), \
+                patch("elobot.extensions.match.choose_bases", new=AsyncMock(return_value=match)), \
                 patch(
                     "elobot.features.hosting.war.helper_host_job.time",
                     new=MagicMock(time=MagicMock(return_value=1000.0)),

@@ -11,8 +11,8 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
 from elobot.features.base_store import live_service
-from cogs.match_commands import MatchCommands
-import cogs.match_commands as match_commands
+from elobot.extensions.match import MatchCommands
+import elobot.extensions.match as match_commands
 from elobot.features.hosting.war import helper_base_store_availability
 from elobot.config.game import HOST_CLAN_CHOICES
 from elobot.db import BaseLink, BaseStore, Match, Participant

@@ -14,7 +14,7 @@ import asyncio
 import re
 from datetime import datetime
 from elobot.discord.mentions import mention_user
-from cogs.match_commands import QUEUE_OPERATION_LOCK, confirm_match, get_district_options, is_player_occupied
+from elobot.extensions.match import QUEUE_OPERATION_LOCK, confirm_match, get_district_options, is_player_occupied
 
 
 CHALLENGE_ACCEPT_LOCK = asyncio.Lock()

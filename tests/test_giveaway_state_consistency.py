@@ -8,7 +8,7 @@ from beanie.odm.settings.document import DocumentSettings
 from beanie.odm.fields import ExpressionField
 from pymongo.errors import OperationFailure
 
-import cogs.giveaway_commands as commands
+import elobot.extensions.giveaway as commands
 from elobot.db import Giveaway
 
 

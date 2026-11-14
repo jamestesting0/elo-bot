@@ -14,8 +14,8 @@ from PIL import Image
 from pymongo.errors import OperationFailure
 
 import elobot.features.bases.screenshots as screenshots
-import cogs.base_commands as commands
-import cogs.preset_commands as presets
+import elobot.extensions.base as commands
+import elobot.extensions.preset as presets
 from elobot.integrations import helper_api
 from elobot.features.bases.fingerprints import images
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI

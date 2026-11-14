@@ -6,7 +6,7 @@ import coc
 import interactions as ipy
 from pydantic import JsonValue
 
-from cogs.self_commands import SelfCommands
+from elobot.extensions.self_service import SelfCommands
 from elobot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elobot.config.ids import MATCH_CHANNEL
 from elobot.db import Match, Participant

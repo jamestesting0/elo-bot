@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import interactions as ipy
 
-from cogs.player_commands import (
+from elobot.extensions.player import (
     PlayerCommands,
     _fetch_display_names,
     _global_match_choice,
@@ -100,10 +100,10 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         recorded, player_collection = self._collections(recorded_rows, players)
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
-                patch("cogs.player_commands.Player.find_one", side_effect=AssertionError("full player load")),
-                patch("cogs.player_commands.RecordedMatch.find_all", side_effect=AssertionError("full match load")),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.Player.find_one", side_effect=AssertionError("full player load")),
+                patch("elobot.extensions.player.RecordedMatch.find_all", side_effect=AssertionError("full match load")),
         ):
             await rebuild_match_id_choices(self.bot, self.guild)
 
@@ -141,8 +141,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user = fetch_user
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await rebuild_match_id_choices(self.bot, self.guild)
 
@@ -156,8 +156,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         recorded, player_collection = self._collections(recorded_rows, players)
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await rebuild_match_id_choices(self.bot, self.guild)
 
@@ -175,8 +175,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         )
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await refresh_user_match_id_choices(self.bot, self.guild, "111")
             await refresh_user_match_id_choices(self.bot, self.guild, "222")
@@ -205,8 +205,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         )
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await refresh_user_match_id_choices(self.bot, self.guild, "111")
 
@@ -229,8 +229,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         )
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await refresh_user_match_id_choices(self.bot, self.guild, "111")
 
@@ -270,8 +270,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         )
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await refresh_user_match_id_choices(self.bot, self.guild, "111")
 
@@ -304,8 +304,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         recorded, player_collection = self._collections(recorded_rows, players)
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await rebuild_match_id_choices(self.bot, self.guild)
 
@@ -320,8 +320,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         recorded, player_collection = self._collections(recorded_rows, players)
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             snapshot = await publish_match_id_choices(self.bot, self.guild)
             self.bot.match_id_choices["all"].insert(0, _global_match_choice("Ann", "Bob", "8"))
@@ -347,8 +347,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         ))
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await rebuild_match_id_choices(self.bot, self.guild)
 
@@ -377,8 +377,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user = fetch_user
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await rebuild_match_id_choices(self.bot, self.guild)
 
@@ -402,8 +402,8 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_user = fetch_user
 
         with (
-                patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded),
-                patch("cogs.player_commands.Player.get_pymongo_collection", return_value=player_collection),
+                patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded),
+                patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=player_collection),
         ):
             await rebuild_match_id_choices(self.bot, self.guild)
 
@@ -484,7 +484,7 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         )
         cog = SimpleNamespace(bot=self.bot)
         collection = SimpleNamespace(find_one=AsyncMock(return_value=kwargs.pop("registered", {"_id": "111"})))
-        with patch("cogs.player_commands.Player.get_pymongo_collection", return_value=collection):
+        with patch("elobot.extensions.player.Player.get_pymongo_collection", return_value=collection):
             await PlayerCommands.match_id_autocomplete.callback(cog, ctx)
         return ctx, collection
 
@@ -538,7 +538,7 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         recorded_rows = [row(9, "111", "444"), row(10, "222", "111")]
         recorded, _player_collection = self._collections(recorded_rows, [])
 
-        with patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded):
+        with patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded):
             ctx, _collection = await self._autocomplete(command="data", text="", guild=self.guild)
 
         self.bot.fetch_user.assert_not_awaited()
@@ -553,7 +553,7 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         self.bot.match_id_choices = {}
         recorded, _player_collection = self._collections([row(10, "222", "111"), row(9, "111", "444")], [])
 
-        with patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded):
+        with patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded):
             ctx, _collection = await self._autocomplete(command="data", text="10", guild=self.guild)
 
         self.assertEqual(recorded.pipelines[0][0], {"$match": {"_id": {"$regex": "^10"}}})
@@ -564,7 +564,7 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         self.bot.match_id_choices = {}
         recorded, _player_collection = self._collections([row(10, "222", "111")], [])
 
-        with patch("cogs.player_commands.RecordedMatch.get_pymongo_collection", return_value=recorded):
+        with patch("elobot.extensions.player.RecordedMatch.get_pymongo_collection", return_value=recorded):
             ctx, _collection = await self._autocomplete(command="data", text="bob", guild=self.guild)
 
         self.assertEqual(recorded.pipelines, [])

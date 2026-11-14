@@ -1,0 +1,5719 @@
+{
+ "documents": {
+  "AuditLogEntry": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "arguments": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "boolean"
+        }
+       ]
+      },
+      "title": "Arguments",
+      "type": "object"
+     },
+     "author_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Author Id",
+      "type": "string"
+     },
+     "command": {
+      "title": "Command",
+      "type": "string"
+     },
+     "recorded_at_ns": {
+      "minimum": 0,
+      "title": "Recorded At Ns",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "recorded_at_ns",
+     "command",
+     "author_id"
+    ],
+    "title": "AuditLogEntry",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'recorded_at_ns': -1}, name='audit_log_recorded_at_desc')"
+    ],
+    "name": "audit_log_entries",
+    "use_state_management": true
+   }
+  },
+  "BaseExtractionRun": {
+   "schema": {
+    "$defs": {
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "actual_device": {
+      "title": "Actual Device",
+      "type": "string"
+     },
+     "batch_size": {
+      "maximum": 32,
+      "minimum": 1,
+      "title": "Batch Size",
+      "type": "integer"
+     },
+     "completed_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Completed At"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "cutoff": {
+      "$ref": "#/$defs/PydanticObjectId"
+     },
+     "deployment": {
+      "title": "Deployment",
+      "type": "string"
+     },
+     "enrollment_complete": {
+      "default": false,
+      "title": "Enrollment Complete",
+      "type": "boolean"
+     },
+     "enrollment_cursor": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "notification_channel_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Notification Channel Id"
+     },
+     "notification_error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Notification Error"
+     },
+     "notification_message_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Notification Message Id"
+     },
+     "pipeline_id": {
+      "default": "capital-v1-4d63ddd9",
+      "title": "Pipeline Id",
+      "type": "string"
+     },
+     "requested_device": {
+      "title": "Requested Device",
+      "type": "string"
+     },
+     "requester_id": {
+      "title": "Requester Id",
+      "type": "string"
+     },
+     "status": {
+      "default": "enrolling",
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "requester_id",
+     "deployment",
+     "batch_size",
+     "requested_device",
+     "actual_device",
+     "cutoff"
+    ],
+    "title": "BaseExtractionRun",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'active': 1}, unique=True, partialFilterExpression={'active': True}, name='active_1')",
+     "IndexModel({'status': 1, 'created_at': 1}, name='status_1_created_at_1')"
+    ],
+    "name": "base_extraction_runs",
+    "use_state_management": true
+   }
+  },
+  "BaseFingerprintTask": {
+   "schema": {
+    "$defs": {
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "attempts": {
+      "default": 0,
+      "title": "Attempts",
+      "type": "integer"
+     },
+     "base_id": {
+      "$ref": "#/$defs/PydanticObjectId"
+     },
+     "claim_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Claim Token"
+     },
+     "completed_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Completed At"
+     },
+     "completion_receipt": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Completion Receipt"
+     },
+     "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+     },
+     "district": {
+      "title": "District",
+      "type": "string"
+     },
+     "error_code": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Error Code"
+     },
+     "lease_expires_at": {
+      "format": "date-time",
+      "title": "Lease Expires At",
+      "type": "string"
+     },
+     "lease_owner": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Lease Owner"
+     },
+     "next_attempt_at": {
+      "format": "date-time",
+      "title": "Next Attempt At",
+      "type": "string"
+     },
+     "pipeline_id": {
+      "default": "capital-v1-4d63ddd9",
+      "title": "Pipeline Id",
+      "type": "string"
+     },
+     "predecessor_request_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Predecessor Request Id"
+     },
+     "run_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Run Id"
+     },
+     "source_image_url": {
+      "title": "Source Image Url",
+      "type": "string"
+     },
+     "source_revision": {
+      "title": "Source Revision",
+      "type": "integer"
+     },
+     "state": {
+      "default": "pending",
+      "enum": [
+       "pending",
+       "running",
+       "succeeded",
+       "failed",
+       "superseded",
+       "deleted"
+      ],
+      "title": "State",
+      "type": "string"
+     }
+    },
+    "required": [
+     "base_id",
+     "source_revision",
+     "source_image_url",
+     "district"
+    ],
+    "title": "BaseFingerprintTask",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'run_id': 1, 'base_id': 1}, unique=True, partialFilterExpression={'run_id': {'$type': 'string'}}, name='run_id_1_base_id_1')",
+     "IndexModel({'state': 1, 'next_attempt_at': 1, 'lease_expires_at': 1}, name='state_1_next_attempt_at_1_lease_expires_at_1')",
+     "IndexModel({'base_id': 1, 'source_revision': 1}, name='base_id_1_source_revision_1')"
+    ],
+    "name": "base_fingerprint_tasks",
+    "use_state_management": true
+   }
+  },
+  "BaseLayout": {
+   "schema": {
+    "$defs": {
+     "BaseFingerprint": {
+      "additionalProperties": false,
+      "properties": {
+       "anchor_found": {
+        "default": true,
+        "title": "Anchor Found",
+        "type": "boolean"
+       },
+       "anchor_type": {
+        "anyOf": [
+         {
+          "enum": [
+           "capital_peak",
+           "district_hall"
+          ],
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Anchor Type"
+       },
+       "buildings": {
+        "items": {
+         "$ref": "#/$defs/Building"
+        },
+        "maxItems": 300,
+        "minItems": 1,
+        "title": "Buildings",
+        "type": "array"
+       },
+       "confidence_threshold": {
+        "maximum": 1,
+        "minimum": 0,
+        "title": "Confidence Threshold",
+        "type": "number"
+       },
+       "coordinate_system": {
+        "title": "Coordinate System",
+        "type": "string"
+       },
+       "district_id": {
+        "maximum": 8,
+        "minimum": 0,
+        "title": "District Id",
+        "type": "integer"
+       },
+       "expected_count_match": {
+        "title": "Expected Count Match",
+        "type": "boolean"
+       },
+       "extractor_revision": {
+        "title": "Extractor Revision",
+        "type": "string"
+       },
+       "generated_at": {
+        "format": "date-time",
+        "title": "Generated At",
+        "type": "string"
+       },
+       "image_height": {
+        "exclusiveMinimum": 0,
+        "title": "Image Height",
+        "type": "integer"
+       },
+       "image_width": {
+        "exclusiveMinimum": 0,
+        "title": "Image Width",
+        "type": "integer"
+       },
+       "inference_runs": {
+        "maximum": 3,
+        "minimum": 1,
+        "title": "Inference Runs",
+        "type": "integer"
+       },
+       "model_sha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Model Sha256",
+        "type": "string"
+       },
+       "pipeline_id": {
+        "title": "Pipeline Id",
+        "type": "string"
+       },
+       "schema_version": {
+        "default": 1,
+        "enum": [
+         1,
+         2
+        ],
+        "title": "Schema Version",
+        "type": "integer"
+       },
+       "source_image_sha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "title": "Source Image Sha256",
+        "type": "string"
+       },
+       "source_image_url": {
+        "title": "Source Image Url",
+        "type": "string"
+       },
+       "source_revision": {
+        "minimum": 0,
+        "title": "Source Revision",
+        "type": "integer"
+       },
+       "total_detections": {
+        "exclusiveMinimum": 0,
+        "maximum": 300,
+        "title": "Total Detections",
+        "type": "integer"
+       },
+       "warnings": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Warnings",
+        "type": "array"
+       }
+      },
+      "required": [
+       "pipeline_id",
+       "model_sha256",
+       "extractor_revision",
+       "coordinate_system",
+       "source_revision",
+       "source_image_sha256",
+       "source_image_url",
+       "district_id",
+       "generated_at",
+       "image_width",
+       "image_height",
+       "anchor_type",
+       "total_detections",
+       "confidence_threshold",
+       "inference_runs",
+       "expected_count_match",
+       "buildings"
+      ],
+      "title": "BaseFingerprint",
+      "type": "object"
+     },
+     "Building": {
+      "additionalProperties": false,
+      "properties": {
+       "conf": {
+        "maximum": 1,
+        "minimum": 0,
+        "title": "Conf",
+        "type": "number"
+       },
+       "type": {
+        "enum": [
+         "air_bomb",
+         "air_defence",
+         "blast_bow",
+         "bomb_tower",
+         "cannon",
+         "capital_peak",
+         "crusher",
+         "district_hall",
+         "gaint_cannon",
+         "hive",
+         "inferno_tower",
+         "motor",
+         "multi_cannon",
+         "post_cannon",
+         "post_dragon",
+         "post_gaint",
+         "post_goblin",
+         "rapid_rocket",
+         "reflector",
+         "rocket_artilery",
+         "spear",
+         "tesla",
+         "wizard_tower"
+        ],
+        "title": "Type",
+        "type": "string"
+       },
+       "x": {
+        "maximum": 1,
+        "minimum": -1,
+        "title": "X",
+        "type": "number"
+       },
+       "y": {
+        "maximum": 1,
+        "minimum": -1,
+        "title": "Y",
+        "type": "number"
+       }
+      },
+      "required": [
+       "type",
+       "x",
+       "y",
+       "conf"
+      ],
+      "title": "Building",
+      "type": "object"
+     },
+     "ExtractionState": {
+      "properties": {
+       "claim_token": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Claim Token"
+       },
+       "completed_at": {
+        "anyOf": [
+         {
+          "format": "date-time",
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Completed At"
+       },
+       "completion_receipt": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Completion Receipt"
+       },
+       "error_code": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Error Code"
+       },
+       "lease_expires_at": {
+        "anyOf": [
+         {
+          "format": "date-time",
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Lease Expires At"
+       },
+       "pipeline_id": {
+        "default": "capital-v1-4d63ddd9",
+        "title": "Pipeline Id",
+        "type": "string"
+       },
+       "request_id": {
+        "title": "Request Id",
+        "type": "string"
+       },
+       "requested_at": {
+        "format": "date-time",
+        "title": "Requested At",
+        "type": "string"
+       },
+       "source_revision": {
+        "minimum": 0,
+        "title": "Source Revision",
+        "type": "integer"
+       },
+       "status": {
+        "default": "pending",
+        "enum": [
+         "pending",
+         "running",
+         "ready",
+         "failed"
+        ],
+        "title": "Status",
+        "type": "string"
+       }
+      },
+      "required": [
+       "source_revision"
+      ],
+      "title": "ExtractionState",
+      "type": "object"
+     },
+     "ImageAttachment": {
+      "properties": {
+       "attachment_id": {
+        "title": "Attachment Id",
+        "type": "string"
+       },
+       "channel_id": {
+        "title": "Channel Id",
+        "type": "string"
+       },
+       "message_id": {
+        "title": "Message Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "channel_id",
+       "message_id",
+       "attachment_id"
+      ],
+      "title": "ImageAttachment",
+      "type": "object"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "builder_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Builder Id"
+     },
+     "district": {
+      "title": "District",
+      "type": "string"
+     },
+     "expiration_date": {
+      "title": "Expiration Date",
+      "type": "number"
+     },
+     "fingerprint": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/BaseFingerprint"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "fingerprint_extraction": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/ExtractionState"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "image_attachment": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/ImageAttachment"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "image_revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Image Revision",
+      "type": "integer"
+     },
+     "image_url": {
+      "title": "Image Url",
+      "type": "string"
+     },
+     "link": {
+      "title": "Link",
+      "type": "string",
+      "unique": true
+     },
+     "operation_receipts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Operation Receipts",
+      "type": "array"
+     },
+     "quality": {
+      "title": "Quality",
+      "type": "string"
+     },
+     "records": {
+      "default": [],
+      "items": {},
+      "title": "Records",
+      "type": "array"
+     }
+    },
+    "required": [
+     "district",
+     "link",
+     "image_url",
+     "expiration_date",
+     "quality"
+    ],
+    "title": "BaseLayout",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "district",
+     "IndexModel({'link': 1}, unique=True, name='link_1')",
+     "quality",
+     "builder_id",
+     [
+      [
+       "district",
+       1
+      ],
+      [
+       "quality",
+       1
+      ]
+     ],
+     [
+      [
+       "district",
+       1
+      ],
+      [
+       "quality",
+       1
+      ],
+      [
+       "builder_id",
+       1
+      ]
+     ],
+     "IndexModel({'district': 1, 'fingerprint.pipeline_id': 1}, name='district_1_fingerprint.pipeline_id_1')",
+     "IndexModel({'fingerprint_extraction.status': 1}, name='fingerprint_extraction.status_1')"
+    ],
+    "name": "base_layouts",
+    "use_state_management": true
+   }
+  },
+  "Clan": {
+   "schema": {
+    "$defs": {
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "availability_str": {
+      "title": "Availability Str",
+      "type": "string"
+     },
+     "available_slots": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Available Slots",
+      "type": "array"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "tag": {
+      "title": "Tag",
+      "type": "string"
+     }
+    },
+    "required": [
+     "tag",
+     "name",
+     "availability_str"
+    ],
+    "title": "Clan",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "tag"
+    ],
+    "name": "clans",
+    "use_state_management": true
+   }
+  },
+  "EloFinal": {
+   "schema": {
+    "$defs": {
+     "EloFinalMatch": {
+      "properties": {
+       "actual_started_at": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Actual Started At"
+       },
+       "attempt": {
+        "default": 0,
+        "title": "Attempt",
+        "type": "integer"
+       },
+       "bye": {
+        "default": false,
+        "title": "Bye",
+        "type": "boolean"
+       },
+       "contestant_revision": {
+        "default": 1,
+        "title": "Contestant Revision",
+        "type": "integer"
+       },
+       "contestants": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Contestants",
+        "type": "array"
+       },
+       "feeders": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Feeders",
+        "type": "array"
+       },
+       "first_actual_started_at": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "First Actual Started At"
+       },
+       "id": {
+        "title": "Id",
+        "type": "string"
+       },
+       "match_id": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/PydanticObjectId"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null
+       },
+       "outcome": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/Outcome"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null
+       },
+       "players": {
+        "anyOf": [
+         {
+          "additionalProperties": {
+           "anyOf": [
+            {
+             "$ref": "#/$defs/MatchPlayerStats"
+            },
+            {
+             "type": "null"
+            }
+           ]
+          },
+          "type": "object"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Players"
+       },
+       "provisioning": {
+        "default": false,
+        "title": "Provisioning",
+        "type": "boolean"
+       },
+       "provisioning_error": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Provisioning Error"
+       },
+       "result_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Result Id"
+       },
+       "result_version": {
+        "default": 0,
+        "title": "Result Version",
+        "type": "integer"
+       },
+       "scheduled_is_war": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Scheduled Is War"
+       },
+       "scheduled_times": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "title": "Scheduled Times",
+        "type": "array"
+       },
+       "start_claim": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Start Claim"
+       },
+       "state": {
+        "$ref": "#/$defs/NodeState",
+        "default": "WAITING"
+       },
+       "thread_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Thread Id"
+       },
+       "winner": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Winner"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "title": "EloFinalMatch",
+      "type": "object"
+     },
+     "FinalResultProgress": {
+      "properties": {
+       "channel_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Channel Id"
+       },
+       "completed": {
+        "default": false,
+        "title": "Completed",
+        "type": "boolean"
+       },
+       "error": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Error"
+       },
+       "helper_completed": {
+        "default": false,
+        "title": "Helper Completed",
+        "type": "boolean"
+       },
+       "message_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Message Id"
+       },
+       "published": {
+        "default": false,
+        "title": "Published",
+        "type": "boolean"
+       },
+       "published_repair_pending": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Published Repair Pending"
+       },
+       "release_completed": {
+        "default": false,
+        "title": "Release Completed",
+        "type": "boolean"
+       },
+       "send_attempted": {
+        "default": false,
+        "title": "Send Attempted",
+        "type": "boolean"
+       },
+       "thread_deleted": {
+        "default": false,
+        "title": "Thread Deleted",
+        "type": "boolean"
+       }
+      },
+      "title": "FinalResultProgress",
+      "type": "object"
+     },
+     "FinalState": {
+      "enum": [
+       "REGISTRATION",
+       "BRACKET_READY",
+       "RUNNING",
+       "FINALIZING",
+       "COMPLETED",
+       "CANCELLING",
+       "CANCELLED"
+      ],
+      "type": "string"
+     },
+     "MatchDistrictStats": {
+      "properties": {
+       "base_quality": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Base Quality"
+       },
+       "destruction": {
+        "title": "Destruction",
+        "type": "integer"
+       },
+       "stars": {
+        "title": "Stars",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "stars",
+       "destruction"
+      ],
+      "title": "MatchDistrictStats",
+      "type": "object"
+     },
+     "MatchPlayerStats": {
+      "properties": {
+       "confirmation_method": {
+        "anyOf": [
+         {
+          "enum": [
+           "ready",
+           "manual",
+           "automatic"
+          ],
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmation Method"
+       },
+       "confirmed_at": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmed At"
+       },
+       "destruction": {
+        "title": "Destruction",
+        "type": "integer"
+       },
+       "districts": {
+        "additionalProperties": {
+         "$ref": "#/$defs/MatchDistrictStats"
+        },
+        "title": "Districts",
+        "type": "object"
+       },
+       "elo_change": {
+        "title": "Elo Change",
+        "type": "integer"
+       },
+       "opponent": {
+        "title": "Opponent",
+        "type": "string"
+       },
+       "opponent_destruction": {
+        "title": "Opponent Destruction",
+        "type": "integer"
+       },
+       "opponent_stars": {
+        "title": "Opponent Stars",
+        "type": "integer"
+       },
+       "stars": {
+        "title": "Stars",
+        "type": "integer"
+       },
+       "won": {
+        "title": "Won",
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "stars",
+       "destruction",
+       "opponent_stars",
+       "opponent_destruction",
+       "opponent",
+       "elo_change",
+       "won"
+      ],
+      "title": "MatchPlayerStats",
+      "type": "object"
+     },
+     "NodeState": {
+      "enum": [
+       "WAITING",
+       "READY",
+       "BYE",
+       "PLAYING",
+       "DECIDED",
+       "TIED",
+       "NEEDS_MANAGER"
+      ],
+      "type": "string"
+     },
+     "Outcome": {
+      "enum": [
+       "Played",
+       "Forfeit"
+      ],
+      "type": "string"
+     },
+     "PredictionState": {
+      "enum": [
+       "NEVER_OPENED",
+       "OPEN",
+       "CLOSED"
+      ],
+      "type": "string"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "active": {
+      "default": false,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "archived_elo": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Archived Elo",
+      "type": "object"
+     },
+     "bracket_message_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Bracket Message Id"
+     },
+     "bracket_published_revision": {
+      "default": -1,
+      "title": "Bracket Published Revision",
+      "type": "integer"
+     },
+     "bracket_send_attempted": {
+      "default": false,
+      "title": "Bracket Send Attempted",
+      "type": "boolean"
+     },
+     "bracket_send_nonce": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Bracket Send Nonce"
+     },
+     "byes": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Byes",
+      "type": "array"
+     },
+     "cancel_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Cancel Reason"
+     },
+     "champion": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Champion"
+     },
+     "channel_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Channel Id"
+     },
+     "completed_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Completed At"
+     },
+     "current_round": {
+      "default": "Quarterfinals",
+      "title": "Current Round",
+      "type": "string"
+     },
+     "districts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Districts",
+      "type": "array"
+     },
+     "draft_owner": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Draft Owner"
+     },
+     "draft_revision": {
+      "default": 0,
+      "title": "Draft Revision",
+      "type": "integer"
+     },
+     "draft_setup_revision": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Draft Setup Revision"
+     },
+     "entrant_ids": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Entrant Ids",
+      "type": "array"
+     },
+     "final": {
+      "items": {
+       "$ref": "#/$defs/EloFinalMatch"
+      },
+      "title": "Final",
+      "type": "array"
+     },
+     "first_actual_started_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "First Actual Started At"
+     },
+     "guild_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Guild Id"
+     },
+     "manual_draft": {
+      "additionalProperties": {
+       "items": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "type": "array"
+      },
+      "title": "Manual Draft",
+      "type": "object"
+     },
+     "nodes": {
+      "additionalProperties": {
+       "$ref": "#/$defs/EloFinalMatch"
+      },
+      "title": "Nodes",
+      "type": "object"
+     },
+     "player_nicknames": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Player Nicknames",
+      "type": "object"
+     },
+     "prediction_state": {
+      "$ref": "#/$defs/PredictionState",
+      "default": "NEVER_OPENED"
+     },
+     "predictions_ever_opened": {
+      "default": false,
+      "title": "Predictions Ever Opened",
+      "type": "boolean"
+     },
+     "predictions_scoring_revision": {
+      "default": 0,
+      "title": "Predictions Scoring Revision",
+      "type": "integer"
+     },
+     "publication_error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Publication Error"
+     },
+     "publication_pending": {
+      "default": false,
+      "title": "Publication Pending",
+      "type": "boolean"
+     },
+     "quarter_finals": {
+      "items": {
+       "$ref": "#/$defs/EloFinalMatch"
+      },
+      "title": "Quarter Finals",
+      "type": "array"
+     },
+     "reopening_pending": {
+      "default": false,
+      "title": "Reopening Pending",
+      "type": "boolean"
+     },
+     "repair_nodes": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Repair Nodes",
+      "type": "array"
+     },
+     "repair_pending": {
+      "default": false,
+      "title": "Repair Pending",
+      "type": "boolean"
+     },
+     "result_progress": {
+      "additionalProperties": {
+       "$ref": "#/$defs/FinalResultProgress"
+      },
+      "title": "Result Progress",
+      "type": "object"
+     },
+     "result_revision": {
+      "default": 0,
+      "title": "Result Revision",
+      "type": "integer"
+     },
+     "revision": {
+      "default": 0,
+      "title": "Revision",
+      "type": "integer"
+     },
+     "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+     },
+     "season_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "season_number": {
+      "title": "Season Number",
+      "type": "integer"
+     },
+     "seeds": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "title": "Seeds",
+      "type": "object"
+     },
+     "semi_finals": {
+      "items": {
+       "$ref": "#/$defs/EloFinalMatch"
+      },
+      "title": "Semi Finals",
+      "type": "array"
+     },
+     "setup_revision": {
+      "default": 0,
+      "title": "Setup Revision",
+      "type": "integer"
+     },
+     "state": {
+      "$ref": "#/$defs/FinalState",
+      "default": "REGISTRATION"
+     }
+    },
+    "required": [
+     "season_number"
+    ],
+    "title": "EloFinal",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'season_number': 1}, unique=True, name='final_season_unique')",
+     "IndexModel({'active': 1}, unique=True, partialFilterExpression={'active': True}, name='final_active_unique')"
+    ],
+    "name": "elo_finals",
+    "use_state_management": true
+   }
+  },
+  "FinalBet": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "action_id": {
+      "title": "Action Id",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "amount": {
+      "minimum": 0,
+      "title": "Amount",
+      "type": "integer"
+     },
+     "contestant": {
+      "title": "Contestant",
+      "type": "string"
+     },
+     "market_id": {
+      "title": "Market Id",
+      "type": "string"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     },
+     "version": {
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+     },
+     "wallet_id": {
+      "title": "Wallet Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "market_id",
+     "wallet_id",
+     "user_id",
+     "contestant",
+     "amount",
+     "action_id"
+    ],
+    "title": "FinalBet",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'market_id': 1, 'wallet_id': 1}, unique=True, name='final_bet_wallet')"
+    ],
+    "name": "final_bets",
+    "use_state_management": true
+   }
+  },
+  "FinalBettingMarket": {
+   "schema": {
+    "$defs": {
+     "FrozenStake": {
+      "properties": {
+       "amount": {
+        "title": "Amount",
+        "type": "integer"
+       },
+       "bet_id": {
+        "title": "Bet Id",
+        "type": "string"
+       },
+       "contestant": {
+        "title": "Contestant",
+        "type": "string"
+       }
+      },
+      "required": [
+       "bet_id",
+       "contestant",
+       "amount"
+      ],
+      "title": "FrozenStake",
+      "type": "object"
+     },
+     "SettlementGeneration": {
+      "properties": {
+       "allocations": {
+        "additionalProperties": {
+         "type": "integer"
+        },
+        "title": "Allocations",
+        "type": "object"
+       },
+       "paid": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Paid",
+        "type": "array"
+       },
+       "refund": {
+        "default": false,
+        "title": "Refund",
+        "type": "boolean"
+       },
+       "result_version": {
+        "title": "Result Version",
+        "type": "integer"
+       },
+       "reversed": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Reversed",
+        "type": "array"
+       },
+       "version": {
+        "title": "Version",
+        "type": "integer"
+       },
+       "winner": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Winner"
+       }
+      },
+      "required": [
+       "version",
+       "result_version"
+      ],
+      "title": "SettlementGeneration",
+      "type": "object"
+     }
+    },
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "announcement_attempted": {
+      "default": false,
+      "title": "Announcement Attempted",
+      "type": "boolean"
+     },
+     "announcement_channel_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Announcement Channel Id"
+     },
+     "announcement_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Announcement Id"
+     },
+     "announcement_signature": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Announcement Signature"
+     },
+     "contestant_revision": {
+      "title": "Contestant Revision",
+      "type": "integer"
+     },
+     "contestants": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Contestants",
+      "type": "array"
+     },
+     "desired_refund": {
+      "default": false,
+      "title": "Desired Refund",
+      "type": "boolean"
+     },
+     "desired_result_version": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Desired Result Version"
+     },
+     "desired_winner": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Desired Winner"
+     },
+     "escrow": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Escrow",
+      "type": "integer"
+     },
+     "final_id": {
+      "title": "Final Id",
+      "type": "string"
+     },
+     "first_actual_started_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "First Actual Started At"
+     },
+     "generations": {
+      "items": {
+       "$ref": "#/$defs/SettlementGeneration"
+      },
+      "title": "Generations",
+      "type": "array"
+     },
+     "node_id": {
+      "title": "Node Id",
+      "type": "string"
+     },
+     "pools": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "title": "Pools",
+      "type": "object"
+     },
+     "publication_error": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Publication Error"
+     },
+     "settled_result_version": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Settled Result Version"
+     },
+     "stakes": {
+      "additionalProperties": {
+       "$ref": "#/$defs/FrozenStake"
+      },
+      "title": "Stakes",
+      "type": "object"
+     },
+     "start_claim": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Claim"
+     },
+     "state": {
+      "default": "OPEN",
+      "enum": [
+       "OPEN",
+       "CLOSED",
+       "SETTLING",
+       "PAID",
+       "REFUNDED",
+       "CORRECTING"
+      ],
+      "title": "State",
+      "type": "string"
+     },
+     "version": {
+      "default": 0,
+      "title": "Version",
+      "type": "integer"
+     },
+     "void_actor": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Void Actor"
+     },
+     "void_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Void Reason"
+     }
+    },
+    "required": [
+     "_id",
+     "final_id",
+     "node_id",
+     "contestant_revision",
+     "contestants"
+    ],
+    "title": "FinalBettingMarket",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'final_id': 1, 'node_id': 1, 'contestant_revision': 1}, unique=True, name='final_market_contestants')"
+    ],
+    "name": "final_betting_markets",
+    "use_state_management": true
+   }
+  },
+  "FinalMatchResult": {
+   "schema": {
+    "$defs": {
+     "FinalHelperCredit": {
+      "properties": {
+       "history": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/HelperHistory"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null
+       },
+       "points": {
+        "title": "Points",
+        "type": "number"
+       },
+       "receipt": {
+        "title": "Receipt",
+        "type": "string"
+       },
+       "user_id": {
+        "title": "User Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "user_id",
+       "receipt",
+       "points"
+      ],
+      "title": "FinalHelperCredit",
+      "type": "object"
+     },
+     "FinalResultSnapshot": {
+      "properties": {
+       "actual_started_at": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Actual Started At"
+       },
+       "contestants": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Contestants",
+        "type": "array"
+       },
+       "outcome": {
+        "$ref": "#/$defs/Outcome",
+        "default": "Played"
+       },
+       "scheduled_times": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "title": "Scheduled Times",
+        "type": "array"
+       },
+       "scores": {
+        "additionalProperties": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "title": "Scores",
+        "type": "object"
+       },
+       "winner": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Winner"
+       }
+      },
+      "required": [
+       "contestants",
+       "scores"
+      ],
+      "title": "FinalResultSnapshot",
+      "type": "object"
+     },
+     "HelperHistory": {
+      "properties": {
+       "player1": {
+        "title": "Player1",
+        "type": "string"
+       },
+       "player2": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Player2"
+       },
+       "time": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "number"
+         }
+        ],
+        "title": "Time"
+       }
+      },
+      "required": [
+       "time",
+       "player1"
+      ],
+      "title": "HelperHistory",
+      "type": "object"
+     },
+     "Outcome": {
+      "enum": [
+       "Played",
+       "Forfeit"
+      ],
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "actor_id": {
+      "title": "Actor Id",
+      "type": "string"
+     },
+     "attempt": {
+      "title": "Attempt",
+      "type": "integer"
+     },
+     "bases": {
+      "additionalProperties": {
+       "items": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "type": "array"
+      },
+      "title": "Bases",
+      "type": "object"
+     },
+     "contestant_revision": {
+      "title": "Contestant Revision",
+      "type": "integer"
+     },
+     "created_at": {
+      "title": "Created At",
+      "type": "integer"
+     },
+     "final_id": {
+      "title": "Final Id",
+      "type": "string"
+     },
+     "helper_credits": {
+      "items": {
+       "$ref": "#/$defs/FinalHelperCredit"
+      },
+      "title": "Helper Credits",
+      "type": "array"
+     },
+     "node_id": {
+      "title": "Node Id",
+      "type": "string"
+     },
+     "operation_key": {
+      "title": "Operation Key",
+      "type": "string"
+     },
+     "previous_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Previous Id"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Reason"
+     },
+     "season_number": {
+      "title": "Season Number",
+      "type": "integer"
+     },
+     "snapshot": {
+      "$ref": "#/$defs/FinalResultSnapshot"
+     },
+     "source_match_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Source Match Id"
+     },
+     "source_thread": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Source Thread"
+     },
+     "source_token": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Source Token"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "_id",
+     "final_id",
+     "season_number",
+     "node_id",
+     "contestant_revision",
+     "attempt",
+     "version",
+     "operation_key",
+     "actor_id",
+     "created_at",
+     "snapshot"
+    ],
+    "title": "FinalMatchResult",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'final_id': 1, 'node_id': 1, 'version': 1}, unique=True, name='final_result_version')",
+     "IndexModel({'operation_key': 1}, unique=True, name='final_result_operation')",
+     "IndexModel({'season_number': 1, 'snapshot.contestants': 1}, name='final_result_history')"
+    ],
+    "name": "final_match_results",
+    "use_state_management": true
+   }
+  },
+  "FinalPlayerProfile": {
+   "schema": {
+    "$defs": {
+     "FinalEditionStats": {
+      "properties": {
+       "byes": {
+        "default": 0,
+        "title": "Byes",
+        "type": "integer"
+       },
+       "destruction": {
+        "default": 0,
+        "title": "Destruction",
+        "type": "integer"
+       },
+       "district_count": {
+        "default": 0,
+        "title": "District Count",
+        "type": "integer"
+       },
+       "forfeits": {
+        "default": 0,
+        "title": "Forfeits",
+        "type": "integer"
+       },
+       "losses": {
+        "default": 0,
+        "title": "Losses",
+        "type": "integer"
+       },
+       "placement": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Placement"
+       },
+       "played": {
+        "default": 0,
+        "title": "Played",
+        "type": "integer"
+       },
+       "revision": {
+        "default": 0,
+        "title": "Revision",
+        "type": "integer"
+       },
+       "season_number": {
+        "title": "Season Number",
+        "type": "integer"
+       },
+       "stars": {
+        "default": 0,
+        "title": "Stars",
+        "type": "integer"
+       },
+       "wins": {
+        "default": 0,
+        "title": "Wins",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "season_number"
+      ],
+      "title": "FinalEditionStats",
+      "type": "object"
+     }
+    },
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "editions": {
+      "additionalProperties": {
+       "$ref": "#/$defs/FinalEditionStats"
+      },
+      "title": "Editions",
+      "type": "object"
+     },
+     "player_id": {
+      "title": "Player Id",
+      "type": "string"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "user_id",
+     "player_id"
+    ],
+    "title": "FinalPlayerProfile",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'user_id': 1}, unique=True, name='final_profile_user')"
+    ],
+    "name": "final_player_profiles",
+    "use_state_management": true
+   }
+  },
+  "FinalPrediction": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "correct": {
+      "additionalProperties": {
+       "type": "boolean"
+      },
+      "title": "Correct",
+      "type": "object"
+     },
+     "draft": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Draft",
+      "type": "object"
+     },
+     "eligible": {
+      "default": 0,
+      "title": "Eligible",
+      "type": "integer"
+     },
+     "final_id": {
+      "title": "Final Id",
+      "type": "string"
+     },
+     "points": {
+      "default": 0,
+      "title": "Points",
+      "type": "integer"
+     },
+     "scoring_revision": {
+      "default": 0,
+      "title": "Scoring Revision",
+      "type": "integer"
+     },
+     "season_number": {
+      "title": "Season Number",
+      "type": "integer"
+     },
+     "session_revision": {
+      "default": 0,
+      "title": "Session Revision",
+      "type": "integer"
+     },
+     "setup_revision": {
+      "title": "Setup Revision",
+      "type": "integer"
+     },
+     "stage": {
+      "default": 0,
+      "maximum": 3,
+      "minimum": 0,
+      "title": "Stage",
+      "type": "integer"
+     },
+     "submitted": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Submitted",
+      "type": "object"
+     },
+     "submitted_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Submitted At"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "final_id",
+     "season_number",
+     "user_id",
+     "setup_revision"
+    ],
+    "title": "FinalPrediction",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'final_id': 1, 'user_id': 1}, unique=True, name='final_prediction_owner')",
+     "IndexModel({'season_number': 1, 'points': -1}, name='final_prediction_ranking')"
+    ],
+    "name": "final_predictions",
+    "use_state_management": true
+   }
+  },
+  "Giveaway": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Id",
+      "type": "string"
+     },
+     "channel_id": {
+      "exclusiveMinimum": 0,
+      "title": "Channel Id",
+      "type": "integer"
+     },
+     "draw_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Draw Id"
+     },
+     "end_timestamp": {
+      "minimum": 0,
+      "title": "End Timestamp",
+      "type": "number"
+     },
+     "ended": {
+      "default": false,
+      "title": "Ended",
+      "type": "boolean"
+     },
+     "entries": {
+      "items": {
+       "pattern": "^[0-9]+$",
+       "type": "string"
+      },
+      "title": "Entries",
+      "type": "array"
+     },
+     "min_elo": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Min Elo",
+      "type": "integer"
+     },
+     "min_matches": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Min Matches",
+      "type": "integer"
+     },
+     "sponsor_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Sponsor Id",
+      "type": "string"
+     },
+     "winner_id": {
+      "anyOf": [
+       {
+        "pattern": "^[0-9]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Winner Id"
+     }
+    },
+    "required": [
+     "_id",
+     "end_timestamp",
+     "sponsor_id",
+     "channel_id"
+    ],
+    "title": "Giveaway",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'ended': 1, 'end_timestamp': 1}, name='giveaway_pending_end')",
+     "IndexModel({'end_timestamp': 1}, name='giveaway_end_timestamp')"
+    ],
+    "name": "giveaways",
+    "use_state_management": true
+   }
+  },
+  "Helper": {
+   "schema": {
+    "$defs": {
+     "HelperHistory": {
+      "properties": {
+       "player1": {
+        "title": "Player1",
+        "type": "string"
+       },
+       "player2": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Player2"
+       },
+       "time": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "number"
+         }
+        ],
+        "title": "Time"
+       }
+      },
+      "required": [
+       "time",
+       "player1"
+      ],
+      "title": "HelperHistory",
+      "type": "object"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "accounts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Accounts",
+      "type": "array"
+     },
+     "history": {
+      "items": {
+       "$ref": "#/$defs/HelperHistory"
+      },
+      "title": "History",
+      "type": "array"
+     },
+     "operation_receipts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Operation Receipts",
+      "type": "array"
+     },
+     "points": {
+      "default": 0,
+      "title": "Points",
+      "type": "number"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "user_id"
+    ],
+    "title": "Helper",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "user_id"
+    ],
+    "name": "helpers",
+    "use_state_management": true
+   }
+  },
+  "HelperTask": {
+   "schema": {
+    "$defs": {
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "player_id": {
+      "title": "Player Id",
+      "type": "string"
+     },
+     "thread": {
+      "title": "Thread",
+      "type": "string"
+     },
+     "timestamp": {
+      "title": "Timestamp",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "thread",
+     "player_id",
+     "timestamp"
+    ],
+    "title": "HelperTask",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "thread",
+     "player_id",
+     [
+      [
+       "thread",
+       1
+      ],
+      [
+       "player_id",
+       1
+      ]
+     ],
+     "IndexModel({'timestamp': -1}, name='idx_timestamp')"
+    ],
+    "name": "helper_tasks",
+    "use_state_management": true
+   }
+  },
+  "Match": {
+   "schema": {
+    "$defs": {
+     "BaseLink": {
+      "properties": {
+       "base_quality": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Base Quality"
+       },
+       "expiration_date": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Expiration Date"
+       },
+       "image": {
+        "title": "Image",
+        "type": "string"
+       },
+       "link": {
+        "title": "Link",
+        "type": "string"
+       }
+      },
+      "required": [
+       "link",
+       "image"
+      ],
+      "title": "BaseLink",
+      "type": "object"
+     },
+     "BaseStore": {
+      "properties": {
+       "clan_tag": {
+        "title": "Clan Tag",
+        "type": "string"
+       },
+       "is_live": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Is Live"
+       },
+       "message_id": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Message Id"
+       },
+       "ready": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Ready"
+       },
+       "reservation_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Reservation Id"
+       },
+       "slot": {
+        "title": "Slot",
+        "type": "string"
+       },
+       "stored_at": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Stored At"
+       }
+      },
+      "required": [
+       "clan_tag",
+       "slot"
+      ],
+      "title": "BaseStore",
+      "type": "object"
+     },
+     "FinalResultOperation": {
+      "properties": {
+       "after": {
+        "$ref": "#/$defs/FinalResultSnapshot"
+       },
+       "before": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/FinalResultSnapshot"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null
+       },
+       "completed": {
+        "default": false,
+        "title": "Completed",
+        "type": "boolean"
+       },
+       "helper_completed": {
+        "default": false,
+        "title": "Helper Completed",
+        "type": "boolean"
+       },
+       "operation_key": {
+        "title": "Operation Key",
+        "type": "string"
+       },
+       "publication_error": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Publication Error"
+       },
+       "published": {
+        "default": false,
+        "title": "Published",
+        "type": "boolean"
+       },
+       "result_id": {
+        "title": "Result Id",
+        "type": "string"
+       },
+       "version": {
+        "title": "Version",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "operation_key",
+       "result_id",
+       "version",
+       "after"
+      ],
+      "title": "FinalResultOperation",
+      "type": "object"
+     },
+     "FinalResultSnapshot": {
+      "properties": {
+       "actual_started_at": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Actual Started At"
+       },
+       "contestants": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Contestants",
+        "type": "array"
+       },
+       "outcome": {
+        "$ref": "#/$defs/Outcome",
+        "default": "Played"
+       },
+       "scheduled_times": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "title": "Scheduled Times",
+        "type": "array"
+       },
+       "scores": {
+        "additionalProperties": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "title": "Scores",
+        "type": "object"
+       },
+       "winner": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Winner"
+       }
+      },
+      "required": [
+       "contestants",
+       "scores"
+      ],
+      "title": "FinalResultSnapshot",
+      "type": "object"
+     },
+     "JsonValue": {},
+     "MatchDistrictStats": {
+      "properties": {
+       "base_quality": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Base Quality"
+       },
+       "destruction": {
+        "title": "Destruction",
+        "type": "integer"
+       },
+       "stars": {
+        "title": "Stars",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "stars",
+       "destruction"
+      ],
+      "title": "MatchDistrictStats",
+      "type": "object"
+     },
+     "MatchFormat": {
+      "enum": [
+       "ordinary_three",
+       "elo_final_seven"
+      ],
+      "type": "string"
+     },
+     "MatchMessagePublication": {
+      "description": "Final Discord payload bound to one committed match run.",
+      "properties": {
+       "components": {
+        "items": {
+         "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+         },
+         "type": "object"
+        },
+        "title": "Components",
+        "type": "array"
+       },
+       "embeds": {
+        "items": {
+         "additionalProperties": {
+          "$ref": "#/$defs/JsonValue"
+         },
+         "type": "object"
+        },
+        "title": "Embeds",
+        "type": "array"
+       },
+       "host_clans": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Host Clans",
+        "type": "array"
+       },
+       "hosts": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Hosts",
+        "type": "array"
+       },
+       "is_war": {
+        "title": "Is War",
+        "type": "boolean"
+       },
+       "message_id": {
+        "title": "Message Id",
+        "type": "integer"
+       },
+       "participants": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Participants",
+        "type": "array"
+       },
+       "pending": {
+        "default": false,
+        "title": "Pending",
+        "type": "boolean"
+       },
+       "times": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Times",
+        "type": "array"
+       }
+      },
+      "required": [
+       "message_id",
+       "is_war",
+       "participants",
+       "times",
+       "hosts",
+       "host_clans",
+       "embeds",
+       "components"
+      ],
+      "title": "MatchMessagePublication",
+      "type": "object"
+     },
+     "MatchPlayerStats": {
+      "properties": {
+       "confirmation_method": {
+        "anyOf": [
+         {
+          "enum": [
+           "ready",
+           "manual",
+           "automatic"
+          ],
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmation Method"
+       },
+       "confirmed_at": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmed At"
+       },
+       "destruction": {
+        "title": "Destruction",
+        "type": "integer"
+       },
+       "districts": {
+        "additionalProperties": {
+         "$ref": "#/$defs/MatchDistrictStats"
+        },
+        "title": "Districts",
+        "type": "object"
+       },
+       "elo_change": {
+        "title": "Elo Change",
+        "type": "integer"
+       },
+       "opponent": {
+        "title": "Opponent",
+        "type": "string"
+       },
+       "opponent_destruction": {
+        "title": "Opponent Destruction",
+        "type": "integer"
+       },
+       "opponent_stars": {
+        "title": "Opponent Stars",
+        "type": "integer"
+       },
+       "stars": {
+        "title": "Stars",
+        "type": "integer"
+       },
+       "won": {
+        "title": "Won",
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "stars",
+       "destruction",
+       "opponent_stars",
+       "opponent_destruction",
+       "opponent",
+       "elo_change",
+       "won"
+      ],
+      "title": "MatchPlayerStats",
+      "type": "object"
+     },
+     "MatchResultOperation": {
+      "properties": {
+       "base_rollbacks": {
+        "items": {
+         "$ref": "#/$defs/ResultBaseRollback"
+        },
+        "title": "Base Rollbacks",
+        "type": "array"
+       },
+       "cancelled": {
+        "default": false,
+        "title": "Cancelled",
+        "type": "boolean"
+       },
+       "completed": {
+        "default": false,
+        "title": "Completed",
+        "type": "boolean"
+       },
+       "created_at": {
+        "title": "Created At",
+        "type": "number"
+       },
+       "key": {
+        "title": "Key",
+        "type": "string"
+       },
+       "previous_record": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/ResultRecordSnapshot"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null
+       },
+       "public_message_id": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Public Message Id"
+       },
+       "published": {
+        "default": false,
+        "title": "Published",
+        "type": "boolean"
+       },
+       "record": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/ResultRecordSnapshot"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null
+       },
+       "response": {
+        "additionalProperties": {
+         "type": "string"
+        },
+        "title": "Response",
+        "type": "object"
+       },
+       "summary_message_id": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Summary Message Id"
+       }
+      },
+      "required": [
+       "key",
+       "response",
+       "created_at"
+      ],
+      "title": "MatchResultOperation",
+      "type": "object"
+     },
+     "Outcome": {
+      "enum": [
+       "Played",
+       "Forfeit"
+      ],
+      "type": "string"
+     },
+     "Participant": {
+      "properties": {
+       "base_store": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/BaseStore"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null
+       },
+       "bases": {
+        "items": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/BaseLink"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Bases",
+        "type": "array"
+       },
+       "confirmation_method": {
+        "anyOf": [
+         {
+          "enum": [
+           "ready",
+           "manual",
+           "automatic"
+          ],
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmation Method"
+       },
+       "confirmed": {
+        "default": false,
+        "title": "Confirmed",
+        "type": "boolean"
+       },
+       "confirmed_at": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmed At"
+       },
+       "districts": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Districts",
+        "type": "array"
+       },
+       "format": {
+        "$ref": "#/$defs/MatchFormat",
+        "default": "ordinary_three"
+       },
+       "opponent_bases_stored": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": false,
+        "title": "Opponent Bases Stored"
+       },
+       "queue_attempt_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Queue Attempt Id"
+       },
+       "queue_districts_locked": {
+        "default": false,
+        "title": "Queue Districts Locked",
+        "type": "boolean"
+       },
+       "result": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "title": "Result",
+        "type": "array"
+       },
+       "secondary_base_index": {
+        "anyOf": [
+         {
+          "maximum": 6,
+          "minimum": 0,
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Secondary Base Index"
+       },
+       "submit_bases": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": false,
+        "title": "Submit Bases"
+       },
+       "user_id": {
+        "title": "User Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "user_id"
+      ],
+      "title": "Participant",
+      "type": "object"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     },
+     "ResultBaseRollback": {
+      "properties": {
+       "base_id": {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       "record": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "integer"
+          },
+          {
+           "type": "number"
+          }
+         ]
+        },
+        "title": "Record",
+        "type": "array"
+       }
+      },
+      "required": [
+       "base_id",
+       "record"
+      ],
+      "title": "ResultBaseRollback",
+      "type": "object"
+     },
+     "ResultRecordSnapshot": {
+      "properties": {
+       "id": {
+        "title": "Id",
+        "type": "string"
+       },
+       "is_challenge": {
+        "default": false,
+        "title": "Is Challenge",
+        "type": "boolean"
+       },
+       "matched_time": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Matched Time"
+       },
+       "operation_key": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Operation Key"
+       },
+       "players": {
+        "additionalProperties": {
+         "$ref": "#/$defs/MatchPlayerStats"
+        },
+        "title": "Players",
+        "type": "object"
+       },
+       "time": {
+        "title": "Time",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "id",
+       "time",
+       "players"
+      ],
+      "title": "ResultRecordSnapshot",
+      "type": "object"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "autowin_actor_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Autowin Actor Id"
+     },
+     "autowin_completed": {
+      "default": false,
+      "title": "Autowin Completed",
+      "type": "boolean"
+     },
+     "autowin_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Autowin Reason"
+     },
+     "autowin_winner_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Autowin Winner Id"
+     },
+     "base_submission": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": true,
+      "title": "Base Submission"
+     },
+     "capital_peak_available": {
+      "default": false,
+      "title": "Capital Peak Available",
+      "type": "boolean"
+     },
+     "challenge_activity_override": {
+      "default": false,
+      "title": "Challenge Activity Override",
+      "type": "boolean"
+     },
+     "confirmation_tracking": {
+      "default": false,
+      "title": "Confirmation Tracking",
+      "type": "boolean"
+     },
+     "final_attempt": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Attempt"
+     },
+     "final_base_page_revision": {
+      "default": 0,
+      "title": "Final Base Page Revision",
+      "type": "integer"
+     },
+     "final_contestant_revision": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Contestant Revision"
+     },
+     "final_districts": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Final Districts",
+      "type": "array"
+     },
+     "final_hosting_times": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Final Hosting Times",
+      "type": "array"
+     },
+     "final_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Id"
+     },
+     "final_legacy_hosting_evidence": {
+      "items": {
+       "type": "boolean"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Final Legacy Hosting Evidence",
+      "type": "array"
+     },
+     "final_node_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Node Id"
+     },
+     "final_result_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Result Id"
+     },
+     "final_result_operation": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/FinalResultOperation"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "final_start_claim": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Start Claim"
+     },
+     "final_started_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Started At"
+     },
+     "final_started_times": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Final Started Times",
+      "type": "array"
+     },
+     "final_superseded": {
+      "default": false,
+      "title": "Final Superseded",
+      "type": "boolean"
+     },
+     "final_thread_creation_claimed": {
+      "default": false,
+      "title": "Final Thread Creation Claimed",
+      "type": "boolean"
+     },
+     "format": {
+      "$ref": "#/$defs/MatchFormat",
+      "default": "ordinary_three"
+     },
+     "host_clans": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Host Clans",
+      "type": "array"
+     },
+     "hosts": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Hosts",
+      "type": "array"
+     },
+     "is_autowin": {
+      "default": false,
+      "title": "Is Autowin",
+      "type": "boolean"
+     },
+     "is_challenge": {
+      "default": false,
+      "title": "Is Challenge",
+      "type": "boolean"
+     },
+     "is_war": {
+      "default": true,
+      "title": "Is War",
+      "type": "boolean"
+     },
+     "matched_time": {
+      "title": "Matched Time",
+      "type": "number"
+     },
+     "message_publications": {
+      "items": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/MatchMessagePublication"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Message Publications",
+      "type": "array"
+     },
+     "msg": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Msg"
+     },
+     "old_msgs": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Old Msgs",
+      "type": "array"
+     },
+     "participants": {
+      "items": {
+       "$ref": "#/$defs/Participant"
+      },
+      "title": "Participants",
+      "type": "array"
+     },
+     "persistent_host_clans": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Persistent Host Clans",
+      "type": "array"
+     },
+     "primary_base_quality": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Primary Base Quality"
+     },
+     "public_message_publication": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/MatchMessagePublication"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "recorded_match_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Recorded Match Id"
+     },
+     "result_operation": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/MatchResultOperation"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "routing_channel_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Routing Channel Id"
+     },
+     "routing_guild_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Routing Guild Id"
+     },
+     "scheduled_times": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Scheduled Times",
+      "type": "array"
+     },
+     "secondary_base_quality": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Secondary Base Quality"
+     },
+     "submitters": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Submitters",
+      "type": "array"
+     },
+     "thread": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Thread"
+     },
+     "thread_message_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Thread Message Id"
+     },
+     "times": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Times",
+      "type": "array"
+     },
+     "token": {
+      "title": "Token",
+      "type": "string"
+     },
+     "wizard_valley_available": {
+      "default": false,
+      "title": "Wizard Valley Available",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "token",
+     "matched_time"
+    ],
+    "title": "Match",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "token",
+     "thread",
+     "participants.user_id",
+     [
+      [
+       "is_challenge",
+       1
+      ],
+      [
+       "matched_time",
+       1
+      ]
+     ]
+    ],
+    "name": "matches",
+    "use_state_management": true
+   }
+  },
+  "OverrideCode": {
+   "schema": {
+    "$defs": {
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+     },
+     "override_type": {
+      "enum": [
+       "challenge",
+       "match"
+      ],
+      "title": "Override Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "code",
+     "override_type",
+     "expires_at"
+    ],
+    "title": "OverrideCode",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'code': 1}, unique=True, name='override_code_unique')",
+     "IndexModel({'expires_at': 1}, expireAfterSeconds=0, name='override_code_expiry')"
+    ],
+    "name": "override_codes"
+   }
+  },
+  "PendingBaseSubmission": {
+   "schema": {
+    "$defs": {
+     "ImageAttachment": {
+      "properties": {
+       "attachment_id": {
+        "title": "Attachment Id",
+        "type": "string"
+       },
+       "channel_id": {
+        "title": "Channel Id",
+        "type": "string"
+       },
+       "message_id": {
+        "title": "Message Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "channel_id",
+       "message_id",
+       "attachment_id"
+      ],
+      "title": "ImageAttachment",
+      "type": "object"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     },
+     "SubmissionAcceptance": {
+      "properties": {
+       "accepted_builder_id": {
+        "anyOf": [
+         {
+          "pattern": "^[0-9]+$",
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Accepted Builder Id"
+       },
+       "base_id": {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       "builder_id": {
+        "anyOf": [
+         {
+          "pattern": "^[0-9]+$",
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Builder Id"
+       },
+       "expiration_date": {
+        "title": "Expiration Date",
+        "type": "number"
+       },
+       "note": {
+        "title": "Note",
+        "type": "string"
+       },
+       "phase": {
+        "default": "accepting",
+        "enum": [
+         "accepting",
+         "accepted"
+        ],
+        "title": "Phase",
+        "type": "string"
+       },
+       "quality": {
+        "title": "Quality",
+        "type": "string"
+       },
+       "reviewer_id": {
+        "pattern": "^[0-9]+$",
+        "title": "Reviewer Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "reviewer_id",
+       "base_id",
+       "quality",
+       "note",
+       "builder_id",
+       "accepted_builder_id",
+       "expiration_date"
+      ],
+      "title": "SubmissionAcceptance",
+      "type": "object"
+     },
+     "SubmissionRejection": {
+      "properties": {
+       "phase": {
+        "const": "rejected",
+        "default": "rejected",
+        "title": "Phase",
+        "type": "string"
+       },
+       "reason": {
+        "title": "Reason",
+        "type": "string"
+       },
+       "reviewer_id": {
+        "pattern": "^[0-9]+$",
+        "title": "Reviewer Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "reviewer_id",
+       "reason"
+      ],
+      "title": "SubmissionRejection",
+      "type": "object"
+     },
+     "SubmissionResolution": {
+      "discriminator": {
+       "mapping": {
+        "accepted": "#/$defs/SubmissionAcceptance",
+        "accepting": "#/$defs/SubmissionAcceptance",
+        "rejected": "#/$defs/SubmissionRejection"
+       },
+       "propertyName": "phase"
+      },
+      "oneOf": [
+       {
+        "$ref": "#/$defs/SubmissionAcceptance"
+       },
+       {
+        "$ref": "#/$defs/SubmissionRejection"
+       }
+      ]
+     }
+    },
+    "properties": {
+     "_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Id",
+      "type": "string"
+     },
+     "builder_display": {
+      "title": "Builder Display",
+      "type": "string"
+     },
+     "builder_id": {
+      "anyOf": [
+       {
+        "pattern": "^[0-9]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Builder Id"
+     },
+     "district": {
+      "title": "District",
+      "type": "string"
+     },
+     "image_attachment": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/ImageAttachment"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "image_url": {
+      "title": "Image Url",
+      "type": "string"
+     },
+     "link": {
+      "title": "Link",
+      "type": "string"
+     },
+     "proposed_quality": {
+      "title": "Proposed Quality",
+      "type": "string"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Reason"
+     },
+     "resolution": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/SubmissionResolution"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "review_channel_id": {
+      "anyOf": [
+       {
+        "pattern": "^[0-9]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Review Channel Id"
+     },
+     "submitter_display": {
+      "title": "Submitter Display",
+      "type": "string"
+     },
+     "submitter_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Submitter Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "link",
+     "image_url",
+     "submitter_id",
+     "submitter_display",
+     "builder_display",
+     "district",
+     "proposed_quality"
+    ],
+    "title": "PendingBaseSubmission",
+    "type": "object"
+   },
+   "settings": {
+    "name": "pending_base_submissions",
+    "use_state_management": true
+   }
+  },
+  "Player": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "auto_queue": {
+      "default": "0",
+      "title": "Auto Queue",
+      "type": "string"
+     },
+     "autowin_receipts": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "title": "Autowin Receipts",
+      "type": "object"
+     },
+     "avg_destruction": {
+      "default": 0.0,
+      "title": "Avg Destruction",
+      "type": "number"
+     },
+     "avg_stars": {
+      "default": 0.0,
+      "title": "Avg Stars",
+      "type": "number"
+     },
+     "base_presets": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "properties": {
+          "collection": {
+           "title": "Collection",
+           "type": "string"
+          },
+          "id": {
+           "title": "Id",
+           "type": "string"
+          }
+         },
+         "required": [
+          "id",
+          "collection"
+         ],
+         "type": "object"
+        },
+        {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Base Presets",
+      "type": "object"
+     },
+     "blocked_users": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Blocked Users",
+      "type": "array"
+     },
+     "capital_peak_enabled": {
+      "default": true,
+      "title": "Capital Peak Enabled",
+      "type": "boolean"
+     },
+     "challenge": {
+      "default": true,
+      "title": "Challenge",
+      "type": "boolean"
+     },
+     "district_presets": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "District Presets",
+      "type": "array"
+     },
+     "elo": {
+      "title": "Elo",
+      "type": "integer"
+     },
+     "highest_elo": {
+      "title": "Highest Elo",
+      "type": "integer"
+     },
+     "last_cancel": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Last Cancel"
+     },
+     "last_challenged": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Last Challenged",
+      "type": "array"
+     },
+     "matches": {
+      "items": {
+       "anyOf": [
+        {
+         "properties": {
+          "collection": {
+           "title": "Collection",
+           "type": "string"
+          },
+          "id": {
+           "title": "Id",
+           "type": "string"
+          }
+         },
+         "required": [
+          "id",
+          "collection"
+         ],
+         "type": "object"
+        },
+        {
+         "additionalProperties": true,
+         "type": "object"
+        }
+       ]
+      },
+      "title": "Matches",
+      "type": "array"
+     },
+     "opponent_avg_destruction": {
+      "default": 0.0,
+      "title": "Opponent Avg Destruction",
+      "type": "number"
+     },
+     "opponent_avg_stars": {
+      "default": 0.0,
+      "title": "Opponent Avg Stars",
+      "type": "number"
+     },
+     "priority": {
+      "default": false,
+      "title": "Priority",
+      "type": "boolean"
+     },
+     "secondary_district_presets": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Secondary District Presets",
+      "type": "array"
+     },
+     "self_host_invitation_attempted": {
+      "default": false,
+      "title": "Self Host Invitation Attempted",
+      "type": "boolean"
+     },
+     "self_host_invitation_message_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Self Host Invitation Message Id"
+     },
+     "tag": {
+      "title": "Tag",
+      "type": "string"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     },
+     "wins": {
+      "default": 0,
+      "title": "Wins",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "_id",
+     "user_id",
+     "tag",
+     "elo",
+     "highest_elo"
+    ],
+    "title": "Player",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "user_id",
+     "tag",
+     "elo",
+     "wins",
+     "avg_stars",
+     "avg_destruction"
+    ],
+    "name": "players",
+    "use_state_management": true
+   }
+  },
+  "Queue": {
+   "schema": {
+    "$defs": {
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     },
+     "QueueDistrictSelection": {
+      "properties": {
+       "attempt_id": {
+        "title": "Attempt Id",
+        "type": "string"
+       },
+       "confirmed": {
+        "default": false,
+        "title": "Confirmed",
+        "type": "boolean"
+       },
+       "districts": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "maxItems": 3,
+        "minItems": 3,
+        "title": "Districts",
+        "type": "array"
+       }
+      },
+      "required": [
+       "attempt_id",
+       "districts"
+      ],
+      "title": "QueueDistrictSelection",
+      "type": "object"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "district_selections": {
+      "additionalProperties": {
+       "$ref": "#/$defs/QueueDistrictSelection"
+      },
+      "title": "District Selections",
+      "type": "object"
+     },
+     "entered_at": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "title": "Entered At",
+      "type": "object"
+     },
+     "players": {
+      "items": {
+       "anyOf": [
+        {
+         "properties": {
+          "collection": {
+           "title": "Collection",
+           "type": "string"
+          },
+          "id": {
+           "title": "Id",
+           "type": "string"
+          }
+         },
+         "required": [
+          "id",
+          "collection"
+         ],
+         "type": "object"
+        },
+        {
+         "additionalProperties": true,
+         "type": "object"
+        }
+       ]
+      },
+      "title": "Players",
+      "type": "array"
+     },
+     "tier": {
+      "title": "Tier",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "tier"
+    ],
+    "title": "Queue",
+    "type": "object"
+   },
+   "settings": {
+    "name": "queue",
+    "state_management_replace_objects": true,
+    "use_state_management": true
+   }
+  },
+  "RecordedMatch": {
+   "schema": {
+    "$defs": {
+     "MatchDistrictStats": {
+      "properties": {
+       "base_quality": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Base Quality"
+       },
+       "destruction": {
+        "title": "Destruction",
+        "type": "integer"
+       },
+       "stars": {
+        "title": "Stars",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "stars",
+       "destruction"
+      ],
+      "title": "MatchDistrictStats",
+      "type": "object"
+     },
+     "MatchPlayerStats": {
+      "properties": {
+       "confirmation_method": {
+        "anyOf": [
+         {
+          "enum": [
+           "ready",
+           "manual",
+           "automatic"
+          ],
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmation Method"
+       },
+       "confirmed_at": {
+        "anyOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmed At"
+       },
+       "destruction": {
+        "title": "Destruction",
+        "type": "integer"
+       },
+       "districts": {
+        "additionalProperties": {
+         "$ref": "#/$defs/MatchDistrictStats"
+        },
+        "title": "Districts",
+        "type": "object"
+       },
+       "elo_change": {
+        "title": "Elo Change",
+        "type": "integer"
+       },
+       "opponent": {
+        "title": "Opponent",
+        "type": "string"
+       },
+       "opponent_destruction": {
+        "title": "Opponent Destruction",
+        "type": "integer"
+       },
+       "opponent_stars": {
+        "title": "Opponent Stars",
+        "type": "integer"
+       },
+       "stars": {
+        "title": "Stars",
+        "type": "integer"
+       },
+       "won": {
+        "title": "Won",
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "stars",
+       "destruction",
+       "opponent_stars",
+       "opponent_destruction",
+       "opponent",
+       "elo_change",
+       "won"
+      ],
+      "title": "MatchPlayerStats",
+      "type": "object"
+     }
+    },
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "is_challenge": {
+      "default": false,
+      "title": "Is Challenge",
+      "type": "boolean"
+     },
+     "manual_submission_completed": {
+      "default": false,
+      "title": "Manual Submission Completed",
+      "type": "boolean"
+     },
+     "manual_submission_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Manual Submission Key"
+     },
+     "matched_time": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Matched Time"
+     },
+     "operation_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Operation Key"
+     },
+     "players": {
+      "additionalProperties": {
+       "$ref": "#/$defs/MatchPlayerStats"
+      },
+      "title": "Players",
+      "type": "object"
+     },
+     "time": {
+      "title": "Time",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "_id",
+     "time",
+     "players"
+    ],
+    "title": "RecordedMatch",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "id",
+     "time"
+    ],
+    "name": "recorded_matches",
+    "use_state_management": true
+   }
+  },
+  "Season": {
+   "schema": {
+    "$defs": {
+     "DistrictSeasonData": {
+      "properties": {
+       "attacks": {
+        "title": "Attacks",
+        "type": "integer"
+       },
+       "average_destruction": {
+        "title": "Average Destruction",
+        "type": "number"
+       },
+       "average_stars": {
+        "title": "Average Stars",
+        "type": "number"
+       },
+       "builder_id": {
+        "title": "Builder Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "builder_id",
+       "attacks",
+       "average_stars",
+       "average_destruction"
+      ],
+      "title": "DistrictSeasonData",
+      "type": "object"
+     },
+     "PlayerSeasonData": {
+      "properties": {
+       "elo": {
+        "title": "Elo",
+        "type": "integer"
+       },
+       "player_id": {
+        "title": "Player Id",
+        "type": "string"
+       }
+      },
+      "required": [
+       "player_id",
+       "elo"
+      ],
+      "title": "PlayerSeasonData",
+      "type": "object"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "districts": {
+      "additionalProperties": {
+       "items": {
+        "$ref": "#/$defs/DistrictSeasonData"
+       },
+       "type": "array"
+      },
+      "title": "Districts",
+      "type": "object"
+     },
+     "end": {
+      "title": "End",
+      "type": "integer"
+     },
+     "final_summary": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "title": "Final Summary",
+      "type": "object"
+     },
+     "players": {
+      "items": {
+       "$ref": "#/$defs/PlayerSeasonData"
+      },
+      "title": "Players",
+      "type": "array"
+     },
+     "season_number": {
+      "title": "Season Number",
+      "type": "integer"
+     },
+     "start": {
+      "title": "Start",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "season_number",
+     "start",
+     "end"
+    ],
+    "title": "Season",
+    "type": "object"
+   },
+   "settings": {
+    "name": "seasons",
+    "use_state_management": true
+   }
+  },
+  "ServerState": {
+   "schema": {
+    "$defs": {
+     "DiscordMessageRef": {
+      "properties": {
+       "channel": {
+        "title": "Channel",
+        "type": "integer"
+       },
+       "message": {
+        "title": "Message",
+        "type": "integer"
+       }
+      },
+      "required": [
+       "channel",
+       "message"
+      ],
+      "title": "DiscordMessageRef",
+      "type": "object"
+     }
+    },
+    "properties": {
+     "_id": {
+      "default": "server",
+      "title": "Id",
+      "type": "string"
+     },
+     "clan_availability_embed": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/DiscordMessageRef"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "hosting_queue_embed": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/DiscordMessageRef"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "last_matching": {
+      "default": 0,
+      "title": "Last Matching",
+      "type": "number"
+     },
+     "last_tip_index": {
+      "default": -1,
+      "title": "Last Tip Index",
+      "type": "integer"
+     },
+     "queue_disabled": {
+      "default": false,
+      "title": "Queue Disabled",
+      "type": "boolean"
+     }
+    },
+    "title": "ServerState",
+    "type": "object"
+   },
+   "settings": {
+    "name": "server_state"
+   }
+  },
+  "StickyMessage": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Id",
+      "type": "string"
+     },
+     "author_name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Author Name",
+      "type": "string"
+     },
+     "avatar_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Avatar Url"
+     },
+     "channel_id": {
+      "anyOf": [
+       {
+        "pattern": "^[0-9]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Channel Id"
+     },
+     "content": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Content",
+      "type": "string"
+     },
+     "message_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Message Id",
+      "type": "string"
+     },
+     "webhook_id": {
+      "pattern": "^[0-9]+$",
+      "title": "Webhook Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "message_id",
+     "webhook_id",
+     "content",
+     "author_name"
+    ],
+    "title": "StickyMessage",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "channel_id"
+    ],
+    "name": "sticky_messages",
+    "use_state_management": true
+   }
+  },
+  "TokenLedgerEntry": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "actor_id": {
+      "title": "Actor Id",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "integer"
+     },
+     "created_at": {
+      "title": "Created At",
+      "type": "integer"
+     },
+     "escrow_amount": {
+      "default": 0,
+      "title": "Escrow Amount",
+      "type": "integer"
+     },
+     "generation": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Generation"
+     },
+     "identity_from": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Identity From"
+     },
+     "identity_to": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Identity To"
+     },
+     "kind": {
+      "enum": [
+       "grant",
+       "stake",
+       "edit",
+       "cancel",
+       "payout",
+       "refund",
+       "reversal",
+       "identity"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "market_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Market Id"
+     },
+     "operation_key": {
+      "title": "Operation Key",
+      "type": "string"
+     },
+     "wallet_id": {
+      "title": "Wallet Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "operation_key",
+     "wallet_id",
+     "actor_id",
+     "amount",
+     "kind",
+     "created_at"
+    ],
+    "title": "TokenLedgerEntry",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'operation_key': 1}, unique=True, name='token_receipt_operation')",
+     "IndexModel({'wallet_id': 1, 'created_at': -1}, name='token_receipt_history')",
+     "IndexModel({'market_id': 1}, name='token_receipt_market')"
+    ],
+    "name": "token_ledger",
+    "use_state_management": true
+   }
+  },
+  "TokenWallet": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "balance": {
+      "default": 0,
+      "title": "Balance",
+      "type": "integer"
+     },
+     "identity_claims": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Identity Claims",
+      "type": "array"
+     },
+     "initialized": {
+      "default": false,
+      "title": "Initialized",
+      "type": "boolean"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     },
+     "version": {
+      "default": 0,
+      "title": "Version",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "_id",
+     "user_id"
+    ],
+    "title": "TokenWallet",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'user_id': 1}, unique=True, name='token_wallet_owner')",
+     "IndexModel({'identity_claims': 1}, unique=True, name='token_wallet_identity')",
+     "IndexModel({'balance': -1, 'user_id': 1}, name='token_wallet_ranking')"
+    ],
+    "name": "token_wallets",
+    "use_state_management": true
+   }
+  }
+ },
+ "index_constants": {
+  "AUDIT_LOG_INDEXES": [
+   [
+    {
+     "key": {
+      "recorded_at_ns": -1
+     },
+     "name": "audit_log_recorded_at_desc"
+    }
+   ]
+  ],
+  "BASE_FINGERPRINT_INDEXES": [
+   [
+    {
+     "key": {
+      "district": 1,
+      "fingerprint.pipeline_id": 1
+     },
+     "name": "district_1_fingerprint.pipeline_id_1"
+    },
+    {
+     "key": {
+      "fingerprint_extraction.status": 1
+     },
+     "name": "fingerprint_extraction.status_1"
+    }
+   ]
+  ],
+  "EXTRACTION_RUN_INDEXES": [
+   [
+    {
+     "key": {
+      "active": 1
+     },
+     "name": "active_1",
+     "partialFilterExpression": {
+      "active": true
+     },
+     "unique": true
+    },
+    {
+     "key": {
+      "created_at": 1,
+      "status": 1
+     },
+     "name": "status_1_created_at_1"
+    }
+   ]
+  ],
+  "FINGERPRINT_TASK_INDEXES": [
+   [
+    {
+     "key": {
+      "base_id": 1,
+      "run_id": 1
+     },
+     "name": "run_id_1_base_id_1",
+     "partialFilterExpression": {
+      "run_id": {
+       "$type": "string"
+      }
+     },
+     "unique": true
+    },
+    {
+     "key": {
+      "lease_expires_at": 1,
+      "next_attempt_at": 1,
+      "state": 1
+     },
+     "name": "state_1_next_attempt_at_1_lease_expires_at_1"
+    },
+    {
+     "key": {
+      "base_id": 1,
+      "source_revision": 1
+     },
+     "name": "base_id_1_source_revision_1"
+    }
+   ]
+  ],
+  "GIVEAWAY_INDEXES": [
+   [
+    {
+     "key": {
+      "end_timestamp": 1,
+      "ended": 1
+     },
+     "name": "giveaway_pending_end"
+    },
+    {
+     "key": {
+      "end_timestamp": 1
+     },
+     "name": "giveaway_end_timestamp"
+    }
+   ]
+  ],
+  "OVERRIDE_CODE_INDEXES": [
+   [
+    {
+     "key": {
+      "code": 1
+     },
+     "name": "override_code_unique",
+     "unique": true
+    },
+    {
+     "expireAfterSeconds": 0,
+     "key": {
+      "expires_at": 1
+     },
+     "name": "override_code_expiry"
+    }
+   ]
+  ]
+ }
+}

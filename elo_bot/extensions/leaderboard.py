@@ -32,7 +32,7 @@ def _selected_options(options, selected):
     return result
 
 
-_HITRATE_TIERS = ("Overall", "Average", "Good", "Great", "Excellent")
+_HITRATE_TIERS = ("Overall", "Excellent", "Great", "Good", "Average")
 
 
 def _is_hitrate(lb_type: str) -> bool:
@@ -1039,6 +1039,7 @@ class LeaderboardCommands(ipy.Extension):
         if is_live:
             ctx.message.components[-1] = _tier_menu(tier)
             await ctx.edit(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
+            await ctx.send(f"{SUCCESS_EMOJI} The base quality is changed to `{tier}`.", ephemeral=True)
             return
         ctx.message.components[-2] = _tier_menu(tier)
         ctx.message.components[-1] = ipy.ActionRow(
@@ -1049,6 +1050,7 @@ class LeaderboardCommands(ipy.Extension):
                        disabled=size <= LB_ENTRIES_PER_PAGE),
         )
         await ctx.edit(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
+        await ctx.send(f"{SUCCESS_EMOJI} The base quality is changed to `{tier}`.", ephemeral=True)
 
     @ipy.component_callback(re.compile(r"lb_refresh(?:\|.*)?"))
     async def lb_refresh(self, ctx: ipy.ComponentContext):

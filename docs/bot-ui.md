@@ -223,9 +223,9 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 
 ## Final screens
 
-- Bracket names (images, selects, thread names) are the player's Discord display name, refreshed before
-  the bracket, a round's threads or a scoreboard is published. A nickname set with `/final add nickname:`
-  or `/final nick` overrides it. Quarterfinals follow seeds: QF1 1v8, QF2 2v7, QF3 3v6, QF4 4v5.
+- Bracket names (images, selects) are the player's Discord display name, refreshed before the bracket,
+  a round's threads or a scoreboard is published. A nickname set with `/final add nickname:` or `/final nick`
+  overrides it. Final thread names use Discord usernames like normal match threads (`🟡 QF1 · user1 vs. user8`). Quarterfinals follow seeds: QF1 1v8, QF2 2v7, QF3 3v6, QF4 4v5.
 - `/embed Elo Information` has a 📖 README button opening a private guide with a section select.
   Sections live in `assets/embeds/readme/`; navigation edits the same private message.
   Rewards and Base Building keep their own buttons.

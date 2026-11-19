@@ -21,7 +21,7 @@ from elo_bot.features.finals.invitations import (
     accept_invitation, add_players, decline_invitation, invitation_embed, invite_players, notify, open_seats,
     require_registration, retire_outdated_invitations, withdraw_invitation,
 )
-from elo_bot.features.finals.labels import pairing_label
+from elo_bot.features.finals.labels import thread_label
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.posts import staff_notice
 from elo_bot.features.finals.replacement import replace_entrant, replaceable_entrants
@@ -177,7 +177,8 @@ class Roster:
     async def _move_thread(self, replaced, leaving: str, joining: str, names: dict[str, str]) -> None:
         thread = await self.bot.fetch_channel(int(replaced.thread_id))
         node = replaced.final.nodes[replaced.node_id]
-        schedule_channel_name_edit(thread, thread.name.partition(" ")[0], pairing_label(replaced.final, node))
+        players = [await self.bot.fetch_user(int(user)) for user in node.contestants]
+        schedule_channel_name_edit(thread, thread.name.partition(" ")[0], thread_label(node.id, players))
         source = await Match.get(node.match_id)
         if source and source.thread_message_id:
             opening = await thread.fetch_message(source.thread_message_id)

@@ -26,7 +26,7 @@ from elo_bot.features.matches.thread_messages import (
 )
 from elo_bot.features.queue.policy import QUEUE_OPERATION_LOCK
 from elo_bot.features.queue.state import remove_matched_queue_attempts
-from elo_bot.features.finals.labels import pairing_label
+from elo_bot.features.finals.labels import thread_label
 
 
 def get_district_options(
@@ -336,7 +336,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         final_title = None
         if is_final_match(match):
             final = await EloFinal.get(PydanticObjectId(match.final_id))
-            final_title = (pairing_label(final, final.nodes[match.final_node_id]),
+            final_title = (thread_label(match.final_node_id, (player1, player2)),
                            f"**Season {final.season_number} Final · {match.final_node_id}**")
 
         if not match.thread:

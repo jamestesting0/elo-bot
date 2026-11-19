@@ -68,6 +68,11 @@ def pairing_label(final: EloFinal, node: EloFinalMatch) -> str:
         final.player_nicknames.get(user, user) if user else "TBD" for user in node.contestants)
 
 
+def thread_label(node_id: str, players: Sequence[ipy.User]) -> str:
+    """Thread names use Discord usernames, like normal match threads."""
+    return f"{node_id} · " + " vs. ".join(str(player) for player in players)
+
+
 def matchup(contestants: Sequence[str | None], winner: str | None,
             names: dict[str, str]) -> str:
     players = []

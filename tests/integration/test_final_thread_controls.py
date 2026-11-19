@@ -32,7 +32,7 @@ class TestFinalThreadControls(FinalScenarioCase):
         channel = MagicMock(create_private_thread=AsyncMock(return_value=thread))
         users = {int(user): MagicMock(id=user, display_name=f"Player {user}", mention=f"<@{user}>") for user in final.entrant_ids}
         for user, view in users.items():
-            view.__str__.return_value = f"Player {user}"
+            view.__str__.return_value = f"user{user}"
         bot = MagicMock(fetch_channel=AsyncMock(return_value=thread if existing else channel),
                         fetch_user=AsyncMock(side_effect=lambda user: users[int(user)]))
         bot.user.id = 999
@@ -52,8 +52,8 @@ class TestFinalThreadControls(FinalScenarioCase):
         self.assertEqual(len(saved.participants[0].bases), 7)
         self.assertFalse(any(saved.times))
         name = bot.fetch_channel.return_value.create_private_thread.await_args.kwargs["name"]
-        self.assertTrue(name.startswith(f"🟡 {source.final_node_id} · "))
-        self.assertIn(" vs. ", name)
+        first, second = (participant.user_id for participant in saved.participants)
+        self.assertEqual(name, f"🟡 {source.final_node_id} · user{first} vs. user{second}")
         embed = thread.send.await_args.kwargs["embed"]
         self.assertEqual(embed.title, f"**Season 7 Final · {source.final_node_id}**")
         self.assertNotIn(" vs. ", embed.description)

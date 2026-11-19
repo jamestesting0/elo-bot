@@ -106,6 +106,13 @@ class TestFinalReplacement(FinalScenarioCase):
         staff = MagicMock(send=AsyncMock())
         bot = MagicMock(ext={}, fetch_channel=AsyncMock(side_effect=lambda channel: staff if channel == STAFF_CHANNEL
                                                          else thread))
+
+        def username(user):
+            view = MagicMock(id=user)
+            view.__str__.return_value = f"user{user}"
+            return view
+
+        bot.fetch_user = AsyncMock(side_effect=username)
         cog = FinalCommands(bot)
         guild = MagicMock(fetch_member=AsyncMock(side_effect=lambda user: MagicMock(
             id=int(user), display_name=f"Player {user}", has_role=MagicMock(return_value=False))))
@@ -113,7 +120,7 @@ class TestFinalReplacement(FinalScenarioCase):
                 patch.object(FinalCommands, "_provision_node", new=AsyncMock(return_value=("777", True, []))) as provision, \
                 patch("elo_bot.extensions.final.roster.schedule_channel_name_edit") as rename:
             await cog._replace(await EloFinal.get(final.id), guild, "8", "9")
-        self.assertEqual(rename.call_args.args[1:], ("🟡", f"{node_id} · Player 1 vs. Player 9"))
+        self.assertEqual(rename.call_args.args[1:], ("🟡", f"{node_id} · user1 vs. user9"))
         self.assertEqual(opening.edit.await_args.kwargs["content"], "<@1>\n<@9>\n<@&5>")
         thread.add_member.assert_awaited_once_with(9)
         thread.remove_member.assert_awaited_once_with(8)

@@ -14745,6 +14745,62 @@
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Store both live match results with Helper'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='result-live'>",
    "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {
+    "country": {
+     "name": "country_autocomplete"
+    },
+    "when": {
+     "name": "when_autocomplete"
+    }
+   },
+   "callback": {
+    "name": "timestamp"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Post a Discord timestamp from a date or time'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TimestampCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='timestamp'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "country": "SlashCommandParameter(name='country', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
+    "when": "SlashCommandParameter(name='when', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "timestamp",
+   "scope": "0",
+   "scopes": [
+    0
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "type": "SlashCommand"
   }
  ],
  "components": {
@@ -18615,6 +18671,40 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "choose_timestamp"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "TimestampCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^timestamp_choose\\\\|[0-9]{1,20}\\\\|[0-9]{1,20}$')]",
+    "nsfw": false,
+    "pattern": "^timestamp_choose\\|[0-9]{1,20}\\|[0-9]{1,20}$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "closure": [
       "token_jump"
      ],
@@ -18863,6 +18953,14 @@
    "description": null,
    "error": null,
    "name": "ThreadCommands",
+   "postrun": [],
+   "prerun": []
+  },
+  {
+   "checks": [],
+   "description": null,
+   "error": null,
+   "name": "TimestampCommands",
    "postrun": [],
    "prerun": []
   },
@@ -20355,6 +20453,41 @@
     "name": "ModalCallback::[re.compile('^season_stats_page_modal\\\\|(current|[0-9]+)$')]",
     "nsfw": false,
     "pattern": "^season_stats_page_modal\\|(current|[0-9]+)$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ModalCommand"
+   },
+   {
+    "_application_id": null,
+    "_just_ctx": false,
+    "auto_defer": "Missing",
+    "callback": {
+     "name": "enter_clock"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "TimestampCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ModalCallback::[re.compile('^timestamp_time\\\\|[0-9]{1,20}\\\\|[0-9]{1,20}\\\\|[0-9]{1,2}$')]",
+    "nsfw": false,
+    "pattern": "^timestamp_time\\|[0-9]{1,20}\\|[0-9]{1,20}\\|[0-9]{1,2}$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -23427,6 +23560,54 @@
       "name": "re-invite",
       "name_localizations": null,
       "type": 1
+     }
+    ]
+   },
+   {
+    "contexts": [
+     0,
+     1,
+     2
+    ],
+    "default_member_permissions": null,
+    "description": "Post a Discord timestamp from a date or time",
+    "description_localizations": null,
+    "integration_types": [
+     0
+    ],
+    "name": "timestamp",
+    "name_localizations": null,
+    "nsfw": false,
+    "options": [
+     {
+      "autocomplete": true,
+      "channel_types": null,
+      "choices": [],
+      "description": "When it is, such as in two hours or Thursday at 19:00",
+      "description_localizations": null,
+      "max_length": 100,
+      "max_value": null,
+      "min_length": null,
+      "min_value": null,
+      "name": "when",
+      "name_localizations": null,
+      "required": true,
+      "type": 3
+     },
+     {
+      "autocomplete": true,
+      "channel_types": null,
+      "choices": [],
+      "description": "Choose your country or time zone the first time",
+      "description_localizations": null,
+      "max_length": 100,
+      "max_value": null,
+      "min_length": null,
+      "min_value": null,
+      "name": "country",
+      "name_localizations": null,
+      "required": false,
+      "type": 3
      }
     ]
    }

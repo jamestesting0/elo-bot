@@ -49,6 +49,12 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         match_channel.create_private_thread = AsyncMock(return_value=thread)
         self.bot.fetch_channel = AsyncMock(return_value=match_channel)
         self.bot.fetch_user = AsyncMock(side_effect=[first_player, second_player])
+        command_client = ipy.Client()
+        command_client.load_extension("elo_bot.extensions.timestamp")
+        command_id = 123456789012345678
+        command_client.update_command_cache(ipy.GLOBAL_SCOPE, "timestamp", ipy.Snowflake(command_id))
+        self.bot.interactions_by_scope = command_client.interactions_by_scope
+        self.bot.mention_command = command_client.mention_command
 
         # When the match thread and its initial message are created.
         with (
@@ -64,6 +70,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
             [(button.label, button.custom_id) for button in action_rows[0].components],
             [("Submit Result", "submit_button|TOKEN")],
         )
+        scheduling = next(field for field in thread.send.await_args.kwargs["embed"].fields
+                          if field.name == "**Scheduling**")
+        self.assertIn(f"</timestamp:{command_id}>", scheduling.value)
+        self.assertIn("[HammerTime](https://old.hammertime.cyou/en-GB)", scheduling.value)
 
     async def test_initial_match_message_notes_loaded_preset_bases(self):
         # Given one valid preset and one expired preset for the assigned districts.
@@ -108,6 +118,10 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         match_channel.create_private_thread = AsyncMock(return_value=thread)
         self.bot.fetch_channel = AsyncMock(return_value=match_channel)
         self.bot.fetch_user = AsyncMock(side_effect=discord_players)
+        command_client = ipy.Client()
+        command_client.load_extension("elo_bot.extensions.timestamp")
+        self.bot.interactions_by_scope = command_client.interactions_by_scope
+        self.bot.mention_command = command_client.mention_command
 
         # When the match thread and its initial embed are created.
         with (
@@ -123,6 +137,9 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         embed = thread.send.await_args.kwargs["embed"]
         notes = next(field for field in embed.fields if field.name == "**Notes**")
         self.assertEqual(notes.value, "- **[First Player](<https://discordapp.com/users/111?tab=wishlist>)** has preset bases.")
+        scheduling = next(field for field in embed.fields if field.name == "**Scheduling**")
+        self.assertIn("`/timestamp`", scheduling.value)
+        self.assertNotIn("</timestamp:", scheduling.value)
 
     async def test_delete_thread_button_allows_staff_roles_before_or_after_rename(self):
         for role, channel_name in ((LVL1_ROLES[2], "🟡 Match Thread"), (STAFF_ROLE, "🔴 Match Thread")):

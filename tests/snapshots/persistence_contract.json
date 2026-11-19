@@ -6153,6 +6153,80 @@
     "use_state_management": true
    }
   },
+  "TimestampDraft": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "anchor": {
+      "title": "Anchor",
+      "type": "integer"
+     },
+     "channel_id": {
+      "title": "Channel Id",
+      "type": "integer"
+     },
+     "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+     },
+     "expression": {
+      "title": "Expression",
+      "type": "string"
+     },
+     "owner_id": {
+      "title": "Owner Id",
+      "type": "integer"
+     },
+     "zone": {
+      "title": "Zone",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "owner_id",
+     "channel_id",
+     "expression",
+     "anchor",
+     "zone",
+     "expires_at"
+    ],
+    "title": "TimestampDraft",
+    "type": "object"
+   },
+   "settings": {
+    "name": "timestamp_drafts",
+    "use_state_management": true
+   }
+  },
+  "TimestampPreference": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "zone": {
+      "title": "Zone",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "zone"
+    ],
+    "title": "TimestampPreference",
+    "type": "object"
+   },
+   "settings": {
+    "name": "timestamp_preferences",
+    "use_state_management": true
+   }
+  },
   "TokenLedgerEntry": {
    "schema": {
     "properties": {
@@ -6473,6 +6547,17 @@
       "open": 1
      },
      "name": "sequential_run_open"
+    }
+   ]
+  ],
+  "TIMESTAMP_DRAFT_INDEXES": [
+   [
+    {
+     "expireAfterSeconds": 0,
+     "key": {
+      "expires_at": 1
+     },
+     "name": "timestamp_draft_expiry"
     }
    ]
   ]

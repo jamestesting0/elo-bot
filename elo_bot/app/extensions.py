@@ -17,5 +17,6 @@ EXTENSIONS = (
     "elo_bot.extensions.season",
     "elo_bot.extensions.self_service",
     "elo_bot.extensions.thread",
+    "elo_bot.extensions.timestamp",
     "elo_bot.extensions.tokens",
 )

@@ -401,6 +401,11 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
             # save updated match
             await match.save_changes()
 
+        timestamp_command = bot.interactions_by_scope.get(ipy.GLOBAL_SCOPE, {}).get("timestamp")
+        timestamp_mention = "`/timestamp`"
+        if timestamp_command is not None and timestamp_command.cmd_id.get(ipy.GLOBAL_SCOPE):
+            timestamp_mention = bot.mention_command("timestamp")
+
         embed = ipy.Embed(
             title=f"**{player1} vs. {player2}**",
             description=(
@@ -417,8 +422,8 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
                 ),
                 ipy.EmbedField(
                     name="**Scheduling**",
-                    value="Use [HammerTime](https://old.hammertime.cyou/en-GB) to "
-                          "generate a Discord timestamp and send in chat.",
+                    value=f"Post a timestamp with {timestamp_mention} or paste one from "
+                          "[HammerTime](https://old.hammertime.cyou/en-GB).",
                     inline=False,
                 ),
                 ipy.EmbedField(

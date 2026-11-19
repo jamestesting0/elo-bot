@@ -84,7 +84,7 @@ class TestResultOperationBoundaries(unittest.IsolatedAsyncioTestCase):
         ctx = self.store_context()
         async def correct_during_guild_lookup(_guild):
             await self.runtime.cog.result_store_modal.callback.func(self.runtime.cog, ctx,
-                result1="2.90", result2="3.100", result3="3.100")
+                results="2.90\n3.100\n3.100")
             return self.runtime.state.bot.fetch_guild.return_value
         self.runtime.state.bot.fetch_guild.side_effect = correct_during_guild_lookup
         # When
@@ -100,7 +100,7 @@ class TestResultOperationBoundaries(unittest.IsolatedAsyncioTestCase):
             if "result_operation" in updates.get("$set", {}):
                 self.runtime.before_match_write = AsyncMock()
                 await self.runtime.cog.result_store_modal.callback.func(self.runtime.cog, ctx,
-                    result1="2.90", result2="3.100", result3="3.100")
+                    results="2.90\n3.100\n3.100")
         self.runtime.before_match_write = correct_before_claim
         response = deepcopy(retry_fixture.RESULTS)
         # When
@@ -121,7 +121,7 @@ class TestResultOperationBoundaries(unittest.IsolatedAsyncioTestCase):
 
         self.runtime.state.invite.side_effect = check_after_write
         await self.runtime.cog.result_store_modal.callback.func(
-            self.runtime.cog, ctx, result1="2.90", result2="3.100", result3="3.100",
+            self.runtime.cog, ctx, results="2.90\n3.100\n3.100",
         )
         self.assertEqual(observed_results, [(("111",), ["2.90", "3.100", "3.100"])])
         self.assertEqual(self.runtime.match["participants"][1]["result"], [None, None, None])

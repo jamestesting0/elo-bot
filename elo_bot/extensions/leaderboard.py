@@ -6,6 +6,7 @@ from copy import copy
 from datetime import datetime
 
 import interactions as ipy
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
 from elo_bot.config.emojis import ERROR_EMOJI, RANK_EMOJIS, RANK_REVERSED_EMOJIS, SUCCESS_EMOJI
 from elo_bot.config.ids import GUILD_IDS
@@ -1110,9 +1111,9 @@ class LeaderboardCommands(ipy.Extension):
             )
 
         if lb_type in {"Tokens", "Predictions"}:
-            await ctx.message.edit(embeds=ctx.message.embeds, components=ctx.message.components)
+            await edit_channel_message(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
         else:
-            await ctx.message.edit(embeds=ctx.message.embeds)
+            await edit_channel_message(ctx.message, embeds=ctx.message.embeds)
         await ctx.send(f"{SUCCESS_EMOJI} The leaderboard is now up to date.", ephemeral=True)
 
     @ipy.listen(ipy.events.Startup)

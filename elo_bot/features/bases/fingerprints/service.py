@@ -11,6 +11,7 @@ from bson import ObjectId
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pydantic import ValidationError
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.bases.fingerprints.artifacts import SCRATCH
 from elo_bot.features.bases.fingerprints.images import download_image
 from elo_bot.features.bases.fingerprints.ingestion import source_filter
@@ -145,7 +146,7 @@ class FingerprintService:
                 raise FingerprintError("status_channel_not_staff_only")
             if run.notification_message_id:
                 message = await channel.fetch_message(run.notification_message_id)
-                await message.edit(content=text)
+                await edit_channel_message(message, content=text)
             else:
                 message = await channel.send(text)
                 await run.set({"notification_channel_id": str(channel.id), "notification_message_id": str(message.id)})

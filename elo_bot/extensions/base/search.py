@@ -7,6 +7,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 import elo_bot.extensions.base.groups as groups
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import (
     BASE_SUBMISSION_CHANNEL,
@@ -16,7 +17,7 @@ from elo_bot.config.ids import (
 )
 from elo_bot.db import PendingBaseSubmission
 from elo_bot.discord.checks import has_any, has_any_id
-from elo_bot.discord.pagination import InvalidPageError, build_page_jump_modal
+from elo_bot.discord.pagination import InvalidPageError, parse_page_number, build_page_jump_modal
 from elo_bot.features.base_submission.models import (
     ReviewStatus,
 )
@@ -163,11 +164,13 @@ class BaseSearchCommands:
             return
         if session is None or session.expires_at <= time.monotonic():
             self._similarity.sessions.pop(token, None)
+            if page_number is None:
+                # Search results are ephemeral: only the clicked button's update can retire their controls.
+                try:
+                    await ctx.edit_origin(components=[])
+                except ipy.errors.HTTPException:
+                    pass
             await ctx.send(f"{ERROR_EMOJI} This search expired. Run a new search.", ephemeral=True)
-            try:
-                await ctx.message.edit(components=[])
-            except ipy.errors.HTTPException:
-                pass
             return
         if not can_search(ctx, review=bool(session.review_id)):
             await ctx.send(f"{ERROR_EMOJI} You no longer have access to this search.", ephemeral=True)
@@ -175,8 +178,14 @@ class BaseSearchCommands:
         if direction == "page" and page_number is None:
             await ctx.send_modal(build_page_jump_modal(f"base_similar_modal|{token}|page"))
             return
-        if page_number is None:
-            await ctx.defer(edit_origin=True)
+        if page_number is not None:
+            # Reject bad input before acknowledging: after the deferred update a reply could only replace the results.
+            try:
+                parse_page_number(page_number, len(session.matches))
+            except InvalidPageError as error:
+                await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                return
+        await ctx.defer(edit_origin=True)
         async with session.lock:
             if self._similarity.sessions.get(token) is not session or session.expires_at <= time.monotonic():
                 payload = {"content": f"{ERROR_EMOJI} This search expired. Run a new search.",
@@ -189,8 +198,9 @@ class BaseSearchCommands:
                 try:
                     payload = await render_page(session, ctx, page_number=page_number)
                 except InvalidPageError as error:
-                    await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
-                    return
+                    # Results became unavailable after the jump was checked: keep the current page and say why
+                    # in the (private) results message, since this interaction already answered with an update.
+                    payload = {**await render_page(session, ctx), "content": f"{ERROR_EMOJI} {error}"}
             if page_number is None:
                 await ctx.edit_origin(**payload)
             else:
@@ -237,7 +247,7 @@ class BaseSearchCommands:
                     )
                     if not legacy and not pending_publication:
                         continue
-                    await message.edit(components=build_review_components())
+                    await edit_channel_message(message, components=build_review_components())
             except ipy.errors.Forbidden as error:
                 self._review_refresh_retry_after[saved.id] = time.monotonic() + 3600
                 logging.warning(

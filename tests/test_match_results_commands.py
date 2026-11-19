@@ -251,6 +251,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send_modal.assert_awaited_once()
         modal = ctx.send_modal.call_args.args[0]
         self.assertLessEqual(len(modal.title), 45)
+        self.assertEqual(modal.components[0].value, "3.100\n\n")
 
     async def test_match_autowin_allows_finished_war_player_correction(self):
         from tests._autowin_fixture import AutowinState
@@ -309,9 +310,7 @@ class TestMatchCommands(MatchCommandsCase):
         await self.cog.result_store_modal.callback.func(
             self.cog,
             ctx,
-            result1="2.88",
-            result2="2.90",
-            result3="2.80",
+            results="2.88\n2.90\n2.80",
         )
 
         collection.update_one.assert_awaited_once()

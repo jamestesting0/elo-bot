@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import interactions as ipy
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import CLASHING_SWORD_EMOJI, STAR_EMOJI
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elo_bot.db import Match
@@ -40,8 +41,8 @@ class ScheduledResultStoreContext:
             components: MessageComponents = None,
     ) -> ipy.Message:
         if content is None:
-            return await message.edit(components=components)
-        return await message.edit(content=content, components=components)
+            return await edit_channel_message(message, components=components)
+        return await edit_channel_message(message, content=content, components=components)
 
     @staticmethod
     async def delete(message: ipy.Message) -> None:

@@ -11,6 +11,7 @@ import aiohttp
 import anyio
 import interactions as ipy
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.base_store.publication import BaseStoreMessageConflict
 from elo_bot.features.hosting.war.confirmation import confirm_helper_queue
 from elo_bot.integrations.helper_api import (
@@ -201,7 +202,7 @@ async def run_helper_host_job(
         async def edit_progress_message(**kwargs) -> None:
             try:
                 if request.public_progress:
-                    await progress_message.edit(**kwargs)
+                    await edit_channel_message(progress_message, **kwargs)
                 else:
                     await ctx.edit(progress_message, **kwargs)
             except ipy.errors.HTTPException:

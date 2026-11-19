@@ -65,7 +65,13 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
 - **Limits:** field values 1,024 characters, descriptions 4,096, titles 256, select labels and autocomplete
   names 100, 25 autocomplete choices. Check before rendering; `stats_embed` raises an error instead of
   silently truncating data the user needs.
-- **Editing:** edit through `edit_channel_message` (it stays under Discord's per-channel edit rate) and send
+- **Editing:** every edit of a channel message goes through `edit_channel_message`, which queues all edits in
+  a channel under Discord's per-channel rate; never call `message.edit(...)` directly (only `context=` edits and
+  `ctx.edit_origin`, which use the interaction route, bypass it). A component or modal callback that has not
+  answered yet edits the clicked message with `ctx.edit_origin(...)`, or answers first and then edits, so a busy
+  channel queue cannot outlast Discord's 3-second response window. Callbacks that wait on a lock use
+  `@acknowledge_privately` (outermost), which defers privately before the lock. Ephemeral messages are only
+  edited through the interaction. Send
   `embed_edit_payload(embed)` when a description must be cleared, because `Embed.to_dict` drops empty fields.
 
 ```python

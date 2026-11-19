@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import interactions as ipy
+from elo_bot.discord.message_edits import edit_channel_message
 from pydantic import JsonValue
 
 
@@ -17,4 +18,4 @@ class ScheduledBaseStoreContext:
     async def edit(self, message: ipy.Message, *,
                    embed: ipy.Embed | dict[str, JsonValue] | list[dict[str, JsonValue]],
                    components: list[ipy.Button]) -> ipy.Message:
-        return await message.edit(embed=embed, components=components)
+        return await edit_channel_message(message, embed=embed, components=components)

@@ -361,7 +361,7 @@ class TestMatchCommands(MatchCommandsCase):
                 mock_match.find_one = AsyncMock(return_value=match)
                 ctx = MagicMock(channel=None, custom_id=f"district_select|TOKEN|{index}", values=[district])
                 ctx.author.id = 111
-                ctx.send = AsyncMock()
+                ctx.send, ctx.defer = AsyncMock(), AsyncMock()
 
                 # When: a stale or forged component value reaches the callback
                 await self.cog.district_select.callback(ctx)

@@ -8,6 +8,7 @@ from datetime import datetime
 import interactions as ipy
 from beanie import PydanticObjectId
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import CROSS_EMOJI, DISTRICT_EMOJI, IMPORTANT_EMOJI, TICK_EMOJI
 from elo_bot.config.game import BASE_SUBMISSION_THRESHOLD
 from elo_bot.config.ids import COMMAND_CHANNEL, MATCH_CHANNEL, STAFF_ROLE
@@ -318,7 +319,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
                 if match.thread_message_id != int(msg.id) and not await attach_thread_message(match, int(msg.id)):
                     raise ThreadMessageBindingError(token)
                 if f"<@&{STAFF_ROLE}>" not in msg.content:
-                    await msg.edit(content=f"{msg.content}\n<@&{STAFF_ROLE}>")
+                    await edit_channel_message(msg, content=f"{msg.content}\n<@&{STAFF_ROLE}>")
                 if not msg.pinned:
                     await msg.pin()
                 return str(match.thread)
@@ -470,7 +471,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         )
         if not await attach_thread_message(match, int(msg.id)):
             raise ThreadMessageBindingError(token)
-        await msg.edit(content=f"{msg.content}\n<@&{STAFF_ROLE}>")  # avoids ping
+        await edit_channel_message(msg, content=f"{msg.content}\n<@&{STAFF_ROLE}>")  # avoids ping
         await msg.pin()
 
         return str(thread.id)

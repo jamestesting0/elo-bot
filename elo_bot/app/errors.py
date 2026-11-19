@@ -7,6 +7,7 @@ from datetime import datetime
 import coc
 import interactions as ipy
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord import runtime
 from elo_bot.app.events import on_raid_weekend_end
 from elo_bot.config.emojis import ERROR_EMOJI, STAFF_EMOJI, SUCCESS_EMOJI
@@ -317,5 +318,5 @@ async def bug_respond_modal(ctx: ipy.ModalContext, **response):
         await ctx.send(f"{ERROR_EMOJI} Discord forbidden error, the bot do not share servers with the target user!")
     else:
         ctx.message.components[0].components[0].disabled = True
-        await ctx.message.edit(components=ctx.message.components)
+        await edit_channel_message(ctx.message, components=ctx.message.components)
         await ctx.send(f"{SUCCESS_EMOJI} Your response is sent to the user who reported the bug!")

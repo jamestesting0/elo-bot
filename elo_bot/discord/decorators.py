@@ -52,3 +52,15 @@ def reset_cooldown_on_error(command_func):
             traceback.print_exc()
             raise
     return wrapper
+
+
+def acknowledge_privately(callback):
+    """Defer privately before a component or modal callback waits on locks or the channel edit queue.
+
+    Discord fails an interaction that is not answered within 3 seconds; every reply that follows is private.
+    """
+    @wraps(callback)
+    async def acknowledged(owner, ctx: interactions.InteractionContext, *args, **kwargs):
+        await ctx.defer(ephemeral=True)
+        return await callback(owner, ctx, *args, **kwargs)
+    return acknowledged

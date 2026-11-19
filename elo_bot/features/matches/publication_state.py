@@ -2,6 +2,7 @@ import interactions as ipy
 from beanie import PydanticObjectId
 from pydantic import JsonValue
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.ids import MATCH_CHANNEL
 from elo_bot.core.finals import is_final_match
 from elo_bot.db import Match
@@ -39,7 +40,7 @@ async def restore_match_publication(message: ipy.Message, match: Match, player: 
     collection = match.get_pymongo_collection()
     if await collection.find_one(query, {"_id": 1}) is None:
         return False
-    await message.edit(embeds=publication.embeds, components=publication.components)
+    await edit_channel_message(message, embeds=publication.embeds, components=publication.components)
     if publication.pending:
         published = publication.model_copy(update={"pending": False})
         payload = published.model_dump(mode="json", exclude_defaults=True)

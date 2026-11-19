@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,6 +9,7 @@ import tests._stored_base_controls_fixture as fixtures
 from elo_bot.config.ids import STAFF_ROLE
 from elo_bot.config.emojis import SUCCESS_EMOJI
 from elo_bot.db import Match, Player
+from elo_bot.features.matches.message_lock import match_message_lock
 from tests._patch_sites import patch_sites
 
 
@@ -36,8 +38,9 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
         ):
             with self.subTest(control=name):
                 self.ctx.custom_id = f"{prefix}|TOKEN|0"
-                self.ctx.send.reset_mock()
-                self.ctx.send_modal.reset_mock()
+                self.ctx.responded = self.ctx.deferred = False
+                for mock in (self.ctx.send, self.ctx.send_modal, self.ctx.defer, self.ctx.edit, self.ctx.message.edit):
+                    mock.reset_mock()
                 with (
                     patch.object(Match, "set", new_callable=AsyncMock) as write,
                     patch_sites(('elo_bot.extensions.match.base_store.try_reserve_resource_clan', 'elo_bot.extensions.match.hosting.try_reserve_resource_clan', 'elo_bot.extensions.match.settings.try_reserve_resource_clan', 'elo_bot.features.matches.resources.try_reserve_resource_clan'), new=AsyncMock(return_value=MagicMock())),
@@ -47,13 +50,30 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
                 write.assert_not_awaited()
                 claim.assert_not_awaited()
                 self.ctx.send_modal.assert_not_awaited()
+                # Answered before the old message is retired on the channel queue.
+                self.assertTrue(self.ctx.defer.await_count or self.ctx.send.await_count)
                 self.assertEqual(self.ctx.message.edit.await_args.kwargs["components"], [])
+                self.ctx.edit.assert_not_awaited()
+
+    async def test_locked_callbacks_answer_before_waiting_on_the_match_lock(self) -> None:
+        for name, prefix in (("host_match_button", "match_host"), ("host_clan_select", "host_clan_select")):
+            with self.subTest(control=name):
+                self.ctx.custom_id = f"{prefix}|TOKEN|0"
+                acknowledged = asyncio.Event()
+                self.ctx.defer = AsyncMock(side_effect=lambda **_: acknowledged.set())
+                async with asyncio.timeout(5):
+                    async with match_message_lock(self.ctx.channel.id):
+                        callback = asyncio.create_task(getattr(self.cog, name).callback.func(self.cog, self.ctx))
+                        await acknowledged.wait()
+                        self.assertFalse(callback.done())
+                    await callback
+                self.ctx.defer.assert_awaited_once_with(ephemeral=True)
 
     async def test_already_open_old_result_modal_cannot_write_after_restart(self) -> None:
         self.ctx.custom_id = "store_modal|TOKEN|0"
         with patch.object(Match, "set", new_callable=AsyncMock) as write:
             await self.cog.result_store_modal.callback.func(
-                self.cog, self.ctx, result1="3.100", result2="", result3="",
+                self.cog, self.ctx, results="3.100",
             )
         write.assert_not_awaited()
         self.assertEqual(self.ctx.message.edit.await_args.kwargs["components"], [])
@@ -77,7 +97,7 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
         collection = MagicMock(update_one=AsyncMock(return_value=UpdateResult({"n": 0}, True)))
         with patch.object(Match, "get_pymongo_collection", return_value=collection):
             await self.cog.result_store_modal.callback.func(
-                self.cog, self.ctx, result1="3.100", result2="", result3="",
+                self.cog, self.ctx, results="3.100",
             )
         query, _ = collection.update_one.await_args.args
         self.assertEqual(query["old_msgs.0"], 200)
@@ -93,7 +113,7 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
         with (patch.object(Match, "get_pymongo_collection", return_value=collection),
               patch.object(Player, "find_one", new=AsyncMock(return_value=None))):
             await self.cog.result_store_modal.callback.func(
-                self.cog, self.ctx, result1="3.100", result2="2.90", result3="1.80",
+                self.cog, self.ctx, results="3.100\n2.90\n1.80",
             )
         collection.update_one.assert_awaited_once()
         _, update = collection.update_one.await_args.args

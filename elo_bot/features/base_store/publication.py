@@ -7,6 +7,7 @@ import interactions as ipy
 from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.base_store.models import BaseStorePresentationRequest
 from elo_bot.features.base_store.channel_context import ScheduledBaseStoreContext
 from elo_bot.features.base_store.presentation import build_helper_store_components, build_manual_store_components, build_store_embed
@@ -37,7 +38,7 @@ async def mark_store_status(
     if context is not None and ipy.MessageFlags.EPHEMERAL in message.flags:
         await context.edit(message, embeds=payloads, components=[])
     else:
-        await message.edit(embeds=payloads, components=[])
+        await edit_channel_message(message, embeds=payloads, components=[])
 
 
 async def mark_store_unavailable(
@@ -86,7 +87,7 @@ async def mark_store_reserved(
                             f"{names[match.participants[index].user_id]}: {held.slot}"
                             for index, held in live_stores(match, store.reservation_id)
                         )
-            await message.edit(embeds=_store_status_payload(embeds, "**Bases Stored**"))
+            await edit_channel_message(message, embeds=_store_status_payload(embeds, "**Bases Stored**"))
             if not await match.get_pymongo_collection().find_one(match.base_store_filter(player), {"_id": 1}):
                 await mark_store_unavailable(message)
                 return False
@@ -130,7 +131,7 @@ async def report_incomplete_stored_start(
             embeds = deepcopy(message.embeds) or [ipy.Embed()]
             embeds[0].title = "**Match Start Incomplete**"
             embeds[0].description = detail
-            await message.edit(embeds=embeds, components=components)
+            await edit_channel_message(message, embeds=embeds, components=components)
     except ipy.errors.HTTPException:
         logging.exception(
             "Unable to show incomplete stored-base start for match %s, side %s, message %s",
@@ -187,7 +188,7 @@ async def present_retained_base_store(
             if interaction_message:
                 await ctx.edit(message, embed=embed_edit_payload(embed), components=undo)
             else:
-                await message.edit(embed=embed_edit_payload(embed), components=undo)
+                await edit_channel_message(message, embed=embed_edit_payload(embed), components=undo)
             if await Match.find_one(request.match.base_store_filter(request.player)):
                 return True
         await mark_store_unavailable(message, context=ctx if interaction_message else None)
@@ -230,7 +231,7 @@ async def publish_base_store_message(
         if await request.match.attach_base_store_message(
                 request.player, int(message.id), ready=request.failure_reason is None,
         ):
-            await message.edit(embed=embed_edit_payload(embed), components=components)
+            await edit_channel_message(message, embed=embed_edit_payload(embed), components=components)
             if await Match.find_one(request.match.base_store_filter(request.player)):
                 return True
         await mark_store_unavailable(message)

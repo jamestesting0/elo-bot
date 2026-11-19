@@ -1,3 +1,4 @@
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.core.finals import is_final_match
 from copy import deepcopy
 import asyncio
@@ -379,7 +380,7 @@ async def _abort_live_start_locked(
             embeds[0].description = None
             if is_public:
                 embeds[0].color = RED_COLOR
-            await message.edit(embeds=match_message_embeds(embeds), components=[])
+            await edit_channel_message(message, embeds=match_message_embeds(embeds), components=[])
         except ipy.errors.NotFound:
             continue
         except ipy.errors.HTTPException as error:

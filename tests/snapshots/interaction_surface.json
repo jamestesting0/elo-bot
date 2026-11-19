@@ -17065,6 +17065,9 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "closure": [
+      "district_select"
+     ],
      "name": "district_select"
     },
     "checks": [],
@@ -17411,6 +17414,9 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "closure": [
+      "match_confirm_button"
+     ],
      "name": "match_confirm_button"
     },
     "checks": [],
@@ -19565,6 +19571,9 @@
     "_just_ctx": false,
     "auto_defer": "Missing",
     "callback": {
+     "closure": [
+      "confirm_occupied_match_modal"
+     ],
      "name": "confirm_occupied_match_modal"
     },
     "checks": [],

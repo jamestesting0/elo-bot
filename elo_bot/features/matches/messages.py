@@ -185,11 +185,11 @@ async def _publish_match_message(
             raise MatchMessagePublicationError(expected.match_id, expected.player)
         remember_publication(publication)
         if existing_message is None or (public and replace_controls):
-            await message.edit(embed=final_embeds, components=list(components))
+            await edit_channel_message(message, embed=final_embeds, components=list(components))
             if not public and existing_message is None:
                 await message.pin()
         else:
-            await message.edit(embed=final_embeds)
+            await edit_channel_message(message, embed=final_embeds)
         published = publication.model_copy(update={"pending": False})
         result = await collection.update_one(
             {**query, field: message_id, publication_field: publication_payload},

@@ -12,6 +12,7 @@ from beanie import PydanticObjectId
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 import elo_bot.extensions.base.groups as groups
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import BASE_TIERS
 from elo_bot.config.ids import (
@@ -163,7 +164,7 @@ class BaseSubmissionCommands:
                     await submission.insert()
                     controls_enabled = False
                     try:
-                        published = await review_message.edit(components=build_review_components())
+                        published = await edit_channel_message(review_message, components=build_review_components())
                         buttons = list(_iter_message_components(published.components)) if published else []
                         controls_enabled = (
                             {button.custom_id for button in buttons} ==
@@ -417,7 +418,8 @@ class BaseSubmissionCommands:
         members = await asyncio.gather(*(guild.fetch_member(user_id) for user_id in user_ids))
         names = {user_id: mention_user(member, user_id, mention_type="Builder" if user_id == builder_id else "Player")
                  for user_id, member in zip(user_ids, members)}
-        await ctx.message.edit(
+        await edit_channel_message(
+            ctx.message,
             embed=mark_review_embed(submission, decision, resolution.reviewer_id, names),
             components=build_review_components(disabled=True),
         )

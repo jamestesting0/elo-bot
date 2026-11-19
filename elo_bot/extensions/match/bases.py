@@ -8,6 +8,7 @@ import validators
 from beanie.odm.operators.find.comparison import In
 from interactions import utils
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import (
     ERROR_EMOJI,
     IMPORTANT_EMOJI,
@@ -75,7 +76,7 @@ class MatchBaseCommands:
         token = parts[1]
         match = await Match.find_one(Match.token == token)
         if not match:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await ctx.edit_origin(components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} It seems that this match has been cancelled.", ephemeral=True)
             return
 
@@ -114,7 +115,7 @@ class MatchBaseCommands:
                 (match.is_war and war_ts is not None and (war_ts - now) < 600)
         )
         if too_late:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await ctx.edit_origin(components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(
                 f"{ERROR_EMOJI} It is too late to submit now, you can only submit bases 10 minutes before the match.",
                 ephemeral=True
@@ -259,7 +260,7 @@ class MatchBaseCommands:
         ):
             embed.fields[4].value += f"\n{note}"
 
-        await match_msg.edit(embeds=match_message_embeds(match_msg.embeds))
+        await edit_channel_message(match_msg, embeds=match_message_embeds(match_msg.embeds))
 
         await ctx.send(f"{SUCCESS_EMOJI} Your bases are submitted!", components=[], ephemeral=True)
 
@@ -904,7 +905,7 @@ class MatchBaseCommands:
                     match_msg.embeds[0].fields[4].value,
             ):
                 match_msg.embeds[0].fields[4].value += f"\n{note}"
-            await match_msg.edit(embeds=match_message_embeds(match_msg.embeds))
+            await edit_channel_message(match_msg, embeds=match_message_embeds(match_msg.embeds))
         except ipy.errors.HTTPException:
             await ctx.send(f"{ERROR_EMOJI} Base saved. The match message could not be updated; notify the host.",
                            ephemeral=True)

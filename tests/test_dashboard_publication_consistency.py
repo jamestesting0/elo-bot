@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from copy import deepcopy
 from types import SimpleNamespace
@@ -161,6 +162,24 @@ class TestDashboardPublicationConsistency(unittest.IsolatedAsyncioTestCase):
         payload = process_message_payload(embeds=self.message.edit.await_args.kwargs["embed"])
         self.assertEqual(payload["embeds"][0]["description"], "")
 
+
+    async def test_clan_refresh_skips_a_tick_while_the_previous_run_is_still_working(self) -> None:
+        entered, release = asyncio.Event(), asyncio.Event()
+
+        async def slow_state():
+            entered.set()
+            await release.wait()
+            return SimpleNamespace(clan_availability_embed=None)
+
+        cog = match_module.MatchCommands(MagicMock(ext={}))
+        with patch.object(ServerState, "current", new=AsyncMock(side_effect=slow_state)) as current:
+            async with asyncio.timeout(5):
+                first = asyncio.create_task(cog.update_clan_availability_embed.callback.func(cog))
+                await entered.wait()
+                await cog.update_clan_availability_embed.callback.func(cog)
+                release.set()
+                await first
+        current.assert_awaited_once()
 
     async def test_clan_refresh_clears_stale_loading_only_after_controls_are_active(self) -> None:
         self.message.embeds = [ipy.Embed(title="**Clan Availability**", description="Loading…")]

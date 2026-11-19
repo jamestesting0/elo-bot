@@ -5,6 +5,7 @@ from typing import assert_never
 
 import coc
 import interactions as ipy
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord.mentions import mention_user
 
 from elo_bot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
@@ -308,7 +309,7 @@ async def _abort_war_start_locked(ctx: ipy.ComponentContext | ipy.SlashContext, 
         embeds = deepcopy(abort.message.embeds) or [ipy.Embed()]
         embeds[0].title = "**Match Aborted**"
         embeds[0].description = None
-        await abort.message.edit(embeds=match_message_embeds(embeds), components=[])
+        await edit_channel_message(abort.message, embeds=match_message_embeds(embeds), components=[])
     except ipy.errors.NotFound:
         publication_error = None
     except ipy.errors.HTTPException as error:

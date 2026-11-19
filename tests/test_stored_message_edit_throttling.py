@@ -29,7 +29,7 @@ class TestStoredMessageEditThrottling(unittest.IsolatedAsyncioTestCase):
     async def sleep(self, delay: float) -> None:
         self.clock += delay
 
-    async def test_reservation_edits_do_not_wait_on_the_channel_budget(self) -> None:
+    async def test_reservation_edits_stay_within_the_channel_budget(self) -> None:
         match = await self.f.find({})
         self.assertTrue(await publish_live_storage(self.f.runtime, self.f.ctx, match))
         for _ in range(3):
@@ -39,7 +39,8 @@ class TestStoredMessageEditThrottling(unittest.IsolatedAsyncioTestCase):
             self.f.bot, StoredBaseMessageRetirement("900", self.message.id, "releasing"),
         )
 
-        self.assertEqual(self.edit_times, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        self.assertEqual(self.edit_times[:5], [0.0] * 5)
+        self.assertGreaterEqual(self.edit_times[5], message_edits._EDIT_WINDOW)
         self.assertEqual(self.message.embeds[0].title, "**Releasing Base Storage**")
         self.assertEqual(self.message.components, [])
         self.assertTrue(all(p["base_store"] for p in self.f.document["participants"]))

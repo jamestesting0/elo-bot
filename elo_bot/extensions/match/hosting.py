@@ -15,6 +15,8 @@ import elo_bot.features.hosting.live.live_start as live_start
 import elo_bot.features.hosting.sequential.service as sequential_service
 import elo_bot.features.hosting.war.helper_host as helper_host
 import elo_bot.features.hosting.war.war_start as war_start
+from elo_bot.discord.decorators import acknowledge_privately
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import (
     ERROR_EMOJI,
     SUCCESS_EMOJI,
@@ -500,6 +502,7 @@ class MatchHostingCommands:
         )
 
     @ipy.component_callback(re.compile(r"^host_clan_select\|\w+\|\d+$"))
+    @acknowledge_privately
     @coordinated_match_message
     async def host_clan_select(self, ctx: ipy.ComponentContext):
         _, token, index = ctx.custom_id.split("|")
@@ -508,9 +511,7 @@ class MatchHostingCommands:
         match = await Match.find_one(Match.token == token)
 
         if match is None:
-            await ctx.message.edit(
-                components=utils.misc_utils.disable_components(*ctx.message.components)
-            )
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(
                 f"{ERROR_EMOJI} Unable to fetch a valid match, the match has probably ended.",
                 ephemeral=True,
@@ -709,7 +710,7 @@ class MatchHostingCommands:
         # load match by token from Mongo
         match = await Match.find_one(Match.token == token)
         if match is None:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, the match has probably ended.")
             return
 
@@ -738,17 +739,16 @@ class MatchHostingCommands:
         await ctx.send(f"{SUCCESS_EMOJI} The match has been aborted.", ephemeral=True)
 
     @ipy.component_callback(re.compile(r"^match_host\|\w+\|\w+$"))
+    @acknowledge_privately
     @coordinated_match_message
     async def host_match_button(self, ctx: ipy.ComponentContext):
-        await ctx.defer(ephemeral=True)
-
         _, token, index = ctx.custom_id.split("|")
         index = int(index)
 
         # fetch the match by token
         match = await Match.find_one(Match.token == token)
         if match is None:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, the match has probably ended.")
             return
 

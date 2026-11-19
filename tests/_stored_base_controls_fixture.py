@@ -43,6 +43,8 @@ class StoredBaseControlsStateMixin:
         self.ctx.message.edit = AsyncMock()
         self.ctx.message.delete = AsyncMock()
         self.ctx.send, self.ctx.defer = AsyncMock(), AsyncMock()
+        self.ctx.responded = self.ctx.deferred = False
+        self.ctx.defer.side_effect = lambda **_: setattr(self.ctx, "deferred", True)
         self.find = AsyncMock(return_value=self.match)
         find_patch = patch.object(Match, "find_one", new=self.find)
         find_patch.start()

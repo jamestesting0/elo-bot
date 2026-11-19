@@ -11,6 +11,7 @@ from interactions import utils
 
 import elo_bot.extensions.base.groups as groups
 import elo_bot.features.hosting.war.helper_preserve as helper_preserve
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CODES_REVERSED
 from elo_bot.config.ids import (
@@ -569,7 +570,7 @@ class BaseManagementCommands:
         old_link = ctx.message.embeds[0].fields[0].value
         existing_base = await BaseLayout.find_one(BaseLayout.link == old_link)
         if not existing_base:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await ctx.edit_origin(components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} It seems that the base is already renewed.", ephemeral=True)
             return
 
@@ -630,7 +631,7 @@ class BaseManagementCommands:
         await self.send_base_renewal_log(base)
 
         ctx.message.embeds[0].add_field(name="New Base Link", value=new_link)
-        await ctx.message.edit(embeds=ctx.message.embeds,
+        await edit_channel_message(ctx.message, embeds=ctx.message.embeds,
                                components=utils.misc_utils.disable_components(*ctx.message.components))
 
         await ctx.send(f"{SUCCESS_EMOJI} You have successfully renewed a base for `{new_district}`.",

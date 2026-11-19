@@ -8,6 +8,7 @@ from weakref import WeakValueDictionary
 
 import interactions as ipy
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.base_store.live import live_pair_ready
 from elo_bot.config.presentation import COLOR
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
@@ -134,7 +135,7 @@ class LiveRequestCoordinator:
         )
         components = build_live_request_components(identity)
         message.components = [components]
-        await message.edit(components=components)
+        await edit_channel_message(message, components=components)
         self.schedule_expiry(ctx.channel, int(message.id), identity)
         await ctx.send(f"{SUCCESS_EMOJI} Live match request sent to {opponent.mention}.", ephemeral=True)
 
@@ -230,7 +231,7 @@ class LiveRequestCoordinator:
     ) -> None:
         components = build_live_request_components(identity, disabled=True)
         message.components = [components]
-        await message.edit(content=status, components=components)
+        await edit_channel_message(message, content=status, components=components)
 
     @staticmethod
     def _is_pending(message: ipy.Message, identity: LiveRequestIdentity) -> bool:

@@ -41,7 +41,7 @@ class FingerprintSearchStateMixin:
                                guild=SimpleNamespace(fetch_member=AsyncMock(
                                    return_value=SimpleNamespace(id=123, display_name="Builder"))),
                                channel_id=BASE_SUBMISSION_CHANNEL, message=SimpleNamespace(id=message, edit=AsyncMock()),
-                               defer=AsyncMock(), send=AsyncMock(return_value=SimpleNamespace(id=777)),
+                               defer=AsyncMock(), edit=AsyncMock(), send=AsyncMock(return_value=SimpleNamespace(id=777)),
                                edit_origin=AsyncMock(), custom_id="")
 
     async def search(self, ctx):

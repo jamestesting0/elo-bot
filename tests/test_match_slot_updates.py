@@ -45,7 +45,7 @@ class TestMatchSlotUpdates(unittest.IsolatedAsyncioTestCase):
             ctx.values = [district]
             ctx.author.id = 111
             ctx.channel.id = 222
-            ctx.send = AsyncMock()
+            ctx.send, ctx.defer = AsyncMock(), AsyncMock()
             contexts.append(ctx)
         cog = MatchCommands(MagicMock())
 

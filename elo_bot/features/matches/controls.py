@@ -5,6 +5,7 @@ import interactions as ipy
 from pydantic import JsonValue
 from beanie import PydanticObjectId
 
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.features.matches.messages import MatchMessageState
 from elo_bot.db import Match
@@ -13,12 +14,13 @@ from elo_bot.features.finals.matches import require_ongoing_match
 
 
 async def reject_outdated_match_control(ctx: ipy.ComponentContext | ipy.ModalContext) -> None:
+    # Answer first: retiring the public message waits on the channel edit queue.
+    await ctx.send(f"{ERROR_EMOJI} The match setup changed. Use the latest match message.", ephemeral=True)
     if ctx.message is not None:
         embeds = deepcopy(ctx.message.embeds) or [ipy.Embed()]
         embeds[0].title = "**Outdated Match Message**"
         embeds[0].description = "This message belongs to an earlier match setup. Use the latest match message."
-        await ctx.message.edit(embeds=embeds, components=[])
-    await ctx.send(f"{ERROR_EMOJI} The match setup changed. Use the latest match message.", ephemeral=True)
+        await edit_channel_message(ctx.message, embeds=embeds, components=[])
 
 
 async def check_match_control(

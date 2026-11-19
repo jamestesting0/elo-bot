@@ -7,6 +7,9 @@ import interactions as ipy
 
 from elo_bot.discord import message_edits
 from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.base_store.publication import mark_store_status
+from elo_bot.features.matches.messages import mark_match_message_ended
 
 
 class TestChannelMessageEdits(unittest.IsolatedAsyncioTestCase):
@@ -103,6 +106,50 @@ class TestChannelMessageEdits(unittest.IsolatedAsyncioTestCase):
                     await asyncio.gather(first, second)
         self.assertEqual(max_active, 1)
         self.assertEqual(message.edit.await_count, 2)
+
+    async def test_storage_and_match_messages_in_one_thread_share_the_bucket(self) -> None:
+        stored = [self._message(123, index) for index in range(3)]
+        matches = [self._message(123, 10 + index) for index in range(3)]
+        for message in stored:
+            message.embeds = [ipy.Embed(title="**Bases Stored**")]
+            message.flags = ipy.MessageFlags(0)
+        for message in matches:
+            message.embeds = [ipy.Embed(title="**Match Started**")]
+
+        async with asyncio.timeout(5):
+            await asyncio.gather(*(mark_store_status(message, "**Base Storage Released**") for message in stored),
+                                 *(mark_match_message_ended(message) for message in matches))
+
+        self.assertEqual(len(self.slept), 1)
+        self.assertEqual(sum(message.edit.await_count for message in stored + matches), 6)
+
+    async def test_component_rejection_acknowledges_without_waiting_for_a_busy_channel(self) -> None:
+        busy = self._message(900, 1)
+        started, release = asyncio.Event(), asyncio.Event()
+
+        async def blocked_edit(**_kwargs) -> None:
+            started.set()
+            await release.wait()
+
+        busy.edit.side_effect = blocked_edit
+        ctx = MagicMock(spec=ipy.ComponentContext)
+        ctx.channel.id = 1
+        ctx.custom_id = "submit_bases|TOKEN"
+        ctx.message = self._message(900, 2)
+        ctx.message.components = []
+        cog = MatchCommands(MagicMock(ext={}))
+        async with asyncio.timeout(5):
+            queued = asyncio.create_task(edit_channel_message(busy, content="queued"))
+            await started.wait()
+            with patch("elo_bot.extensions.match.bases.Match", new=MagicMock(find_one=AsyncMock(return_value=None))):
+                await cog.submit_bases_button.callback.func(cog, ctx)
+            self.assertFalse(queued.done())
+            release.set()
+            await queued
+
+        ctx.edit_origin.assert_awaited_once_with(components=[])
+        ctx.message.edit.assert_not_awaited()
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
 
 if __name__ == "__main__":

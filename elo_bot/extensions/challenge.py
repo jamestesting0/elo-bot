@@ -3,6 +3,7 @@ import secrets
 from interactions import utils
 
 import interactions as ipy
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, ORDINAL_REPRESENTATIONS
 from elo_bot.config.ids import COMMAND_CHANNEL, ELO_BLACKLIST_ROLE, GUILD_IDS, INFO_CHANNEL, LVL3_ROLES
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
@@ -526,7 +527,7 @@ class ChallengeCommands(ipy.Extension):
             emoji="📥",
             custom_id=f"submit_bases|{token}",
         )
-        await ctx.message.edit(components=submit_bases_button)
+        await edit_channel_message(ctx.message, components=submit_bases_button)
 
         # confirm the match and get thread ID
         thread_id = await confirm_match(self.bot, token)
@@ -552,7 +553,7 @@ class ChallengeCommands(ipy.Extension):
 
         match = await Match.find_one(Match.token == token)
         if match is None:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} It seems that this match is invalidated.", ephemeral=True)
             return
 
@@ -618,7 +619,7 @@ class ChallengeCommands(ipy.Extension):
             for actionrow in ctx.message.components:
                 for component in actionrow.components:
                     component.disabled = True
-            await ctx.message.edit(components=ctx.message.components)
+            await edit_channel_message(ctx.message, components=ctx.message.components)
             await ctx.edit_origin(components=ipy.utils.misc_utils.disable_components(button_actionrow))
 
             await res.send(f"{SUCCESS_EMOJI} The action is recorded.", ephemeral=True)
@@ -635,12 +636,12 @@ class ChallengeCommands(ipy.Extension):
 
         match = await Match.find_one(Match.token == token)
         if match is None:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} It seems that this match is invalidated.", ephemeral=True)
             return
 
         if all(p.confirmed for p in match.participants):
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(
                 f"{ERROR_EMOJI} The challenge is already accepted, is too late to cancel now.",
                 ephemeral=True
@@ -703,7 +704,7 @@ class ChallengeCommands(ipy.Extension):
             for actionrow in ctx.message.components:
                 for component in actionrow.components:
                     component.disabled = True
-            await ctx.message.edit(components=ctx.message.components)
+            await edit_channel_message(ctx.message, components=ctx.message.components)
             await ctx.edit_origin(components=ipy.utils.misc_utils.disable_components(button_actionrow))
 
             await res.send(f"{SUCCESS_EMOJI} The action is recorded.", ephemeral=True)

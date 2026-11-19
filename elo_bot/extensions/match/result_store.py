@@ -23,8 +23,13 @@ from elo_bot.config.presentation import (
     ORDINAL_REPRESENTATIONS,
 )
 from elo_bot.core.finals import is_final_match, FinalError
-from elo_bot.core.match_results import ResultDetectionType, is_valid_match_result_entry
+from elo_bot.core.match_results import (
+    MATCH_RESULT_ENTRY_COUNT,
+    ResultDetectionType,
+    is_valid_match_result_entry,
+)
 from elo_bot.db import Match
+from elo_bot.discord.decorators import acknowledge_privately
 from elo_bot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 from elo_bot.extensions.match.groups import result_group
 from elo_bot.features.hosting.self_hosted.invitations import invite_eligible_players
@@ -54,7 +59,7 @@ class MatchResultStoreCommands:
 
         match = await Match.find_one(Match.token == token)
         if match is None:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await ctx.edit_origin(components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, the match has probably ended.")
             return
 
@@ -86,8 +91,6 @@ class MatchResultStoreCommands:
         participant = match.participants[index]
         player = await self.bot.fetch_user(participant.user_id)
 
-        # prepare labels and default values
-        districts = match.final_districts
         results = participant.result
 
         if is_final_match(match):
@@ -99,43 +102,21 @@ class MatchResultStoreCommands:
                 custom_id=f"store_modal|{token}|{index}"))
             return
 
-        # short text expects strings; use empty string for none
-        val1 = results[0] or ""
-        val2 = results[1] or ""
-        val3 = results[2] or ""
-
-        label1 = districts[0] or "District 1"
-        label2 = districts[1] or "District 2"
-        label3 = districts[2] or "District 3"
-
         title = f"{player} Result Submission" if player else "Result Submission"
         if len(title) > 45:
             prefix = str(player)[:45 - len(" Result Submission")].rstrip()
             title = f"{prefix} Result Submission" if prefix else "Result Submission"
 
         modal = ipy.Modal(
-            ipy.ShortText(
-                label=label1,
-                placeholder="Format: [stars].[destruction]",
-                value=val1,
+            ipy.ParagraphText(
+                label="Result",
+                placeholder="Format: [stars].[destruction]\n"
+                            "E.g, 2 stars 83% -> 2.83\n"
+                            "Separate results with line breaks",
+                # Blank lines keep unplayed districts empty, so partial results survive a reopen.
+                value="\n".join(result or "" for result in results) if any(results) else None,
                 max_length=100,
-                custom_id="result1",
-                required=False,
-            ),
-            ipy.ShortText(
-                label=label2,
-                placeholder="Format: [stars].[destruction]",
-                value=val2,
-                max_length=100,
-                custom_id="result2",
-                required=False,
-            ),
-            ipy.ShortText(
-                label=label3,
-                placeholder="Format: [stars].[destruction]",
-                value=val3,
-                max_length=100,
-                custom_id="result3",
+                custom_id="results",
                 required=False,
             ),
             title=title,
@@ -145,10 +126,9 @@ class MatchResultStoreCommands:
         await ctx.send_modal(modal)
 
     @ipy.modal_callback(re.compile(r"^store_modal\|\w+\|\w+$"))
+    @acknowledge_privately
     @coordinated_match_message
     async def result_store_modal(self, ctx: ipy.ModalContext, **response):
-        await ctx.defer(ephemeral=True)
-
         _, token, index = ctx.custom_id.split("|")
         index = int(index)
         opponent_index = 0 if index else 1
@@ -177,6 +157,13 @@ class MatchResultStoreCommands:
                 await ctx.send(f"{ERROR_EMOJI} Enter seven valid stars.destruction lines.", ephemeral=True)
                 return
             response = {f"result{position + 1}": score for position, score in enumerate(scores)}
+        else:
+            entries = response["results"].splitlines()
+            if len(entries) > MATCH_RESULT_ENTRY_COUNT:
+                await ctx.send(f"{ERROR_EMOJI} Enter at most three results, one per line.", ephemeral=True)
+                return
+            entries += [""] * (MATCH_RESULT_ENTRY_COUNT - len(entries))
+            response = {f"result{position + 1}": entry for position, entry in enumerate(entries)}
 
         # resolve players from the participant list
         if (str(ctx.author.id) in {participant.user_id for participant in match.participants}

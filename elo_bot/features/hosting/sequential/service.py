@@ -17,6 +17,7 @@ import elo_bot.features.hosting.live.eligibility as live_eligibility
 import elo_bot.features.hosting.live.live_reservations as live_reservations
 import elo_bot.features.hosting.live.live_start as live_start
 import elo_bot.features.hosting.war.war_start as war_start
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL2_ROLES
 from elo_bot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
@@ -385,7 +386,7 @@ async def refresh_progress(bot: ipy.Client, run: HelperSequentialRun) -> None:
         return
     match = await Match.get(run.match_id)
     try:
-        await message.edit(embed=ui.progress_embed(run, match), components=progress_components(run, match))
+        await edit_channel_message(message, embed=ui.progress_embed(run, match), components=progress_components(run, match))
     except ipy.errors.HTTPException:
         logging.exception("Unable to publish Helper sequential progress for run %s", run.id)
 

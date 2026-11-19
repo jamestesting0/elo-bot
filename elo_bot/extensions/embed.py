@@ -8,6 +8,7 @@ from pymongo.errors import PyMongoError
 
 import interactions as ipy
 from datetime import UTC, datetime
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, REWARDS_IMAGE, FOOTER_TEXT
 from elo_bot.config.ids import CHAT_CHANNEL, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE
@@ -42,7 +43,7 @@ class EmbedCommands(ipy.Extension):
                 state_field: {"channel": int(ctx.channel.id), "message": int(message.id)},
             })
             registered = True
-            await message.edit(embed=embed_edit_payload(embed), components=components or [])
+            await edit_channel_message(message, embed=embed_edit_payload(embed), components=components or [])
         except (PyMongoError, ipy.errors.HTTPException, RuntimeError):
             logging.exception("Dashboard publication failed in channel %s", ctx.channel.id)
             status_note = "Its controls are unavailable."
@@ -52,7 +53,7 @@ class EmbedCommands(ipy.Extension):
                 unavailable.description = "This dashboard could not be activated. Please create it again."
                 unavailable.fields = []
                 try:
-                    await message.edit(embed=unavailable, components=[])
+                    await edit_channel_message(message, embed=unavailable, components=[])
                 except ipy.errors.HTTPException:
                     logging.exception("Dashboard failure status could not be published for message %s", message.id)
                     status_note = "The announcement could not be updated to show this failure."

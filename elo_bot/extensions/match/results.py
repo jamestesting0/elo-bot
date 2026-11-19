@@ -120,7 +120,7 @@ class MatchResultCommands:
                         if component.custom_id.startswith("submit_button"):
                             component.disabled = True
                             break
-                await ctx.message.edit(components=ctx.message.components)
+                await edit_channel_message(ctx.message, components=ctx.message.components)
             except ipy.errors.HTTPException:
                 pass
             return

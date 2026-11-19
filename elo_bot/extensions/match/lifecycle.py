@@ -9,6 +9,8 @@ from interactions import utils
 from pymongo.errors import PyMongoError
 
 import elo_bot.features.hosting.war.result_store as result_store
+from elo_bot.discord.decorators import acknowledge_privately
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import (
     CROSS_EMOJI,
     ERROR_EMOJI,
@@ -66,6 +68,7 @@ from elo_bot.features.results.operations import (
 
 class MatchLifecycleCommands:
     @ipy.component_callback(re.compile(r"^district_select\|\w+\|\d+$"))
+    @acknowledge_privately
     async def district_select(self, ctx: ipy.ComponentContext):
         _, token, index = ctx.custom_id.split("|")
         match = await Match.find_one(Match.token == token)
@@ -84,7 +87,7 @@ class MatchLifecycleCommands:
             return
 
         if not match:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} It seems that this match is **cancelled**.", ephemeral=True)
 
             return
@@ -96,7 +99,7 @@ class MatchLifecycleCommands:
                            ephemeral=True)
             return
         if match.thread:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} The match is already in process, is too late to select districts now.",
                            ephemeral=True)
 
@@ -139,13 +142,12 @@ class MatchLifecycleCommands:
         ))
 
     @ipy.modal_callback(re.compile(r"^confirm_occupied_match_modal\|\w+$"))
+    @acknowledge_privately
     async def confirm_occupied_match_modal(self, ctx: ipy.ModalContext, **response):
         async with QUEUE_OPERATION_LOCK:
             await self._confirm_occupied_match_modal(ctx, response)
 
     async def _confirm_occupied_match_modal(self, ctx: ipy.ModalContext, response) -> None:
-        await ctx.defer(ephemeral=True)
-
         _, token = ctx.custom_id.split("|")
         match = await Match.find_one(Match.token == token)
         if not match:
@@ -173,13 +175,12 @@ class MatchLifecycleCommands:
         await self._confirm_match_participant(ctx, match, participant, opponent, token)
 
     @ipy.component_callback(re.compile(r"^match_confirm\|\w+$"))
+    @acknowledge_privately
     async def match_confirm_button(self, ctx: ipy.ComponentContext):
         async with QUEUE_OPERATION_LOCK:
             await self._match_confirm_button(ctx)
 
     async def _match_confirm_button(self, ctx: ipy.ComponentContext) -> None:
-        await ctx.defer(ephemeral=True)
-
         if ctx.channel and int(ctx.channel.id) == COMMAND_CHANNEL and not str(ctx.author.id) in ctx.message.content:
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
@@ -189,7 +190,7 @@ class MatchLifecycleCommands:
         _, token = ctx.custom_id.split("|")
         match = await Match.find_one(Match.token == token)
         if not match:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} It seems that this match is **cancelled**.", ephemeral=True)
 
             return
@@ -243,7 +244,8 @@ class MatchLifecycleCommands:
             guild = await member_guild(ctx)
             member = await guild.fetch_member(opponent.user_id)
             ctx.message.embeds[0].add_field(name="**Opponent**", value=mention_user(member, opponent.user_id))
-            await ctx.message.edit(
+            await edit_channel_message(
+                ctx.message,
                 content="", components=submit_bases_button, embeds=match_message_embeds(ctx.message.embeds),
             )
 
@@ -365,7 +367,7 @@ class MatchLifecycleCommands:
         _, token = ctx.custom_id.split("|", 1)
         match = await Match.find_one(Match.token == token)
         if not match:
-            await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
+            await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} It seems that this match has been cancelled.", ephemeral=True)
 
             return
@@ -382,7 +384,7 @@ class MatchLifecycleCommands:
         guild = await member_guild(ctx)
         member = await guild.fetch_member(opponent.user_id)
         ctx.message.embeds[0].add_field(name="**Opponent**", value=mention_user(member, opponent.user_id))
-        await ctx.message.edit(components=submit_bases_button, embeds=match_message_embeds(ctx.message.embeds))
+        await edit_channel_message(ctx.message, components=submit_bases_button, embeds=match_message_embeds(ctx.message.embeds))
 
         await ctx.send(f"{SUCCESS_EMOJI} Your opponent is now revealed, and you cannot cancel the match anymore.",
                        ephemeral=True)

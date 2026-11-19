@@ -110,7 +110,8 @@ class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsynci
         session.expires_at = time.monotonic() - 1
         await self.cog.similar_page.callback.func(self.cog, ctx)
         self.assertIn("expired", ctx.send.await_args.args[0])
-        ctx.message.edit.assert_awaited_with(components=[])
+        ctx.edit_origin.assert_awaited_with(components=[])
+        ctx.message.edit.assert_not_awaited()
         await self.cog.similar_page.callback.func(self.cog, ctx)
         self.assertIn("expired", ctx.send.await_args.args[0])
 

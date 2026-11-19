@@ -1,3 +1,4 @@
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.core.finals import is_final_match
 from copy import deepcopy
 import logging
@@ -33,18 +34,18 @@ async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, act
     pending = any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)
     if message.embeds[0].title == "**Match has Ended**":
         if pending:
-            await message.edit(embeds=match_message_embeds(message.embeds))
+            await edit_channel_message(message, embeds=match_message_embeds(message.embeds))
     elif ended or message.embeds[0].title == "**Match Ended**":
         await mark_match_message_ended(message)
     elif bound and active and message.embeds[0].title in (
             "**Match Started**", "**Match Scheduled**", "**Match Rescheduled**",
     ):
         if pending:
-            await message.edit(embeds=match_message_embeds(message.embeds))
+            await edit_channel_message(message, embeds=match_message_embeds(message.embeds))
     elif pending or not bound or not active:
         if message.embeds[0].title == "**Match Aborted**":
             if message.components:
-                await message.edit(components=[])
+                await edit_channel_message(message, components=[])
             return
         description = (
             "This message could not be verified against the current match. "
@@ -60,7 +61,7 @@ async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, act
             "Match message recovery could not restore message %s: bound=%s active=%s title=%r placeholder=%s",
             message.id, bound, active, message.embeds[0].title, pending,
         )
-        await message.edit(embeds=match_message_embeds(embeds), components=[])
+        await edit_channel_message(message, embeds=match_message_embeds(embeds), components=[])
 
 
 async def _attempt_repair_message(message: ipy.Message, *, bound: bool, ended: bool, active: bool,

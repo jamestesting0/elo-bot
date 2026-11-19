@@ -9,6 +9,7 @@ import anyio
 from pymongo.errors import PyMongoError
 
 import interactions as ipy
+from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GOLDPASS_IMAGE
 from elo_bot.config.emojis import ERROR_EMOJI, GIVEAWAY_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES
@@ -29,7 +30,7 @@ async def mark_giveaway_unavailable(message: ipy.Message, *, ending: bool = Fals
         "Entries closed. Drawing the winner…" if ending else
         "Giveaway unavailable. Please contact a helper."
     ))
-    await message.edit(embed=embed, components=[])
+    await edit_channel_message(message, embed=embed, components=[])
 
 
 class GiveawayCommands(ipy.Extension):
@@ -85,7 +86,7 @@ class GiveawayCommands(ipy.Extension):
                 embed.fields[0].value = details
             else:
                 embed.add_field(name="Giveaway Details", value=details)
-            await message.edit(embed=embed, components=[])
+            await edit_channel_message(message, embed=embed, components=[])
 
             if recovering:
                 return True
@@ -261,7 +262,7 @@ class GiveawayCommands(ipy.Extension):
                 channel_id=int(giveaway_channel.id),
             ))
             saved = True
-            await msg.edit(embed=embed, components=enter_button)
+            await edit_channel_message(msg, embed=embed, components=enter_button)
         except (PyMongoError, ipy.errors.HTTPException):
             logging.exception("Giveaway creation could not be confirmed in channel %s", giveaway_channel.id)
             if msg is not None:
@@ -279,6 +280,8 @@ class GiveawayCommands(ipy.Extension):
 
     @ipy.component_callback("enter_giveaway")
     async def enter_giveaway(self, ctx: ipy.ComponentContext):
+        # Entries wait on this giveaway's lock and its channel edits, so acknowledge the click first.
+        await ctx.defer(ephemeral=True)
         async with self._giveaway_locks.setdefault(str(ctx.message.id), anyio.Lock()):
             await self._enter_giveaway(ctx)
 
@@ -332,7 +335,7 @@ class GiveawayCommands(ipy.Extension):
         giveaway_entries = len(giveaway.entries)
         ctx.message.embeds[0].fields[0].value = re.sub(r"Entries: \w+", f"Entries: {giveaway_entries}",
                                                        ctx.message.embeds[0].fields[0].value)
-        await ctx.message.edit(embed=ctx.message.embeds[0])
+        await edit_channel_message(ctx.message, embed=ctx.message.embeds[0])
 
         await ctx.send(f"{SUCCESS_EMOJI} You have now entered the giveaway!", ephemeral=True)
 

@@ -1,8 +1,10 @@
+import asyncio
 import unittest
 from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import anyio
 import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 from beanie.odm.fields import ExpressionField
@@ -127,6 +129,23 @@ class TestGiveawayStateConsistency(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.row["entries"], ["100"])
         self.assertNotIn("now entered", ctx.send.await_args.args[0])
         self.message.edit.assert_not_awaited()
+
+    async def test_entry_click_is_acknowledged_before_waiting_on_the_giveaway_lock(self) -> None:
+        acknowledged = asyncio.Event()
+        ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(),
+                        defer=AsyncMock(side_effect=lambda **_: acknowledged.set()))
+        ctx.message = self.message
+        ctx.author.id = 200
+        async with asyncio.timeout(5):
+            async with self.cog._giveaway_locks.setdefault(str(self.message.id), anyio.Lock()):
+                entry = asyncio.create_task(self.cog.enter_giveaway.callback.func(self.cog, ctx))
+                await acknowledged.wait()
+                self.assertFalse(entry.done())
+                entry.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await entry
+        ctx.defer.assert_awaited_once_with(ephemeral=True)
+        ctx.send.assert_not_awaited()
 
     async def test_end_persists_winner_before_publishing_success(self) -> None:
         await self.cog.end_giveaway("42")

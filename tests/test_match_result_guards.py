@@ -136,7 +136,8 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
 
     @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_result_store_modal_rejects_out_of_range_entry(self, mock_match):
-        for invalid_entry in ("4.50", "3.101", "-1.50", "3.-1"):
+        for invalid_entry, error in (("4.50", "incorrect"), ("3.101", "incorrect"), ("-1.50", "incorrect"),
+                                     ("3.-1", "incorrect"), ("3.100\n2.90\n1.80\n2.70", "at most")):
             with self.subTest(invalid_entry=invalid_entry):
                 # Given: an incremental result modal with one out-of-range entry.
                 ctx = MagicMock(spec=ipy.ModalContext)
@@ -165,14 +166,12 @@ class TestMatchResultGuards(unittest.IsolatedAsyncioTestCase):
                 await self.cog.result_store_modal.callback.func(
                     self.cog,
                     ctx,
-                    result1=invalid_entry,
-                    result2="",
-                    result3="",
+                    results=invalid_entry,
                 )
 
                 # Then: no participant result is persisted.
                 write.assert_not_awaited()
-                self.assertIn("incorrect", ctx.send.await_args.args[0].lower())
+                self.assertIn(error, ctx.send.await_args.args[0].lower())
 
     def test_match_result_store_options_enforce_numeric_bounds(self):
         # Given: the single-district slash command options.

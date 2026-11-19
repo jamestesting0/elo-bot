@@ -36,6 +36,7 @@ class MatchCommands(QueueCommands, MatchLifecycleCommands, MatchBaseCommands, Ma
         self.helper_api_key = HELPER_API_KEY
         self._pending_match_thread_renames: dict[str, asyncio.Task[None]] = {}
         self._hosting_queue_embed_update_lock = asyncio.Lock()
+        self._clan_availability_embed_update_lock = asyncio.Lock()
         self._match_publication_repair_lock = anyio.Lock()
 
     @property

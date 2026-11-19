@@ -132,17 +132,16 @@ class TestFinalRedesignCommands(FinalScenarioCase):
         bot, _ = self.bot()
         cog = FinalCommands(bot)
         ctx = self.context(final)
-        for callback, expected in (("final_result_autocomplete", ["QF1", "QF2", "QF3", "QF4"]),
-                ("final_forfeit_autocomplete", ["QF2", "QF3", "QF4"]),
-                ("final_close_autocomplete", ["QF2"]), ("final_void_autocomplete", ["QF2", "QF3"])):
+        for callback, expected in (("final_close_autocomplete", ["QF2"]),
+                                   ("final_void_autocomplete", ["QF2", "QF3"])):
             with self.subTest(callback=callback):
                 await getattr(cog, callback)(ctx)
                 choices = ctx.send.await_args.kwargs["choices"]
                 self.assertEqual([choice.value for choice in choices], expected)
                 self.assertTrue(all("vs." in str(choice.name) and len(str(choice.name)) <= 100 for choice in choices))
-        ctx.input_text = "Player 4"
-        await cog.final_result_autocomplete(ctx)
-        self.assertEqual([choice.value for choice in ctx.send.await_args.kwargs["choices"]], ["QF4"])
+        ctx.input_text = "Player 3"
+        await cog.final_void_autocomplete(ctx)
+        self.assertEqual([choice.value for choice in ctx.send.await_args.kwargs["choices"]], ["QF3"])
 
     async def test_round_resume_skips_results_already_saved_in_the_same_round(self):
         final = await confirm_bracket(await self.roster(8), "9")

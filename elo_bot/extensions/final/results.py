@@ -7,14 +7,16 @@ from pymongo.errors import PyMongoError
 
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
-from elo_bot.core.finals import FINAL_DISTRICTS, FinalError
+from elo_bot.core.finals import FINAL_DISTRICTS, FinalError, is_final_match
 from elo_bot.core.match_results import is_valid_match_result_entry
+from elo_bot.db import Match
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final, match_group
 from elo_bot.features.finals import lifecycle
+from elo_bot.features.finals.matches import require_current_match
 from elo_bot.features.finals.result_drafts import (
     ResultDraftExpired,
     create_result_draft,
@@ -47,28 +49,36 @@ class Results:
                                          winner=winner, outcome=outcome, reason=reason))
 
     @match_group.subcommand(sub_cmd_name="result", sub_cmd_description="Submit or correct all seven district scores")
-    @slash_option(name="match", description="Match, e.g. QF1", opt_type=OptionType.STRING, required=True,
-                  autocomplete=True)
     @slash_option(name="winner", description="Forfeit winner", opt_type=OptionType.USER)
     @slash_option(name="reason", description="Correction or forfeit reason", opt_type=OptionType.STRING)
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     @final_action
-    async def final_match_result(self, ctx: SlashContext, match: str, winner: ipy.User = None,
-                                 reason: str = None):
-        edition = await self._ongoing_edition(ctx, access="manager")
-        await self.open_result_form(ctx, edition, match, winner=str(winner.id) if winner else None,
+    async def final_match_result(self, ctx: SlashContext, winner: ipy.User = None, reason: str = None):
+        source = await Match.find_one(Match.thread == str(ctx.channel.id))
+        if source is None or not is_final_match(source):
+            raise FinalError("Use this command in an Elo Final match thread.")
+        edition = await self._ongoing_edition(ctx, source.final_id, access="manager")
+        node = require_current_match(edition, source)
+        await self.open_result_form(ctx, edition, node.id, winner=str(winner.id) if winner else None,
                                     reason=reason)
 
-    @match_group.subcommand(sub_cmd_name="forfeit", sub_cmd_description="Record an unplayed forfeit with zero scores")
-    @slash_option(name="match", description="Match, e.g. QF1", opt_type=OptionType.STRING, required=True,
-                  autocomplete=True)
-    @slash_option(name="winner", description="Advancing entrant", opt_type=OptionType.USER, required=True)
-    @slash_option(name="reason", description="Forfeit reason", opt_type=OptionType.STRING, required=True)
+    @match_group.subcommand(sub_cmd_name="forfeit", sub_cmd_description="Forfeit a player's unfinished Final match")
+    @slash_option(name="player", description="Player who is forfeiting", opt_type=OptionType.USER, required=True)
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     @final_action
-    async def final_match_forfeit(self, ctx: SlashContext, match: str, winner: ipy.User, reason: str):
+    async def final_match_forfeit(self, ctx: SlashContext, player: ipy.User):
         edition = await self._ongoing_edition(ctx, access="manager")
-        await self.open_result_form(ctx, edition, match, winner=str(winner.id), outcome="Forfeit", reason=reason)
+        player_id = str(player.id)
+        unfinished = [node for node in edition.nodes.values()
+                      if player_id in node.contestants and all(node.contestants)
+                      and not node.bye and node.winner is None and node.result_id is None]
+        if not unfinished:
+            raise FinalError("That player has no unfinished Final match.")
+        if len(unfinished) > 1:
+            raise FinalError("That player has multiple unfinished Final matches. Check `/final bracket view`.")
+        node = unfinished[0]
+        opponent = next(user for user in node.contestants if user and user != player_id)
+        await self.open_result_form(ctx, edition, node.id, winner=opponent, outcome="Forfeit")
 
     @ipy.modal_callback(re.compile(r"^finalres\|.+$"))
     @final_action
@@ -84,11 +94,13 @@ class Results:
             require_result_role(ctx, needs_manager)
             if owner != str(ctx.author.id):
                 raise FinalError("You cannot interact with another user's components.")
+            scores = {user: ["0.00"] * len(FINAL_DISTRICTS) if forfeit == "1"
+                      else response[f"player{side + 1}"].splitlines()
+                      for side, user in enumerate(node.contestants)}
             request = FinalResultSubmission(
                 final_id=edition.id, node_id=node_id, actor_id=owner, operation_key=f"final-modal:{ctx.id}",
                 expected_version=int(version), contestant_revision=int(revision), attempt=int(attempt),
-                scores={user: response[f"player{side + 1}"].splitlines()
-                        for side, user in enumerate(node.contestants)},
+                scores=scores,
                 winner=None if winner == "-" else winner, outcome="Forfeit" if forfeit == "1" else "Played",
                 reason=response.get("reason"),
             )

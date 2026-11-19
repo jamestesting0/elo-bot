@@ -45,7 +45,8 @@ class TestFinalGateJourney(FinalUICase):
             source = await schedule_final_match(source, int(time.time()) + 3600, player=0)
             await schedule_final_match(source, int(time.time()) + 7200, player=1)
         opened = self.context()
-        await self.cog.final_match_result.callback.func(self.cog, opened, match=node_id)
+        opened.channel.id = int(source.thread)
+        await self.cog.final_match_result.callback.func(self.cog, opened)
         modal = self.context()
         modal.custom_id = opened.send_modal.await_args.args[0].custom_id
         await self.cog.final_result_modal.callback.func(self.cog, modal, player1="\n".join(["3.100"] * 7),
@@ -124,8 +125,15 @@ class TestFinalGateJourney(FinalUICase):
             await accept_final_start(source, "9")
             self.assertEqual((await FinalBettingMarket.get(market.id)).state, "CLOSED")
             print("GATE_JOURNEY accepted hosting: predictions closed, QF1 market closed")
+            wrong_channel = self.context()
+            wrong_channel.channel.id = 999
+            await self.cog.final_match_result.callback.func(self.cog, wrong_channel)
+            wrong_channel.send_modal.assert_not_awaited()
+            self.assertTrue(wrong_channel.send.await_args.kwargs["ephemeral"])
+
             tie = self.context()
-            await self.cog.final_match_result.callback.func(self.cog, tie, match="QF1")
+            tie.channel.id = int(source.thread)
+            await self.cog.final_match_result.callback.func(self.cog, tie)
             tied = self.context()
             tied.custom_id = tie.send_modal.await_args.args[0].custom_id
             await self.cog.final_result_modal.callback.func(self.cog, tied, player1="\n".join(["3.100"] * 7),

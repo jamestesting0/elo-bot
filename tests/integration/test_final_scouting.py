@@ -32,6 +32,15 @@ class TestFinalScouting(FinalUICase):
         ctx.channel.id = 777
         return ctx
 
+    async def select(self, panel, row: int, option: int, *, user: int, manager: bool = False):
+        menu = panel.kwargs["components"][row].components[0]
+        ctx = self.context(user, manager=manager, component=True)
+        ctx.channel.id = 777
+        ctx.custom_id = menu.custom_id
+        ctx.values = [menu.options[option].value]
+        await self.cog.final_scout_select.callback.func(self.cog, ctx)
+        return ctx
+
     def link(self, district: str) -> str:
         code = next(code for code, name in DISTRICT_CODES_REVERSED.items() if name == district)
         return f"https://link.clashofclans.com/en?action=OpenLayout&id=TH15%3ACC%{code}%3AAAAAA"
@@ -66,9 +75,13 @@ class TestFinalScouting(FinalUICase):
             await self.submit(self.player(0), self.source.final_districts[0])
         self.assertIsNone((await Match.get(self.source.id)).participants[0].bases[0])
 
-    async def test_scouting_opens_thirty_minutes_before_for_players_and_managers(self):
-        await self.source.set({"participants.1.bases.0": BaseLink(
-            link="opponent", image="https://cdn.example/opponent.webp", scout_view=True).model_dump()})
+    async def test_player_scouts_one_opponent_district_at_a_time_after_opening(self):
+        await self.source.set({
+            "participants.1.bases.0": BaseLink(
+                link="opponent", image="https://cdn.example/opponent.webp", scout_view=True).model_dump(),
+            "participants.1.bases.6": BaseLink(
+                link="unscouted", image="https://cdn.example/unscouted.webp").model_dump(),
+        })
         await self.schedule(60)
         early = self.player(0)
         await self.cog.match_base_scout.callback.func(self.cog, early)
@@ -77,22 +90,75 @@ class TestFinalScouting(FinalUICase):
         await self.schedule(20)
         player = self.player(0)
         await self.cog.match_base_scout.callback.func(self.cog, player)
-        embeds = player.send.await_args.kwargs["embeds"]
-        self.assertEqual(player.send.await_count, 1)
-        self.assertEqual(len(embeds), 7)
-        self.assertEqual(embeds[0].image.url, "https://cdn.example/opponent.webp")
-        self.assertIsNone(embeds[1].image)
+        panel = player.send.await_args
+        self.assertTrue(panel.kwargs["ephemeral"])
+        self.assertEqual(panel.kwargs["embed"].image.url, "https://cdn.example/opponent.webp")
+        district_menu, = panel.kwargs["components"]
+        self.assertEqual([option.label for option in district_menu.components[0].options],
+                         self.source.final_districts)
 
-        manager = self.context(manager=True)
-        manager.channel.id = 777
-        self.bot.fetch_user = AsyncMock(side_effect=lambda user: MagicMock(id=int(user), mention=f"<@{user}>"))
-        await self.cog.match_base_scout.callback.func(self.cog, manager)
-        self.assertEqual(manager.send.await_count, 2)
+        missing = await self.select(panel, 0, 6, user=int(self.players[0]))
+        missing_panel = missing.edit_origin.await_args
+        self.assertIn("Goblin Mines", missing_panel.kwargs["embed"].title)
+        self.assertIsNone(missing_panel.kwargs["embed"].image)
+        self.assertIn("being prepared", missing_panel.kwargs["embed"].description)
+        missing.send.assert_not_awaited()
+
+        await self.source.set({"participants.1.bases.6": BaseLink(
+            link="new", image="https://cdn.example/new.webp", scout_view=True).model_dump()})
+        updated = await self.select(missing_panel, 0, 6, user=int(self.players[0]))
+        self.assertEqual(updated.edit_origin.await_args.kwargs["embed"].image.url, "https://cdn.example/new.webp")
 
         outsider = self.context(5, manager=False)
         outsider.channel.id = 777
         await self.cog.match_base_scout.callback.func(self.cog, outsider)
         self.assertTrue(outsider.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
+        other_player = await self.select(panel, 0, 0, user=int(self.players[1]))
+        self.assertTrue(other_player.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
+        other_player.edit_origin.assert_not_awaited()
+
+    async def test_manager_switches_attackers_on_the_same_district_with_independent_opening_times(self):
+        first = BaseLink(link="first", image="https://cdn.example/first.webp", scout_view=True)
+        second = BaseLink(link="second", image="https://cdn.example/second.webp", scout_view=True)
+        now = int(time.time())
+        await self.source.set({"scheduled_times": [now + 10 * 60, now + 50 * 60],
+                               "participants.0.bases.2": first.model_dump(),
+                               "participants.1.bases.2": second.model_dump()})
+        manager = self.context(manager=True)
+        manager.channel.id = 777
+        await self.cog.match_base_scout.callback.func(self.cog, manager)
+        panel = manager.send.await_args
+        self.assertEqual(manager.send.await_count, 1)
+        views = panel.kwargs["components"][1].components[0].options
+        self.assertEqual([option.label for option in views], ["Player 1's view", "Player 2's view"])
+
+        district = await self.select(panel, 0, 2, user=manager.author.id, manager=True)
+        district_panel = district.edit_origin.await_args
+        self.assertEqual(district_panel.kwargs["embed"].image.url, second.image)
+        locked = await self.select(district_panel, 1, 1, user=manager.author.id, manager=True)
+        locked_panel = locked.edit_origin.await_args
+        self.assertIsNone(locked_panel.kwargs["embed"].image)
+        self.assertIn(f"<t:{now + 20 * 60}:R>", locked_panel.kwargs["embed"].description)
+
+        await self.schedule(20)
+        view_menu = locked_panel.kwargs["components"][1].components[0]
+        unlocked, client = self.library_context(view_menu.custom_id)
+        unlocked.author.has_role.side_effect = manager.author.has_role.side_effect
+        unlocked.values = [view_menu.options[1].value]
+        client.cache.get_channel.return_value.id = 777
+        await self.cog.final_scout_select.callback.func(self.cog, unlocked)
+        update = client.http.edit_interaction_message.await_args.args[0]
+        self.assertEqual([embed["image"]["url"] for embed in update["embeds"]], [first.image])
+        district, view = [row["components"][0] for row in update["components"]]
+        self.assertEqual([option["label"] for option in district["options"] if option.get("default")],
+                         ["Builder's Workshop"])
+        self.assertEqual([option["label"] for option in view["options"] if option.get("default")],
+                         ["Player 2's view"])
+        client.http.post_followup.assert_not_awaited()
+
+        revoked = await self.select(district_panel, 1, 1, user=manager.author.id)
+        self.assertEqual(revoked.edit_origin.await_args.kwargs["embeds"], [])
+        self.assertEqual(revoked.edit_origin.await_args.kwargs["components"], [])
 
     async def test_open_scouting_fills_missing_bases_and_captures_each_missing_scout_view_once(self):
         scouted = BaseLink(link="scouted", image="https://cdn.example/kept.webp", scout_view=True)

@@ -12,8 +12,7 @@ class TestFinalGateModal(FinalUICase):
     async def test_open_result_modal_rejects_reset_and_changed_pairing_before_creating_a_draft(self):
         self.final = await confirm_bracket(self.final, "9")
         opened = self.context()
-        await self.cog.final_match_forfeit.callback.func(self.cog, opened, match="QF1",
-                                                       winner=MagicMock(id=1), reason="Fixture forfeit")
+        await self.cog.final_match_forfeit.callback.func(self.cog, opened, player=MagicMock(id=8))
         custom_id = opened.send_modal.await_args.args[0].custom_id
         original = await final_for_view()
         for field in ("result_version", "contestant_revision", "attempt"):
@@ -22,8 +21,7 @@ class TestFinalGateModal(FinalUICase):
                     {"$inc": {f"nodes.QF1.{field}": 1}})
                 stale = self.context()
                 stale.custom_id = custom_id
-                await self.cog.final_result_modal.callback.func(self.cog, stale,
-                    player1="\n".join(["0.00"] * 7), player2="\n".join(["0.00"] * 7), reason="Fixture forfeit")
+                await self.cog.final_result_modal.callback.func(self.cog, stale, reason="Fixture forfeit")
                 self.assertEqual(await FinalResultDraft.count(), 0)
                 self.assertTrue(stale.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
                 self.assertFalse(stale.send.await_args.kwargs.get("components"))
@@ -33,8 +31,7 @@ class TestFinalGateModal(FinalUICase):
         before = (await final_for_view()).model_dump()
         stale = self.context()
         stale.custom_id = custom_id
-        await self.cog.final_result_modal.callback.func(self.cog, stale, player1="\n".join(["0.00"] * 7),
-                                                       player2="\n".join(["0.00"] * 7), reason="Fixture forfeit")
+        await self.cog.final_result_modal.callback.func(self.cog, stale, reason="Fixture forfeit")
         self.assertEqual(await FinalResultDraft.count(), 0)
         self.assertEqual(await FinalMatchResult.count(), 0)
         self.assertEqual((await final_for_view()).model_dump(), before)

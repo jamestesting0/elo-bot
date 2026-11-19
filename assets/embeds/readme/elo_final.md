@@ -9,7 +9,12 @@ The top 8 players receive DM invitations on the selection date. Invitations expi
 *Final matches use 7 districts. If the total score is tied, staff arrange a district replay.*
 
 **Scouting**
-Use `/match base scout` to view bases from 30 minutes before your scheduled match.
+From 30 minutes before your scheduled start, use `/match base scout` in the match thread. Choose a district to see your opponent's scout image.
+
+**Match Thread**
+Use `/match base submit` to submit a base link and `/match base view` to review your bases. Managers can submit or correct scores with `/final match result` in the thread.
+
+Managers can use `/final match forfeit` to select the forfeiting player, enter a reason and confirm that their opponent advances.
 
 **Predictions**
 Use **Predict** on the pinned bracket post or `/final predict` to pick winners for the whole bracket. Submit and edit your picks until predictions close, before play begins. Once predictions close, `/final predictions view` shows everyone's picks.

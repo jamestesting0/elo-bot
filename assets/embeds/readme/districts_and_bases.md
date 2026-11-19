@@ -6,8 +6,8 @@ Every match has one district from each group:
 
 **Submitting Your Bases**
 You can use your own bases when both players have 1100+ Elo.
-- `/match base submit`: submit a base link and screenshot
-- `/match base view`: view submitted bases
+- `/match base submit`: submit a base link and screenshot in the match thread
+- `/match base view`: view submitted bases in the match thread
 - `/match base remove` or `/match base remove-all`: remove submissions
 - `/preset base add`: automatically submit a base for that district in future matches
 - `/preset base view` or `/preset base remove`: manage presets

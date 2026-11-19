@@ -196,11 +196,13 @@ class TestFinalResultDrafts(FinalUICase):
         market = await open_market(self.final, "QF1")
         await apply_bet(BetAction(market_id=market.id, user_id="9", contestant="1", amount=1000,
                                  expected_version=0, action_key="forfeit-stake"))
-        node = self.final.nodes["QF1"]
+        opened = self.context()
+        await self.cog.final_match_forfeit.callback.func(self.cog, opened, player=MagicMock(id=8))
+        form = opened.send_modal.await_args.args[0]
+        self.assertEqual([field.custom_id for field in form.components], ["reason"])
         ctx = self.context()
-        ctx.custom_id = f"finalres|{self.final.id}|QF1|9|0|{node.contestant_revision}|{node.attempt}|1|1"
-        await self.cog.final_result_modal.callback.func(self.cog, ctx, player1="\n".join(["0.00"] * 7),
-                                                       player2="\n".join(["0.00"] * 7), reason="Fixture forfeit")
+        ctx.custom_id = form.custom_id
+        await self.cog.final_result_modal.callback.func(self.cog, ctx, reason="Fixture forfeit")
         draft = await FinalResultDraft.find_one({"state": "PENDING"})
         confirmation = self.context(component=True)
         confirmation.custom_id = f"finalconfirm|{draft.id}"
@@ -215,6 +217,15 @@ class TestFinalResultDrafts(FinalUICase):
         self.assertEqual(receipt["components"], [])
         saved = await FinalMatchResult.find_all().first_or_none()
         self.assertEqual((saved.snapshot.outcome, saved.snapshot.winner), ("Forfeit", "1"))
+        self.assertEqual(saved.node_id, "QF1")
+        self.assertEqual(saved.snapshot.scores, {"1": ["0.00"] * 7, "8": ["0.00"] * 7})
+
+        for player_id in (8, 9):
+            with self.subTest(player=player_id):
+                invalid = self.context()
+                await self.cog.final_match_forfeit.callback.func(self.cog, invalid, player=MagicMock(id=player_id))
+                invalid.send_modal.assert_not_awaited()
+                self.assertTrue(invalid.send.await_args.kwargs["ephemeral"])
 
     async def test_only_the_result_completing_the_round_announces_readiness(self):
         for index, key in enumerate(("QF1", "QF2", "QF3", "QF4")):

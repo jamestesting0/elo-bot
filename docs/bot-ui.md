@@ -213,8 +213,9 @@ hosting: show it with `LOADING_EMOJI` and its job ID until the job reports back.
 - Current match results show the necessary scores, totals and outcome without Official result or Revision
   wrapper fields. Keep correction and refund reasons in audit storage and the private staff confirmation; a
   player's match page shows the current official result without staff notes or duplicate correction entries.
-- Base entry uses `/match base submit`, which accepts links and attachments. Score entry uses the
-  seven-score modal followed by an ephemeral result preview with Cancel and Confirm; Confirm rechecks role,
+- Players use `/match base submit` and `/match base view` in their match thread. Final submissions take a link.
+  Managers can open the seven-score modal with `/final match result` in the Final match thread. The private
+  preview has Cancel and Confirm. Confirm rechecks role,
   ownership and the current match before saving. A played preview also has an Edit a score select (one option
   per player and district) that opens a one-score modal and redraws the preview; only its owner can edit.
 
@@ -296,10 +297,13 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   avatars, stars and destruction per district and in total, the loser muted. The
   embed keeps the title, `A ▼ vs. B ▲` and any Recovery field; the district lines and Total
   appear only when the image fails. Forfeits have no scoreboard. Corrections edit both posts.
-- Final bases are submitted as links; Helper captures each one's scout view (no uploads). A side's bases lock
-  30 minutes before the opponent's scheduled time, when `/match base scout` opens for that opponent (managers see
-  both sides, each from its own time). Missing bases are then filled with Excellent Helper bases and scouted.
-  Normal matches have no scouting.
+- Helper captures the scout image for each Final base. A side's bases lock 30 minutes before the opponent's
+  scheduled time. From then on the opponent can run `/match base scout` in the Final match thread and use
+  the district dropdown to browse one image at a time in a private message. LVL1 managers can also select
+  either player's attacking view. Each view follows that player's schedule and shows the other player's
+  bases. Missing submissions are filled with Excellent Helper bases and scouted.
+- `/final match forfeit` takes the forfeiting player and finds their unfinished pairing. The manager enters
+  a reason and confirms that the opponent advances. Any bets on the forfeited match are refunded.
 - A Final match thread has only Submit Result. Players submit bases with `/match base submit` in the
   thread; an older Submit Bases button on a Final thread points there instead of opening a form.
 - Final hosting: `/match autostart` and `/match war autostart` run one sequential Helper job for all seven

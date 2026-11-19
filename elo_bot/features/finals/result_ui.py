@@ -32,11 +32,16 @@ def result_form(final: EloFinal, node: EloFinalMatch, owner: str, previous: Fina
                 stored: dict[str, list[str]] | None = None) -> ipy.Modal:
     custom_id = f"finalres|{final.id}|{node.id}|{owner}|{node.result_version}|" \
                 f"{node.contestant_revision}|{node.attempt}|{winner or '-'}|{int(outcome == 'Forfeit')}"
+    title = f"Season {final.season_number} Final · {node.id}"
+    if outcome == "Forfeit":
+        forfeiting = next(user for user in node.contestants if user != winner)
+        return ipy.Modal(
+            ipy.ShortText(label="Reason", custom_id="reason", value=reason, max_length=300, required=True),
+            title=f"{node.id} · Forfeit {final.player_nicknames[forfeiting]}"[:45], custom_id=custom_id,
+        )
     fields = []
     for side, user in enumerate(node.contestants):
-        if outcome == "Forfeit":
-            value = "\n".join(["0.00"] * 7)
-        elif previous:
+        if previous:
             value = "\n".join(previous.snapshot.scores[user])
         elif stored and user in stored:
             value = "\n".join(stored[user])
@@ -45,9 +50,9 @@ def result_form(final: EloFinal, node: EloFinalMatch, owner: str, previous: Fina
         fields.append(ipy.ParagraphText(label=f"{final.player_nicknames[user][:35]}'s scores",
                                        custom_id=f"player{side + 1}", value=value, max_length=100,
                                        placeholder=SCORE_PLACEHOLDER))
-    if previous or winner is not None or outcome == "Forfeit":
+    if previous or winner is not None:
         fields.append(ipy.ShortText(label="Reason", custom_id="reason", value=reason, max_length=300, required=True))
-    return ipy.Modal(*fields, title=f"Season {final.season_number} Final · {node.id}", custom_id=custom_id)
+    return ipy.Modal(*fields, title=title, custom_id=custom_id)
 
 
 def preview_controls(final: EloFinal, draft: FinalResultDraft) -> list[ipy.ActionRow]:

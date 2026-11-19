@@ -13,7 +13,6 @@ from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import (
     ERROR_EMOJI,
     IMPORTANT_EMOJI,
-    LOADING_EMOJI,
     SUCCESS_EMOJI,
 )
 from elo_bot.config.game import (
@@ -38,7 +37,8 @@ from elo_bot.config.presentation import (
 from elo_bot.db import BaseLayout, BaseLink, Match, OverrideCode, Participant
 from elo_bot.discord.mentions import mention_user
 from elo_bot.extensions.match.groups import base_group
-from elo_bot.core.finals import FinalError, is_final_match
+from elo_bot.core.finals import is_final_match
+from elo_bot.features.finals.scout_ui import scout_opening_text, scout_panel
 from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, scout_opens_at, store_scout_image
 from elo_bot.features.matches.attack_bases import assign_bases
 from elo_bot.features.matches.messages import (
@@ -50,8 +50,6 @@ from elo_bot.features.matches.thread_messages import (
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.integrations.files import delete_file
 from elo_bot.integrations.http import download_file
-from elo_bot.features.finals.lifecycle import final_for_view, ongoing_final
-from elo_bot.features.finals.matches import require_ongoing_match
 from elo_bot.features.matches.controls import check_current_match, update_match
 
 
@@ -309,23 +307,6 @@ class MatchBaseCommands:
                         ipy.DateTrigger(date)
                     )
                     task2.start()
-
-    async def _base_command_match(self, ctx, node_id=None, *, write=False):
-        if node_id is None:
-            source = await Match.find_one(Match.thread == str(ctx.channel.id))
-            if source and write and is_final_match(source):
-                await require_ongoing_match(source)
-            return source
-        final = await ongoing_final() if write else await final_for_view()
-        if ctx.guild_id != final.guild_id or ctx.author.has_role(ELO_BLACKLIST_ROLE):
-            raise FinalError("Use this command in the Final's server while eligible.")
-        node = final.nodes.get(node_id.upper())
-        if node is None or node.match_id is None:
-            raise FinalError("Choose a prepared match from `/final bracket view`.")
-        source = await Match.get(node.match_id)
-        if source and write:
-            await require_ongoing_match(source)
-        return source
 
     @base_group.subcommand(sub_cmd_name="remove-all", sub_cmd_description="Remove all bases for a match")
     @ipy.slash_option(
@@ -655,13 +636,8 @@ class MatchBaseCommands:
         opt_type=ipy.OptionType.ATTACHMENT,
         required=False
     )
-    @ipy.slash_option(name="match", description="Final match, e.g. QF1 (optional in its thread)",
-                      opt_type=ipy.OptionType.STRING, autocomplete=True)
-    async def match_base_submit(self, ctx: ipy.SlashContext, base_link: str, base_ss: ipy.Attachment = None,
-                                match: str = None):
+    async def match_base_submit(self, ctx: ipy.SlashContext, base_link: str, base_ss: ipy.Attachment = None):
         await ctx.defer(ephemeral=True)
-
-        target_node = match
 
         # validate link
         if not validators.url(base_link):
@@ -679,16 +655,14 @@ class MatchBaseCommands:
             )
             return
 
-        try:
-            match = await self._base_command_match(ctx, target_node, write=True)
-        except FinalError as error:
-            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
-            return
+        match = await Match.find_one(Match.thread == str(ctx.channel.id))
         if not match:
             await ctx.send(
                 f"{ERROR_EMOJI} Unable to fetch a valid match, please make sure to use this command in a 1v1 thread!",
                 ephemeral=True
             )
+            return
+        if not await check_current_match(ctx, match):
             return
 
         if not match.base_submission:
@@ -823,8 +797,7 @@ class MatchBaseCommands:
 
         # edit the pinned match message to inform helpers (unchanged behavior)
         try:
-            thread = await self.bot.fetch_channel(match.thread) if target_node else ctx.channel
-            match_msg = await find_match_thread_announcement(thread, match, self.bot.user.id)
+            match_msg = await find_match_thread_announcement(ctx.channel, match, self.bot.user.id)
         except ipy.errors.HTTPException:
             await ctx.send(f"{ERROR_EMOJI} Base saved. The match message could not be updated; notify the host.",
                            ephemeral=True)
@@ -863,47 +836,56 @@ class MatchBaseCommands:
         opens = scout_opens_at(match, attacker)
         return opens is not None and time.time() >= opens
 
+    @staticmethod
+    def _scout_attackers(ctx: ipy.InteractionContext, match: Match) -> tuple[int, ...]:
+        player = next((side for side, participant in enumerate(match.participants)
+                       if participant.user_id == str(ctx.author.id)), None)
+        if any(ctx.author.has_role(role) for role in LVL1_ROLES):
+            return (1, 0) if player == 1 else (0, 1)
+        return () if player is None else (player,)
+
     @base_group.subcommand(sub_cmd_name="scout", sub_cmd_description="Scout your opponent's bases before a Final match")
-    @ipy.slash_option(name="match", description="Final match, e.g. QF1 (optional in its thread)",
-                      opt_type=ipy.OptionType.STRING, autocomplete=True)
-    async def match_base_scout(self, ctx: ipy.SlashContext, match: str = None):
+    async def match_base_scout(self, ctx: ipy.SlashContext):
         await ctx.defer(ephemeral=True)
-        try:
-            match = await self._base_command_match(ctx, match)
-        except FinalError as error:
-            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+        match = await Match.find_one(Match.thread == str(ctx.channel.id))
+        if not match or not is_final_match(match) or match.final_superseded:
+            await ctx.send(f"{ERROR_EMOJI} Use this command in an Elo Final match thread.", ephemeral=True)
             return
-        if not match or not is_final_match(match):
-            await ctx.send(f"{ERROR_EMOJI} Scouting is only available for Elo Final matches.", ephemeral=True)
-            return
-        participant_ids = [participant.user_id for participant in match.participants]
-        if str(ctx.author.id) in participant_ids:
-            attackers = [participant_ids.index(str(ctx.author.id))]
-        elif any(ctx.author.has_role(role) for role in LVL1_ROLES):
-            attackers = [0, 1]
-        else:
+        attackers = self._scout_attackers(ctx, match)
+        if not attackers:
             await ctx.send(f"{ERROR_EMOJI} Only the players and managers can scout this match.", ephemeral=True)
             return
-        opening = [opens for attacker in attackers if (opens := scout_opens_at(match, attacker)) is not None]
-        scouting = [attacker for attacker in attackers if self._final_bases_locked(match, attacker)]
-        if not scouting:
-            await ctx.send(f"{ERROR_EMOJI} Scouting opens <t:{min(opening)}:R>." if opening else
-                           f"{ERROR_EMOJI} Scouting opens 30 minutes before the scheduled match.", ephemeral=True)
+        attacker = next((side for side in attackers if self._final_bases_locked(match, side)), None)
+        if attacker is None:
+            opens = min((at for side in attackers if (at := scout_opens_at(match, side)) is not None), default=None)
+            await ctx.send(f"{ERROR_EMOJI} {scout_opening_text(opens)}", ephemeral=True)
             return
-        for attacker in scouting:
-            defender = match.participants[1 - attacker]
-            embeds = []
-            for district, base in zip(match.final_districts, defender.bases, strict=True):
-                embed = ipy.Embed(title=f"**{district}**", color=COLOR,
-                                  footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE))
-                if base and base.scout_view:
-                    embed.set_image(base.image)
-                else:
-                    embed.description = f"{LOADING_EMOJI} The scout view is being prepared."
-                embeds.append(embed)
-            # A manager sees both sides, so each reply names whose bases it shows.
-            owner = mention_user(await self.bot.fetch_user(defender.user_id)) if len(attackers) == 2 else None
-            await ctx.send(owner, embeds=embeds, ephemeral=True)
+        embed, controls = scout_panel(match, str(ctx.author.id), attacker, 0, manager=len(attackers) == 2)
+        await ctx.send(embed=embed, components=controls, ephemeral=True)
+
+    @ipy.component_callback(re.compile(r"^finalscout\|\d+\|[a-f0-9]{24}\|(district|view)$"))
+    async def final_scout_select(self, ctx: ipy.ComponentContext):
+        _, owner, match_id, _ = ctx.custom_id.split("|")
+        if owner != str(ctx.author.id):
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
+            return
+        if len(ctx.values) != 1 or not re.fullmatch(r"[01]\|[0-6]", ctx.values[0]):
+            await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
+            return
+        attacker, district = map(int, ctx.values[0].split("|"))
+        await ctx.defer(edit_origin=True)
+        match = await Match.get(match_id)
+        if not match or match.thread != str(ctx.channel.id) or not is_final_match(match) or match.final_superseded:
+            await ctx.edit_origin(content=f"{ERROR_EMOJI} The paginated message is no longer available.",
+                                  embeds=[], components=[])
+            return
+        attackers = self._scout_attackers(ctx, match)
+        if attacker not in attackers:
+            await ctx.edit_origin(content=f"{ERROR_EMOJI} You do not have permission to interact with this component!",
+                                  embeds=[], components=[])
+            return
+        embed, controls = scout_panel(match, owner, attacker, district, manager=len(attackers) == 2)
+        await ctx.edit_origin(embed=embed, components=controls)
 
     @base_group.subcommand(sub_cmd_name="view", sub_cmd_description="View the bases of the match")
     @ipy.check(ipy.has_any_role(*LVL3_ROLES))
@@ -916,16 +898,10 @@ class MatchBaseCommands:
             ipy.SlashCommandChoice(name="Player 2", value=1)
         ]
     )
-    @ipy.slash_option(name="match", description="Final match, e.g. QF1 (optional in its thread)",
-                      opt_type=ipy.OptionType.STRING, autocomplete=True)
-    async def match_base_view(self, ctx: ipy.SlashContext, player: int = 0, match: str = None):
+    async def match_base_view(self, ctx: ipy.SlashContext, player: int = 0):
         await ctx.defer(ephemeral=True)
 
-        try:
-            match = await self._base_command_match(ctx, match)
-        except FinalError as error:
-            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
-            return
+        match = await Match.find_one(Match.thread == str(ctx.channel.id))
         if not match:
             await ctx.send(
                 f"{ERROR_EMOJI} Unable to fetch a valid match, please make sure to use this command in a 1v1 thread!",
@@ -991,16 +967,3 @@ class MatchBaseCommands:
             embeds.append(embed)
 
         await ctx.send(f"Here are {player_user.mention}'s Bases", embeds=embeds, ephemeral=True)
-
-    @match_base_submit.autocomplete("match")
-    @match_base_view.autocomplete("match")
-    async def final_base_match_autocomplete(self, ctx: ipy.AutocompleteContext):
-        try:
-            final = await final_for_view()
-            choices = [ipy.SlashCommandChoice(name=node.id, value=node.id) for node in final.nodes.values()
-                       if node.match_id and ctx.guild_id == final.guild_id
-                       and not ctx.author.has_role(ELO_BLACKLIST_ROLE)
-                       and ctx.input_text.lower() in node.id.lower()]
-        except FinalError:
-            choices = []
-        await ctx.send(choices=choices)

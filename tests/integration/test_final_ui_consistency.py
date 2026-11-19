@@ -339,8 +339,8 @@ class TestFinalUIConsistency(FinalScenarioCase):
             embeds=[ipy.Embed(fields=[ipy.EmbedField(name=str(n), value="value") for n in range(4)])],
             edit=AsyncMock(), components=[ipy.ActionRow(ipy.Button(label="Submit Result",
                 style=ipy.ButtonStyle.GRAY, custom_id=f"submit_button|{source.token}"))])
-        thread = MagicMock(fetch_message=AsyncMock(return_value=message), fetch_pinned_messages=AsyncMock(return_value=[message]))
-        self.bot.fetch_channel = AsyncMock(return_value=thread)
+        ctx.channel = MagicMock(id=777, fetch_message=AsyncMock(return_value=message),
+                                fetch_pinned_messages=AsyncMock(return_value=[message]))
         await source.set({"thread_message_id": 888})
         return source, ctx, message
 
@@ -375,27 +375,32 @@ class TestFinalUIConsistency(FinalScenarioCase):
         before = [player.model_dump() for player in await Player.find_all().to_list()]
         for index, district in enumerate(source.final_districts):
             link = f"https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%{DISTRICT_CODES[district]}%3ATEST"
-            await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link, match="QF1")
+            await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link)
             saved = await Match.get(source.id)
             self.assertEqual(saved.participants[0].bases[index].link, link)
             self.assertIn("Base submitted", ctx.send.await_args.args[0])
         replacement = saved.participants[0].bases[6].link.replace("TEST", "REPLACED")
-        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, replacement, match="QF1")
+        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, replacement)
         self.assertEqual((await Match.get(source.id)).participants[0].bases[6].link, replacement)
         self.assertEqual((await Match.get(source.id)).final_base_page_revision, 8)
         self.assertTrue(all(base is None for base in (await Match.get(source.id)).participants[1].bases))
         self.assertEqual(before, [player.model_dump() for player in await Player.find_all().to_list()])
         self.assertEqual(message.edit.await_count, 8)
 
+        self.bot.fetch_user = AsyncMock(return_value=ctx.author)
+        await self.match_cog.match_base_view.callback.func(self.match_cog, ctx)
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+        self.assertEqual(ctx.send.await_args.kwargs["embeds"][6].description, replacement)
+
     async def test_base_command_rejects_foreign_finished_and_concurrent_changes(self):
         source, ctx, message = await self.base_setup()
         link = f"https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%{DISTRICT_CODES[source.final_districts[6]]}%3ATEST"
         ctx.author.id = 9
-        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link, match="QF1")
+        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link)
         self.assertIn("Only the players", ctx.send.await_args.args[0])
         ctx.author.id = int(source.participants[0].user_id)
         await source.set({"final_result_id": "test-result"})
-        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link, match="QF1")
+        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link)
         self.assertIn("finished", ctx.send.await_args.args[0])
         await source.set({"final_result_id": None})
 
@@ -408,7 +413,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
             return await update_one(query, update, **kwargs)
 
         with patch.object(collection, "update_one", side_effect=concurrent_update):
-            await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link, match="QF1")
+            await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link)
         self.assertIn("not saved", ctx.send.await_args.args[0])
         self.assertTrue(all(base is None for base in (await Match.get(source.id)).participants[0].bases))
         message.edit.assert_not_awaited()
@@ -417,7 +422,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
         source, ctx, message = await self.base_setup()
         link = f"https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%{DISTRICT_CODES[source.final_districts[6]]}%3ATEST"
         message.edit.side_effect = ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
-        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link, match="QF1")
+        await self.match_cog.match_base_submit.callback.func(self.match_cog, ctx, link)
         self.assertEqual((await Match.get(source.id)).participants[0].bases[6].link, link)
         self.assertIn("Base saved.", ctx.send.await_args.args[0])
         ctx.custom_id = f"submit_bases|{source.token}"

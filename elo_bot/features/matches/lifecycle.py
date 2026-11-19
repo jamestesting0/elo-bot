@@ -6,12 +6,13 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime
 
 import interactions as ipy
+from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import CROSS_EMOJI, DISTRICT_EMOJI, IMPORTANT_EMOJI, TICK_EMOJI
 from elo_bot.config.game import BASE_SUBMISSION_THRESHOLD
 from elo_bot.config.ids import COMMAND_CHANNEL, MATCH_CHANNEL, STAFF_ROLE
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, ORDINAL_REPRESENTATIONS
-from elo_bot.db import BaseLink, Match, Participant, Player
+from elo_bot.db import BaseLink, Match, Participant, Player, EloFinal
 from elo_bot.db.player_models import QueueDistrictSelection
 from elo_bot.discord.mentions import mention_user
 from elo_bot.core.finals import is_final_match
@@ -24,6 +25,7 @@ from elo_bot.features.matches.thread_messages import (
 )
 from elo_bot.features.queue.policy import QUEUE_OPERATION_LOCK
 from elo_bot.features.queue.state import remove_matched_queue_attempts
+from elo_bot.features.finals.labels import pairing_label
 
 
 def get_district_options(
@@ -315,13 +317,6 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
             if msg is not None:
                 if match.thread_message_id != int(msg.id) and not await attach_thread_message(match, int(msg.id)):
                     raise ThreadMessageBindingError(token)
-                if (is_final_match(match) and match.base_submission and not match.final_superseded
-                        and match.final_result_id is None and not any(
-                            component.custom_id == f"submit_bases|{token}"
-                            for row in msg.components for component in row.components)):
-                    await msg.edit(components=[ipy.ActionRow(ipy.Button(
-                        style=ipy.ButtonStyle.GRAY, label="Submit Bases", custom_id=f"submit_bases|{token}",
-                        emoji=ipy.PartialEmoji(name="📥"))), *msg.components])
                 if f"<@&{STAFF_ROLE}>" not in msg.content:
                     await msg.edit(content=f"{msg.content}\n<@&{STAFF_ROLE}>")
                 if not msg.pinned:
@@ -337,6 +332,11 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         p1, p2 = match.participants
         player1 = await bot.fetch_user(int(p1.user_id))
         player2 = await bot.fetch_user(int(p2.user_id))
+        final_title = None
+        if is_final_match(match):
+            final = await EloFinal.get(PydanticObjectId(match.final_id))
+            final_title = (pairing_label(final, final.nodes[match.final_node_id]),
+                           f"**Season {final.season_number} Final · {match.final_node_id}**")
 
         if not match.thread:
             if is_final_match(match):
@@ -348,7 +348,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
                     raise ThreadMessageBindingError(token)
                 match.final_thread_creation_claimed = True
             # create private thread
-            thread_name = f"🟡 {player1} vs. {player2}".replace("@", "")
+            thread_name = ("🟡 " + final_title[0] if final_title else f"🟡 {player1} vs. {player2}").replace("@", "")[:100]
             thread = await channel.create_private_thread(
                 name=thread_name,
                 invitable=False,
@@ -444,10 +444,13 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         else:
             names = {p.user_id: mention_user(player) for p, player in zip(match.participants, (player1, player2))}
             notes = [f"- {names[p.user_id]} has preset bases." for p in match.participants if any(p.bases)]
-            notes.extend(f"- {names[p.user_id]} wish to submit bases." for p in match.participants if p.submit_bases)
+            if not is_final_match(match):
+                notes.extend(f"- {names[p.user_id]} wish to submit bases." for p in match.participants if p.submit_bases)
 
         if notes:
             embed.add_field(name="**Notes**", value="\n".join(notes))
+        if final_title:
+            embed.title = final_title[1]
 
         submit_button = ipy.Button(
             style=ipy.ButtonStyle.GRAY,
@@ -457,9 +460,6 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         )
 
         controls = [submit_button]
-        if is_final_match(match) and match.base_submission:
-            controls.insert(0, ipy.Button(style=ipy.ButtonStyle.GRAY, label="Submit Bases",
-                custom_id=f"submit_bases|{token}", emoji=ipy.PartialEmoji(name="📥")))
 
         # Send a match thread message
         msg = await thread.send(

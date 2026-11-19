@@ -40,7 +40,7 @@ class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsynci
         self.assertIn("100.0%", payload["embeds"][0].fields[0].value)
         self.assertEqual(payload["embeds"][0].description, self.bases[0].link + "\n")
         self.assertEqual(payload["embeds"][0].fields[2].value,
-                         "**[Builder](<https://discordapp.com/users/123>)**")
+                         "**[Builder](<https://discordapp.com/users/123?tab=wishlist>)**")
         self.assertEqual([b.disabled for b in payload["components"][0].components], [True, False, False])
 
     async def test_slash_search_also_excludes_private_candidates(self):

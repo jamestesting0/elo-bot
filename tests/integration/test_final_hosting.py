@@ -2,15 +2,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
-from tests.integration._final_fixture import FinalScenarioCase
-from elo_bot.features.finals.hosting import accept_final_start
-from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
-from elo_bot.features.finals.matches import prepare_match
-from elo_bot.core.finals import FINAL_DISTRICTS, FinalError
-from elo_bot.db import Match, Clan
-from elo_bot.db.token_models import FinalBettingMarket
-from elo_bot.features.hosting.war import result_store_task
 import elo_bot.extensions.match as match_module
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.core.finals import FINAL_DISTRICTS, FinalError
+from elo_bot.db import Clan, Match
+from elo_bot.db.token_models import FinalBettingMarket
+from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
+from elo_bot.features.finals.matches import prepare_match
+from elo_bot.features.hosting.war import result_store_task
+from tests.integration._final_fixture import FinalScenarioCase
 
 
 class TestFinalHosting(FinalScenarioCase):
@@ -20,7 +21,7 @@ class TestFinalHosting(FinalScenarioCase):
         market = await FinalBettingMarket(id="market", final_id=str(final.id), node_id="QF1",
                                          contestant_revision=source.final_contestant_revision,
                                          contestants=[participant.user_id for participant in source.participants]).insert()
-        return await resolve_final(), source, market
+        return await final_for_view(), source, market
 
     async def test_provisioning_reuses_exact_attempt_without_claiming_play(self):
         final, source, market = await self.pairing()
@@ -37,7 +38,7 @@ class TestFinalHosting(FinalScenarioCase):
         with self.assertRaises(FinalError):
             await accept_final_start(source, "host")
         self.assertEqual((await FinalBettingMarket.get(market.id)).state, "OPEN")
-        self.assertIsNone((await resolve_final()).first_actual_started_at)
+        self.assertIsNone((await final_for_view()).first_actual_started_at)
 
     async def test_missing_clan_and_stale_source_are_preflight_failures(self):
         final, source, market = await self.pairing()
@@ -48,7 +49,7 @@ class TestFinalHosting(FinalScenarioCase):
         with self.assertRaises(FinalError):
             await accept_final_start(source, "host", clan_tag="#CLAN", expected_source={"thread": "stale"})
         self.assertEqual((await FinalBettingMarket.get(market.id)).state, "OPEN")
-        self.assertIsNone((await resolve_final()).first_actual_started_at)
+        self.assertIsNone((await final_for_view()).first_actual_started_at)
 
     async def test_accepted_start_closes_before_external_work_and_survives_abort_fields(self):
         final, source, market = await self.pairing()
@@ -59,27 +60,22 @@ class TestFinalHosting(FinalScenarioCase):
         await saved.set({"times": [None, None], "hosts": [None, None]})
         await accept_final_start(saved, "other-host")
         self.assertEqual((await FinalBettingMarket.get(market.id)).version, 1)
-        self.assertEqual((await resolve_final()).nodes["QF1"].start_claim, saved.final_start_claim)
+        self.assertEqual((await final_for_view()).nodes["QF1"].start_claim, saved.final_start_claim)
 
-    async def test_final_base_controls_use_command_and_foreign_owner_is_rejected(self):
-        final, source, _ = await self.pairing()
-        bot = MagicMock(ext={})
-        cog = match_module.MatchCommands(bot)
+    async def test_old_final_submit_bases_button_points_to_the_command_without_a_modal(self):
+        _, source, _ = await self.pairing()
+        cog = match_module.MatchCommands(MagicMock(ext={}))
         ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), send_modal=AsyncMock())
         ctx.channel.id = 987
         ctx.guild_id = source.routing_guild_id
-        ctx.author.id = int(source.participants[0].user_id)
+        ctx.custom_id = f"submit_bases|{source.token}"
         ctx.author.has_role.return_value = False
-        for page in (0, 1):
-            ctx.custom_id = f"submit_bases|{source.token}|{page}|{ctx.author.id}|0"
+        for author in (int(source.participants[0].user_id), 999):
+            ctx.author.id = author
             await cog.submit_bases_button.callback.func(cog, ctx)
             ctx.send_modal.assert_not_awaited()
-            self.assertIn(f"/match base submit match:{source.final_node_id}", ctx.send.await_args.args[0])
-        ctx.author.id = 999
-        before = ctx.send_modal.await_count
-        await cog.submit_bases_button.callback.func(cog, ctx)
-        self.assertEqual(ctx.send_modal.await_count, before)
-        self.assertIn("unavailable or outdated", ctx.send.await_args.args[0])
+            self.assertEqual(ctx.send.await_args.args[0],
+                             f"{ERROR_EMOJI} Submit your bases with `/match base submit` in this thread.")
         self.assertEqual((await Match.get(source.id)).participants[0].bases, [None] * 7)
 
     async def test_final_helper_start_never_schedules_forty_minute_collection(self):

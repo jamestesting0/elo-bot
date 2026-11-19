@@ -243,7 +243,10 @@ async def on_modal_error(event: ipy.events.ModalError):
     ctx: ipy.ModalContext = event.ctx
     error = event.error
 
-    if isinstance(error, coc.errors.GatewayError):
+    if isinstance(error, ipy.errors.CommandCheckFailure):
+        await ctx.send(f"{ERROR_EMOJI} You do not have permission to interact with this component!",
+                       ephemeral=True)
+    elif isinstance(error, coc.errors.GatewayError):
         await ctx.send(f"{ERROR_EMOJI} Clash of Clans' API server is having some unexpected issues.",
                        ephemeral=True)
     elif isinstance(error, coc.errors.Maintenance):

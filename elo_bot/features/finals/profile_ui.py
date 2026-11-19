@@ -1,15 +1,16 @@
-import asyncio
+
+
 
 import interactions as ipy
 
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elo_bot.config.emojis import STAR_EMOJI, WIN_EMOJI, LOSS_EMOJI, TOKEN_EMOJI
 from elo_bot.core.parsing import get_destruction, get_stars
-from elo_bot.discord.mentions import mention_user
 from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
 from elo_bot.db import EloFinal, Player
 from elo_bot.db.final_models import FinalEditionStats, FinalMatchResult, FinalPlayerProfile, FinalPrediction
 from elo_bot.db.token_models import TokenWallet
+from elo_bot.discord.mentions import member_names
 
 
 async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
@@ -40,8 +41,8 @@ async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
                         f"**Committed:** {committed:,} {TOKEN_EMOJI}"
                         + (f"\n**Debt:** {debt:,} {TOKEN_EMOJI}" if debt else ""))
     if prediction and prediction.submitted_at is not None:
-        embed.add_field(name="**Predictions**", value=f"{prediction.points}/{prediction.eligible} → "
-            f"{prediction.points / prediction.eligible * 100 if prediction.eligible else 0:.2f}%")
+        embed.add_field(name="**Predictions**", value=f"`{prediction.points}/{prediction.eligible}` → "
+            f"`{prediction.points / prediction.eligible * 100 if prediction.eligible else 0:.2f}%`")
     else:
         embed.add_field(name="**Predictions**", value="No predictions.")
     official = {node.result_id for node in final.nodes.values()}
@@ -49,8 +50,7 @@ async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
         "snapshot.contestants": {"$in": claims}}).sort("-created_at").limit(4).to_list()
     opponents = {contestant for result in results for contestant in result.snapshot.contestants
                  if contestant not in claims}
-    members = await asyncio.gather(*(guild.fetch_member(opponent) for opponent in opponents))
-    names = {opponent: mention_user(member, opponent) for opponent, member in zip(opponents, members)}
+    names = await member_names(guild, opponents)
     recent_matches = ""
     for result in results:
         snapshot = result.snapshot
@@ -71,10 +71,13 @@ async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
     if avatar:
         embed.set_thumbnail(url=avatar.url)
     embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
-    editions = await EloFinal.find({"schema_version": 2}).sort("-season_number").limit(25).to_list()
+    latest = {}
+    for edition in await EloFinal.find({"schema_version": 2}).sort([("season_number", -1), ("_id", -1)]).to_list():
+        latest.setdefault(edition.season_number, edition)
+    editions = list(latest.values())[:25]
     controls = [ipy.ActionRow(ipy.StringSelectMenu(*[ipy.StringSelectOption(label=f"Season {edition.season_number} Final",
         value=str(edition.season_number), default=edition.id == final.id) for edition in editions],
-        custom_id=f"finalprofile|{owner}|{user_id}", placeholder="Select a Final")),
+        custom_id=f"finalprofile|{owner}|{user_id}", placeholder="🔍 Select a Final")),
         ipy.ActionRow(ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="Matches",
             custom_id=f"finalhist|{owner}|{final.season_number}|{user_id}|1"))]
     return embed, controls

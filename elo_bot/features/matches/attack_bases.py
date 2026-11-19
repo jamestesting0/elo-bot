@@ -4,13 +4,15 @@ from datetime import datetime
 import interactions as ipy
 from beanie.odm.operators.find.comparison import NotIn
 
-from elo_bot.config.emojis import IMPORTANT_EMOJI
+from elo_bot.config.emojis import IMPORTANT_EMOJI, ERROR_EMOJI
 from elo_bot.config.game import DISTRICT_CODES_REVERSED
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, LEGACY_UNAVAILABLE_IMAGE, UNAVAILABLE_IMAGE
 from elo_bot.db import BaseLayout, BaseLink, Match, Player
-from elo_bot.core.finals import is_final_match
+from elo_bot.core.finals import is_final_match, FinalError
 from elo_bot.features.matches.base_selection import district_base_quality, ensure_secondary_base_index, get_base_quality
 from elo_bot.db.final_models import FinalMatchResult
+from elo_bot.features.finals.matches import require_ongoing_match
+from elo_bot.features.matches.controls import update_match
 
 
 def is_missing_scout_view(match: Match, player_id: str | int):
@@ -58,12 +60,29 @@ async def send_bases(bot: ipy.Client, token: str, player: int, opponent: int, sc
         pass
 
 
+def missing_bases_message(match: Match, sides: tuple[int, ...] = (0, 1)) -> str | None:
+    missing = []
+    for index, district in enumerate(match.final_districts):
+        for side in sides:
+            bases = match.participants[side].bases
+            if index >= len(bases) or not bases[index] or not bases[index].link:
+                missing.append(district)
+                break
+    if not missing:
+        return None
+    where = ("any district" if len(missing) == len(match.final_districts)
+             else ", ".join(f"**{district}**" for district in missing))
+    return f"{ERROR_EMOJI} No base is available for {where}. Players can submit their own with `/match base submit`."
+
+
 async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
                        return_match_data: bool = False) -> list[ipy.Embed] | Match:
     # determine the quality of the bases
     player_doc = await Player.find_one(Player.user_id == str(player.id))
     opponent_doc = await Player.find_one(Player.user_id == str(opponent.id))
     match = await Match.find_one(Match.token == token)
+    if is_final_match(match):
+        await require_ongoing_match(match)
     primary_quality, secondary_quality = get_base_quality(player_doc, opponent_doc, match)
 
     opponent_index = next(i for i, participant in enumerate(match.participants)
@@ -181,7 +200,13 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
 
         embeds.append(embed)
 
-    await match.save_changes()
+    if is_final_match(match):
+        field = f"participants.{opponent_index}.bases"
+        if not await update_match(match, {"_id": match.id}, {"$set": {
+                field: [base.model_dump() if base else None for base in opponent_participant.bases]}}):
+            raise FinalError("The match changed. Its bases were not changed.")
+    else:
+        await match.save_changes()
 
     if return_match_data:
         return match

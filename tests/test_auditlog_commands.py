@@ -155,7 +155,7 @@ class TestAuditlogCommands(unittest.IsolatedAsyncioTestCase):
 
         ctx.edit.assert_awaited_once()
         self.assertIs(ctx.edit.await_args.args[0], ctx.message)
-        self.assertIn("[Member 14](<https://discordapp.com/users/14>)", ctx.edit.await_args.kwargs["embed"].description)
+        self.assertIn("[Member 14](<https://discordapp.com/users/14?tab=wishlist>)", ctx.edit.await_args.kwargs["embed"].description)
         action_row = ctx.edit.await_args.kwargs["components"][0]
         self.assertEqual(action_row.components[1].label, "3/3")
         self.assertTrue(action_row.components[2].disabled)

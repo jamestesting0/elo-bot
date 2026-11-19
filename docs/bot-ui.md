@@ -50,6 +50,8 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
 - **Footer:** `FOOTER_TEXT` with `FOOTER_IMAGE` on every embed (`set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)`
   or `footer=ipy.EmbedFooter(...)`).
+- **Field layout:** fields are full width. Leave `inline` at its default `False`; use `inline=True` only
+  when side-by-side fields were specifically asked for.
 - **Field names:** bold, `name="**Available Tokens**"`. Section headings inside profiles and the match
   instructions use `__**...**__` (`__**Statistics (All Seasons)**__`, `__**Recent Matches**__`, `__**Instruction**__`).
 - **Label lines:** profile descriptions and stat blocks use `**Label:** value` per line. Statistic lists that
@@ -84,7 +86,7 @@ embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
   prompts use `self.bot.mention_command("player register", scope)` for a clickable mention; either is
   acceptable, never a bare slash command.
 - **Numbers:** inline code for values in rows and stat lists, thousands separators for counts and tokens
-  (`f"{amount:,}"`), two decimals for averages and percentages (`f"{rate:.2f}%"`), an arrow from a count to
+  (`f"{amount:,}"`), Elo without a separator (`1335 Elo`), two decimals for averages and percentages (`f"{rate:.2f}%"`), an arrow from a count to
   its derived rate (`` `12` → `66.67%` ``), the token icon after amounts (`1,250 {TOKEN_EMOJI}`), and
   `ORDINAL_REPRESENTATIONS` for "1st base" style positions.
 - **Times:** Discord timestamps, never formatted dates. `RelativeTime` for ages, countdowns, expiry and
@@ -95,7 +97,7 @@ embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
   `suppress_embeds=True`.
 - **Emphasis:** bold for the state or quantity that matters (`**cancelled**`, `**disabled**`, `**all**`),
   italics for reminders and notes (`{IMPORTANT_EMOJI} *Please kick the players out of the clan!*`).
-  Markdown headings (`##`) and small text (`-#`) appear only in Components V2 views.
+  Messages are embeds, so markdown headings (`##`) and small text (`-#`) are not used.
 
 ## Ranked rows
 
@@ -122,7 +124,7 @@ arrow (`` `30` → `2.10⭐ 81.50%` ``), predictions show `` `correct/eligible` 
 | External links | Clan Link, Open In-game | `URL` | `CLAN_EMOJI` |
 
 `GRAY`, `GREY` and `SECONDARY` are the same style, and `RED` is `DANGER`; match the surrounding code.
-Back/Next belongs to form steps such as pairing and predictions; it never replaces history arrows. Add a
+Back/Next belongs to form steps such as predictions; it never replaces history arrows. Add a
 control only when it gives the user an action they need: Matches opens useful detail, while a Refresh button
 on profiles was removed because it added nothing (leaderboards keep theirs). Retire controls with
 `components=[]` after completion, cancellation or expiry, and disable betting controls once betting closes.
@@ -135,10 +137,9 @@ on profiles was removed because it added nothing (leaderboards keep theirs). Ret
 - Modal titles are short noun phrases ("Jump to page", "Bug Response Form"). Use `ShortText` for single
   values and `ParagraphText` for multi-line input, with a placeholder that shows the format
   ("Format: [stars].[destruction]").
-- The Final prediction flow is the one Components V2 view: a `ContainerComponent` with
-  `accent_color=COLOR`, a `## Season 14 Final · Prediction` heading, `TextDisplayComponent` lines and a
-  `-# {FOOTER_TEXT}` footer. Modals are parsed by `ComponentsV2ModalContext`, which also accepts selects
-  inside modals (the base submission user select). Use Components V2 only where a flow already does.
+- Every message, the Final prediction wizard included, is an embed with the standard footer and icon.
+  Modals are parsed by `ComponentsV2ModalContext`, which also accepts selects inside modals (the base
+  submission user select).
 
 ### Custom IDs, state and ownership
 
@@ -207,3 +208,67 @@ hosting: show it with `LOADING_EMOJI` and its job ID until the job reports back.
 
 Check layouts at desktop and narrow widths: wrapping, readable numbers, action labels and disabled states.
 Preserve the bot's existing styling rather than adding decorative headings, icons or controls to fill space.
+
+## Final screens
+
+- Bracket names (images, selects, thread names) are the player's Discord display name, refreshed before
+  the bracket, a round's threads or a scoreboard is published. A nickname set with `/final add nickname:`
+  or `/final nick` overrides it. Quarterfinals follow seeds: QF1 1v8, QF2 2v7, QF3 3v6, QF4 4v5.
+- `/embed Elo Final` posts a short description with a 📅 Details button. Details answers privately with
+  the season's dates computed on click (Elo Final selection, queue close, season end, each as
+  `<t:…:D> · <t:…:R>`) above `assets/embeds/elo_final.md`. The ongoing season ends on the first Monday of Feb,
+  Apr, Jun, Aug, Oct or Dec at 07:00 UTC after its `/season reset`; selection is 10 days earlier and the queue
+  closes 3 days earlier. If the ongoing season has no Final (a cancelled one does not count) three days after
+  its selection date, the season is extended and all dates move to the next boundary.
+- `/embed sticky:True` keeps Elo Information or Elo Final at the bottom of the channel like `/sticky`. The bot
+  reposts it itself so its buttons keep working; the live dashboards cannot be sticky.
+- `/final start` always opens the Final of the ongoing season (the season after the last `/season reset`).
+  A season has one Final; cancelling it frees the season, so it can be started again before the reset.
+  Entrants are seeded by their Elo when they are added.
+- Final commands take `final_season`, an autocomplete of seasons that have a Final (newest first). A season
+  restarted after a cancellation shows its latest Final. The ranked `season` autocomplete is separate.
+- `/final status` is private. Managers see thread links, attention items, the next step and the available
+  actions. Players see Matches, Predictions and Betting without thread links or manager controls.
+  During setup, managers see entrants in Elo seeding order, one linked name per line. Dashboard action
+  feedback goes above the updated embed.
+- `/final bracket create` opens one seeded draft owned by the manager. The select swaps exactly two
+  slots. Reset restores Elo seeding; Confirm publishes and pins the saved bracket; Cancel discards the
+  draft. Confirm uses `SUCCESS` and `TICK_EMOJI`; Cancel uses `DANGER` and `CROSS_EMOJI`.
+- Starting a round lists each thread or its error, opens the round's betting markets and offers Close
+  Predictions while predictions remain open. The dashboard and slash commands use the same actions.
+- Predictions live on the pinned bracket post: a Predictions field (`Open · 42 submitted`) and, while
+  predictions are open, a Predict button that is removed when they close. The private wizard lists the
+  page's pairings in the embed with one winner select each (seed Elo in the options), then Back, Next
+  and Submit; a page never exceeds five rows. Review shows the bracket image, a line of picks, Back and
+  Submit. The submitted screen keeps the image and offers Edit Picks until closure.
+- `/final predictions view` lists submitted predictions (`1. **Spyke** · 🏆 Kaito · \`3/5\``, score once a
+  match is played) with a "🔍 View a player's picks" select that anyone can use: it opens that player's card
+  privately and leaves the list unchanged; `player:` opens one card directly. A card is the marked bracket
+  image, the score once a match is played, and the results. Everyone can view after predictions close; LVL1
+  managers can view before that, always privately. Only submitted picks appear. Paging stays with the user who ran the command.
+  More than 25 predictors page with `◀️` `2/3` `▶️`.
+- Betting stays in one private message through the chooser, amount modal, review, cancellation and
+  receipt. Modal submission defers with `edit_origin=True`. Back edits the chooser. A closed market
+  retires the panel's controls.
+- Result previews last 15 minutes and survive a restart. Persistent Confirm and Cancel callbacks
+  recheck the owner, role, Final and match before saving. Saved replies identify who advances; the next
+  round is called ready only by the result that completes the current round. A tie asks for a manager
+  decision. Failed follow-up work keeps the saved result and shows pending updates.
+- A played Final result is posted in its match thread and in the Final channel with a scoreboard image
+  (`attachment://scoreboard.png`, rendered on `assets/finals/elo_final_scoreboard.png`): nicknames,
+  avatars, stars and destruction per district and in total, the loser muted, both sides white for a tie. The
+  embed keeps the title, `A ▼ vs. B ▲` and any Tie or Recovery field; the district lines and Total
+  appear only when the image fails. Forfeits have no scoreboard. Corrections edit both posts.
+- A Final match thread has only Submit Result. Players submit bases with `/match base submit` in the
+  thread; an older Submit Bases button on a Final thread points there instead of opening a form.
+- Final hosting: `/match autostart` and `/match war autostart` run one sequential Helper job for all seven
+  districts unless `sequential:False` or `district:` is given. Live `attacks_first` posts that player's
+  challenge first each cycle; blank posts both together. Unsubmitted districts get Excellent library bases.
+  A start that cannot happen (predictions open, unscheduled, wrong live/war command) is refused before
+  bases are drawn or Helper is asked, with one reply. `/self` hosting is refused for Finals.
+- The sequential progress message (`**QF4 · Sequential Hosting**`) has no fields: a status line with the
+  last check, then one row per district: ➖ waiting, loading icon for the current district, success icon
+  with `2⭐ 83%` scores once stored. Job ids and run details stay in `/match helper status`.
+- Cancel Final and End Final ask for confirmation. Cancellation offers optional match thread deletion;
+  cancellation itself retains stored-base reservations. Confirmed Discord thread deletion releases them
+  through the existing deletion listener. The public bracket (including its Predictions field) and markets reflect closure.

@@ -5,7 +5,7 @@ import interactions as ipy
 from tests.integration._final_fixture import FinalScenarioCase
 from elo_bot.features.base_store.storage import clear_match_base_stores
 from elo_bot.features.finals.hosting import accept_final_start
-from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.matches import bind_thread, prepare_match
 from elo_bot.features.finals.recovery import recover_final
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
@@ -25,7 +25,7 @@ class TestFinalThreadRecovery(FinalScenarioCase):
         await Clan(tag="#TEST", name="Test", availability_str="Available", available_slots=[]).insert()
         source = await Match.get(source.id)
         await bind_thread(final, source, "777")
-        return await resolve_final(), source
+        return await final_for_view(), source
 
     async def submit(self, final, source, *, forfeit=False):
         node = final.nodes["QF1"]
@@ -39,9 +39,20 @@ class TestFinalThreadRecovery(FinalScenarioCase):
         await clear_match_base_stores(source, reset_stored_flags=True, reason="thread_deleted")
 
     def deleted_bot(self):
-        channel = MagicMock(send=AsyncMock(return_value=MagicMock(id=900)))
+        messages = {}
+
+        async def send(**payload):
+            message = MagicMock(id=900 + len(messages), pin=AsyncMock(), edit=AsyncMock(), payload=payload)
+            message.author.id = 42
+            message.nonce = payload.get("nonce")
+            messages[str(message.id)] = message
+            return message
+
+        channel = MagicMock(send=AsyncMock(side_effect=send), messages=messages,
+            fetch_message=AsyncMock(side_effect=lambda message_id: messages[str(message_id)]))
         channel.guild.fetch_member = AsyncMock(return_value=None)
         bot = MagicMock()
+        bot.user.id = 42
         async def fetch(channel_id):
             if channel_id == 777:
                 raise ipy.errors.NotFound(MagicMock(status=404, reason="Not Found"))
@@ -55,7 +66,7 @@ class TestFinalThreadRecovery(FinalScenarioCase):
         await accept_final_start(source, "host", player=None)
         bot, _ = self.deleted_bot()
         pending = await recover_final(final, bot=bot, release_deleted=self.release_deleted)
-        current = await resolve_final()
+        current = await final_for_view()
         self.assertIn("thread deleted", " ".join(pending))
         self.assertEqual(current.nodes["QF1"].state, "NEEDS_MANAGER")
         self.assertIsNone(current.nodes["QF1"].match_id)
@@ -66,7 +77,7 @@ class TestFinalThreadRecovery(FinalScenarioCase):
         self.assertNotEqual(replacement.id, source.id)
         self.assertEqual(replacement.final_attempt, 2)
         self.assertEqual((await FinalBettingMarket.get(market.id)).state, "CLOSED")
-        self.assertEqual((await resolve_final()).nodes["QF1"].first_actual_started_at,
+        self.assertEqual((await final_for_view()).nodes["QF1"].first_actual_started_at,
                          current.nodes["QF1"].first_actual_started_at)
 
     async def test_forbidden_thread_keeps_binding_and_reservation(self):
@@ -75,7 +86,7 @@ class TestFinalThreadRecovery(FinalScenarioCase):
             MagicMock(status=403, reason="Forbidden"))))
         pending = await recover_final(final, bot=bot, release_deleted=self.release_deleted)
         self.assertIn("could not be verified", " ".join(pending))
-        self.assertEqual((await resolve_final()).nodes["QF1"].match_id, source.id)
+        self.assertEqual((await final_for_view()).nodes["QF1"].match_id, source.id)
         self.assertEqual((await Match.get(source.id)).participants[0].base_store.reservation_id, "owned")
 
     async def test_completed_play_releases_only_after_durable_helper_credit_and_retries_once(self):
@@ -92,7 +103,7 @@ class TestFinalThreadRecovery(FinalScenarioCase):
         self.assertEqual((await Helper.find_one({"user_id": "host"})).operation_receipts,
                          [f"result:{source.id}:host:live"])
         self.assertIsNone((await Match.get(source.id)).participants[0].base_store)
-        self.assertTrue((await resolve_final()).result_progress[result.id].release_completed)
+        self.assertTrue((await final_for_view()).result_progress[result.id].release_completed)
 
     async def test_forfeit_retains_slot_until_confirmed_thread_deletion_and_publishes_fallback(self):
         final, source = await self.pairing()
@@ -102,14 +113,14 @@ class TestFinalThreadRecovery(FinalScenarioCase):
         bot, channel = self.deleted_bot()
         await recover_final(final, bot=bot, release_deleted=self.release_deleted)
         self.assertIsNone((await Match.get(source.id)).participants[0].base_store)
-        progress = (await resolve_final()).result_progress[result.id]
+        progress = (await final_for_view()).result_progress[result.id]
         self.assertTrue(progress.thread_deleted)
         self.assertTrue(progress.published)
         self.assertEqual(progress.channel_id, str(final.channel_id))
-        forfeit = channel.send.await_args.kwargs["embed"].fields[1]
-        self.assertEqual(forfeit.name, "**Forfeit**")
-        self.assertEqual(forfeit.value,
-                         f"**[❌Invalid Player](<https://discordapp.com/users/{result.snapshot.winner}>)** wins")
+        embed = channel.messages[progress.message_id].payload["embed"]
+        self.assertIn(f"https://discordapp.com/users/{result.snapshot.winner}", embed.description)
+        self.assertNotIn("0%", embed.description)
+        self.assertEqual(len(embed.description.splitlines()), 1)
 
     async def test_saved_handoff_survives_source_document_loss_with_exact_helper_receipt(self):
         final, source = await self.pairing()
@@ -120,14 +131,14 @@ class TestFinalThreadRecovery(FinalScenarioCase):
         helper = await Helper.find_one({"user_id": "host"})
         self.assertEqual(helper.points, 3)
         self.assertEqual(len(helper.history), 1)
-        self.assertTrue((await resolve_final()).result_progress[result.id].completed)
+        self.assertTrue((await final_for_view()).result_progress[result.id].completed)
 
     async def test_restart_binds_only_the_thread_saved_on_the_exact_attempt(self):
         final = await confirm_bracket(await self.roster(8), "manager")
         source = await prepare_match(final, "QF1")
         await source.set({"thread": "777"})
         await recover_final(final)
-        node = (await resolve_final()).nodes["QF1"]
+        node = (await final_for_view()).nodes["QF1"]
         self.assertEqual(node.thread_id, "777")
         self.assertFalse(node.provisioning)
         self.assertEqual(await Match.count(), 1)

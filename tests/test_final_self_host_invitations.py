@@ -25,13 +25,15 @@ class TestFinalSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
             )}, result_progress={result.id: FinalResultProgress()}, repair_pending=True,
         )
         with patch.object(recovery, "select_financial_work", new=AsyncMock(return_value=(final, []))), \
-                patch.object(recovery, "resolve_final", new=AsyncMock(return_value=final)), \
+                patch.object(recovery, "reload_final", new=AsyncMock(return_value=final)), \
                 patch.object(EloFinal, "get_pymongo_collection", return_value=MagicMock(update_one=AsyncMock())), \
                 patch.object(recovery.FinalBettingMarket, "find", return_value=SimpleNamespace(
                     to_list=AsyncMock(return_value=[]))), \
                 patch.object(FinalMatchResult, "find", return_value=SimpleNamespace(
                     to_list=AsyncMock(return_value=[result]))), \
                 patch.object(recovery, "invite_eligible_players", new=AsyncMock()) as invitations, \
+                patch.object(recovery, "publish_bracket", new=AsyncMock()), \
+                patch.object(recovery, "bracket_signature", new=AsyncMock(return_value="signature")), \
                 patch.object(recovery, "publish_result", new=AsyncMock()):
             await recovery.recover_final(final, bot=MagicMock())
         invitations.assert_not_awaited()
@@ -52,13 +54,15 @@ class TestFinalSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
         )
         bot = MagicMock()
         with patch.object(recovery, "select_financial_work", new=AsyncMock(return_value=(final, []))), \
-                patch.object(recovery, "resolve_final", new=AsyncMock(return_value=final)), \
+                patch.object(recovery, "reload_final", new=AsyncMock(return_value=final)), \
                 patch.object(EloFinal, "get_pymongo_collection", return_value=MagicMock(update_one=AsyncMock())), \
                 patch.object(recovery.FinalBettingMarket, "find", return_value=SimpleNamespace(
                     to_list=AsyncMock(return_value=[]))), \
                 patch.object(FinalMatchResult, "find", return_value=SimpleNamespace(
                     to_list=AsyncMock(return_value=[result]))), \
                 patch.object(recovery, "invite_eligible_players", new=AsyncMock()) as invitations, \
+                patch.object(recovery, "publish_bracket", new=AsyncMock()), \
+                patch.object(recovery, "bracket_signature", new=AsyncMock(return_value="signature")), \
                 patch.object(recovery, "publish_result", new=AsyncMock()):
             # When: an old result is recovered without a new completion.
             await recovery.recover_final(final, bot=bot)
@@ -99,13 +103,15 @@ class TestFinalSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
 
         collection = MagicMock(update_one=AsyncMock(side_effect=checkpoint))
         with patch.object(recovery, "select_financial_work", new=AsyncMock(return_value=(final, []))), \
-                patch.object(recovery, "resolve_final", new=AsyncMock(return_value=final)), \
+                patch.object(recovery, "reload_final", new=AsyncMock(return_value=final)), \
                 patch.object(EloFinal, "get_pymongo_collection", return_value=collection), \
                 patch.object(recovery.FinalBettingMarket, "find", return_value=SimpleNamespace(
                     to_list=AsyncMock(return_value=[]))), \
                 patch.object(FinalMatchResult, "find", return_value=SimpleNamespace(
                     to_list=AsyncMock(return_value=[result]))), \
                 patch.object(recovery, "invite_eligible_players", new=AsyncMock(side_effect=invite)) as invitations, \
+                patch.object(recovery, "publish_bracket", new=AsyncMock()), \
+                patch.object(recovery, "bracket_signature", new=AsyncMock(return_value="signature")), \
                 patch.object(recovery, "publish_result", new=AsyncMock(side_effect=publish)):
             # When: recovery checkpoints the completed result.
             pending = await recovery.recover_final(final, bot=MagicMock())

@@ -4,6 +4,8 @@ from elo_bot.db import BaseLayout, Match
 from elo_bot.config.game import BASE_TIERS
 from typing import Optional
 from elo_bot.db import Player
+from elo_bot.core.finals import FinalError, is_final_match
+from elo_bot.features.matches.controls import update_match
 
 
 def district_base_quality(district: str | None, quality: str) -> str:
@@ -45,9 +47,13 @@ async def ensure_secondary_base_index(match: Match, side: int, primary: str, sec
     seed = candidates[random.randint(0, len(candidates) - 1)]
     field = f"participants.{side}.secondary_base_index"
     identity = {"_id": match.id, f"participants.{side}.user_id": participant.user_id}
-    await match.get_pymongo_collection().update_one(
-        {**identity, field: None}, {"$set": {field: seed}},
-    )
+    if is_final_match(match):
+        if not await update_match(match, {**identity, field: None}, {"$set": {field: seed}}):
+            raise FinalError("The match changed before its bases could be selected.")
+    else:
+        await match.get_pymongo_collection().update_one(
+            {**identity, field: None}, {"$set": {field: seed}},
+        )
     # Reload the winning assignment, including when another selector claimed it first.
     fresh = await Match.find_one(identity)
     if fresh is None or fresh.participants[side].secondary_base_index is None:
@@ -56,6 +62,8 @@ async def ensure_secondary_base_index(match: Match, side: int, primary: str, sec
 
 
 def get_base_quality(player_doc: Player, opponent_doc: Player, match_doc: Optional[Match] = None):
+    if match_doc and is_final_match(match_doc):
+        return "Excellent", "Excellent"
     if match_doc and match_doc.primary_base_quality and match_doc.secondary_base_quality:
         return match_doc.primary_base_quality, match_doc.secondary_base_quality
 

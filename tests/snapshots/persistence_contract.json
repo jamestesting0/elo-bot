@@ -1179,6 +1179,18 @@
         "title": "Helper Completed",
         "type": "boolean"
        },
+       "image_error": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Image Error"
+       },
        "message_id": {
         "anyOf": [
          {
@@ -1190,6 +1202,47 @@
         ],
         "default": null,
         "title": "Message Id"
+       },
+       "public_message_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Public Message Id"
+       },
+       "public_published_repair_pending": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Public Published Repair Pending"
+       },
+       "public_send_attempted": {
+        "default": false,
+        "title": "Public Send Attempted",
+        "type": "boolean"
+       },
+       "public_send_nonce": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Public Send Nonce"
        },
        "published": {
         "default": false,
@@ -1218,6 +1271,18 @@
         "title": "Send Attempted",
         "type": "boolean"
        },
+       "send_nonce": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Send Nonce"
+       },
        "thread_deleted": {
         "default": false,
         "title": "Thread Deleted",
@@ -1232,7 +1297,6 @@
        "REGISTRATION",
        "BRACKET_READY",
        "RUNNING",
-       "FINALIZING",
        "COMPLETED",
        "CANCELLING",
        "CANCELLED"
@@ -1401,20 +1465,6 @@
       "title": "Active",
       "type": "boolean"
      },
-     "archived_elo": {
-      "additionalProperties": {
-       "anyOf": [
-        {
-         "type": "integer"
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "title": "Archived Elo",
-      "type": "object"
-     },
      "bracket_message_id": {
       "anyOf": [
        {
@@ -1426,11 +1476,6 @@
       ],
       "default": null,
       "title": "Bracket Message Id"
-     },
-     "bracket_published_revision": {
-      "default": -1,
-      "title": "Bracket Published Revision",
-      "type": "integer"
      },
      "bracket_send_attempted": {
       "default": false,
@@ -1449,12 +1494,17 @@
       "default": null,
       "title": "Bracket Send Nonce"
      },
-     "byes": {
-      "items": {
-       "type": "string"
-      },
-      "title": "Byes",
-      "type": "array"
+     "bracket_signature": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Bracket Signature"
      },
      "cancel_reason": {
       "anyOf": [
@@ -1503,18 +1553,6 @@
       ],
       "default": null,
       "title": "Completed At"
-     },
-     "current_round": {
-      "default": "Quarterfinals",
-      "title": "Current Round",
-      "type": "string"
-     },
-     "districts": {
-      "items": {
-       "type": "string"
-      },
-      "title": "Districts",
-      "type": "array"
      },
      "draft_owner": {
       "anyOf": [
@@ -1600,6 +1638,13 @@
       "title": "Manual Draft",
       "type": "object"
      },
+     "nickname_overrides": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Nickname Overrides",
+      "type": "array"
+     },
      "nodes": {
       "additionalProperties": {
        "$ref": "#/$defs/EloFinalMatch"
@@ -1652,11 +1697,6 @@
       "title": "Quarter Finals",
       "type": "array"
      },
-     "reopening_pending": {
-      "default": false,
-      "title": "Reopening Pending",
-      "type": "boolean"
-     },
      "repair_nodes": {
       "items": {
        "type": "string"
@@ -1691,26 +1731,22 @@
       "title": "Schema Version",
       "type": "integer"
      },
-     "season_id": {
-      "anyOf": [
-       {
-        "$ref": "#/$defs/PydanticObjectId"
-       },
-       {
-        "type": "null"
-       }
-      ],
-      "default": null
-     },
      "season_number": {
       "title": "Season Number",
       "type": "integer"
      },
-     "seeds": {
+     "seed_elo": {
       "additionalProperties": {
-       "type": "integer"
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ]
       },
-      "title": "Seeds",
+      "title": "Seed Elo",
       "type": "object"
      },
      "semi_finals": {
@@ -1738,7 +1774,7 @@
    },
    "settings": {
     "indexes": [
-     "IndexModel({'season_number': 1}, unique=True, name='final_season_unique')",
+     "IndexModel({'season_number': 1}, unique=True, name='final_season_claim', partialFilterExpression={'state': {'$in': ['REGISTRATION', 'BRACKET_READY', 'RUNNING', 'COMPLETED', 'CANCELLING']}})",
      "IndexModel({'active': 1}, unique=True, partialFilterExpression={'active': True}, name='final_active_unique')"
     ],
     "name": "elo_finals",
@@ -2640,6 +2676,229 @@
      "IndexModel({'season_number': 1, 'points': -1}, name='final_prediction_ranking')"
     ],
     "name": "final_predictions",
+    "use_state_management": true
+   }
+  },
+  "FinalResultDraft": {
+   "schema": {
+    "$defs": {
+     "FinalResultSnapshot": {
+      "properties": {
+       "actual_started_at": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Actual Started At"
+       },
+       "contestants": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Contestants",
+        "type": "array"
+       },
+       "outcome": {
+        "$ref": "#/$defs/Outcome",
+        "default": "Played"
+       },
+       "scheduled_times": {
+        "items": {
+         "anyOf": [
+          {
+           "type": "integer"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "maxItems": 2,
+        "minItems": 2,
+        "title": "Scheduled Times",
+        "type": "array"
+       },
+       "scores": {
+        "additionalProperties": {
+         "items": {
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "title": "Scores",
+        "type": "object"
+       },
+       "winner": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Winner"
+       }
+      },
+      "required": [
+       "contestants",
+       "scores"
+      ],
+      "title": "FinalResultSnapshot",
+      "type": "object"
+     },
+     "Outcome": {
+      "enum": [
+       "Played",
+       "Forfeit"
+      ],
+      "type": "string"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "description": "A result preview whose state is consumed in the result transaction.",
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "attempt": {
+      "title": "Attempt",
+      "type": "integer"
+     },
+     "contestant_revision": {
+      "title": "Contestant Revision",
+      "type": "integer"
+     },
+     "expected_version": {
+      "title": "Expected Version",
+      "type": "integer"
+     },
+     "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+     },
+     "explicit_winner": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Explicit Winner"
+     },
+     "final_id": {
+      "$ref": "#/$defs/PydanticObjectId"
+     },
+     "guild_id": {
+      "title": "Guild Id",
+      "type": "integer"
+     },
+     "node_id": {
+      "title": "Node Id",
+      "type": "string"
+     },
+     "owner_id": {
+      "title": "Owner Id",
+      "type": "string"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Reason"
+     },
+     "result_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Result Id"
+     },
+     "round_completed": {
+      "default": false,
+      "title": "Round Completed",
+      "type": "boolean"
+     },
+     "snapshot": {
+      "$ref": "#/$defs/FinalResultSnapshot"
+     },
+     "source_match_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
+     "state": {
+      "default": "PENDING",
+      "enum": [
+       "PENDING",
+       "CONFIRMED",
+       "CANCELLED"
+      ],
+      "title": "State",
+      "type": "string"
+     }
+    },
+    "required": [
+     "final_id",
+     "guild_id",
+     "owner_id",
+     "node_id",
+     "expected_version",
+     "contestant_revision",
+     "attempt",
+     "snapshot",
+     "expires_at"
+    ],
+    "title": "FinalResultDraft",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'expires_at': 1}, expireAfterSeconds=0, name='final_result_draft_expiry')"
+    ],
+    "name": "final_result_drafts",
     "use_state_management": true
    }
   },
@@ -5551,23 +5810,6 @@
       "title": "End",
       "type": "integer"
      },
-     "final_summary": {
-      "additionalProperties": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "integer"
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "title": "Final Summary",
-      "type": "object"
-     },
      "players": {
       "items": {
        "$ref": "#/$defs/PlayerSeasonData"
@@ -5679,10 +5921,18 @@
       "type": "string"
      },
      "author_name": {
-      "maxLength": 80,
-      "minLength": 1,
-      "title": "Author Name",
-      "type": "string"
+      "anyOf": [
+       {
+        "maxLength": 80,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Author Name"
      },
      "avatar_url": {
       "anyOf": [
@@ -5710,10 +5960,30 @@
       "title": "Channel Id"
      },
      "content": {
-      "maxLength": 2000,
-      "minLength": 1,
-      "title": "Content",
-      "type": "string"
+      "anyOf": [
+       {
+        "maxLength": 2000,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Content"
+     },
+     "embed_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Embed Type"
      },
      "message_id": {
       "pattern": "^[0-9]+$",
@@ -5721,17 +5991,22 @@
       "type": "string"
      },
      "webhook_id": {
-      "pattern": "^[0-9]+$",
-      "title": "Webhook Id",
-      "type": "string"
+      "anyOf": [
+       {
+        "pattern": "^[0-9]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Webhook Id"
      }
     },
     "required": [
      "_id",
-     "message_id",
-     "webhook_id",
-     "content",
-     "author_name"
+     "message_id"
     ],
     "title": "StickyMessage",
     "type": "object"

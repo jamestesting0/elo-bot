@@ -46,8 +46,8 @@ class TestBaseStorePresentation(unittest.TestCase):
     def test_store_embed_and_opponent_summary_match_command_contract(self) -> None:
         request = self.make_request()
 
-        names = {"100": "**[Player](<https://discordapp.com/users/100>)**",
-                 "300": "**[Helper](<https://discordapp.com/users/300>)**"}
+        names = {"100": "**[Player](<https://discordapp.com/users/100?tab=wishlist>)**",
+                 "300": "**[Helper](<https://discordapp.com/users/300?tab=wishlist>)**"}
         embed = build_store_embed(request, names)
 
         self.assertEqual(embed.title, "**Bases Stored**")

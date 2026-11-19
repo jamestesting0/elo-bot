@@ -12,10 +12,12 @@ class StickyMessage(Document):
     # Older records use the channel ID as _id and have no channel_id field.
     channel_id: DiscordId | None = None
     message_id: DiscordId
-    webhook_id: DiscordId
-    content: str = Field(min_length=1, max_length=2000)
-    author_name: str = Field(min_length=1, max_length=80)
+    # Text stickies are reposted through a webhook; embed stickies are reposted by the bot itself.
+    webhook_id: DiscordId | None = None
+    content: str | None = Field(default=None, min_length=1, max_length=2000)
+    author_name: str | None = Field(default=None, min_length=1, max_length=80)
     avatar_url: str | None = None
+    embed_type: str | None = None
 
     @classmethod
     async def for_channel(cls, channel_id: str) -> list["StickyMessage"]:
@@ -25,7 +27,7 @@ class StickyMessage(Document):
         ]}).to_list()
         return sorted(messages, key=lambda message: int(message.id))
 
-    async def move(self, message_id: str, webhook_id: str) -> bool:
+    async def move(self, message_id: str, webhook_id: str | None) -> bool:
         result = await self.get_pymongo_collection().update_one(
             {"_id": self.id, "message_id": self.message_id},
             {"$set": {"message_id": message_id, "webhook_id": webhook_id}},

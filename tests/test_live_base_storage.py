@@ -40,11 +40,11 @@ class TestLiveBaseStorage(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.f.channel.send.await_args.kwargs["embed"].description)
         self.assertFalse(message.embeds[0].description)
         self.assertEqual(message.embeds[0].fields[0].value,
-                         "**[Player 111](<https://discordapp.com/users/111>)**\n"
-                         "**[Player 222](<https://discordapp.com/users/222>)**")
+                         "**[Player 111](<https://discordapp.com/users/111?tab=wishlist>)**\n"
+                         "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)**")
         self.assertEqual(message.embeds[0].fields[3].value,
-                         "**[Player 111](<https://discordapp.com/users/111>)** — Slot 1\n"
-                         "**[Player 222](<https://discordapp.com/users/222>)** — Slot 2")
+                         "**[Player 111](<https://discordapp.com/users/111?tab=wishlist>)** — Slot 1\n"
+                         "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)** — Slot 2")
         self.assertEqual([b.label for b in message.components[0].components], ["Start Match", "Undo"])
         self.assertTrue(message.components[0].components[0].custom_id.startswith("helper_stored_live_start|"))
         self.assertTrue(live_pair_ready(await self.f.find({}), stores[0]["reservation_id"]))
@@ -61,8 +61,8 @@ class TestLiveBaseStorage(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(message.embeds[0].title, "**Base Storage Incomplete**")
         self.assertFalse(message.embeds[0].description)
         self.assertEqual(message.embeds[0].fields[3].value,
-                         "**[Player 111](<https://discordapp.com/users/111>)** — Slot 1\n"
-                         "**[Player 222](<https://discordapp.com/users/222>)** — Slot 2")
+                         "**[Player 111](<https://discordapp.com/users/111?tab=wishlist>)** — Slot 1\n"
+                         "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)** — Slot 2")
         self.assertEqual([b.label for b in message.components[0].components], ["Undo"])
 
     async def test_first_job_cancel_prevents_second_job_but_retains_pair(self):

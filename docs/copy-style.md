@@ -56,7 +56,7 @@ Reuse the existing text for recurring situations instead of writing a variant:
 ## Command references
 
 Wrap every command reference in a message, embed or error in backticks, including its subcommands and any
-option it names: `` Use `/final recover`. ``, `` Use `/final bracket create mode:Manual` to resume. ``.
+option it names: `` Use `/final recover`. ``, `` Use `/final bracket create` to resume. ``.
 Where a clickable link helps (registration and preset prompts), `self.bot.mention_command("player register", scope)`
 is the existing alternative. Slash-command and option descriptions are plain text in Discord, so leave them
 unwrapped; they are short sentence-case phrases without a final period ("Show a player's Final result history").
@@ -91,3 +91,28 @@ Keep code changes equally focused. Reuse current parsing, locks, helpers and com
 framework or abstraction for a local copy change, broad exception suppression, duplicated formatting rules
 and tests that only echo implementation. Verify the affected behavior and stop when the requested change is
 complete.
+
+## Final action replies
+
+Use the phase names Setup, Bracket ready, Quarterfinals, Semifinals, Final, Champion decided, Ended,
+Cancelling and Cancelled. Prediction states read Not opened, Open and Closed. Markets read Open,
+Closed, Paying out, Paid and Refunded.
+
+Write `Bracket confirmed and published: <link>` only after the bracket is saved and published.
+If publication fails, write `Bracket confirmed. Publishing failed and will retry: <reason>`.
+Round replies say which round started or partly started, followed by one line per match.
+
+Prediction submission says `Prediction submitted. You can change it until predictions close.`
+Bet receipts say `Bet updated: 1,000 <token emoji> on <player>.` or
+`Bet cancelled. 500 <token emoji> returned.` Reviews show Estimated Profit.
+
+Result replies say `Result saved. <player> advances to SF1.` Add the next-round readiness sentence
+only when that result completes the round. Ties say `Result saved as a tie. A manager must choose the
+winner with` followed by the match-specific command in backticks. Forfeits identify the advancing
+player and refunded bets. Pending work says `Result saved.` followed by
+`Bracket and payout updates are pending and retry automatically.` Never ask staff to run a manager command
+unless the message explicitly asks a manager to act.
+
+Expired previews say `Confirmation expired. Submit the result again.` Owner-bound controls keep the
+standard ownership reply. Outdated views name the command that opens a fresh view. Keep the outcome
+above the updated display, and remove controls after a final receipt.

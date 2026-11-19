@@ -7,9 +7,9 @@ from elo_bot.extensions.final import FinalCommands
 from elo_bot.extensions.leaderboard import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
 from elo_bot.extensions.tokens import TokenCommands
 from elo_bot.config.ids import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES
-from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
+from elo_bot.config.presentation import FOOTER_IMAGE, LB_ENTRIES_PER_PAGE
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
 from elo_bot.features.finals.predictions import change_prediction_state
 from elo_bot.features.tokens.bets import open_market
@@ -17,6 +17,7 @@ from elo_bot.db.final_models import FinalPrediction
 from elo_bot.db.token_models import FinalBet, TokenWallet
 from elo_bot.db import Player
 from elo_bot.db.final_models import FinalMatchResult
+from elo_bot.db.final_draft_models import FinalResultDraft
 
 
 class TestFinalCallbacks(FinalScenarioCase):
@@ -30,7 +31,12 @@ class TestFinalCallbacks(FinalScenarioCase):
 
     async def asyncSetUp(self):
         await super().asyncSetUp()
-        self.bot = MagicMock(ext={})
+        self.message = MagicMock(id=800, pin=AsyncMock(), edit=AsyncMock())
+        self.channel = MagicMock(send=AsyncMock(return_value=self.message),
+                                 fetch_message=AsyncMock(return_value=self.message))
+        self.channel.guild.fetch_member = AsyncMock(return_value=None)
+        self.bot = MagicMock(ext={}, fetch_channel=AsyncMock(return_value=self.channel))
+        self.bot.user.id = 42
         self.cog = FinalCommands(self.bot)
         self.final = await confirm_bracket(await self.roster(8), "manager")
 
@@ -43,7 +49,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         client.cache.get_user.return_value = member
         client.cache.place_user_data.return_value = member
         client.cache.get_guild.return_value.fetch_member = AsyncMock(return_value=None)
-        message = MagicMock(id=9001, flags=ipy.MessageFlags.IS_COMPONENTS_V2 | ipy.MessageFlags.EPHEMERAL)
+        message = MagicMock(id=9001, flags=ipy.MessageFlags.EPHEMERAL)
         client.cache.place_message_data.return_value = message
         client.cache.get_message.return_value = message
         client.http.post_initial_response = AsyncMock(return_value=None)
@@ -68,18 +74,19 @@ class TestFinalCallbacks(FinalScenarioCase):
         self.assertEqual(initial["type"], 5)
         self.assertEqual(initial["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
         payload = client.http.edit_interaction_message.await_args.args[0]
-        self.assertTrue(payload["flags"] & ipy.MessageFlags.IS_COMPONENTS_V2)
+        self.assertFalse(payload.get("flags", 0) & ipy.MessageFlags.IS_COMPONENTS_V2)
         self.assertFalse(payload.get("content"))
-        self.assertFalse(payload.get("embeds"))
-        self.assertEqual(payload["components"][0]["type"], 17)
+        self.assertEqual(payload["embeds"][0]["footer"]["icon_url"], FOOTER_IMAGE)
+        self.assertEqual(payload["components"][0]["components"][0]["type"], 3)
         client.http.post_followup.assert_not_awaited()
         prediction = await FinalPrediction.find_one({"user_id": "9"})
         component, transport = self.library_context(int(ipy.InteractionType.MESSAGE_COMPONENT),
-            f"finalpred|7|9|{prediction.session_revision}|pick|QF1", [self.final.nodes["QF1"].contestants[0]])
+            f"finalpred|{self.final.id}|9|{prediction.session_revision}|pick|QF1", [self.final.nodes["QF1"].contestants[0]])
         await self.cog.final_prediction_action.callback.func(self.cog, component)
         self.assertEqual(transport.http.post_initial_response.await_args.args[0]["type"], 6)
-        edited = transport.http.edit_interaction_message.await_args.args[0]
-        self.assertTrue(edited["flags"] & ipy.MessageFlags.IS_COMPONENTS_V2)
+        edited = transport.http.edit_interaction_message.await_args.kwargs["payload"]
+        self.assertFalse(edited.get("flags", 0) & ipy.MessageFlags.IS_COMPONENTS_V2)
+        self.assertEqual(edited["embeds"][0]["footer"]["icon_url"], FOOTER_IMAGE)
         self.assertEqual((await FinalPrediction.get(prediction.id)).draft["QF1"], "1")
 
     async def test_betting_review_confirm_stale_and_owner_controls_match_persisted_state(self):
@@ -89,7 +96,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         ctx.custom_id = f"betamount|{market.id}|9|1|0"
         await self.cog.bet_amount.callback.func(self.cog, ctx, "1000")
         embed = ctx.send.await_args.kwargs["embed"]
-        self.assertEqual(embed.description, f"**[Player 1](<https://discordapp.com/users/1>)** · 1,000 {TOKEN_EMOJI}")
+        self.assertEqual(embed.description, f"**[Player 1](<https://discordapp.com/users/1?tab=wishlist>)** · 1,000 {TOKEN_EMOJI}")
         self.assertEqual([(field.name, field.value) for field in embed.fields],
                          [("**Estimated Profit**", f"0 {TOKEN_EMOJI}")])
         button = ctx.send.await_args.kwargs["components"][0]
@@ -99,7 +106,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         await self.cog.bet_confirm.callback.func(self.cog, ctx)
         self.assertEqual((await TokenWallet.get("9")).balance, 4000)
         self.assertEqual((await FinalBet.find_one({"user_id": "9"})).amount, 1000)
-        self.assertIn(f"{SUCCESS_EMOJI} Bet updated: 1,000 {TOKEN_EMOJI} on <@1>.",
+        self.assertIn(f"{SUCCESS_EMOJI} Bet updated: 1,000 {TOKEN_EMOJI} on **[Player 1](<https://discordapp.com/users/1?tab=wishlist>)**.",
                       ctx.edit_origin.await_args.kwargs["content"])
         self.assertEqual(ctx.edit_origin.await_args.kwargs["components"], [])
         self.assertEqual(ctx.edit_origin.await_args.kwargs["embeds"], [])
@@ -108,7 +115,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         await self.cog.bet_confirm.callback.func(self.cog, ctx)
         self.assertIn("bet changed", ctx.edit_origin.await_args.kwargs["content"])
         self.assertTrue(ctx.edit_origin.await_args.kwargs["content"].startswith(str(ERROR_EMOJI)))
-        self.assertEqual(ctx.edit_origin.await_args.kwargs["components"][0].label, "Open Bet")
+        self.assertEqual(ctx.edit_origin.await_args.kwargs["components"], [])
         self.assertEqual((await TokenWallet.get("9")).balance, 4000)
         foreign = self.context(user=8)
         foreign.custom_id = button.custom_id
@@ -180,7 +187,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         message = MagicMock(embeds=[payload["embed"]], components=payload["components"], edit=AsyncMock())
         message.interaction.user.id = 9
         ctx.message = message
-        self.assertEqual(message.embeds[0].fields[0].value, "Current Season")
+        self.assertEqual(message.embeds[0].fields[0].value, "Lifetime")
         self.assertEqual([option.value for option in message.components[0].components[0].options if option.default], ["Tokens"])
         ctx.custom_id = f"lb_right|{LB_ENTRIES_PER_PAGE}"
         await board.lb_pagination.callback.func(board, ctx)
@@ -189,7 +196,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         self.assertTrue(message.components[-1].components[-1].disabled)
         await board.lb_refresh.callback.func(board, ctx)
         self.assertIn(second_page, message.embeds[0].description)
-        self.assertEqual(message.embeds[0].fields[0].value, "Current Season")
+        self.assertEqual(message.embeds[0].fields[0].value, "Lifetime")
         await board.lb_page_modal.callback.func(board, ctx, page="1")
         self.assertTrue(message.components[-1].components[0].disabled)
         await board.lb_page_button.callback.func(board, ctx)
@@ -221,33 +228,31 @@ class TestFinalCallbacks(FinalScenarioCase):
         source = await schedule_final_match(source, 2000000000)
         await source.set({"thread": "777"})
         await bind_thread(self.final, source, "777")
-        self.final = await resolve_final()
+        self.final = await final_for_view()
         ctx = self.context(manager=True)
         ctx.author.has_role.side_effect = lambda role: role in LVL1_ROLES or role in LVL2_ROLES
         node = self.final.nodes["QF1"]
-        ctx.custom_id = f"finalres|7|QF1|9|0|{node.contestant_revision}|{node.attempt}|-|0"
+        ctx.custom_id = f"finalres|{self.final.id}|QF1|9|0|{node.contestant_revision}|{node.attempt}|-|0"
         self.bot.fetch_channel = AsyncMock(side_effect=ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden")))
         before = [player.model_dump() for player in await Player.find_all().to_list()]
-        confirmations = []
-
-        async def confirm(**kwargs):
-            self.assertEqual(await FinalMatchResult.count(), 0)
-            self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
-            self.assertEqual(ctx.send.await_args.args[0], "Confirm this result?")
-            self.assertIn("700%", ctx.send.await_args.kwargs["embed"].fields[0].value)
-            confirmation = self.context(manager=True)
-            confirmation.custom_id = "finalconfirm|100"
-            confirmations.append(confirmation)
-            return MagicMock(ctx=confirmation)
-
-        self.bot.wait_for_component = AsyncMock(side_effect=confirm)
         await self.cog.final_result_modal.callback.func(self.cog, ctx, player1="\n".join(["3.100"] * 7),
                                                       player2="\n".join(["2.80"] * 7))
-        confirmation = self.bot.wait_for_component.await_args.kwargs
-        self.assertFalse(confirmation["check"](MagicMock(ctx=self.context(user=8))))
-        response = confirmations[0].edit_origin.await_args.kwargs
+        self.assertEqual(await FinalMatchResult.count(), 0)
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+        self.assertEqual(ctx.send.await_args.args[0], "Confirm this result?")
+        self.assertIn("700%", ctx.send.await_args.kwargs["embed"].fields[0].value)
+        draft = await FinalResultDraft.find_one({"owner_id": "9"})
+        foreign = self.context(user=8, manager=True)
+        foreign.custom_id = f"finalconfirm|{draft.id}"
+        await self.cog.final_result_confirmation.callback.func(self.cog, foreign)
+        self.assertIn("another user", foreign.send.await_args.args[0])
+        self.assertEqual(await FinalMatchResult.count(), 0)
+        confirmation = self.context(manager=True)
+        confirmation.custom_id = f"finalconfirm|{draft.id}"
+        await self.cog.final_result_confirmation.callback.func(self.cog, confirmation)
+        response = confirmation.edit_origin.await_args.kwargs
         self.assertTrue(response["content"].startswith(f"{SUCCESS_EMOJI} Result saved."))
-        self.assertIn("publication remains pending", response["content"])
+        self.assertIn("updates are pending and retry automatically", response["content"])
         self.assertEqual(response["components"], [])
         self.assertEqual(ctx.send.await_count, 1)
         self.assertEqual(await FinalMatchResult.count(), 1)

@@ -11,11 +11,11 @@ class TestFinalLeaderboardReads(FinalScenarioCase):
     async def test_predictions_all_seasons_aggregates_submitted_scores_across_final_editions(self):
         old_archive = await Season(season_number=3, start=0, end=1, players=[]).insert()
         latest_archive = await Season(season_number=9, start=2, end=3, players=[]).insert()
-        old = await EloFinal(season_number=3, season_id=old_archive.id, schema_version=2).insert()
+        old = await EloFinal(season_number=3, schema_version=2).insert()
         current = await EloFinal(
-            season_number=7, season_id=self.archive.id, schema_version=2, active=True
+            season_number=7, schema_version=2, active=True
         ).insert()
-        latest = await EloFinal(season_number=9, season_id=latest_archive.id, schema_version=2).insert()
+        latest = await EloFinal(season_number=9, schema_version=2).insert()
         for final, user, points, eligible, submitted_at in (
             (old, "1", 2, 2, 1), (current, "1", 6, 100, 1),
             (old, "2", 5, 5, 1), (current, "2", 3, 3, 1),
@@ -53,7 +53,7 @@ class TestFinalLeaderboardReads(FinalScenarioCase):
         self.assertFalse(any(entry["command"].get("autocommit") is False for entry in commands))
         self.assertEqual(len(rows), 9)
         self.assertEqual(rows[-1].user_id, "1")
-        self.assertEqual((rows[-1].value, rows[-1].debt, rows[-1].scope), (0, 50, "Current Season"))
+        self.assertEqual((rows[-1].value, rows[-1].debt, rows[-1].scope), (0, 50, "Lifetime"))
         self.assertEqual([w.model_dump() for w in await TokenWallet.find_all().sort("user_id").to_list()],
                          [w.model_dump() for w in before_wallets])
         self.assertEqual([r.model_dump() for r in await TokenLedgerEntry.find_all().sort("_id").to_list()],

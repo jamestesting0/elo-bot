@@ -6,6 +6,7 @@ from elo_bot.discord import runtime
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES
 from elo_bot.db import StickyMessage
+from elo_bot.features.embeds.static import static_embed
 
 STICKY_WEBHOOK_NAME = "Elo Sticky"
 
@@ -114,10 +115,27 @@ async def sticky(ctx: ipy.SlashContext, message: str) -> None:
     await ctx.send(f"{SUCCESS_EMOJI} Sticky message set.", ephemeral=True)
 
 
+async def post_embed_sticky(channel, embed_type: str) -> None:
+    channel_id = str(channel.id)
+    async with sticky_channel_lock(channel_id):
+        embed, components = static_embed(embed_type)
+        sent = await channel.send(embed=embed, components=components)
+        try:
+            document = StickyMessage(id=str(sent.id), channel_id=channel_id, message_id=str(sent.id),
+                                     embed_type=embed_type)
+            await StickyMessage.get_pymongo_collection().insert_one(document.model_dump(by_alias=True))
+        except Exception:
+            await sent.delete()
+            raise
+
+
 @ipy.listen(ipy.events.MessageCreate)
 async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
     channel = event.message.channel
     if not isinstance(channel, (ipy.GuildText, ipy.GuildNews, ipy.ThreadChannel)):
+        return
+    # Ephemeral replies are visible to one user only, so they never push a sticky up.
+    if ipy.MessageFlags.EPHEMERAL in ipy.MessageFlags(event.message.flags or 0):
         return
 
     channel_id = str(channel.id)
@@ -133,7 +151,7 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
         ):
             return
 
-        webhook, thread_id = await sticky_webhook(channel, stickies[0].webhook_id)
+        webhook = thread_id = None
         for sticky in stickies:
             old_message_id = sticky.message_id
             note_bot_sticky_delete(channel_id, old_message_id)
@@ -148,9 +166,17 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
                 raise
 
             try:
-                sent = await send_sticky(webhook, sticky.content, sticky.author_name, sticky.avatar_url, thread_id)
+                if sticky.embed_type:
+                    embed, components = static_embed(sticky.embed_type)
+                    sent, webhook_id = await channel.send(embed=embed, components=components), None
+                else:
+                    if webhook is None:
+                        known = next((item.webhook_id for item in stickies if item.webhook_id), None)
+                        webhook, thread_id = await sticky_webhook(channel, known)
+                    sent = await send_sticky(webhook, sticky.content, sticky.author_name, sticky.avatar_url, thread_id)
+                    webhook_id = str(webhook.id)
                 try:
-                    moved = await sticky.move(str(sent.id), str(webhook.id))
+                    moved = await sticky.move(str(sent.id), webhook_id)
                 except Exception:
                     await sent.delete()
                     raise

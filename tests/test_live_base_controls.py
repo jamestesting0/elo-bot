@@ -120,8 +120,8 @@ class TestLiveBaseControls(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.stored.embeds[0].title, "**Base Storage Incomplete**")
         self.assertFalse(self.stored.embeds[0].description)
         self.assertEqual(self.stored.embeds[0].fields[3].value,
-                         "**[Player 111](<https://discordapp.com/users/111>)** — No slot reserved\n"
-                         "**[Player 222](<https://discordapp.com/users/222>)** — Slot 2")
+                         "**[Player 111](<https://discordapp.com/users/111?tab=wishlist>)** — No slot reserved\n"
+                         "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)** — Slot 2")
         self.assertEqual([p["payload"]["slot"] for p in self.f.http.create_payloads], [1, 2])
 
     async def test_successful_undo_releases_both_slots(self):

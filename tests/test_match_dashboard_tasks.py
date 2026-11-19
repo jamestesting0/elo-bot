@@ -32,7 +32,7 @@ class TestMatchCommands(MatchCommandsCase):
         timestamp = ipy.Timestamp.fromtimestamp(3000).format(ipy.TimestampStyles.RelativeTime)
         message.edit.assert_awaited_once()
         self.assertEqual(message.edit.await_args.kwargs["embed"]["description"],
-                         f"<#987> **[Player](<https://discordapp.com/users/111>)** {timestamp}\n")
+                         f"<#987> **[Player](<https://discordapp.com/users/111?tab=wishlist>)** {timestamp}\n")
 
     @patch_sites(('elo_bot.extensions.match.dashboards.HelperTask', 'elo_bot.features.matches.resources.HelperTask'))
     @patch.object(ServerState, "current", new_callable=AsyncMock)
@@ -124,7 +124,7 @@ class TestMatchCommands(MatchCommandsCase):
         mock_sync_slots.assert_awaited_once_with(bot=self.bot)
         self.assertEqual(
             message.edit.await_args.kwargs["embed"]["fields"][0]["value"],
-            "Available\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123>)**",
+            "Available\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123?tab=wishlist>)**",
         )
         message.edit.assert_awaited_once()
         mock_is_raid_weekend.assert_not_called()

@@ -25,6 +25,7 @@ from elo_bot.db import Match
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.discord.mentions import mention_user
 from elo_bot.extensions.match.groups import set_group
+from elo_bot.features.matches.controls import check_current_match, update_match
 from elo_bot.features.matches.message_lock import coordinated_match_message
 from elo_bot.features.matches.messages import (
     MatchMessageState,
@@ -59,6 +60,8 @@ class MatchSettingsCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
@@ -93,14 +96,14 @@ class MatchSettingsCommands:
             )
             return
 
-        write = await match.get_pymongo_collection().update_one(
+        write = await update_match(match,
             {**MatchMessageState.capture(match, 0).binding_filter(), "result_operation": None,
              "participants.0.result": list(match.participants[0].result),
              "participants.1.result": list(match.participants[1].result),
              "is_autowin": {"$ne": True}},
             {"$set": {"hosts.0": str(user.id), "hosts.1": str(user.id)}},
         )
-        if write.matched_count != 1:
+        if not write:
             await ctx.send(f"{ERROR_EMOJI} The match changed. Check the current host before retrying.",
                            ephemeral=True)
             return
@@ -211,6 +214,8 @@ class MatchSettingsCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return

@@ -7,8 +7,9 @@ from typing import Literal
 from pymongo.errors import PyMongoError
 
 import interactions as ipy
+from datetime import UTC, datetime
 from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.presentation import BANNER_IMAGE, COLOR, FOOTER_IMAGE, REWARDS_IMAGE
+from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, REWARDS_IMAGE, FOOTER_TEXT
 from elo_bot.config.ids import CHAT_CHANNEL, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE
 from elo_bot.config.game import HOST_CLAN_OPTIONS
 from elo_bot.discord.embeds import embed_edit_payload
@@ -17,6 +18,9 @@ from elo_bot.features.base_store.slots import collect_base_store_slot_owners, fo
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.members import member_guild
 from elo_bot.features.matches import resources
+from elo_bot.features.embeds.static import STATIC_EMBED_TYPES, static_embed
+from elo_bot.features.seasons.ongoing import ongoing_season_calendar
+from elo_bot.features.sticky.commands import post_embed_sticky
 
 
 class EmbedCommands(ipy.Extension):
@@ -65,6 +69,7 @@ class EmbedCommands(ipy.Extension):
         description="Type of the embed",
         choices=[
             ipy.SlashCommandChoice(name="Elo Information", value="Elo Information"),
+            ipy.SlashCommandChoice(name="Elo Final", value="Elo Final"),
             ipy.SlashCommandChoice(name="HOTW Information", value="HOTW Information"),
             ipy.SlashCommandChoice(name="GTBB Information", value="GTBB Information"),
             ipy.SlashCommandChoice(name="Hosting Queue", value="Hosting Queue"),
@@ -72,79 +77,24 @@ class EmbedCommands(ipy.Extension):
         ],
         opt_type=ipy.OptionType.STRING
     )
-    async def embed(self, ctx: ipy.SlashContext, embed_type: str):
+    @ipy.slash_option(
+        name="sticky",
+        description="Keep this embed at the bottom of the channel, like /sticky",
+        opt_type=ipy.OptionType.BOOLEAN,
+    )
+    async def embed(self, ctx: ipy.SlashContext, embed_type: str, sticky: bool = False):
         await ctx.defer(ephemeral=True)
 
-        if embed_type == "Elo Information":
-            description = open("assets/embeds/information.md", "r").read()
+        if embed_type in STATIC_EMBED_TYPES:
+            if sticky:
+                await post_embed_sticky(ctx.channel, embed_type)
+            else:
+                embed, components = static_embed(embed_type)
+                await ctx.channel.send(embed=embed, components=components)
 
-            embed = ipy.Embed(
-                title="**Clan Capital Elo System**",
-                description=description,
-                footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=FOOTER_IMAGE),
-                images=[ipy.EmbedAttachment(url=BANNER_IMAGE)],
-                color=COLOR,
-            )
-
-            participate_button = ipy.Button(
-                style=ipy.ButtonStyle.GRAY,
-                label="Participate",
-                custom_id="participate_button",
-                emoji=ipy.PartialEmoji(name="war", id=1050832305410805760)
-            )
-
-            build_button = ipy.Button(
-                style=ipy.ButtonStyle.GRAY,
-                label="Base Building",
-                custom_id="build_button",
-                emoji=ipy.PartialEmoji(name="grandbuilder", id=1294298302069739642)
-            )
-
-            rewards_button = ipy.Button(
-                style=ipy.ButtonStyle.GRAY,
-                label="Rewards",
-                custom_id="rewards_button",
-                emoji=ipy.PartialEmoji(name="goldpass", id=947797613825105950)
-            )
-
-            support_button = ipy.Button(
-                style=ipy.ButtonStyle.GRAY,
-                label="Support",
-                custom_id="support_button",
-                emoji="🛠️"
-            )
-
-            rules_button = ipy.Button(
-                style=ipy.ButtonStyle.GRAY,
-                label="Rules",
-                custom_id="rules_button",
-                emoji="📜"
-            )
-
-            docs_button = ipy.Button(
-                style=ipy.ButtonStyle.URL,
-                label="Documentation",
-                url="https://docs.google.com/document/d/1__Ufp_KCFrTaiFMvEouafyGn08quPKkIo50OFvswkUw/edit#heading=h"
-                    ".kz8yj8uavt8i",
-                emoji=ipy.PartialEmoji(name="googledocs", id=1294293700775641109)
-            )
-
-            video_button = ipy.Button(
-                style=ipy.ButtonStyle.URL,
-                label="Youtube",
-                url="https://www.youtube.com/watch?v=1bUDs5g-YOE&list=PLCBSjHpUFbfGiwqK-xf1R5FdGqrFBf3rk&pp=gAQB",
-                emoji=ipy.PartialEmoji(name="youtube", id=1124367780788056074)
-            )
-
-            await ctx.channel.send(
-                embed=embed,
-                components=[
-                    ipy.ActionRow(participate_button, support_button),
-                    ipy.ActionRow(rewards_button, build_button),
-                    ipy.ActionRow(rules_button, docs_button),
-                    ipy.ActionRow(video_button)
-                ]
-            )
+        elif sticky:
+            await ctx.send(f"{ERROR_EMOJI} Only Elo Information and Elo Final can be sticky.", ephemeral=True)
+            return
 
         elif embed_type == "Hosting Queue":
             embed = ipy.Embed(
@@ -205,6 +155,20 @@ class EmbedCommands(ipy.Extension):
             return
 
         await ctx.send(f"{SUCCESS_EMOJI} The embed has been sent.", ephemeral=True)
+
+    @ipy.component_callback("elo_final_details")
+    async def elo_final_details(self, ctx: ipy.ComponentContext):
+        with open("assets/embeds/elo_final.md") as details:
+            schedule = details.read()
+        calendar = await ongoing_season_calendar(datetime.now(UTC))
+        dates = "\n".join(
+            f"**{label}:** <t:{int(moment.timestamp())}:D> · <t:{int(moment.timestamp())}:R>"
+            for label, moment in (("Elo Final selection", calendar.final_selection),
+                                  ("Queue closes", calendar.queue_closes),
+                                  ("Season ends", calendar.season_ends)))
+        embed = ipy.Embed(title="**Season & Elo Final Schedule**", description=f"{dates}\n\n{schedule}",
+                          footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE), color=COLOR)
+        await ctx.send(embed=embed, ephemeral=True)
 
     @ipy.component_callback("rules_button")
     async def rules_button(self, ctx: ipy.ComponentContext):
@@ -347,7 +311,8 @@ class EmbedCommands(ipy.Extension):
 
     @ipy.listen(ipy.events.MemberUpdate)
     async def on_member_update(self, event: ipy.events.MemberUpdate):
-        if int(event.guild.id) not in GUILD_IDS:
+        # An uncached member has no earlier roles, so a newly granted Player role cannot be told apart.
+        if int(event.guild.id) not in GUILD_IDS or event.before is None:
             return
 
         before_roles = {int(role.id) for role in event.before.roles}

@@ -1007,7 +1007,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertIn("waiting for your opponent", ctx.send.await_args.args[0])
         self.bot.fetch_guild.assert_awaited_once_with(match_results_module.MAIN_GUILD)
         opponent = next(field for field in ctx.message.embeds[0].fields if field.name == "**Opponent**")
-        self.assertEqual(opponent.value, "**[Player 222](<https://discordapp.com/users/222>)**")
+        self.assertEqual(opponent.value, "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)**")
 
     async def test_reveal_opponent_in_dm_names_the_opponent_from_the_main_server(self):
         self.seed()
@@ -1017,7 +1017,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         await self.invoke("reveal_opponent_button", ctx)
         self.bot.fetch_guild.assert_awaited_once_with(match_results_module.MAIN_GUILD)
         opponent = next(field for field in ctx.message.embeds[0].fields if field.name == "**Opponent**")
-        self.assertEqual(opponent.value, "**[Player 222](<https://discordapp.com/users/222>)**")
+        self.assertEqual(opponent.value, "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)**")
         self.assertIn("opponent is now revealed", ctx.send.await_args.args[0])
 
     async def test_unconfirmed_match_with_incomplete_choices_rejects_queue_confirm(self):

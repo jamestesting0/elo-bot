@@ -40,6 +40,7 @@ from elo_bot.db import (
     ServerState,
     StickyMessage,
 )
+from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
 from elo_bot.db.fingerprint_models import BASE_FINGERPRINT_INDEXES, EXTRACTION_RUN_INDEXES, FINGERPRINT_TASK_INDEXES
 from elo_bot.db.sequential_models import SEQUENTIAL_RUN_INDEXES, HelperSequentialRun
@@ -107,6 +108,7 @@ async def main():
             FinalMatchResult,
             FinalPlayerProfile,
             FinalPrediction,
+            FinalResultDraft,
             TokenWallet,
             TokenLedgerEntry,
             FinalBettingMarket,

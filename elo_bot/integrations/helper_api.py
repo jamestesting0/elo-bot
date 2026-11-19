@@ -641,6 +641,7 @@ class HelperSequentialLivePayload(HelperModel):
     base_links_for_player_2: list[str] | None = Field(default=None, min_length=1, max_length=9)
     districts: list[str] | None = Field(default=None, min_length=1, max_length=9)
     remove_bases_after: Literal[False] | None = None
+    attacks_first: str | None = None
 
     @model_validator(mode="after")
     def validate_source_fields(self) -> "HelperSequentialLivePayload":

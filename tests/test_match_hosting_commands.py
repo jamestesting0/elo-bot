@@ -497,11 +497,11 @@ class TestMatchCommands(MatchCommandsCase):
         command = self.cog.match_autostart
 
         self.assertEqual(command.resolved_name, "match autostart")
-        self.assertEqual([str(option.name) for option in command.options], ["clan", "scout", "district", "sequential"])
+        self.assertEqual([str(option.name) for option in command.options],
+                         ["clan", "scout", "district", "sequential", "attacks_first"])
         self.assertTrue(command.options[0].required)
-        self.assertFalse(command.options[1].required)
-        self.assertFalse(command.options[2].required)
-        self.assertFalse(command.options[3].required)
+        self.assertFalse(any(option.required for option in command.options[1:]))
+        self.assertEqual([choice.value for choice in command.options[4].choices], [0, 1])
         self.assertEqual([str(option.name) for option in self.cog.match_start.options], ["clan", "scout"])
         self.assertEqual(len(command.checks), 1)
         self.assertIs(command.max_concurrency.bucket, match_base_store_module.CHANNEL_USER_CONCURRENCY_BUCKET)
@@ -1253,7 +1253,7 @@ class TestMatchCommands(MatchCommandsCase):
         self.bot.fetch_channel.assert_not_awaited()
 
     @patch_sites(('elo_bot.extensions.match.dashboards.Clan.find_one', 'elo_bot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
-    @patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new_callable=AsyncMock)
     @patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)
@@ -1610,7 +1610,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.channel.send.assert_not_awaited()
 
     @patch_sites(('elo_bot.extensions.match.dashboards.Clan.find_one', 'elo_bot.features.matches.resources.Clan.find_one'), new_callable=AsyncMock)
-    @patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new_callable=AsyncMock)
     @patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)

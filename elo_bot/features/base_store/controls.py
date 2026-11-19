@@ -38,6 +38,8 @@ from elo_bot.db import Match, Player
 from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.core.finals import FinalError
+import elo_bot.features.hosting.war.war_start as war_start
+from elo_bot.features.finals.matches import require_ongoing_match
 
 
 async def resolve_stored_base_control(
@@ -48,6 +50,11 @@ async def resolve_stored_base_control(
         return StoredBaseControlFailure(
             f"{ERROR_EMOJI} Unable to fetch a valid match, the match has probably ended."
         )
+    if is_final_match(match):
+        try:
+            await require_ongoing_match(match)
+        except FinalError as error:
+            return StoredBaseControlFailure(f"{ERROR_EMOJI} {error}")
     store = match.participants[request.player].base_store
     if store and store.is_live and not allow_live:
         return StoredBaseControlFailure(f"{ERROR_EMOJI} Use the paired live-storage message for these bases.")
@@ -187,6 +194,10 @@ async def start_stored_bases(
                     "message could not be updated. No reservation was released by this start. Please contact a helper.",
                     ephemeral=True,
                 )
+                return
+            except war_start.WarStartRefused as refusal:
+                # Nothing started, so the stored bases stay ready for a retry.
+                await ctx.send(str(refusal), ephemeral=True)
                 return
             except Exception:  # noqa: BROAD_EXCEPT_OK - preserve storage after failures before the durable start commit
                 refreshed_match = await Match.find_one({"token": request.token})

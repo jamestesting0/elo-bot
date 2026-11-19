@@ -82,7 +82,9 @@ def _normalize_season(lb_type: str, season: str | None) -> str:
 
 
 def _scope_window(lb_type: str, season: str, seasons: list[Season]) -> tuple[str, int | float, int | float]:
-    if lb_type in {"Tokens", "Predictions"}:
+    if lb_type == "Tokens":
+        return "Lifetime", 0, 0
+    if lb_type == "Predictions":
         return (f"Season {season} Final" if season.isdigit() else season), 0, 0
     return interpret_season_string(seasons, season)
 

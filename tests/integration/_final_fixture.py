@@ -8,6 +8,7 @@ from pymongo import AsyncMongoClient
 
 from elo_bot.features.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes, require_transactions
 from elo_bot.db import BaseLayout, Clan, EloFinal, Helper, Match, Player, PlayerSeasonData, RecordedMatch, Season
+from elo_bot.db.sequential_models import HelperSequentialRun
 
 
 class FinalMongoCase(unittest.IsolatedAsyncioTestCase):
@@ -22,7 +23,8 @@ class FinalMongoCase(unittest.IsolatedAsyncioTestCase):
         self.database = self.client[f"elo_final_it_{uuid4().hex}_main"]
         self.addAsyncCleanup(self.cleanup_database)
         await init_beanie(database=self.database, document_models=[
-            Match, Player, Season, EloFinal, BaseLayout, RecordedMatch, Helper, Clan, *FINAL_DOCUMENT_MODELS,
+            Match, Player, Season, EloFinal, BaseLayout, RecordedMatch, Helper, Clan, HelperSequentialRun,
+            *FINAL_DOCUMENT_MODELS,
         ], skip_indexes=True)
         await register_final_indexes()
         await require_transactions()
@@ -37,16 +39,16 @@ class FinalMongoCase(unittest.IsolatedAsyncioTestCase):
 class FinalScenarioCase(FinalMongoCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
-        self.archive = await Season(season_number=7, start=1, end=2, players=[
+        self.archive = await Season(season_number=6, start=1, end=2, players=[
             PlayerSeasonData(player_id=str(user), elo=1000 - user) for user in range(1, 10)
         ]).insert()
         for user in range(1, 10):
-            await Player(id=str(user), user_id=str(user), tag=f"#P{user}", elo=2000, highest_elo=2100).insert()
+            await Player(id=str(user), user_id=str(user), tag=f"#P{user}", elo=1000 - user, highest_elo=2100).insert()
 
     async def roster(self, count):
         from elo_bot.features.finals.lifecycle import add_entrant, start_final
         from elo_bot.config.ids import MAIN_GUILD, FINAL_CHANNEL
-        final = await start_final(None, MAIN_GUILD, FINAL_CHANNEL)
+        final = await start_final(MAIN_GUILD, FINAL_CHANNEL)
         for user in range(1, count + 1):
             final = await add_entrant(final, str(user), f"Player {user}")
         return final

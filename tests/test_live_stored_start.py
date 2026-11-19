@@ -110,8 +110,8 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
         ])
         self.assertEqual(self.message.embeds[0].title, "**Bases Stored**")
         self.assertEqual(self.message.embeds[0].fields[0].value,
-                         "**[Player 111](<https://discordapp.com/users/111>)**: Slot 1\n"
-                         "**[Player 222](<https://discordapp.com/users/222>)**: Slot 2")
+                         "**[Player 111](<https://discordapp.com/users/111?tab=wishlist>)**: Slot 1\n"
+                         "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)**: Slot 2")
 
     async def test_aborted_live_start_keeps_pair_and_shared_undo(self):
         self.f.document.update(is_war=False, times=[100, None], hosts=["999", None],

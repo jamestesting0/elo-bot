@@ -92,7 +92,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         # Verify
         mock_base_layout.find_one.assert_called_once()
         mock_construct_embed.assert_called_once_with(
-            mock_base, "Performance", names={"12345": "**[Builder](<https://discordapp.com/users/12345>)**"},
+            mock_base, "Performance", names={"12345": "**[Builder](<https://discordapp.com/users/12345?tab=wishlist>)**"},
         )
         ctx.send.assert_called_with(embed=mock_embed, ephemeral=True)
 
@@ -186,7 +186,7 @@ class TestBaseCommands(unittest.IsolatedAsyncioTestCase):
         # Verify
         mock_base_layout.find.assert_called()
         mock_construct_embed.assert_called_once_with(
-            mock_base, "Performance", names={"12345": "**[Builder](<https://discordapp.com/users/12345>)**"},
+            mock_base, "Performance", names={"12345": "**[Builder](<https://discordapp.com/users/12345?tab=wishlist>)**"},
         )
         ctx.send.assert_called_once()
 

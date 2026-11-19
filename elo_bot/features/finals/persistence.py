@@ -10,12 +10,17 @@ from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalP
 from elo_bot.db.season_models import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 from elo_bot.db.match_models import Match
+from elo_bot.db.final_draft_models import FinalResultDraft
 
-FINAL_DOCUMENT_MODELS = (FinalMatchResult, FinalPlayerProfile, FinalPrediction,
+FINAL_DOCUMENT_MODELS = (FinalMatchResult, FinalPlayerProfile, FinalPrediction, FinalResultDraft,
                          TokenWallet, TokenLedgerEntry, FinalBettingMarket, FinalBet)
 
 
 async def register_final_indexes() -> None:
+    finals = EloFinal.get_pymongo_collection()
+    # Retired: it also counted cancelled Finals, so a cancelled season could never be started again.
+    if "final_season_unique" in await finals.index_information():
+        await finals.drop_index("final_season_unique")
     for model in (EloFinal, *FINAL_DOCUMENT_MODELS):
         await model.get_pymongo_collection().create_indexes(model.Settings.indexes)
     await Match.get_pymongo_collection().create_indexes([

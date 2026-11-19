@@ -12,6 +12,7 @@ from elo_bot.features.base_store.live import live_stores, ready_live_reservation
 from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.db import Clan, Match, Player
+from elo_bot.core.finals import FINAL_SELF_HOSTING_REFUSAL, is_final_match
 
 
 class SelfHostingRuntime(Protocol):
@@ -63,6 +64,9 @@ async def request_live_match(
     if len(participants) != 2 or caller_id not in [participant.user_id for participant in participants]:
         await ctx.send(f"{ERROR_EMOJI} Only a match participant can request a live match.", ephemeral=True)
         return
+    if is_final_match(match):
+        await ctx.send(f"{ERROR_EMOJI} {FINAL_SELF_HOSTING_REFUSAL}", ephemeral=True)
+        return
     if any(is_match_finished(match, player=index) for index in range(2)):
         await ctx.send(f"{ERROR_EMOJI} This match has already finished.", ephemeral=True)
         return
@@ -84,6 +88,9 @@ async def start_accepted_live_match(
         match: Match,
         requester_index: int,
 ) -> None:
+    if is_final_match(match):
+        await ctx.send(f"{ERROR_EMOJI} {FINAL_SELF_HOSTING_REFUSAL}", ephemeral=True)
+        return
     stored_reservation_id = ready_live_reservation_id(match, identity.stored_reservation_id)
     if identity.stored_reservation_id and stored_reservation_id is None:
         await ctx.send(f"{ERROR_EMOJI} The stored live bases are no longer ready.", ephemeral=True)

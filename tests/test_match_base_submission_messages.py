@@ -176,7 +176,7 @@ class TestMatchBaseSubmissionMessages(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(events, ["save", "edit"])
                 self.assertEqual(message.pin.await_count, 0 if pinned else 1)
                 self.assertEqual(message.embeds[0].fields[4].value,
-                                 "- **[Player](<https://discordapp.com/users/111>)** has submitted bases.")
+                                 "- **[Player](<https://discordapp.com/users/111?tab=wishlist>)** has submitted bases.")
                 self.assertIn(str(SUCCESS_EMOJI), self.ctx.send.await_args.args[0])
 
     async def test_submissions_preserve_existing_notes_for_the_same_user_id(self) -> None:
@@ -184,6 +184,8 @@ class TestMatchBaseSubmissionMessages(unittest.IsolatedAsyncioTestCase):
             for mention in (
                     "<@111>", "<@!111>", "[Old Name](<https://discordapp.com/users/111>)",
                     "**[Old Name](<https://discordapp.com/users/111>)**",
+                    "[Old Name](<https://discordapp.com/users/111?tab=wishlist>)",
+                    "**[Old Name](<https://discordapp.com/users/111?tab=wishlist>)**",
             ):
                 with self.subTest(modal=modal, mention=mention):
                     message = self.message()

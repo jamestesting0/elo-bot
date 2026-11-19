@@ -15,15 +15,12 @@ class TestFinalAdministration(FinalScenarioCase):
         final = await confirm_bracket(await self.roster(5), "manager")
         wallet = await ensure_wallet("9")
         before = [player.model_dump() for player in await Player.find_all().to_list()]
-        for flag in ("repair_pending", "reopening_pending"):
-            with self.subTest(flag=flag):
-                await final.set({"active": False, "state": "COMPLETED", "repair_pending": False,
-                                 "reopening_pending": False, flag: True})
-                with self.assertRaisesRegex(FinalError, "recovery"):
-                    await migrate_final_identity("9", "10", "manager")
-                self.assertEqual((await TokenWallet.get(wallet.id)).user_id, "9")
-                self.assertEqual(before, [player.model_dump() for player in await Player.find_all().to_list()])
-                self.assertEqual(await TokenLedgerEntry.find({"kind": "identity"}).count(), 0)
+        await final.set({"active": False, "state": "COMPLETED", "repair_pending": True})
+        with self.assertRaisesRegex(FinalError, "recovery"):
+            await migrate_final_identity("9", "10", "manager")
+        self.assertEqual((await TokenWallet.get(wallet.id)).user_id, "9")
+        self.assertEqual(before, [player.model_dump() for player in await Player.find_all().to_list()])
+        self.assertEqual(await TokenLedgerEntry.find({"kind": "identity"}).count(), 0)
 
     async def test_active_entrant_and_reset_are_protected_before_any_write(self):
         await self.roster(5)
@@ -38,11 +35,11 @@ class TestFinalAdministration(FinalScenarioCase):
 
     async def test_deregistration_races_a_join_without_an_unregistered_entrant(self):
         import asyncio
-        from elo_bot.features.finals.lifecycle import add_entrant, resolve_final
+        from elo_bot.features.finals.lifecycle import add_entrant, final_for_view
         final = await self.roster(5)
         async with asyncio.timeout(5):
             await asyncio.gather(add_entrant(final, "9", "Bettor"), deregister_player("9"), return_exceptions=True)
-        current = await resolve_final()
+        current = await final_for_view()
         player = await Player.find_one({"user_id": "9"})
         self.assertTrue("9" not in current.entrant_ids or player is not None)
         self.assertEqual(player is not None, "9" in current.entrant_ids)
@@ -78,8 +75,8 @@ class TestFinalAdministration(FinalScenarioCase):
     async def test_final_result_delete_points_to_correction_and_retains_history(self):
         final = await confirm_bracket(await self.roster(8), "manager")
         await self.scheduled_pairing(final, "QF1")
-        from elo_bot.features.finals.lifecycle import resolve_final
-        final = await resolve_final()
+        from elo_bot.features.finals.lifecycle import final_for_view
+        final = await final_for_view()
         node = final.nodes["QF1"]
         result = await submit_result(FinalResultSubmission(final_id=final.id, node_id=node.id, actor_id="manager",
             operation_key="official", expected_version=0, contestant_revision=node.contestant_revision, attempt=node.attempt,

@@ -135,8 +135,8 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
         )
         self.assertEqual(
             [field["value"] for field in public_edit.kwargs["embed"]["fields"]],
-            [f"**[Player {PLAYER_ID}](<https://discordapp.com/users/{PLAYER_ID}>)**",
-             f"**[Player {self.bot.user.id}](<https://discordapp.com/users/{self.bot.user.id}>)**",
+            [f"**[Player {PLAYER_ID}](<https://discordapp.com/users/{PLAYER_ID}?tab=wishlist>)**",
+             f"**[Player {self.bot.user.id}](<https://discordapp.com/users/{self.bot.user.id}?tab=wishlist>)**",
              f"[{self.clans[SECOND_CLAN_TAG].name} ({SECOND_CLAN_TAG})]"
              f"({self.clans[SECOND_CLAN_TAG].share_link})", "Slot 1"],
         )

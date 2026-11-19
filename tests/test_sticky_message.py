@@ -21,10 +21,11 @@ def guild_text(channel_id="10"):
     return channel
 
 
-def message_event(channel, message_id):
+def message_event(channel, message_id, flags=0):
     event = MagicMock()
     event.message.channel = channel
     event.message.id = message_id
+    event.message.flags = ipy.MessageFlags(flags)
     return event
 
 
@@ -177,6 +178,7 @@ class TestStickyCommand(unittest.IsolatedAsyncioTestCase):
                     "content": "hello",
                     "author_name": "A" * 80,
                     "avatar_url": "https://cdn/a.png",
+                "embed_type": None,
                 },
             )
             channel.delete_message.assert_not_awaited()
@@ -317,6 +319,15 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
                 {"$set": {"message_id": "60", "webhook_id": "50"}},
             )
             sent.delete.assert_not_awaited()
+
+    async def test_ephemeral_replies_do_not_move_the_sticky(self):
+        channel = guild_text()
+        channel.delete_message = AsyncMock()
+        with patch.object(sticky_commands.StickyMessage, "for_channel", new_callable=AsyncMock) as lookup:
+            await sticky_commands.on_sticky_message.callback(
+                message_event(channel, "20", ipy.MessageFlags.EPHEMERAL | ipy.MessageFlags.LOADING))
+        lookup.assert_not_awaited()
+        channel.delete_message.assert_not_awaited()
 
     async def test_the_sticky_message_itself_is_left_alone(self):
         for module in self.modules:
@@ -548,6 +559,27 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(deleted, ["11", "101"])
             for sent in sent_messages:
                 sent.delete.assert_not_awaited()
+
+    async def test_embed_sticky_is_reposted_by_the_bot_with_its_buttons(self):
+        channel = guild_text()
+        sent = MagicMock(id="60", delete=AsyncMock())
+        channel.delete_message = AsyncMock()
+        channel.send = AsyncMock(return_value=sent)
+        collection = MagicMock(update_one=AsyncMock(return_value=MagicMock(matched_count=1)))
+        with (
+            patch.object(sticky_commands.StickyMessage, "get_pymongo_collection", return_value=collection),
+            patch.object(sticky_commands, "sticky_webhook", new_callable=AsyncMock) as webhook,
+        ):
+            stored = sticky_document(webhook_id=None, content=None, author_name=None, avatar_url=None,
+                                     embed_type="Elo Final")
+            with patch.object(sticky_commands.StickyMessage, "for_channel", new_callable=AsyncMock, return_value=[stored]):
+                await sticky_commands.on_sticky_message.callback(message_event(channel, "20"))
+        webhook.assert_not_awaited()
+        posted = channel.send.await_args.kwargs
+        self.assertEqual(posted["components"][0].components[0].custom_id, "elo_final_details")
+        collection.update_one.assert_awaited_once_with(
+            {"_id": "10", "message_id": "11"}, {"$set": {"message_id": "60", "webhook_id": None}},
+        )
 
 
 class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):

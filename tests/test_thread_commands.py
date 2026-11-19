@@ -122,7 +122,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         # Then only the player whose preset was loaded is identified in Notes.
         embed = thread.send.await_args.kwargs["embed"]
         notes = next(field for field in embed.fields if field.name == "**Notes**")
-        self.assertEqual(notes.value, "- **[First Player](<https://discordapp.com/users/111>)** has preset bases.")
+        self.assertEqual(notes.value, "- **[First Player](<https://discordapp.com/users/111?tab=wishlist>)** has preset bases.")
 
     async def test_delete_thread_button_allows_staff_roles_before_or_after_rename(self):
         for role, channel_name in ((LVL1_ROLES[2], "🟡 Match Thread"), (STAFF_ROLE, "🔴 Match Thread")):

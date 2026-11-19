@@ -48,9 +48,9 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         pending = MagicMock()
         pending.link = BASE_LINK
         pending.submitter_id = "123"
-        pending.submitter_display = "[Submitter Name](<https://discordapp.com/users/123>)"
+        pending.submitter_display = "[Submitter Name](<https://discordapp.com/users/123?tab=wishlist>)"
         pending.builder_id = "456"
-        pending.builder_display = "[Builder Name](<https://discordapp.com/users/456>)"
+        pending.builder_display = "[Builder Name](<https://discordapp.com/users/456?tab=wishlist>)"
         pending.district = "Barbarian Camp"
         pending.proposed_quality = "Good"
         pending.reason = "Fresh anti-meta layout"
@@ -67,11 +67,11 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
             fields=[
                 ipy.EmbedField(
                     name="Submitter",
-                    value="[Submitter Name](<https://discordapp.com/users/123>)",
+                    value="[Submitter Name](<https://discordapp.com/users/123?tab=wishlist>)",
                 ),
                 ipy.EmbedField(
                     name="Builder",
-                    value="[Builder Name](<https://discordapp.com/users/456>)",
+                    value="[Builder Name](<https://discordapp.com/users/456?tab=wishlist>)",
                 ),
                 ipy.EmbedField(name="District", value="Barbarian Camp"),
                 ipy.EmbedField(name="Proposed Quality", value="Good"),
@@ -192,7 +192,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         review.edit.assert_awaited_once()
         ctx.edit.assert_not_awaited()
         resolved = review.edit.await_args.kwargs
-        self.assertIn("Rejected by **[Member 789](<https://discordapp.com/users/789>)**",
+        self.assertIn("Rejected by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**",
                       self._field(resolved["embed"], "Review Status"))
         buttons = resolved["components"].components
         self.assertTrue(all(button.disabled for button in buttons))
@@ -234,7 +234,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self._field(notification, "Moderator Note"), "Verified in FCs")
         self.assertEqual(notification.images[0].url, "https://cdn.example/review.webp")
         resolved = review.edit.await_args.kwargs
-        self.assertIn("Accepted by **[Member 789](<https://discordapp.com/users/789>)**",
+        self.assertIn("Accepted by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**",
                       self._field(resolved["embed"], "Review Status"))
         self.assertTrue(all(button.disabled for button in resolved["components"].components))
         self.pending.delete.assert_not_awaited()
@@ -267,7 +267,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
                 if expected is not None:
                     resolved = ctx.message.edit.await_args.kwargs["embed"]
                     self.assertEqual(self._field(resolved, "Builder"),
-                                     "**[Member 999](<https://discordapp.com/users/999>)**")
+                                     "**[Member 999](<https://discordapp.com/users/999?tab=wishlist>)**")
 
     async def test_accept_existing_base_link_rejects_review_without_changing_base(self) -> None:
         # Given: the submitted link already exists in the base database.
@@ -291,7 +291,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         ctx.message.edit.assert_awaited_once()
         edited = ctx.message.edit.await_args.kwargs
         self.assertEqual(self._field(edited["embed"], "Review Status"),
-                         "Rejected by **[Member 789](<https://discordapp.com/users/789>)**")
+                         "Rejected by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.assertIn("already exists in the base bank", self._field(edited["embed"], "Rejection Reason"))
         self.assertTrue(all(button.disabled for button in edited["components"].components))
         submitter.send.assert_awaited_once()
@@ -324,7 +324,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self._field(notification, "Reason"), "Copied layout")
         self.assertEqual(notification.images[0].url, "https://cdn.example/review.webp")
         resolved = review.edit.await_args.kwargs
-        self.assertIn("Rejected by **[Member 789](<https://discordapp.com/users/789>)**",
+        self.assertIn("Rejected by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**",
                       self._field(resolved["embed"], "Review Status"))
         self.assertTrue(all(button.disabled for button in resolved["components"].components))
         self.pending.delete.assert_not_awaited()

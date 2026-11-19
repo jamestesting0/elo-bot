@@ -18,9 +18,9 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         from tests._final_empty_storage import empty_final_storage
         empty_final_storage(self)
         wallet = SimpleNamespace(id="123", balance=5000, user_id="123", identity_claims=["123"])
-        self.wallet_grant = self.enterContext(patch_sites(('elo_bot.features.tokens.wallets.ensure_wallet', 'elo_bot.extensions.final.ensure_wallet', 'elo_bot.extensions.player.ensure_wallet'), new=AsyncMock(return_value=wallet)))
+        self.wallet_grant = self.enterContext(patch_sites(('elo_bot.features.tokens.wallets.ensure_wallet', 'elo_bot.extensions.final.betting.ensure_wallet', 'elo_bot.extensions.player.ensure_wallet'), new=AsyncMock(return_value=wallet)))
         self.deregister_write = self.enterContext(patch('elo_bot.extensions.player.deregister_player', new=AsyncMock()))
-        self.enterContext(patch_sites(('elo_bot.extensions.final.wallet_summary', 'elo_bot.extensions.player.wallet_summary'), new=AsyncMock(return_value=(5000, 0, 0))))
+        self.enterContext(patch_sites(('elo_bot.extensions.final.betting.wallet_summary', 'elo_bot.extensions.player.wallet_summary'), new=AsyncMock(return_value=(5000, 0, 0))))
         self.bot = MagicMock()
         self.bot.ext = {}
         self.bot.coc_client = MagicMock()
@@ -205,7 +205,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         main_guild.fetch_member.assert_awaited_once_with("55")
         recent = next(field.value for field in ctx.send.await_args.kwargs["embed"].fields
                       if field.name == "__**Recent Matches**__")
-        self.assertTrue(recent.startswith("vs. **[Kelly](<https://discordapp.com/users/55>)** ("))
+        self.assertTrue(recent.startswith("vs. **[Kelly](<https://discordapp.com/users/55?tab=wishlist>)** ("))
         self.assertIn("<t:1761900000:R>", recent)
 
     @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))

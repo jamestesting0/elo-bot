@@ -6,6 +6,7 @@ import interactions as ipy
 from tests.integration._final_fixture import FinalScenarioCase
 from elo_bot.features.matches.lifecycle import confirm_match
 from elo_bot.config.ids import STAFF_ROLE
+from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.features.finals.lifecycle import confirm_bracket
 from elo_bot.features.finals.matches import prepare_match
 from elo_bot.db import Match
@@ -29,7 +30,7 @@ class TestFinalThreadControls(FinalScenarioCase):
         message.edit = AsyncMock(side_effect=edit)
         thread = MagicMock(id=777, send=AsyncMock(return_value=message), fetch_message=AsyncMock(return_value=message))
         channel = MagicMock(create_private_thread=AsyncMock(return_value=thread))
-        users = {int(user): MagicMock(mention=f"<@{user}>") for user in final.entrant_ids}
+        users = {int(user): MagicMock(id=user, display_name=f"Player {user}", mention=f"<@{user}>") for user in final.entrant_ids}
         for user, view in users.items():
             view.__str__.return_value = f"Player {user}"
         bot = MagicMock(fetch_channel=AsyncMock(return_value=thread if existing else channel),
@@ -46,18 +47,29 @@ class TestFinalThreadControls(FinalScenarioCase):
         self.assertEqual(saved.thread_message_id, 888)
         self.assertEqual(len(saved.final_districts), 7)
         buttons = thread.send.await_args.kwargs["components"][0].components
-        self.assertEqual([button.label for button in buttons], ["Submit Bases", "Submit Result"])
-        self.assertEqual(buttons[0].custom_id, f"submit_bases|{source.token}")
+        self.assertEqual([button.label for button in buttons], ["Submit Result"])
+        self.assertEqual(buttons[0].custom_id, f"submit_button|{source.token}")
         self.assertEqual(len(saved.participants[0].bases), 7)
         self.assertFalse(any(saved.times))
+        name = bot.fetch_channel.return_value.create_private_thread.await_args.kwargs["name"]
+        self.assertTrue(name.startswith(f"🟡 {source.final_node_id} · "))
+        self.assertIn(" vs. ", name)
+        embed = thread.send.await_args.kwargs["embed"]
+        self.assertEqual(embed.title, f"**Season 7 Final · {source.final_node_id}**")
+        self.assertNotIn(" vs. ", embed.description)
+        self.assertEqual(len(embed.fields[0].value.splitlines()), 7)
+        self.assertNotIn("**Notes**", [field.name for field in embed.fields])
+        thread.name, thread.edit = name, AsyncMock()
+        await schedule_channel_name_edit(thread, "🟢")
+        self.assertEqual(thread.edit.await_args.kwargs["name"], "🟢 " + name.partition(" ")[2])
 
-    async def test_retry_repairs_missing_form_control_without_duplicate_thread_or_button(self):
+    async def test_retry_reuses_bound_thread_without_duplicate_post_or_button(self):
         source, bot, thread, message = await self.setup_transport(existing=True)
         await confirm_match(bot, source.token)
         await confirm_match(bot, source.token)
         self.assertEqual([button.label for row in message.components for button in row.components],
-                         ["Submit Bases", "Submit Result"])
-        message.edit.assert_awaited_once()
+                         ["Submit Result"])
+        message.edit.assert_not_awaited()
         thread.send.assert_not_awaited()
         self.assertEqual((await Match.get(source.id)).thread_message_id, 888)
         self.assertEqual(await Match.count(), 1)

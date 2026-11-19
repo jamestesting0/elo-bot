@@ -190,7 +190,11 @@ async def claim_resource_clan(
             path = field.split(".")
             value = getattr(fresh_match, path[0])
             previous_values[field] = copy.deepcopy(value if len(path) == 1 else value[int(path[1])])
-        if expected_control is None:
+        if expected_control is None and is_final_match(fresh_match):
+            if not await update_match_control(fresh_match, MatchMessageState.capture(fresh_match, player1_index),
+                                              match_updates):
+                return False
+        elif expected_control is None:
             await fresh_match.set(match_updates)
         else:
             async with BASE_STORE_RESERVATION_LOCK if isinstance(expected_control, StoredStartState) else nullcontext():
@@ -213,7 +217,10 @@ async def claim_resource_clan(
             occupancy_complete = True
         finally:
             if not occupancy_complete:
-                if expected_control is None:
+                if expected_control is None and is_final_match(fresh_match):
+                    await fresh_match.get_pymongo_collection().update_one(
+                        {"_id": fresh_match.id, **match_updates}, {"$set": previous_values})
+                elif expected_control is None:
                     await fresh_match.set(previous_values)
                 else:
                     rollback_filter = dict(expected_control.binding_filter())

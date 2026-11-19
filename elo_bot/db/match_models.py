@@ -285,6 +285,9 @@ class Match(Document):
             f"host_clans.{player}": None,
         }
         if self.format == "elo_final_seven":
+            query.update({"final_id": self.final_id, "final_node_id": self.final_node_id,
+                "final_contestant_revision": self.final_contestant_revision, "final_attempt": self.final_attempt,
+                "final_superseded": False, "final_result_id": None, "final_result_operation": None})
             query[f"final_hosting_times.{player}"] = self.final_hosting_times[player]
             updates[f"final_hosting_times.{player}"] = None
             if "final_legacy_hosting_evidence" in self.model_fields_set:
@@ -319,6 +322,9 @@ class Match(Document):
             "host_clans": [None, None],
         }
         if self.format == "elo_final_seven":
+            query.update({"final_id": self.final_id, "final_node_id": self.final_node_id,
+                "final_contestant_revision": self.final_contestant_revision, "final_attempt": self.final_attempt,
+                "final_superseded": False, "final_result_id": None, "final_result_operation": None})
             query["final_hosting_times"] = list(self.final_hosting_times)
             updates["final_hosting_times"] = [None, None]
             if "final_legacy_hosting_evidence" in self.model_fields_set:

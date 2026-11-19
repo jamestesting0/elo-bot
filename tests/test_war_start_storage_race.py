@@ -59,15 +59,16 @@ class TestWarStartStorageRace(unittest.IsolatedAsyncioTestCase):
         with patch_sites(('elo_bot.extensions.match.hosting.claim_resource_clan', 'elo_bot.extensions.match.settings.claim_resource_clan', 'elo_bot.features.matches.resources.claim_resource_clan'), new=AsyncMock()) as claim, \
                 patch.object(war_start, "complete_war_start", new=AsyncMock()) as publish:
             # When a manual Start Match tries to start this side.
-            message = await war_start.start_war(self.case.bot, self.case.ctx, self.case.war_request())
+            with self.assertRaises(war_start.WarStartRefused) as refused:
+                await war_start.start_war(self.case.bot, self.case.ctx, self.case.war_request())
 
-        # Then it reports incomplete storage without committing or publishing a start.
-        self.assertIsNone(message)
+        # Then it refuses with the incomplete-storage reason without committing or publishing a start.
         claim.assert_not_awaited()
         publish.assert_not_awaited()
         self.assertEqual(match.times, [None, None])
         self.assertEqual(match.participants[0].base_store.reservation_id, "PENDING")
-        self.assertIn("Base storage is incomplete", self.case.ctx.send.await_args.args[0])
+        self.assertIn("Base storage is incomplete", str(refused.exception))
+        self.case.ctx.send.assert_not_awaited()
 
     async def test_delayed_storage_claim_cannot_overwrite_a_new_start(self) -> None:
         # Given a side whose start has already committed in the database.

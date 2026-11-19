@@ -7,7 +7,8 @@ import interactions as ipy
 from elo_bot.features.base_store.controls import start_stored_bases
 from elo_bot.features.base_store.models import StoredBaseActionRequest
 from elo_bot.features.hosting.live.live_start import (
-    LiveAbort, LiveStart, LiveStartBusy, LiveStartClanUnavailable, ManualLiveStartReply, abort_live_start,
+    LiveAbort, LiveStart, LiveStartBusy, LiveStartClanUnavailable, LiveStartRefused, ManualLiveStartReply,
+    abort_live_start,
     start_live_match,
 )
 from elo_bot.extensions.self_service import SelfCommands
@@ -17,10 +18,12 @@ from elo_bot.integrations.helper_api import (
 )
 from elo_bot.features.hosting.war.helper_host_job import HelperHostJobRequest, run_helper_host_job
 from elo_bot.features.hosting.war.war_start import WarAbort, abort_war_start
-from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
+from elo_bot.features.finals.predictions import change_prediction_state
 from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
-from elo_bot.core.finals import FinalError
+from elo_bot.core.finals import FINAL_SELF_HOSTING_REFUSAL, FinalError
 from elo_bot.features.matches.messages import MatchMessageState
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.features.tokens.bets import open_market
@@ -142,48 +145,46 @@ class TestFinalHostingTiming(FinalScenarioCase):
     async def test_stale_legacy_live_helper_rejection_preserves_newer_start(self):
         await self.check_legacy_failed_helper_cleanup(live=True, newer_start=True)
 
-    async def test_scheduled_self_live_callback_publishes_opponent_request(self):
-        _, source = await self.pairing(live=True)
-        bot, ctx, _ = self.transport(source)
+    async def check_self_live_refused(self, *, stored):
+        _, source = await self.pairing(live=True, stored=stored)
+        bot, ctx, _ = self.transport(source, component=stored)
         cog = SelfCommands(bot)
         with patch.object(cog.live_requests, "schedule_expiry"):
-            await cog.self_host_live.callback.func(cog, ctx)
-        ctx.channel.send.assert_awaited_once()
-        self.assertEqual(ctx.channel.send.await_args.kwargs["embed"].title, "Live Match Request")
-        self.assertEqual(ctx.channel.send.await_args.kwargs["content"], "<@8>")
-        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
-        self.assertIsNone((await Match.get(source.id)).final_started_at)
+            if stored:
+                ctx.custom_id = f"helper_stored_live_start|{source.token}|{'a' * 16}"
+                ctx.message.id = 555
+                await cog.self_stored_live_start.callback.func(cog, ctx)
+            else:
+                await cog.self_host_live.callback.func(cog, ctx)
+        ctx.channel.send.assert_not_awaited()
+        self.assertEqual(ctx.send.await_args.args[0], f"{ERROR_EMOJI} {FINAL_SELF_HOSTING_REFUSAL}")
+        saved = await Match.get(source.id)
+        self.assertIsNone(saved.final_started_at)
+        if stored:
+            self.assertEqual(saved.participants[1].base_store.reservation_id, "a" * 16)
 
-    async def test_scheduled_stored_live_callback_keeps_reservation_in_request(self):
-        _, source = await self.pairing(live=True, stored=True)
-        bot, ctx, _ = self.transport(source, component=True)
-        ctx.custom_id = f"helper_stored_live_start|{source.token}|{'a' * 16}"
-        ctx.message.id = 555
-        cog = SelfCommands(bot)
-        with patch.object(cog.live_requests, "schedule_expiry"):
-            await cog.self_stored_live_start.callback.func(cog, ctx)
-        ctx.channel.send.assert_awaited_once()
-        message = ctx.channel.send.return_value
-        self.assertEqual(ctx.channel.send.await_args.kwargs["embed"].title, "Live Match Request")
-        self.assertTrue(all(button.custom_id.endswith("a" * 16) for button in message.components[0].components))
-        self.assertEqual((await Match.get(source.id)).participants[1].base_store.reservation_id, "a" * 16)
+    async def test_self_live_request_refuses_final_matches(self):
+        await self.check_self_live_refused(stored=False)
 
-    async def test_scheduled_self_war_callback_reaches_helper_without_losing_schedule(self):
+    async def test_stored_self_live_start_refuses_final_matches_and_keeps_the_reservation(self):
+        await self.check_self_live_refused(stored=True)
+
+    async def test_self_war_refuses_final_matches_before_helper_and_keeps_the_schedule(self):
         _, source = await self.pairing(stored=True)
         bot, ctx, _ = self.transport(source)
         cog = SelfCommands(bot)
-        with patch.object(HelperEtaReader, "read", new=AsyncMock(return_value=HelperEta(
-                estimate_start_at=1, estimate_end_at=2))), patch.object(HelperJobCreator, "create",
-                new=AsyncMock(return_value=HelperJobCreateRejected(error="Test rejection"))) as create:
+        with patch.object(HelperEtaReader, "read", new=AsyncMock()) as eta, \
+                patch.object(HelperJobCreator, "create", new=AsyncMock()) as create:
             await cog.self_host_war.callback.func(cog, ctx)
-        create.assert_awaited_once()
+        eta.assert_not_awaited()
+        create.assert_not_awaited()
         self.assertEqual((await Match.get(source.id)).times, source.scheduled_times)
-        self.assertIn("could not confirm", ctx.send.await_args.args[0])
+        self.assertEqual(ctx.send.await_args.args[0], f"{ERROR_EMOJI} {FINAL_SELF_HOSTING_REFUSAL}")
 
     async def test_scheduled_stored_helper_rejection_preserves_accepted_time_and_allows_retry(self):
         _, source = await self.pairing(stored=True)
         _, ctx, runtime = self.transport(source, component=True)
-        market = await open_market(await resolve_final(), "QF1")
+        market = await open_market(await final_for_view(), "QF1")
         request = StoredBaseActionRequest(source.token, 0, "a" * 16, 555)
         with patch.object(HelperEtaReader, "read", new=AsyncMock(return_value=HelperEta(
                 estimate_start_at=1, estimate_end_at=2))), patch.object(HelperJobCreator, "create",
@@ -200,6 +201,22 @@ class TestFinalHostingTiming(FinalScenarioCase):
         self.assertFalse(hosting_started(saved, 0))
         self.assertEqual(saved.participants[0].base_store.reservation_id, "a" * 16)
         self.assertEqual((await FinalBettingMarket.get(market.id)).version, 1)
+
+    async def test_refused_final_start_answers_once_with_its_reason_and_claims_nothing(self):
+        final, source = await self.pairing(live=True)
+        await change_prediction_state(final, True)
+        bot, ctx, _ = self.transport(source)
+        start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
+            player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
+            scout=False, reply=ManualLiveStartReply(slot_instruction=""))
+        with self.assertRaises(FinalError) as refusal:
+            await accept_final_start(source, "host", clan_tag="#REVIEW", player=None)
+        self.assertIsInstance(await start_live_match(bot, ctx, start), LiveStartRefused)
+        ctx.send.assert_awaited_once()
+        self.assertEqual(ctx.send.await_args.args[0], f"{ERROR_EMOJI} {refusal.exception}")
+        saved = await Match.get(source.id)
+        self.assertFalse(hosting_started(saved))
+        self.assertIsNone(saved.final_started_at)
 
     async def test_scheduled_failed_clan_claim_can_retry_until_hosting_commits(self):
         _, source = await self.pairing(live=True)
@@ -292,7 +309,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         self.assertEqual(source.scheduled_times, [None, None])
         source = await schedule_final_match(source, 1700000000, player=0)
         self.assertEqual(source.scheduled_times, [1700000000, None])
-        self.assertEqual((await resolve_final()).nodes["QF1"].scheduled_times, [1700000000, None])
+        self.assertEqual((await final_for_view()).nodes["QF1"].scheduled_times, [1700000000, None])
         self.assertIsNone(source.final_started_at)
         source = await schedule_final_match(source, 1700007200, player=1)
         self.assertEqual(source.scheduled_times, [1700000000, 1700007200])

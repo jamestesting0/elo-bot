@@ -29,7 +29,7 @@ class TestLiveBaseCleanup(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(self.f.document["participants"][1]["base_store"])
         self.assertEqual(self.message.embeds[0].title, "**Base Storage Incomplete**")
         self.assertEqual(self.message.embeds[0].fields[0].value,
-                         f"**[{name}](<https://discordapp.com/users/222>)** — Slot 2")
+                         f"**[{name}](<https://discordapp.com/users/222?tab=wishlist>)** — Slot 2")
         self.assertEqual([b.label for b in self.message.components[0].components], ["Undo"])
 
     async def test_reconciliation_keeps_newer_slot_and_shared_recovery_control(self):

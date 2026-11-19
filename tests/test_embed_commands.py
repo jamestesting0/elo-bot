@@ -1,20 +1,45 @@
 import asyncio
+import re
 import unittest
 from collections import defaultdict
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elo_bot.extensions.embed import EmbedCommands
-from elo_bot.db import BaseStore, ServerState
-import elo_bot.features.matches.resources as resources_module
 import elo_bot.extensions.match.base_store as match_base_store_module
 import elo_bot.extensions.match.dashboards as match_dashboards_module
+import elo_bot.features.matches.resources as resources_module
+from elo_bot.config.ids import GUILD_IDS
+from elo_bot.core.season_calendar import season_calendar
+from elo_bot.db import BaseStore, ServerState
+from elo_bot.extensions.embed import EmbedCommands
 
 
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         resources_module.RESOURCE_CLAN_LOCKS.clear()
+
+    async def test_elo_final_embed_posts_a_details_button_that_answers_privately_with_the_schedule(self):
+        cog = EmbedCommands(MagicMock())
+        ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
+        ctx.channel.send = AsyncMock()
+        await cog.embed.callback.func(cog, ctx, "Elo Final")
+        posted = ctx.channel.send.await_args.kwargs
+        button = posted["components"][0].components[0]
+        self.assertEqual(button.custom_id, "elo_final_details")
+        details = MagicMock(spec=ipy.ComponentContext, send=AsyncMock())
+        calendar = season_calendar(datetime(2026, 11, 19, tzinfo=UTC), datetime(2026, 10, 4, tzinfo=UTC), None)
+        with patch("elo_bot.extensions.embed.ongoing_season_calendar", new=AsyncMock(return_value=calendar)):
+            await cog.elo_final_details.callback.func(cog, details)
+        reply = details.send.await_args.kwargs
+        self.assertTrue(reply["ephemeral"])
+        dates, schedule = reply["embed"].description.split("\n\n", 1)
+        self.assertEqual([int(stamp) for stamp in re.findall(r"<t:(\d+):D>", dates)],
+                         [int(moment.timestamp()) for moment in (calendar.final_selection, calendar.queue_closes,
+                                                                 calendar.season_ends)])
+        with open("assets/embeds/elo_final.md") as source:
+            self.assertEqual(schedule, source.read())
 
     async def test_clan_availability_embed_shows_slot_thread_mentions(self):
         bot = MagicMock()
@@ -70,7 +95,7 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         embed = ctx.channel.send.call_args.kwargs["embed"]
         self.assertEqual(
             embed.fields[0].value,
-            "Available\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123>)**",
+            "Available\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123?tab=wishlist>)**",
         )
         self.assertEqual(embed.fields[1].value, "Available")
 
@@ -105,5 +130,11 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("- Alpha (#A)", response)
 
 
-if __name__ == "__main__":
-    unittest.main()
+    async def test_member_update_without_cached_roles_is_ignored(self):
+        cog = EmbedCommands(MagicMock())
+        event = MagicMock(before=None)
+        event.guild.id = GUILD_IDS[0]
+        with patch("elo_bot.extensions.embed.Player.find_one", new=AsyncMock()) as lookup:
+            await cog.on_member_update.callback(cog, event)
+        lookup.assert_not_awaited()
+        event.after.fetch_dm.assert_not_called()

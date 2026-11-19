@@ -1,4 +1,4 @@
-import asyncio
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -10,11 +10,14 @@ from elo_bot.extensions.match import MatchCommands
 from elo_bot.extensions.tokens import TokenCommands
 from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES, LVL2_ROLES
 from elo_bot.config.game import DISTRICT_CODES
-from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
-from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.config.emojis import ERROR_EMOJI, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI
+from elo_bot.core.finals import FINAL_DISTRICTS
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
 from elo_bot.features.finals.profile_ui import profile_view
-from elo_bot.features.finals.pairing_ui import pairing_view
+from elo_bot.features.finals.bracket_editor import editor_view
+from elo_bot.features.finals.bracket import automatic_pairs
+from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
 from elo_bot.features.finals.leaderboards import FinalBoardRow, final_board_text
 from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market, void_market
@@ -32,15 +35,14 @@ class TestFinalUIConsistency(FinalScenarioCase):
         source = await schedule_final_match(source, 2000000000)
         await source.set({"thread": "777"})
         await bind_thread(self.final, source, "777")
-        self.final = await resolve_final()
+        self.final = await final_for_view()
         self.bot = MagicMock(ext={}, user=SimpleNamespace(id=42))
         self.cog = FinalCommands(self.bot)
         self.match_cog = MatchCommands(self.bot)
         self.ctx = self.context()
         node = self.final.nodes["QF1"]
-        self.ctx.custom_id = f"finalres|7|QF1|9|0|{node.contestant_revision}|{node.attempt}|-|0"
+        self.ctx.custom_id = f"finalres|{self.final.id}|QF1|9|0|{node.contestant_revision}|{node.attempt}|-|0"
         self.confirmation = self.context()
-        self.confirmation.custom_id = "finalconfirm|100"
         self.message = SimpleNamespace(id=123)
         self.ctx.send.return_value = self.message
         message = MagicMock(id=888, pin=AsyncMock(), edit=AsyncMock())
@@ -61,80 +63,87 @@ class TestFinalUIConsistency(FinalScenarioCase):
         await self.cog.final_result_modal.callback.func(self.cog, self.ctx,
             player1="\n".join(["3.100"] * 7), player2="\n".join(["2.80"] * 7))
 
+    async def confirm(self, *, cancel=False):
+        draft = await FinalResultDraft.find_all().sort("-_id").first_or_none()
+        self.confirmation.custom_id = f"final{'cancel' if cancel else 'confirm'}|{draft.id}"
+        await self.cog.final_result_confirmation.callback.func(self.cog, self.confirmation)
+
     async def test_preview_is_ephemeral_and_confirmation_commits_once_before_success(self):
         before = [player.model_dump() for player in await Player.find_all().to_list()]
 
-        async def confirm(**kwargs):
-            self.assertEqual(await FinalMatchResult.count(), 0)
-            self.assertEqual((await resolve_final()).nodes["QF1"].result_version, 0)
-            preview = self.ctx.send.await_args
-            self.assertTrue(preview.kwargs["ephemeral"])
-            self.assertEqual([button.label for button in preview.kwargs["components"].components], ["Cancel", "Confirm"])
-            self.assertEqual(len(preview.kwargs["embed"].description.split("**")), 19)
-            self.assertNotIn("Revision", [field.name.strip("*_") for field in preview.kwargs["embed"].fields])
-            self.assertTrue(kwargs["check"](SimpleNamespace(ctx=self.confirmation)))
-            self.assertFalse(kwargs["check"](SimpleNamespace(ctx=self.context(8))))
-            return SimpleNamespace(ctx=self.confirmation)
-
-        self.bot.wait_for_component = AsyncMock(side_effect=confirm)
+        await self.submit()
+        self.assertEqual(await FinalMatchResult.count(), 0)
+        self.assertEqual((await final_for_view()).nodes["QF1"].result_version, 0)
+        preview = self.ctx.send.await_args
+        self.assertTrue(preview.kwargs["ephemeral"])
+        self.assertEqual([button.label for button in preview.kwargs["components"].components], ["Cancel", "Confirm"])
+        embed = preview.kwargs["embed"]
+        rows = [line for line in embed.description.splitlines() if any(district in line for district in FINAL_DISTRICTS)]
+        self.assertEqual(len(rows), 7)
+        for district in FINAL_DISTRICTS:
+            row = next(line for line in rows if district in line)
+            self.assertIn(f"3{STAR_EMOJI} 100%", row)
+            self.assertIn(f"2{STAR_EMOJI} 80%", row)
+        self.assertEqual(next(field.value for field in embed.fields if field.name.strip("*_") == "Total"),
+                         f"21{STAR_EMOJI} 700% — 14{STAR_EMOJI} 560%")
+        self.assertIn(str(WIN_EMOJI), embed.description.splitlines()[0])
+        self.assertNotIn("Revision", [field.name.strip("*_") for field in preview.kwargs["embed"].fields])
 
         async def success(**kwargs):
             self.assertEqual(await FinalMatchResult.count(), 1)
-            self.assertEqual((await resolve_final()).nodes["QF1"].result_version, 1)
-            self.assertEqual(kwargs["content"], f"{SUCCESS_EMOJI} Result saved.")
+            self.assertEqual((await final_for_view()).nodes["QF1"].result_version, 1)
+            self.assertIn("advances to SF1.", kwargs["content"])
             self.assertEqual(kwargs["components"], [])
             self.assertNotIn("Official result", [field.name.strip("*_") for field in kwargs["embed"].fields])
 
         self.confirmation.edit_origin.side_effect = success
-        await self.submit()
+        await self.confirm()
         self.confirmation.defer.assert_awaited_once_with(edit_origin=True)
         self.assertEqual(before, [player.model_dump() for player in await Player.find_all().to_list()])
 
     async def test_cancel_and_timeout_leave_results_and_profiles_unchanged(self):
         profiles = [row.model_dump() for row in await FinalPlayerProfile.find_all().to_list()]
-        self.confirmation.custom_id = "finalcancel|100"
-        self.bot.wait_for_component = AsyncMock(return_value=SimpleNamespace(ctx=self.confirmation))
         await self.submit()
+        await self.confirm(cancel=True)
         self.assertEqual(self.confirmation.edit_origin.await_args.kwargs["content"],
                          f"{SUCCESS_EMOJI} Submission cancelled.")
         self.assertEqual(self.confirmation.edit_origin.await_args.kwargs["components"], [])
-        self.bot.wait_for_component.side_effect = asyncio.TimeoutError
         await self.submit()
-        self.assertIn("expired", self.ctx.edit.await_args.kwargs["content"])
-        self.assertTrue(self.ctx.edit.await_args.kwargs["content"].startswith(str(ERROR_EMOJI)))
-        self.assertEqual(self.ctx.edit.await_args.kwargs["components"], [])
+        draft = await FinalResultDraft.find_all().sort("-_id").first_or_none()
+        await draft.set({"expires_at": datetime.now(timezone.utc) - timedelta(seconds=1)})
+        await self.confirm()
+        self.assertIn("expired", self.confirmation.edit_origin.await_args.kwargs["content"])
+        self.assertTrue(self.confirmation.edit_origin.await_args.kwargs["content"].startswith(str(ERROR_EMOJI)))
+        self.assertEqual(self.confirmation.edit_origin.await_args.kwargs["components"], [])
         self.assertEqual(await FinalMatchResult.count(), 0)
         self.assertEqual(profiles, [row.model_dump() for row in await FinalPlayerProfile.find_all().to_list()])
         self.bot.fetch_channel.assert_not_awaited()
 
     async def test_stale_pairing_and_revoked_role_reject_confirmation(self):
-        async def changed(**kwargs):
-            await EloFinal.get_pymongo_collection().update_one({"_id": self.final.id},
-                {"$inc": {"nodes.QF1.contestant_revision": 1}})
-            return SimpleNamespace(ctx=self.confirmation)
-
-        self.bot.wait_for_component = AsyncMock(side_effect=changed)
         await self.submit()
+        await EloFinal.get_pymongo_collection().update_one({"_id": self.final.id},
+            {"$inc": {"nodes.QF1.contestant_revision": 1}})
+        await self.confirm()
         self.assertIn("match changed", self.confirmation.edit_origin.await_args.kwargs["content"])
         self.assertEqual(await FinalMatchResult.count(), 0)
         await EloFinal.get_pymongo_collection().update_one({"_id": self.final.id},
             {"$inc": {"nodes.QF1.contestant_revision": -1}})
         self.confirmation.author.has_role.return_value = False
         self.confirmation.author.has_role.side_effect = None
-        self.bot.wait_for_component.side_effect = None
-        self.bot.wait_for_component.return_value = SimpleNamespace(ctx=self.confirmation)
         await self.submit()
-        self.assertIn("manager", self.confirmation.edit_origin.await_args.kwargs["content"])
+        await self.confirm()
+        self.assertTrue(self.confirmation.edit_origin.await_args.kwargs["content"].startswith(str(ERROR_EMOJI)))
+        self.assertEqual(self.confirmation.edit_origin.await_args.kwargs["components"], [])
         self.assertEqual(await FinalMatchResult.count(), 0)
 
     async def test_invalid_scores_do_not_open_confirmation_and_database_failure_has_no_success(self):
-        self.bot.wait_for_component = AsyncMock(return_value=SimpleNamespace(ctx=self.confirmation))
         await self.cog.final_result_modal.callback.func(self.cog, self.ctx, player1="3.100", player2="2.80")
-        self.bot.wait_for_component.assert_not_awaited()
+        self.assertEqual(await FinalResultDraft.count(), 0)
+        await self.submit()
         await self.client.admin.command({"configureFailPoint": "failCommand", "mode": {"times": 1},
             "data": {"failCommands": ["insert"], "errorCode": 2}})
         try:
-            await self.submit()
+            await self.confirm()
         finally:
             await self.client.admin.command({"configureFailPoint": "failCommand", "mode": "off"})
         self.assertIn("Could not confirm the save", self.confirmation.edit_origin.await_args.kwargs["content"])
@@ -154,14 +163,13 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.assertEqual([button.label for button in controls[1].components], ["Matches"])
         row = FinalBoardRow("9", 2, 1, "Season 7 Final", eligible=3)
         self.assertEqual(final_board_text([row], "Predictions"),
-                         "🥇 **[❌Invalid Player](<https://discordapp.com/users/9>)** `2/3` → `66.67%`")
+                         "🥇 **[❌Invalid Player](<https://discordapp.com/users/9?tab=wishlist>)** `2/3` → `66.67%`")
         self.assertEqual(final_board_text([FinalBoardRow("9", 5000, 1, "Lifetime")], "Tokens"),
-                         f"🥇 **[❌Invalid Player](<https://discordapp.com/users/9>)** `5,000` {TOKEN_EMOJI}")
-        for page in range(4):
-            pairing, rows = pairing_view(self.final, "9", page)
-            self.assertEqual(pairing.title, f"**Season 7 Final · Pairing {page + 1}/4**")
-            self.assertEqual(rows[-1].components[0].disabled, page == 0)
-            self.assertEqual(rows[-1].components[1].disabled, page == 3)
+                         f"🥇 **[❌Invalid Player](<https://discordapp.com/users/9?tab=wishlist>)** `5,000` {TOKEN_EMOJI}")
+        self.final.manual_draft = automatic_pairs(self.final)
+        pairing, rows = editor_view(self.final, {})
+        self.assertEqual(pairing.title, "**Season 7 Final · Bracket**")
+        self.assertEqual(len(rows[0].components[0].options), 8)
 
     async def test_history_arrows_page_jump_boundaries_and_owner_preserve_results(self):
         node = self.final.nodes["QF1"]
@@ -171,16 +179,16 @@ class TestFinalUIConsistency(FinalScenarioCase):
                 contestant_revision=node.contestant_revision, attempt=node.attempt,
                 scores={node.contestants[0]: ["3.100"] * 7, node.contestants[1]: ["2.80"] * 7},
                 reason=f"Correction {version}" if version else None))
-            await self.cog._recover(await resolve_final())
+            await self.cog._recover(await final_for_view())
         before = [row.model_dump() for row in await FinalMatchResult.find_all().to_list()]
-        await self.cog._history_view(self.ctx, 7, "1")
+        await self.cog.final_matches.callback.func(self.cog, self.ctx, player=MagicMock(id=1), final_season=7)
         player_page = self.ctx.send.await_args.kwargs
         self.assertEqual([button.label for button in player_page["components"]], ["◀️️", "1/1", "▶️"])
         self.assertEqual([button.disabled for button in player_page["components"]], [True, False, True])
         self.assertEqual([field.name for field in player_page["embed"].fields], ["**Total**"])
         self.assertNotIn("Correction", player_page["embed"].description)
         self.assertEqual([row["reason"] for row in before], [None, "Correction 1", "Correction 2"])
-        await self.cog._history_view(self.ctx, 7, "-")
+        await self.cog.final_matches.callback.func(self.cog, self.ctx, final_season=7)
         payload = self.ctx.send.await_args.kwargs
         self.assertEqual([button.label for button in payload["components"]], ["◀️️", "1/3", "▶️"])
         self.assertEqual([button.style for button in payload["components"]],
@@ -228,10 +236,11 @@ class TestFinalUIConsistency(FinalScenarioCase):
     async def test_public_betting_embed_omits_saved_staff_refund_notes(self):
         market = await open_market(self.final, "QF1")
         await void_market(market.id, "manager", "Internal QA refund note")
-        await self.cog._recover(await resolve_final())
+        await self.cog._recover(await final_for_view())
         saved = await FinalBettingMarket.get(market.id)
         embed = market_embed(self.final, saved)
-        self.assertIn("REFUNDED", embed.description)
+        self.assertNotIn("REFUNDED", embed.description)
+        self.assertEqual(saved.state, "REFUNDED")
         self.assertEqual([field.name for field in embed.fields], ["**Total Pool**"])
         self.assertNotIn("Internal QA", embed.description + " ".join(field.value for field in embed.fields))
         self.assertEqual(saved.void_reason, "Internal QA refund note")
@@ -249,7 +258,9 @@ class TestFinalUIConsistency(FinalScenarioCase):
         await cog.tokens_history.callback.func(cog, self.ctx)
         payload = self.ctx.send.await_args.kwargs
         self.assertTrue(payload["ephemeral"])
-        self.assertIn(f"Edit: -1 {TOKEN_EMOJI} · QF1", payload["embed"].description)
+        self.assertIn(f"-1 {TOKEN_EMOJI} · S7 QF1", payload["embed"].description)
+        self.assertEqual(len(payload["embed"].description.splitlines()), 10)
+        self.assertEqual(payload["embed"].description.count(":R>"), 10)
         self.assertNotIn(" tokens", payload["embed"].description)
         self.assertEqual([button.label for button in payload["components"]], ["◀️️", "1/3", "▶️"])
         self.assertEqual([button.style for button in payload["components"]],
@@ -292,7 +303,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
         before = (await FinalBet.find_one({"user_id": "9"})).model_dump()
         wallet = (await TokenWallet.get("9")).model_dump()
         embed, controls = await bet_review(market, "9", "1", 300, 1, guild=self.ctx.guild)
-        self.assertEqual(embed.description, f"**[❌Invalid Player](<https://discordapp.com/users/1>)** · 300 {TOKEN_EMOJI}")
+        self.assertEqual(embed.description, f"**[❌Invalid Player](<https://discordapp.com/users/1?tab=wishlist>)** · 300 {TOKEN_EMOJI}")
         self.assertEqual([(field.name, field.value) for field in embed.fields],
                          [("**Estimated Profit**", f"200 {TOKEN_EMOJI}")])
         self.assertEqual([button.label for button in controls], ["Confirm Bet", "Back"])
@@ -339,13 +350,13 @@ class TestFinalUIConsistency(FinalScenarioCase):
                 scores={own: ["3.100" if version == 0 else "2.80"] * 7,
                         opponent: ["2.80" if version == 0 else "3.100"] * 7},
                 reason="Correct the test scores" if version else None))
-            await self.cog._recover(await resolve_final())
-        embed, _ = await profile_view(await resolve_final(), MagicMock(id=int(own), avatar=None), "9",
+            await self.cog._recover(await final_for_view())
+        embed, _ = await profile_view(await final_for_view(), MagicMock(id=int(own), avatar=None), "9",
                                      guild=self.ctx.guild)
         recent = next(field for field in embed.fields if "Recent Matches" in field.name)
         self.assertEqual(recent.name, "__**Recent Matches**__")
         self.assertEqual(recent.value.count("vs."), 1)
-        self.assertIn(f"vs. **[❌Invalid Player](<https://discordapp.com/users/{opponent}>)**", recent.value)
+        self.assertIn(f"vs. **[❌Invalid Player](<https://discordapp.com/users/{opponent}?tab=wishlist>)**", recent.value)
         self.assertIn("Loss", recent.value)
         self.assertIn("560% - 21", recent.value)
         self.assertIn("700%", recent.value)
@@ -406,7 +417,8 @@ class TestFinalUIConsistency(FinalScenarioCase):
         ctx.custom_id = f"submit_bases|{source.token}"
         await self.match_cog.submit_bases_button.callback.func(self.match_cog, ctx)
         ctx.send_modal.assert_not_awaited()
-        self.assertIn("/match base submit match:QF1", ctx.send.await_args.args[0])
+        self.assertIn("`/match base submit`", ctx.send.await_args.args[0])
+        self.assertEqual((await Match.get(source.id)).participants[0].bases[6].link, link)
 
     async def test_announcement_targets_final_channel_and_reuses_stored_channel_on_retry(self):
         await self.final.set({"channel_id": 123})
@@ -421,7 +433,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.assertEqual(channel.send.await_args.kwargs["components"][0].label, "Place / Edit Bet")
         self.assertEqual(channel.send.await_args.kwargs["components"][0].to_dict()["emoji"]["id"],
                          1555865080711876660)
-        self.assertIn(f"**[❌Invalid Player](<https://discordapp.com/users/1>)**: 0 {TOKEN_EMOJI}",
+        self.assertIn(f"**[❌Invalid Player](<https://discordapp.com/users/1?tab=wishlist>)** — 0 {TOKEN_EMOJI}",
                       channel.send.await_args.kwargs["embed"].description)
         stored = await FinalBettingMarket.get(market.id)
         self.assertEqual(stored.announcement_channel_id, FINAL_CHANNEL)

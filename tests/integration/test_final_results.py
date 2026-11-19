@@ -1,5 +1,5 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
 from elo_bot.core.finals import FinalError
 from elo_bot.db import Match, Player, RecordedMatch
@@ -12,7 +12,7 @@ class TestFinalResults(FinalScenarioCase):
     async def pairing(self):
         final = await confirm_bracket(await self.roster(8), "manager")
         source = await self.scheduled_pairing(final, "QF1")
-        return await resolve_final(), source
+        return await final_for_view(), source
 
     def request(self, final, source, *, scores=None, winner=None, outcome="Played", reason=None):
         node = final.nodes[source.final_node_id]
@@ -28,7 +28,7 @@ class TestFinalResults(FinalScenarioCase):
         before = {user.user_id: user.model_dump() for user in await Player.find_all().to_list()}
         request = self.request(final, source)
         result = await submit_result(request)
-        self.assertEqual((await resolve_final()).nodes["QF1"].result_id, result.id)
+        self.assertEqual((await final_for_view()).nodes["QF1"].result_id, result.id)
         self.assertEqual(result.snapshot.winner, source.participants[0].user_id)
         self.assertEqual(await RecordedMatch.count(), 0)
         after = {user.user_id: user.model_dump() for user in await Player.find_all().to_list()}
@@ -48,7 +48,7 @@ class TestFinalResults(FinalScenarioCase):
         final, source = await self.pairing()
         scores = {participant.user_id: ["0.00"] * 7 for participant in source.participants}
         result = await submit_result(self.request(final, source, scores=scores))
-        saved = await resolve_final()
+        saved = await final_for_view()
         self.assertIsNone(result.snapshot.winner)
         self.assertEqual(saved.nodes["QF1"].state, "TIED")
         self.assertIsNone(saved.nodes["SF1"].contestants[0])
@@ -59,11 +59,11 @@ class TestFinalResults(FinalScenarioCase):
         scores = {participant.user_id: ["2.80"] * 7 for participant in source.participants}
         initial = await submit_result(self.request(final, source, scores=scores))
         await recover_final(final)
-        current = await resolve_final()
+        current = await final_for_view()
         winner = source.participants[1].user_id
         decided = await submit_result(replace(self.request(current, source, scores=scores, winner=winner,
             reason="Manager tiebreak decision"), operation_key="tie-decision"))
-        saved = await resolve_final()
+        saved = await final_for_view()
         self.assertEqual((initial.snapshot.winner, decided.snapshot.winner), (None, winner))
         self.assertEqual(decided.previous_id, initial.id)
         self.assertEqual(saved.nodes["QF1"].state, "DECIDED")

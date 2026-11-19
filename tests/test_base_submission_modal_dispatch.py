@@ -43,9 +43,9 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
             link=BASE_LINK,
             image_url="https://cdn.example/review.webp",
             submitter_id="123",
-            submitter_display="[Submitter](<https://discordapp.com/users/123>)",
+            submitter_display="[Submitter](<https://discordapp.com/users/123?tab=wishlist>)",
             builder_id="456",
-            builder_display="[Builder](<https://discordapp.com/users/456>)",
+            builder_display="[Builder](<https://discordapp.com/users/456?tab=wishlist>)",
             district="Barbarian Camp",
             proposed_quality="Good",
             reason="Fresh anti-meta layout",
@@ -211,7 +211,7 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
             for field in self.review_message.edit.await_args.kwargs["embed"].fields
             if field.name == "Review Status"
         )
-        self.assertEqual(status, "Accepted by **[Member 789](<https://discordapp.com/users/789>)**")
+        self.assertEqual(status, "Accepted by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.assertTrue(all(
             button.disabled
             for button in self.review_message.edit.await_args.kwargs["components"].components
@@ -255,7 +255,7 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
             for field in self.review_message.edit.await_args.kwargs["embed"].fields
             if field.name == "Review Status"
         )
-        self.assertEqual(status, "Rejected by **[Member 789](<https://discordapp.com/users/789>)**")
+        self.assertEqual(status, "Rejected by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.pending.delete.assert_not_awaited()
         self.assertEqual(self.pending.resolution.phase, "rejected")
 

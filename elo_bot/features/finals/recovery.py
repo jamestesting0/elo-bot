@@ -1,31 +1,25 @@
-import asyncio
 from collections.abc import Awaitable, Callable
-from hashlib import sha256
 
 import interactions as ipy
-import anyio
 from beanie import PydanticObjectId
 from pymongo.errors import PyMongoError
 
-from elo_bot.discord.message_edits import edit_channel_message
-from elo_bot.features.finals.lifecycle import resolve_final
 from elo_bot.features.finals.persistence import transaction
 from elo_bot.features.finals.predictions import rescore_predictions
 from elo_bot.features.finals.profiles import rebuild_profiles
-from elo_bot.features.finals.publication import PUBLICATION_LOCKS, publish_bracket
-from elo_bot.features.finals.result_ui import result_embed
+from elo_bot.features.finals.publication import publish_bracket, bracket_signature
 from elo_bot.core.finals import FinalError
 from elo_bot.features.results.helper_credits import award_helper_once
 from elo_bot.features.hosting.self_hosted.invitations import invite_eligible_players
 from elo_bot.features.tokens.settlement import recover_market, set_settlement_intent
 from elo_bot.features.tokens.presentation import market_signature, publish_market
-from elo_bot.discord.mentions import mention_user
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.features.base_store.storage import BaseStoreReleaseConflict, BaseStoreReleaseDenied
 from elo_bot.features.finals.matches import bind_thread
-from pymongo.errors import DuplicateKeyError
+from elo_bot.features.finals.lifecycle import reload_final
+from elo_bot.features.finals.result_publication import publish_result
 
 
 async def select_financial_work(final_id: PydanticObjectId) -> tuple[EloFinal, list[str]]:
@@ -41,16 +35,24 @@ async def select_financial_work(final_id: PydanticObjectId) -> tuple[EloFinal, l
             cancelled = final.state in {"CANCELLING", "CANCELLED"} and (node is None or not node.winner)
             if market.void_reason or invalidated or cancelled or node.result_id and node.winner:
                 refund = bool(market.void_reason) or invalidated or cancelled or node.outcome == "Forfeit"
-                await set_settlement_intent(market.id, final.result_revision, winner=None if refund else node.winner,
-                                            refund=refund, session=session)
-                selected.append(market.id)
-            elif node.result_id and not node.winner:
+                winner = None if refund else node.winner
+                if (market.desired_result_version != final.result_revision
+                        or market.desired_winner != winner or market.desired_refund != refund):
+                    await set_settlement_intent(market.id, final.result_revision, winner=winner,
+                                                refund=refund, session=session)
+                    selected.append(market.id)
+                elif market.state in {"SETTLING", "CORRECTING"}:
+                    selected.append(market.id)
+            elif node.result_id and not node.winner and market.state == "OPEN":
                 await FinalBettingMarket.get_pymongo_collection().update_one({"_id": market.id, "state": "OPEN"},
                     {"$set": {"state": "CLOSED"}, "$inc": {"version": 1}}, session=session)
-        await rescore_predictions(final, session)
-        await rebuild_profiles(final, session)
-        await collection.update_one({"_id": final.id}, {"$set": {"predictions_scoring_revision": final.result_revision},
-                                                        "$inc": {"revision": 1}}, session=session)
+        if final.predictions_scoring_revision != final.result_revision:
+            await rescore_predictions(final, session)
+            await rebuild_profiles(final, session)
+            await collection.update_one({"_id": final.id}, {"$set": {
+                "predictions_scoring_revision": final.result_revision}, "$inc": {"revision": 1}}, session=session)
+            final.predictions_scoring_revision = final.result_revision
+            final.revision += 1
         return final, selected
 
     return await transaction(select)
@@ -71,55 +73,6 @@ async def mark_deleted_attempt(final, node, source) -> None:
     await transaction(mark)
 
 
-async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None:
-    key = result.id.replace(".", "_")
-    async with PUBLICATION_LOCKS.setdefault(f"result:{result.id}", anyio.Lock()):
-        final = await resolve_final(final.season_number)
-        progress = final.result_progress[key]
-        if (progress.published and not progress.error
-                and progress.published_repair_pending == final.repair_pending):
-            return
-        collection = EloFinal.get_pymongo_collection()
-        path = f"result_progress.{key}"
-        channel_id = progress.channel_id or result.source_thread or str(final.channel_id)
-        try:
-            try:
-                channel = await bot.fetch_channel(int(channel_id))
-            except ipy.errors.NotFound:
-                progress.message_id = None
-                progress.send_attempted = False
-                progress.thread_deleted = True
-                channel_id = str(final.channel_id)
-                await collection.update_one({"_id": final.id}, {"$set": {f"{path}.thread_deleted": True,
-                    f"{path}.message_id": None, f"{path}.send_attempted": False, f"{path}.channel_id": channel_id}})
-                channel = await bot.fetch_channel(final.channel_id)
-            nonce = sha256(f"final-result:{result.id}".encode()).hexdigest()[:24]
-            message = await channel.fetch_message(int(progress.message_id)) if progress.message_id else None
-            if message is None and progress.send_attempted:
-                messages = await channel.fetch_messages(limit=100)
-                message = next((item for item in messages if str(item.nonce) == nonce and item.author.id == bot.user.id), None)
-                if message is None:
-                    raise FinalError(f"{result.node_id} result publication is uncertain. Locate its earlier message.")
-            members = await asyncio.gather(*(channel.guild.fetch_member(user) for user in result.snapshot.contestants))
-            names = {user: mention_user(member, user) for user, member in zip(result.snapshot.contestants, members)}
-            await collection.update_one({"_id": final.id}, {"$set": {f"{path}.send_attempted": True,
-                                                                         f"{path}.channel_id": channel_id}})
-            if message is None:
-                message = await channel.send(embed=result_embed(final, result, names), nonce=nonce, enforce_nonce=True)
-            else:
-                await edit_channel_message(message, embed=result_embed(final, result, names), components=[])
-            await collection.update_one({"_id": final.id}, {"$set": {f"{path}.message_id": str(message.id),
-                f"{path}.published": True, f"{path}.published_repair_pending": final.repair_pending,
-                f"{path}.error": None}})
-            if result.source_match_id:
-                await Match.get_pymongo_collection().update_one({"_id": PydanticObjectId(result.source_match_id),
-                    "final_result_id": result.id}, {"$set": {"final_result_operation.published": True,
-                                                            "final_result_operation.publication_error": None}})
-        except (ipy.errors.HTTPException, FinalError) as error:
-            await collection.update_one({"_id": final.id}, {"$set": {f"{path}.error": str(error)}})
-            raise FinalError(f"{result.node_id} result saved; publication remains pending.") from error
-
-
 async def recover_final(final: EloFinal, *, bot=None,
                         release_completed: Callable[[Match], Awaitable[None]] | None = None,
                         release_deleted: Callable[[Match], Awaitable[None]] | None = None) -> list[str]:
@@ -132,7 +85,7 @@ async def recover_final(final: EloFinal, *, bot=None,
         except (PyMongoError, FinalError) as error:
             pending.append(f"{market_id.split(':')[1]} payout correction is pending: {error}")
     if bot is not None:
-        for market in await FinalBettingMarket.find({"final_id": str(final.id), "announcement_attempted": True}).to_list():
+        for market in await FinalBettingMarket.find({"final_id": str(final.id)}).to_list():
             if market.announcement_signature != market_signature(market) or market.publication_error:
                 try:
                     await publish_market(bot, final, market)
@@ -178,16 +131,16 @@ async def recover_final(final: EloFinal, *, bot=None,
                 await publish_result(bot, final, result)
             except FinalError as error:
                 pending.append(str(error))
-            refreshed = await resolve_final(final.season_number)
+            refreshed = await reload_final(final)
             if source and refreshed.result_progress[key].thread_deleted:
                 if release_deleted is not None:
                     await release_deleted(source)
                 elif any(participant.base_store or participant.opponent_bases_stored for participant in source.participants):
                     pending.append(f"{result.node_id} deleted-thread base cleanup is pending.")
-    if not pending or all("publication" in item for item in pending):
+    if final.repair_pending and (not pending or all("publication" in item for item in pending)):
         await collection.update_one({"_id": final.id, "result_revision": final.result_revision},
             {"$set": {"repair_pending": False, "repair_nodes": []}})
-    final = await resolve_final(final.season_number)
+    final = await reload_final(final)
     if bot is not None and not final.repair_pending:
         for result in results:
             progress = final.result_progress[result.id.replace(".", "_")]
@@ -204,16 +157,6 @@ async def recover_final(final: EloFinal, *, bot=None,
         if unfinished is None:
             await collection.update_one({"_id": final.id, "state": "CANCELLING", "repair_pending": False},
                 {"$set": {"state": "CANCELLED", "active": False}, "$inc": {"revision": 1}})
-    if final.reopening_pending:
-        try:
-            other = await EloFinal.find_one({"active": True, "_id": {"$ne": final.id}})
-            if other is None:
-                await collection.update_one({"_id": final.id, "reopening_pending": True}, {"$set": {
-                    "active": True, "state": "RUNNING", "reopening_pending": False}, "$inc": {"revision": 1}})
-            else:
-                pending.append("Finish the ongoing Final before reopening this edition for corrected play.")
-        except DuplicateKeyError:
-            pending.append("Another Final owns the ongoing edition. Reopening remains pending.")
     for node in final.nodes.values():
         if bot is not None and node.match_id and node.thread_id and not node.result_id:
             try:
@@ -229,16 +172,17 @@ async def recover_final(final: EloFinal, *, bot=None,
                 pending.append(f"{node.id}: thread deleted; use `/final round start` or `/final match result`.")
             except ipy.errors.HTTPException:
                 pending.append(f"{node.id}: thread access could not be verified. Its reservations remain owned.")
-        if node.provisioning and node.match_id and not node.thread_id:
+        if final.state not in {"CANCELLING", "CANCELLED"} and node.provisioning and node.match_id and not node.thread_id:
             source = await Match.get(node.match_id)
             if source and source.thread and source.final_contestant_revision == node.contestant_revision and source.final_attempt == node.attempt:
                 await bind_thread(final, source, source.thread)
                 continue
-        if node.state in {"TIED", "NEEDS_MANAGER"}:
+        if final.state not in {"CANCELLING", "CANCELLED"} and node.state in {"TIED", "NEEDS_MANAGER"}:
             pending.append(f"{node.id}: manager-arranged play or a result decision is required.")
-        if node.provisioning and not node.thread_id:
+        if final.state not in {"CANCELLING", "CANCELLED"} and node.provisioning and not node.thread_id:
             pending.append(f"{node.id}: verify whether its thread was created before retrying.")
-    if bot is not None and final.bracket_send_attempted and final.publication_pending:
+    if bot is not None and (final.nodes or final.bracket_send_attempted) and (
+            final.publication_pending or final.publication_error or final.bracket_signature != await bracket_signature(final)):
         try:
             await publish_bracket(bot, final)
         except FinalError as error:

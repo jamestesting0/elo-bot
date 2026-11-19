@@ -48,8 +48,8 @@ class TestMatchHostAndResultClear(unittest.IsolatedAsyncioTestCase):
         # Then
         self.assertEqual(self.match["hosts"], ["888", "888"])
         self.assertEqual(self.message.edit.await_args.kwargs["embed"]["fields"][1]["value"],
-                         "**[Host](<https://discordapp.com/users/888>)**")
-        self.assertIn("**[Host](<https://discordapp.com/users/888>)**", self.public.embeds[0].description)
+                         "**[Host](<https://discordapp.com/users/888?tab=wishlist>)**")
+        self.assertIn("**[Host](<https://discordapp.com/users/888?tab=wishlist>)**", self.public.embeds[0].description)
         self.assertTrue(self.ctx.send.await_args.args[0].startswith(str(SUCCESS_EMOJI)))
 
     async def test_host_write_failure_never_publishes_success(self) -> None:

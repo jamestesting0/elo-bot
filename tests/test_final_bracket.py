@@ -8,7 +8,7 @@ from elo_bot.db import EloFinal
 class TestFinalBracket(unittest.TestCase):
     def edition(self, count):
         return EloFinal.model_construct(season_number=1, active=True, entrant_ids=[str(i) for i in range(count)],
-                                        archived_elo={str(i): 1000 - i for i in range(count)})
+                                        seed_elo={str(i): 1000 - i for i in range(count)})
 
     def test_five_to_eight_entrants_have_exactly_the_required_byes_and_graph(self):
         for count in range(5, 9):
@@ -17,14 +17,20 @@ class TestFinalBracket(unittest.TestCase):
                 nodes = build_bracket(final, automatic_pairs(final))
                 self.assertEqual(set(nodes), {"QF1", "QF2", "QF3", "QF4", "SF1", "SF2", "F1"})
                 self.assertEqual(sum(node.bye for node in nodes.values()), 8 - count)
+                self.assertEqual([nodes[key].contestants for key in ("QF1", "QF2", "QF3", "QF4")], [
+                    ["0", "7" if count == 8 else None],
+                    ["1", "6" if count >= 7 else None],
+                    ["2", "5" if count >= 6 else None],
+                    ["3", "4"],
+                ])
                 self.assertEqual(nodes["SF1"].feeders, ["QF1", "QF2"])
                 self.assertEqual(nodes["F1"].feeders, ["SF1", "SF2"])
 
-    def test_explicit_lower_seed_bye_is_preserved(self):
+    def test_automatic_byes_go_to_the_highest_seed_elo(self):
         final = self.edition(5)
-        final.byes = ["4"]
+        final.seed_elo["4"] = 2000
         nodes = build_bracket(final, automatic_pairs(final))
-        self.assertTrue(any(node.bye and node.winner == "4" for node in nodes.values()))
+        self.assertEqual({node.winner for node in nodes.values() if node.bye}, {"4", "0", "1"})
 
     def test_manual_arrangement_is_exact_and_duplicate_players_are_rejected(self):
         final = self.edition(8)

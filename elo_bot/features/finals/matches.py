@@ -10,16 +10,29 @@ from elo_bot.db import EloFinal, Match, Participant, Player
 from elo_bot.db.season_models import EloFinalMatch
 from elo_bot.features.matches.messages import MatchMessageState
 from elo_bot.features.matches.timing import hosting_started
+from elo_bot.features.finals.lifecycle import ongoing_final
 
 
 def require_current_match(final: EloFinal, source: Match) -> EloFinalMatch:
+    if final.state in {"CANCELLING", "CANCELLED"}:
+        raise FinalError("This Final was cancelled.")
     node = final.nodes.get(source.final_node_id)
     if (node is None or source.final_superseded or node.match_id != source.id
             or str(final.id) != source.final_id or node.contestant_revision != source.final_contestant_revision
             or node.attempt != source.final_attempt
             or node.contestants != [participant.user_id for participant in source.participants]):
-        raise FinalError("This physical match belongs to an earlier pairing or attempt. Use `/final match view`.")
+        raise FinalError("This match was replaced. Use `/final bracket view`.")
     return node
+
+
+async def require_ongoing_match(source: Match) -> EloFinal:
+    """Reject controls from cancelled, archived, or replaced physical matches."""
+    final = await EloFinal.get(PydanticObjectId(source.final_id))
+    if final is None:
+        raise FinalError("This Final match is unavailable.")
+    require_current_match(final, source)
+    await ongoing_final(final.id)
+    return final
 
 
 async def schedule_final_match(source: Match, timestamp: int, *, player: int | None = None) -> Match:
@@ -36,6 +49,7 @@ async def schedule_final_match(source: Match, timestamp: int, *, player: int | N
         current = Match.model_validate(match_row)
         final = EloFinal.model_validate(final_row)
         node = require_current_match(final, current)
+        await ongoing_final(final.id, session=session)
         require_round_ready(final, next(name for name, nodes in ROUND_NODES.items() if node.id in nodes))
         if node.result_id or final.state in {"CANCELLING", "CANCELLED", "COMPLETED"}:
             raise FinalError("This pairing already has an official result or is closed.")
@@ -67,13 +81,10 @@ async def schedule_final_match(source: Match, timestamp: int, *, player: int | N
 
 async def prepare_match(final: EloFinal, node_id: str) -> Match | None:
     async def prepare(session):
-        row = await EloFinal.get_pymongo_collection().find_one({"_id": final.id}, session=session)
-        if row is None:
-            raise FinalError("The Final is unavailable.")
-        current = EloFinal.model_validate(row)
+        current = await ongoing_final(final.id, session=session)
         round_name = next((name for name, nodes in ROUND_NODES.items() if node_id in nodes), None)
         if round_name is None:
-            raise FinalError("Choose a match from `/final match list`.")
+            raise FinalError("Choose a match from `/final bracket view`.")
         require_round_ready(current, round_name)
         node = current.nodes[node_id]
         if node.bye:
@@ -112,7 +123,6 @@ async def prepare_match(final: EloFinal, node_id: str) -> Match | None:
             match.is_war = node.scheduled_is_war
         node.match_id = match.id
         node.provisioning = True
-        current.current_round = round_name
         current.revision += 1
         await Match.get_pymongo_collection().insert_one(match.model_dump(by_alias=True), session=session)
         await EloFinal.get_pymongo_collection().replace_one({"_id": current.id}, current.model_dump(by_alias=True),
@@ -123,11 +133,13 @@ async def prepare_match(final: EloFinal, node_id: str) -> Match | None:
 
 
 async def bind_thread(final: EloFinal, match: Match, thread_id: str) -> None:
+    await ongoing_final(final.id)
     field = f"nodes.{match.final_node_id}"
     bound = await EloFinal.get_pymongo_collection().update_one({
-        "_id": final.id, f"{field}.match_id": match.id,
+        "_id": final.id, "active": True, "state": {"$nin": ["CANCELLING", "CANCELLED"]},
+        f"{field}.match_id": match.id,
         f"{field}.contestant_revision": match.final_contestant_revision, f"{field}.attempt": match.final_attempt,
     }, {"$set": {f"{field}.thread_id": thread_id, f"{field}.provisioning": False,
                  f"{field}.provisioning_error": None}, "$inc": {"revision": 1}})
     if not bound.matched_count:
-        raise FinalError("The thread exists, but its pairing changed. A manager must recover the binding.")
+        raise FinalError("The match thread was created, but the pairing changed. Ask a manager to run `/final recover`.")

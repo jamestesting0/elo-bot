@@ -16,7 +16,8 @@ from elo_bot.features.base_store.models import (
 )
 from elo_bot.db import BaseStore, Match
 from elo_bot.features.base_store.raid_policy import eligible_for_raid_storage, select_raid_storage_slot
-
+from elo_bot.core.finals import FinalError
+from elo_bot.features.matches.controls import update_match
 
 BASE_STORE_RESERVATION_LOCK = asyncio.Lock()
 
@@ -52,14 +53,14 @@ async def _claim_base_store(match: Match, player: int, store: BaseStore, *, raid
         })
     for index, participant in enumerate(match.participants[:2]):
         query[f"participants.{index}.result"] = participant.result
-    result = await match.get_pymongo_collection().update_one(
+    result = await update_match(match,
         query,
         {"$set": {
             f"participants.{player}.opponent_bases_stored": True,
             f"participants.{player}.base_store": store.model_dump(),
         }},
     )
-    if result.matched_count == 0:
+    if not result:
         return False
     match.participants[player].opponent_bases_stored = True
     match.participants[player].base_store = store
@@ -125,7 +126,10 @@ async def prepare_base_store(
                 return BaseStorePreparationFailure(
                     f"{ERROR_EMOJI} **{slot}** in **{request.clan.name}** is already being used for stored bases."
                 )
-        await runtime._base_store_choose_bases(match, request.player)
+        try:
+            await runtime._base_store_choose_bases(match, request.player)
+        except FinalError as error:
+            return BaseStorePreparationFailure(f"{ERROR_EMOJI} {error}")
         match = await Match.find_one({"thread": request.thread_id})
         if not match or request.player >= len(match.participants):
             return BaseStorePreparationFailure(

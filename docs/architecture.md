@@ -51,8 +51,8 @@ A feature never imports an extension: if two extensions need the same code, it b
 
 ## Extensions as mixin packages
 
-`MatchCommands` and `BaseCommands` are composed from mixins (`elo_bot/extensions/match/*.py`,
-`elo_bot/extensions/base/*.py`). interactions.py registers the callbacks it finds on the class with
+`MatchCommands`, `BaseCommands` and `FinalCommands` are composed from mixins (`elo_bot/extensions/match/*.py`,
+`elo_bot/extensions/base/*.py`, `elo_bot/extensions/final/*.py`). interactions.py registers the callbacks it finds on the class with
 `inspect.getmembers`, sorted by attribute name, so the split does not change registration. The slash command and
 its groups are defined in the package's `groups.py` and bound as class attributes on the composed class and on each
 mixin that decorates with them.

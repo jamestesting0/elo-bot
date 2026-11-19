@@ -1,5 +1,5 @@
 from tests.integration._final_fixture import FinalScenarioCase
-from elo_bot.features.finals.lifecycle import confirm_bracket, end_final, request_cancellation, resolve_final, reset_bracket, start_final
+from elo_bot.features.finals.lifecycle import confirm_bracket, end_final, request_cancellation, final_for_view, reset_bracket, start_final
 from elo_bot.features.finals.matches import prepare_match
 from elo_bot.features.finals.recovery import recover_final
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
@@ -12,10 +12,10 @@ from elo_bot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenW
 
 class TestFinalRecovery(FinalScenarioCase):
     async def result(self, final, node_id, *, reverse=False, outcome="Played", reason=None):
-        final = await resolve_final(final.season_number)
+        final = await final_for_view(final.season_number)
         if outcome == "Played" and final.nodes[node_id].result_id is None:
             await self.scheduled_pairing(final, node_id)
-            final = await resolve_final(final.season_number)
+            final = await final_for_view(final.season_number)
         node = final.nodes[node_id]
         scores = {user: (["0.00"] * 7 if outcome == "Forfeit" else ["3.100" if (side == 0) != reverse else "2.80"] * 7)
                   for side, user in enumerate(node.contestants)}
@@ -34,20 +34,18 @@ class TestFinalRecovery(FinalScenarioCase):
                 before = [player.model_dump() for player in await Player.find_all().to_list()]
                 for round_name, nodes in ROUND_NODES.items():
                     for node_id in nodes:
-                        current = await resolve_final()
+                        current = await final_for_view()
                         if current.nodes[node_id].bye:
                             with self.assertRaises(FinalError):
                                 await open_market(current, node_id)
                             continue
                         await self.result(current, node_id)
-                current = await resolve_final()
-                await Season(season_number=99, start=3, end=4).insert()
+                current = await final_for_view()
                 await end_final(current)
                 saved = await EloFinal.get(final.id)
                 self.assertEqual(saved.state, "COMPLETED")
                 self.assertFalse(saved.active)
                 self.assertEqual(saved.champion, "1")
-                self.assertEqual((await Season.get(self.archive.id)).final_summary["champion"], "1")
                 self.assertEqual(await FinalMatchResult.count(), expected)
                 self.assertEqual(await RecordedMatch.count(), 0)
                 self.assertEqual(before, [player.model_dump() for player in await Player.find_all().to_list()])
@@ -67,10 +65,10 @@ class TestFinalRecovery(FinalScenarioCase):
         await self.result(final, "QF2")
         await self.result(final, "QF3")
         await self.result(final, "QF4")
-        source = await prepare_match(await resolve_final(), "SF1")
+        source = await prepare_match(await final_for_view(), "SF1")
         before = await FinalBettingMarket.get(market.id)
         await self.result(final, "QF1", reason="Corrected destruction")
-        current = await resolve_final()
+        current = await final_for_view()
         self.assertEqual(current.nodes["SF1"].match_id, source.id)
         after = await FinalBettingMarket.get(market.id)
         self.assertEqual(after.generations, before.generations)
@@ -80,17 +78,17 @@ class TestFinalRecovery(FinalScenarioCase):
         final = await confirm_bracket(await self.roster(8), "manager")
         for node in ROUND_NODES["Quarterfinals"]:
             await self.result(final, node)
-        current = await resolve_final()
+        current = await final_for_view()
         sf = await prepare_match(current, "SF1")
-        market = await open_market(await resolve_final(), "SF1")
+        market = await open_market(await final_for_view(), "SF1")
         await apply_bet(BetAction(market_id=market.id, user_id="9", contestant=market.contestants[0], amount=1000,
                                 expected_version=0, action_key="sf-stake"))
         await self.result(final, "SF1")
         await self.result(final, "SF2")
         await self.result(final, "F1")
-        unaffected = (await resolve_final()).nodes["SF2"].result_id
+        unaffected = (await final_for_view()).nodes["SF2"].result_id
         await self.result(final, "QF1", reverse=True, reason="Winner corrected")
-        current = await resolve_final()
+        current = await final_for_view()
         self.assertEqual(current.nodes["SF1"].state, "NEEDS_MANAGER")
         self.assertIsNone(current.nodes["SF1"].result_id)
         self.assertIsNone(current.champion)
@@ -122,9 +120,9 @@ class TestFinalRecovery(FinalScenarioCase):
             await apply_bet(BetAction(market_id=market.id, user_id="9", contestant=market.contestants[0], amount=1000,
                                     expected_version=0, action_key=f"stake:{market.id}"))
         official = await self.result(final, "QF1")
-        await request_cancellation(await resolve_final(), "Event cancelled")
+        await request_cancellation(await final_for_view(), "Event cancelled")
         await recover_final(final)
-        current = await resolve_final()
+        current = await final_for_view()
         self.assertEqual(current.state, "CANCELLED")
         self.assertFalse(current.active)
         self.assertEqual(current.nodes["QF1"].result_id, official.id)
@@ -135,30 +133,25 @@ class TestFinalRecovery(FinalScenarioCase):
     async def test_reset_is_blocked_after_a_market_exists(self):
         final = await confirm_bracket(await self.roster(8), "manager")
         await reset_bracket(final)
-        final = await confirm_bracket(await resolve_final(), "manager")
+        final = await confirm_bracket(await final_for_view(), "manager")
         await open_market(final, "QF1")
         with self.assertRaises(FinalError):
             await reset_bracket(final)
-        self.assertEqual((await resolve_final()).state, "BRACKET_READY")
+        self.assertEqual((await final_for_view()).state, "BRACKET_READY")
 
-    async def test_archived_correction_waits_for_another_active_final_before_reopening(self):
+    async def test_archived_correction_preserves_archive_and_another_ongoing_final(self):
         final = await confirm_bracket(await self.roster(8), "manager")
         for nodes in ROUND_NODES.values():
             for node_id in nodes:
                 await self.result(final, node_id)
-        await end_final(await resolve_final())
-        await Season(season_number=8, start=2, end=3, players=[]).insert()
-        ongoing = await start_final(8, final.guild_id, final.channel_id)
-        await self.result(final, "QF1", reverse=True, reason="Archived winner corrected")
-        old = await resolve_final(7)
-        self.assertTrue(old.reopening_pending)
-        self.assertFalse(old.active)
-        self.assertEqual((await resolve_final()).id, ongoing.id)
-        self.assertIsNone(old.champion)
-        await request_cancellation(ongoing, "Test event cancelled")
-        await recover_final(ongoing)
-        await recover_final(old)
-        old = await resolve_final(7)
-        self.assertTrue(old.active)
-        self.assertFalse(old.reopening_pending)
-        self.assertEqual(old.state, "RUNNING")
+        await end_final(await final_for_view())
+        archived = await final_for_view(7)
+        before = archived.model_dump()
+        count = await FinalMatchResult.count()
+        await Season(season_number=7, start=2, end=3, players=[]).insert()
+        ongoing = await start_final(final.guild_id, final.channel_id)
+        with self.assertRaises(FinalError):
+            await self.result(archived, "QF1", reverse=True, reason="Archived winner corrected")
+        self.assertEqual((await final_for_view(7)).model_dump(), before)
+        self.assertEqual((await final_for_view()).id, ongoing.id)
+        self.assertEqual(await FinalMatchResult.count(), count)

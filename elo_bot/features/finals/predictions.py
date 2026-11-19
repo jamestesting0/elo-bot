@@ -9,6 +9,7 @@ from elo_bot.features.finals.persistence import transaction
 from elo_bot.core.finals import FinalError, NODE_IDS
 from elo_bot.db import EloFinal, Player
 from elo_bot.db.final_models import FinalPrediction
+from elo_bot.features.finals.lifecycle import ongoing_final
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,7 +17,7 @@ class PredictionAction:
     final_id: PydanticObjectId
     user_id: str
     session_revision: int
-    action: Literal["pick", "next", "back", "submit"]
+    action: Literal["pick", "next", "back", "submit", "edit"]
     node_id: str | None = None
     choice: str | None = None
 
@@ -40,12 +41,16 @@ def normalize_picks(final: EloFinal, picks: dict[str, str]) -> dict[str, str]:
     return normalized
 
 
+async def submitted_predictions(final: EloFinal) -> int:
+    return await FinalPrediction.find({"final_id": str(final.id), "submitted_at": {"$ne": None}}).count()
+
+
 async def change_prediction_state(final: EloFinal, open_predictions: bool) -> EloFinal:
     async def change(session):
         collection = EloFinal.get_pymongo_collection()
-        current = EloFinal.model_validate(await collection.find_one({"_id": final.id}, session=session))
+        current = await ongoing_final(final.id, session=session)
         if not current.active or not current.nodes or current.state in {"CANCELLING", "CANCELLED"}:
-            raise FinalError("Freeze an active bracket before managing predictions.")
+            raise FinalError("Create and confirm the bracket with `/final bracket create` first.")
         if open_predictions:
             if current.prediction_state == "CLOSED" or current.first_actual_started_at or any(
                 not node.bye and node.result_id for node in current.nodes.values()
@@ -64,7 +69,7 @@ async def change_prediction_state(final: EloFinal, open_predictions: bool) -> El
 
 async def begin_prediction(final: EloFinal, user_id: str) -> FinalPrediction:
     async def begin(session):
-        current = EloFinal.model_validate(await EloFinal.get_pymongo_collection().find_one({"_id": final.id}, session=session))
+        current = await ongoing_final(final.id, session=session)
         if current.prediction_state != "OPEN" or not current.active:
             raise FinalError("Predictions are closed.")
         if await Player.get_pymongo_collection().find_one({"user_id": user_id}, session=session) is None:
@@ -76,6 +81,7 @@ async def begin_prediction(final: EloFinal, user_id: str) -> FinalPrediction:
             user_id=user_id, setup_revision=current.setup_revision,
         )
         prediction.draft = normalize_picks(current, prediction.draft or prediction.submitted)
+        prediction.stage = 0
         prediction.session_revision += 1
         await collection.replace_one({"_id": prediction.id}, prediction.model_dump(by_alias=True), upsert=True, session=session)
         await EloFinal.get_pymongo_collection().update_one({"_id": final.id}, {"$inc": {"revision": 1}}, session=session)
@@ -86,12 +92,11 @@ async def begin_prediction(final: EloFinal, user_id: str) -> FinalPrediction:
 
 async def apply_prediction_action(request: PredictionAction) -> FinalPrediction:
     async def apply(session):
-        final_row = await EloFinal.get_pymongo_collection().find_one({"_id": request.final_id}, session=session)
+        final = await ongoing_final(request.final_id, session=session)
         row = await FinalPrediction.get_pymongo_collection().find_one(
             {"final_id": str(request.final_id), "user_id": request.user_id}, session=session)
-        if final_row is None or row is None:
+        if row is None:
             raise FinalError("Open `/final predict` to start a prediction draft.")
-        final = EloFinal.model_validate(final_row)
         prediction = FinalPrediction.model_validate(row)
         if (final.prediction_state != "OPEN" or not final.active or prediction.setup_revision != final.setup_revision
                 or prediction.session_revision != request.session_revision):
@@ -99,6 +104,8 @@ async def apply_prediction_action(request: PredictionAction) -> FinalPrediction:
         if await Player.get_pymongo_collection().find_one({"user_id": request.user_id}, session=session) is None:
             raise FinalError("Register before submitting predictions.")
         match request.action:
+            case "edit":
+                prediction.stage = 0
             case "pick":
                 if request.node_id not in final.nodes or request.choice not in pick_options(final, prediction.draft, request.node_id):
                     raise FinalError("Choose a contestant from this pairing.")

@@ -46,7 +46,7 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
             return_value=SimpleNamespace(id=111, display_name="Builder"),
         )
         self.ctx.message.embeds = [base_manage_module.construct_base_embed(
-            self.shown, names={"111": "**[Builder](<https://discordapp.com/users/111>)**"},
+            self.shown, names={"111": "**[Builder](<https://discordapp.com/users/111?tab=wishlist>)**"},
         )]
         self.ctx.message.components = [ipy.ActionRow(ipy.Button(
             style=ipy.ButtonStyle.SUCCESS, label="Preset Add", custom_id="p_base_preset|Any|0",

@@ -11,7 +11,7 @@ FINAL_DISTRICTS: Final = (
 NODE_IDS: Final = ("QF1", "QF2", "QF3", "QF4", "SF1", "SF2", "F1")
 ROUND_NODES: Final = {"Quarterfinals": NODE_IDS[:4], "Semifinals": NODE_IDS[4:6], "Final": NODE_IDS[6:]}
 type MatchFormat = Literal["ordinary_three", "elo_final_seven"]
-type FinalState = Literal["REGISTRATION", "BRACKET_READY", "RUNNING", "FINALIZING", "COMPLETED",
+type FinalState = Literal["REGISTRATION", "BRACKET_READY", "RUNNING", "COMPLETED",
                           "CANCELLING", "CANCELLED"]
 type PredictionState = Literal["NEVER_OPENED", "OPEN", "CLOSED"]
 type NodeState = Literal["WAITING", "READY", "BYE", "PLAYING", "DECIDED", "TIED", "NEEDS_MANAGER"]
@@ -24,6 +24,10 @@ class FinalError(Exception):
 
     def __str__(self) -> str:
         return self.message
+
+
+FINAL_SELF_HOSTING_REFUSAL = ("Final matches can't be self-hosted. A host starts them with "
+                              "`/match autostart` or `/match war autostart`.")
 
 
 def is_final_match(match: "Match") -> bool:

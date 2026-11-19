@@ -320,6 +320,32 @@ class TestLifecycle(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.document["poll_failures"], 2)
         self.assertEqual([event["kind"] for event in self.document["events"]], ["poll_failed"])
 
+    async def test_cancelled_final_cancels_helper_and_closes_without_finalizing_scores(self) -> None:
+        self.document.update(state="ACTIVE", job_id=JOB_ID, final_id=str(PydanticObjectId()))
+        source = MagicMock(final_superseded=True, final_contestant_revision=1, final_attempt=1,
+                           final_result_id=None)
+        running = HelperSequentialJob.model_validate({
+            "id": JOB_ID, "type": "host_sequential_live_match", "status": "running", "created_at": 1,
+            "started_at": 2, "finished_at": None, "error": None, "result": None,
+        })
+        cancelled = running.model_copy(update={"status": "cancelled", "finished_at": 3})
+        client = MagicMock(read=AsyncMock(side_effect=[running, cancelled]), cancel=AsyncMock())
+        with patch.object(service.Match, "get", new=AsyncMock(return_value=source)), \
+                patch.object(service.EloFinal, "get", new=AsyncMock(return_value=MagicMock(state="CANCELLED"))), \
+                patch.object(service, "helper_client", return_value=client), \
+                patch.object(service, "refresh_progress", new=AsyncMock()), \
+                patch.object(service, "store_verified_scores", new=AsyncMock()) as store, \
+                patch.object(service, "finish_stored_sides", new=AsyncMock()) as finish:
+            closed = await service.sync_run(MagicMock(), self.document["_id"])
+        client.cancel.assert_awaited_once()
+        self.assertEqual(client.cancel.await_args.args[1], JOB_ID)
+        self.assertFalse(closed.open)
+        self.assertEqual(closed.state, "TERMINAL")
+        self.assertEqual(closed.job_status, "cancelled")
+        self.assertEqual(closed.close_reason, "The Final was cancelled.")
+        store.assert_not_awaited()
+        finish.assert_not_awaited()
+
     async def test_stale_run_stays_open_while_helper_is_still_hosting(self) -> None:
         running = HelperSequentialJob.model_validate({
             "id": JOB_ID, "type": "host_sequential_live_match", "status": "running", "created_at": 1,
@@ -394,6 +420,7 @@ class TestGuardAndForm(unittest.IsolatedAsyncioTestCase):
         ctx = MagicMock(channel=MagicMock(id=55), defer=AsyncMock(), send=AsyncMock())
         with patch("elo_bot.extensions.match.result_store.Match") as model, \
                 patch("elo_bot.extensions.match.result_store.result_input_error", return_value=None), \
+                patch("elo_bot.extensions.match.result_store.require_source_result_role", new=AsyncMock()), \
                 patch("elo_bot.extensions.match.result_store.open_run_refusal",
                       new=AsyncMock(return_value="Helper is running a sequential match here.")):
             model.find_one = AsyncMock(return_value=match)

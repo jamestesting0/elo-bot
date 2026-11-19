@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 
 from beanie import PydanticObjectId
+from pymongo.asynchronous.client_session import AsyncClientSession
 
 from elo_bot.features.finals.bracket import advance_nodes, require_round_ready
 from elo_bot.features.finals.persistence import transaction
@@ -11,9 +12,10 @@ from elo_bot.features.finals.profiles import rebuild_profiles
 from elo_bot.features.finals.predictions import rescore_predictions
 from elo_bot.core.finals import FinalError, Outcome, ROUND_NODES
 from elo_bot.core.parsing import get_destruction, get_stars
-from elo_bot.db import EloFinal, Match, Season, HelperHistory
+from elo_bot.db import EloFinal, Match, HelperHistory
 from elo_bot.db.final_models import FinalHelperCredit, FinalMatchResult, FinalResultOperation, FinalResultSnapshot
 from elo_bot.db.season_models import FinalResultProgress
+from elo_bot.features.finals.lifecycle import ongoing_final
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,9 +49,9 @@ def submission_snapshot(final: EloFinal, request: FinalResultSubmission) -> Fina
             or node.attempt != request.attempt):
         raise FinalError("The match changed. Open its current result form.")
     if final.state in {"CANCELLING", "CANCELLED"} or final.repair_pending:
-        raise FinalError("Final updates are pending. Use `/final recover` before changing results.")
+        raise FinalError("Final updates are pending. Ask a manager to run `/final recover` before submitting the result.")
     if final.prediction_state == "OPEN":
-        raise FinalError("Close predictions with `/final predictions close` first.")
+        raise FinalError("Predictions are still open. Ask a manager to close them before submitting the result.")
     if node.result_id is None:
         require_round_ready(final, next(name for name, nodes in ROUND_NODES.items() if node.id in nodes))
     if (node.result_id is not None or request.outcome == "Forfeit" or request.winner is not None) and not request.reason:
@@ -64,13 +66,10 @@ def submission_snapshot(final: EloFinal, request: FinalResultSubmission) -> Fina
     return FinalResultSnapshot(contestants=contestants, scores=request.scores, winner=winner, outcome=request.outcome)
 
 
-async def submit_result(request: FinalResultSubmission) -> FinalMatchResult:
+async def submit_result(request: FinalResultSubmission, *, session: AsyncClientSession | None = None) -> FinalMatchResult:
     async def commit(session):
         collection = EloFinal.get_pymongo_collection()
-        row = await collection.find_one({"_id": request.final_id}, session=session)
-        if row is None:
-            raise FinalError("The Final is unavailable.")
-        final = EloFinal.model_validate(row)
+        final = await ongoing_final(request.final_id, session=session)
         node = final.nodes.get(request.node_id)
         if node is None or node.bye or not all(node.contestants):
             raise FinalError("This match has no playable pairing.")
@@ -152,13 +151,6 @@ async def submit_result(request: FinalResultSubmission) -> FinalMatchResult:
         final.repair_nodes = list(dict.fromkeys([node.id, *changed]))
         final.publication_pending = True
         final.result_progress[result.id.replace(".", "_")] = FinalResultProgress()
-        if not final.active and changed:
-            other = await collection.find_one({"active": True, "_id": {"$ne": final.id}}, session=session)
-            if other:
-                final.reopening_pending = True
-            else:
-                final.active = True
-                final.state = "RUNNING"
         await collection.replace_one({"_id": final.id}, final.model_dump(by_alias=True), session=session)
         await rebuild_profiles(final, session)
         await rescore_predictions(final, session)
@@ -170,13 +162,9 @@ async def submit_result(request: FinalResultSubmission) -> FinalMatchResult:
             for side, participant in enumerate(source.participants):
                 updates[f"participants.{side}.result"] = snapshot.scores[participant.user_id]
             await Match.get_pymongo_collection().update_one({"_id": source.id}, {"$set": updates}, session=session)
-        if final.completed_at is not None:
-            await Season.get_pymongo_collection().update_one({"_id": final.season_id}, {"$set": {"final_summary": {
-                "final_id": str(final.id), "champion": final.champion, "revision": final.result_revision,
-            }}}, session=session)
         return result
 
-    return await transaction(commit)
+    return await commit(session) if session is not None else await transaction(commit)
 
 
 def automatic_operation_key(source: Match, scores: dict[str, list[str]]) -> str:

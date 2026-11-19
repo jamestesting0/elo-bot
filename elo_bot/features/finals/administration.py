@@ -8,7 +8,7 @@ from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEnt
 
 
 async def guard_full_reset() -> None:
-    if (await EloFinal.find_one({"$or": [{"active": True}, {"repair_pending": True}, {"reopening_pending": True}]})
+    if (await EloFinal.find_one({"$or": [{"active": True}, {"repair_pending": True}]})
             or await FinalBettingMarket.find_one({"$or": [{"escrow": {"$ne": 0}},
                 {"state": {"$in": ["SETTLING", "CORRECTING"]}}]})):
         raise FinalError("Finish or cancel the ongoing Final and recover its payouts before resetting data.")
@@ -16,7 +16,7 @@ async def guard_full_reset() -> None:
 
 async def guard_deregistration(user_id: str) -> None:
     if await EloFinal.find_one({"active": True, "entrant_ids": user_id}):
-        raise FinalError("Remove this entrant during registration, or finish/cancel the Final before deregistration.")
+        raise FinalError("Remove this entrant during setup, or end or cancel the Final before deregistering them.")
 
 
 async def deregister_player(user_id: str) -> None:
@@ -24,7 +24,7 @@ async def deregister_player(user_id: str) -> None:
         collection = EloFinal.get_pymongo_collection()
         active = await collection.find({"active": True}, session=session).to_list()
         if any(user_id in row["entrant_ids"] for row in active):
-            raise FinalError("Remove this entrant during registration, or finish/cancel the Final before deregistration.")
+            raise FinalError("Remove this entrant during setup, or end or cancel the Final before deregistering them.")
         for row in active:
             await collection.update_one({"_id": row["_id"]}, {"$inc": {"revision": 1}}, session=session)
         result = await Player.get_pymongo_collection().delete_one({"user_id": user_id}, session=session)
@@ -41,12 +41,10 @@ async def guard_result_deletion(match_id: str) -> None:
 async def migrate_final_identity(old: str, new: str, actor: str) -> None:
     async def migrate(session):
         finals = EloFinal.get_pymongo_collection()
-        active = await finals.find({"$or": [{"active": True}, {"repair_pending": True},
-                                          {"reopening_pending": True}]}, session=session).to_list()
+        active = await finals.find({"$or": [{"active": True}, {"repair_pending": True}]}, session=session).to_list()
         if await Player.get_pymongo_collection().find_one({"user_id": new}, session=session):
             raise FinalError("The destination is already registered to another player.")
-        if any(old in row["entrant_ids"] or new in row["entrant_ids"] or row.get("repair_pending")
-               or row.get("reopening_pending") for row in active):
+        if any(old in row["entrant_ids"] or new in row["entrant_ids"] or row.get("repair_pending") for row in active):
             raise FinalError("Finish active participation and Final recovery before migrating this account.")
         wallets = TokenWallet.get_pymongo_collection()
         old_row = await wallets.find_one({"$or": [{"user_id": old}, {"identity_claims": old}]}, session=session)

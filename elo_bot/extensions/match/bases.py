@@ -45,11 +45,27 @@ from elo_bot.features.matches.thread_messages import (
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.integrations.files import delete_file
 from elo_bot.integrations.http import download_file
-from elo_bot.features.finals.lifecycle import resolve_final
+from elo_bot.features.finals.lifecycle import final_for_view, ongoing_final
+from elo_bot.features.finals.matches import require_ongoing_match
+from elo_bot.features.matches.controls import check_current_match, update_match
 
 
 class MatchBaseCommands:
-    @ipy.component_callback(re.compile(r"^submit_bases\|\w+(?:\|[01]\|\d+\|\d+)?$"))
+    async def _save_match_bases(self, ctx, match, player) -> bool:
+        if not is_final_match(match):
+            await match.save_changes()
+            return True
+        if not await check_current_match(ctx, match):
+            return False
+        field = f"participants.{player}.bases"
+        if not await update_match(match, {"_id": match.id}, {"$set": {
+                field: [base.model_dump() if base else None for base in match.participants[player].bases]},
+                "$inc": {"final_base_page_revision": 1}}):
+            await ctx.send(f"{ERROR_EMOJI} The match changed. Your bases were not changed.", ephemeral=True)
+            return False
+        return True
+
+    @ipy.component_callback(re.compile(r"^submit_bases\|\w+$"))
     async def submit_bases_button(self, ctx: ipy.ComponentContext):
         if ctx.channel and int(ctx.channel.id) == COMMAND_CHANNEL and not ctx.message.contains_mention(ctx.author):
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
@@ -73,19 +89,9 @@ class MatchBaseCommands:
             await ctx.send(f"{ERROR_EMOJI} Invalid match data.", ephemeral=True)
             return
 
-        if is_final_match(match) and (
-            author_id not in [participant.user_id for participant in match.participants]
-            or ctx.guild_id != match.routing_guild_id or ctx.author.has_role(ELO_BLACKLIST_ROLE)
-            or match.final_superseded or match.final_result_id is not None
-            or len(parts) > 2 and (parts[3] != author_id or int(parts[4]) != match.final_base_page_revision)
-        ):
-            await ctx.send(f"{ERROR_EMOJI} This base view is unavailable or outdated. Open the current match's controls.",
-                           ephemeral=True)
-            return
-
         if is_final_match(match):
-            await ctx.send(f"Use `/match base submit match:{match.final_node_id} base_link:<link>` for each base.",
-                           ephemeral=True)
+            # Final threads no longer post this button; older thread messages may still carry it.
+            await ctx.send(f"{ERROR_EMOJI} Submit your bases with `/match base submit` in this thread.", ephemeral=True)
             return
 
         if author_id == match.participants[0].user_id:
@@ -157,7 +163,7 @@ class MatchBaseCommands:
 
         await ctx.send_modal(modal)
 
-    @ipy.modal_callback(re.compile(r"^submit_bases_modal\|\w+(?:\|[01]\|\d+\|\d+)?$"))
+    @ipy.modal_callback(re.compile(r"^submit_bases_modal\|\w+$"))
     async def submit_bases_modal(self, ctx: ipy.ModalContext, **response):
         await ctx.defer(ephemeral=True)
 
@@ -248,7 +254,7 @@ class MatchBaseCommands:
         if len(embed.fields) < 5:
             embed.add_field(name="**Notes**", value=note)
         elif not re.search(
-                rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}>\)(?:\*\*)?) has submitted bases\.",
+                rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}(?:\?tab=wishlist)?>\)(?:\*\*)?) has submitted bases\.",
                 embed.fields[4].value,
         ):
             embed.fields[4].value += f"\n{note}"
@@ -299,16 +305,22 @@ class MatchBaseCommands:
                     )
                     task2.start()
 
-    async def _base_command_match(self, ctx, node_id=None):
+    async def _base_command_match(self, ctx, node_id=None, *, write=False):
         if node_id is None:
-            return await Match.find_one(Match.thread == str(ctx.channel.id))
-        final = await resolve_final()
+            source = await Match.find_one(Match.thread == str(ctx.channel.id))
+            if source and write and is_final_match(source):
+                await require_ongoing_match(source)
+            return source
+        final = await ongoing_final() if write else await final_for_view()
         if ctx.guild_id != final.guild_id or ctx.author.has_role(ELO_BLACKLIST_ROLE):
             raise FinalError("Use this command in the Final's server while eligible.")
         node = final.nodes.get(node_id.upper())
         if node is None or node.match_id is None:
-            raise FinalError("Choose a prepared match from `/final match list`.")
-        return await Match.get(node.match_id)
+            raise FinalError("Choose a prepared match from `/final bracket view`.")
+        source = await Match.get(node.match_id)
+        if source and write:
+            await require_ongoing_match(source)
+        return source
 
     @base_group.subcommand(sub_cmd_name="remove-all", sub_cmd_description="Remove all bases for a match")
     @ipy.slash_option(
@@ -340,6 +352,8 @@ class MatchBaseCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         # permission check: only players, hosts, or bot owner
         participant_ids = [p.user_id for p in match.participants[:2]]
         host_ids = (match.hosts or [None, None])
@@ -388,7 +402,8 @@ class MatchBaseCommands:
             p.bases[i] = None
 
         # persist match changes
-        await match.save_changes()
+        if not await self._save_match_bases(ctx, match, p_idx):
+            return
 
         # resolve player mention for confirmation
         player_mention = f"<@{p.user_id}>"
@@ -434,6 +449,8 @@ class MatchBaseCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         # permission: only players, hosts, or bot owner
         participant_ids = [p.user_id for p in match.participants[:2]]
         host_ids = [h for h in (match.hosts or []) if h]
@@ -490,7 +507,8 @@ class MatchBaseCommands:
 
         # remove base and persist to Mongo
         p.bases[district_index] = None
-        await match.save_changes()
+        if not await self._save_match_bases(ctx, match, p_idx):
+            return
 
         await ctx.send(
             f"{SUCCESS_EMOJI} You have successfully removed <@{p.user_id}>'s base for **{district}**",
@@ -529,6 +547,8 @@ class MatchBaseCommands:
                            f"this command in a 1v1 thread!", ephemeral=True)
             return
 
+        if not await check_current_match(ctx, match):
+            return
         # only host(s) or bot owner may set scout views
         host_ids = [h for h in (match.hosts or []) if h]
         if (str(ctx.author.id) not in host_ids) and (str(ctx.author.id) != str(self.bot.owner.id)):
@@ -571,7 +591,8 @@ class MatchBaseCommands:
 
         # save image URL on the BaseLink
         base.image = file_msg.attachments[0].url
-        await match.save_changes()
+        if not await self._save_match_bases(ctx, match, p_idx):
+            return
 
         await ctx.send(f"{SUCCESS_EMOJI} You have set <@{p.user_id}>'s base scout view for **{district}**",
                        ephemeral=True)
@@ -625,6 +646,8 @@ class MatchBaseCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         # disallow hosts command if the invoker is a player; they must use "match base submit"
         if any(str(ctx.author.id) == p.user_id for p in match.participants[:2]):
             await ctx.send(
@@ -688,7 +711,8 @@ class MatchBaseCommands:
 
         # write into the document and persist
         p.bases[d_idx] = BaseLink(link=base_link, image=base_image_url)
-        await match.save_changes()
+        if not await self._save_match_bases(ctx, match, p_idx):
+            return
 
         await ctx.send(
             f"{SUCCESS_EMOJI} You have set <@{p.user_id}>'s base for **{district}**",
@@ -733,7 +757,7 @@ class MatchBaseCommands:
             return
 
         try:
-            match = await self._base_command_match(ctx, target_node)
+            match = await self._base_command_match(ctx, target_node, write=True)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
@@ -841,14 +865,14 @@ class MatchBaseCommands:
         # persist on the document (no list-size enforcing per your note)
         author_participant.bases[d_idx] = BaseLink(link=base_link, image=base_image_url)
         if is_final_match(match):
-            saved = await match.get_pymongo_collection().update_one({
+            saved = await update_match(match, {
                 "_id": match.id, "final_base_page_revision": match.final_base_page_revision,
                 "final_superseded": False, "final_result_id": None,
                 f"participants.{author_index}.user_id": author_id,
                 "times": match.times,
             }, {"$set": {f"participants.{author_index}.bases.{d_idx}": author_participant.bases[d_idx].model_dump()},
                 "$inc": {"final_base_page_revision": 1}})
-            if not saved.matched_count:
+            if not saved:
                 await ctx.send(f"{ERROR_EMOJI} The match changed. Your base was not saved.", ephemeral=True)
                 return
         else:
@@ -876,7 +900,7 @@ class MatchBaseCommands:
             if len(match_msg.embeds[0].fields) < 5:
                 match_msg.embeds[0].add_field(name="**Notes**", value=note)
             elif not re.search(
-                    rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}>\)(?:\*\*)?) has submitted bases\.",
+                    rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}(?:\?tab=wishlist)?>\)(?:\*\*)?) has submitted bases\.",
                     match_msg.embeds[0].fields[4].value,
             ):
                 match_msg.embeds[0].fields[4].value += f"\n{note}"
@@ -982,7 +1006,7 @@ class MatchBaseCommands:
     @match_base_view.autocomplete("match")
     async def final_base_match_autocomplete(self, ctx: ipy.AutocompleteContext):
         try:
-            final = await resolve_final()
+            final = await final_for_view()
             choices = [ipy.SlashCommandChoice(name=node.id, value=node.id) for node in final.nodes.values()
                        if node.match_id and ctx.guild_id == final.guild_id
                        and not ctx.author.has_role(ELO_BLACKLIST_ROLE)

@@ -96,7 +96,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.assertIs(published.await_args_list[0].kwargs["existing_message"], old_message)
         self.assertEqual(thread_payload["title"], "**Match Started**")
         self.assertEqual(public_payload["title"], "**Match Started**")
-        self.assertIn("**[User 999](<https://discordapp.com/users/999>)**", public_payload["description"])
+        self.assertIn("**[User 999](<https://discordapp.com/users/999?tab=wishlist>)**", public_payload["description"])
         self.assertEqual(public_payload["fields"][2]["value"],
                          "[New Clan (#OLD)](https://example.test/clan)")
 
@@ -213,7 +213,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.assertIs(published.await_args.kwargs["existing_message"], public)
         embed = published.await_args.kwargs["embed"].to_dict()
         self.assertEqual(embed["title"], "**Match Rescheduled**")
-        self.assertIn("**[User 999](<https://discordapp.com/users/999>)**", embed["description"])
+        self.assertIn("**[User 999](<https://discordapp.com/users/999?tab=wishlist>)**", embed["description"])
         self.assertEqual(embed["fields"][2]["value"],
                          "[New Clan (#LIVE)](https://example.test/clan)")
 
@@ -246,7 +246,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
             )),
             patch.object(live_start, "mark_store_reserved", new=AsyncMock(return_value=True)),
             patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new=AsyncMock()),
-            patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new=AsyncMock()),
+            patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new=AsyncMock()),
             patch.object(live_start, "schedule_channel_name_edit"),
         ):
             await live_start.complete_live_start(fixture.bot, fixture.ctx, request)

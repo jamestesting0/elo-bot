@@ -33,6 +33,7 @@ from elo_bot.discord.checks import has_any
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.core.raid_weekend import is_raid_weekend
 from elo_bot.db import Clan, Match, Player
+from elo_bot.core.finals import FINAL_SELF_HOSTING_REFUSAL, is_final_match
 
 
 async def is_automatic_match_thread_member(ctx: ipy.BaseContext) -> bool:
@@ -120,6 +121,9 @@ class SelfCommands(ipy.Extension):
         caller_id = str(ctx.author.id)
         if caller_id not in [participant.user_id for participant in participants]:
             await ctx.send(f"{ERROR_EMOJI} Only a match participant can host this war match.", ephemeral=True)
+            return
+        if is_final_match(match):
+            await ctx.send(f"{ERROR_EMOJI} {FINAL_SELF_HOSTING_REFUSAL}", ephemeral=True)
             return
 
         index = next(index for index, participant in enumerate(participants) if participant.user_id == caller_id)

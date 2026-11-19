@@ -76,7 +76,7 @@ class TestAddictionLeaderboard(unittest.IsolatedAsyncioTestCase):
         leaderboard = await construct_leaderboard_string(guild, [player], "Addiction", 100, 200)
 
         # Then: the entry shows only the in-season match count
-        self.assertEqual(leaderboard, "🥇 **[Player One](<https://discordapp.com/users/one>)** `1`\n")
+        self.assertEqual(leaderboard, "🥇 **[Player One](<https://discordapp.com/users/one?tab=wishlist>)** `1`\n")
 
 
 if __name__ == "__main__":

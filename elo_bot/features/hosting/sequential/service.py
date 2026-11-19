@@ -22,11 +22,15 @@ from elo_bot.config.ids import LVL2_ROLES
 from elo_bot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.core.match_results import is_match_finished
-from elo_bot.db import Match, Player
+from elo_bot.db import EloFinal, Match, Player
 from elo_bot.db.sequential_models import LIVE_SIDE, HelperSequentialRun, SequentialRunEvent
 from elo_bot.features.base_store.live import live_pair_ready, live_stores
 from elo_bot.features.base_store.publication import BaseStoreMessageConflict
-from elo_bot.features.hosting.live.helper_live import AutomaticLiveHost, parse_paired_live_bases
+from elo_bot.features.hosting.live.helper_live import (
+    AutomaticLiveHost,
+    parse_paired_live_bases,
+    unpaired_bases_message,
+)
 from elo_bot.features.hosting.sequential import ui
 from elo_bot.features.hosting.sequential.policy import (
     LIST_PAGE_SIZE,
@@ -137,10 +141,10 @@ async def host_war_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: Au
         opponent_user = await bot.fetch_user(match_doc.participants[opponent].user_id)
         match_doc = await attack_bases.choose_bases(match_doc.token, player_user, opponent_user,
                                                     return_match_data=True)
-        links = [base.link if base else None for base in match_doc.participants[opponent].bases]
-        if len(links) != len(FINAL_DISTRICTS) or not all(links):
-            await ctx.send(f"{ERROR_EMOJI} Helper needs an opponent base for all seven districts.", ephemeral=True)
+        if refusal := attack_bases.missing_bases_message(match_doc, (opponent,)):
+            await ctx.send(refusal, ephemeral=True)
             return
+        links = [base.link for base in match_doc.participants[opponent].bases]
         opponent_tag = None
         if host.clan.tag == match_doc.host_clans[opponent]:
             opponent_player = await Player.find_one(Player.user_id == match_doc.participants[opponent].user_id)
@@ -152,11 +156,15 @@ async def host_war_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: Au
     request = HelperSequentialJobCreateRequest(
         job_type="host_sequential_war_match", requested_by=str(ctx.author.id), payload=payload,
     )
-    started_message = await war_start.start_war(bot, ctx, war_start.WarStart(
-        match=match_doc, player=host.player, host=host.host, clan=host.clan, coc_client=bot.coc_client,
-        reply=war_start.SelfHostedWarStartReply(), scout=host.scout, clan_reservation=host.clan_reservation,
-        side_reservation=host.side_reservation, stored_start=host.stored_start,
-    ))
+    try:
+        started_message = await war_start.start_war(bot, ctx, war_start.WarStart(
+            match=match_doc, player=host.player, host=host.host, clan=host.clan, coc_client=bot.coc_client,
+            reply=war_start.SelfHostedWarStartReply(), scout=host.scout, clan_reservation=host.clan_reservation,
+            side_reservation=host.side_reservation, stored_start=host.stored_start,
+        ))
+    except war_start.WarStartRefused as refusal:
+        await ctx.send(str(refusal), ephemeral=True)
+        return
     if not started_message:
         await ctx.send(f"{ERROR_EMOJI} **{host.clan.name}** is currently occupied.\n\n"
                        f"{await resources.available_resource_clans_text()}", ephemeral=True)
@@ -171,6 +179,8 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
     if refusal := await clan_refusal(host.clan.tag):
         await ctx.send(refusal, ephemeral=True)
         return
+    # Helper's attacks_first takes the tag of the player whose challenge goes first; omitted posts both together.
+    first_attacker = None if host.attacks_first is None else (host.player1, host.player2)[host.attacks_first].tag
     reservation_outcome = await live_start.reserve_live_start(str(host.match.token), host.clan.tag)
     match reservation_outcome:
         case live_reservations.LiveStartReservations() as reservations:
@@ -208,17 +218,17 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
             payload = HelperSequentialLivePayload(
                 host_clan_tag=host.clan.tag, base_source="stored", player_1_tag=host.player1.tag,
                 player_2_tag=host.player2.tag, districts=list(FINAL_DISTRICTS), remove_bases_after=False,
+                attacks_first=first_attacker,
             )
         else:
             paired = parse_paired_live_bases(match_doc)
             if paired is None:
-                await ctx.send(f"{ERROR_EMOJI} A complete, distinct pair of bases is required for Helper hosting.",
-                               ephemeral=True)
+                await ctx.send(unpaired_bases_message(match_doc), ephemeral=True)
                 return
             payload = HelperSequentialLivePayload(
                 host_clan_tag=host.clan.tag, base_source="links", player_1_tag=host.player1.tag,
                 player_2_tag=host.player2.tag, base_links_for_player_1=paired.for_player1,
-                base_links_for_player_2=paired.for_player2,
+                base_links_for_player_2=paired.for_player2, attacks_first=first_attacker,
             )
         start_outcome = await live_start.start_live_match(bot, ctx, live_start.LiveStart(
             match=match_doc, host=host.host, clan=host.clan, player1=host.player1, player2=host.player2,
@@ -234,6 +244,8 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
         case live_start.LiveStartBusy():
             await ctx.send(f"{ERROR_EMOJI} This match is already being started.\n\n"
                            f"{await resources.available_resource_clans_text()}", ephemeral=True)
+            return
+        case live_start.LiveStartRefused():
             return
         case live_start.LiveStartClanUnavailable():
             await ctx.send(f"{ERROR_EMOJI} **{host.clan.name}** is currently occupied.\n\n"
@@ -378,9 +390,12 @@ async def refresh_progress(bot: ipy.Client, run: HelperSequentialRun) -> None:
         logging.exception("Unable to publish Helper sequential progress for run %s", run.id)
 
 
-def stale_reason(run: HelperSequentialRun, match: Match | None) -> str | None:
+async def stale_reason(run: HelperSequentialRun, match: Match | None) -> str | None:
     if match is None:
         return "The match no longer exists."
+    final = await EloFinal.get(PydanticObjectId(run.final_id))
+    if final is not None and final.state in {"CANCELLING", "CANCELLED"}:
+        return "The Final was cancelled."
     if match.final_superseded or (match.final_contestant_revision, match.final_attempt) != (
             run.final_contestant_revision, run.final_attempt):
         return "The Final pairing changed."
@@ -405,7 +420,7 @@ async def sync_run(bot: ipy.Client, run_id: PydanticObjectId) -> HelperSequentia
         if run is None or not run.open or run.state != "ACTIVE":
             return run
         match = await Match.get(run.match_id)
-        stale = stale_reason(run, match)
+        stale = await stale_reason(run, match)
         client = helper_client()
         async with helper_session() as session:
             outcome = await client.read(session, run.job_id)
@@ -455,7 +470,7 @@ async def apply_read(
                     await record_event(run, "score_stored", stored)
             if job.status in TERMINAL_JOB_STATUSES:
                 detail = f": {job.error}" if job.error else ""
-                if await close_run(run, stale or f"Helper job {job.status}{detail}."):
+                if await close_run(run, stale or f"Helper job {job.status}{detail}.") and stale is None:
                     await finish_stored_sides(bot, run)
         case unreachable:
             assert_never(unreachable)
@@ -568,7 +583,7 @@ def continuation_request(run: HelperSequentialRun, remaining: list[str], actor_i
 
 async def continue_run(bot: ipy.Client, ctx: ipy.BaseContext, run: HelperSequentialRun) -> None:
     match = await Match.get(run.match_id)
-    if stale := stale_reason(run, match):
+    if stale := await stale_reason(run, match):
         await ctx.send(f"{ERROR_EMOJI} {stale}", ephemeral=True)
         return
     started_side = 0 if run.side == LIVE_SIDE else run.side
@@ -670,7 +685,7 @@ async def recover(bot: ipy.Client, ctx: ipy.SlashContext, match: Match, side: in
 
 
 async def run_checks(bot: ipy.Client, run: HelperSequentialRun, match: Match | None) -> tuple[list[str], str | None]:
-    stale = stale_reason(run, match)
+    stale = await stale_reason(run, match)
     checks = [ui.check_line(stale is None, stale or "The run matches the current Final pairing.")]
     if match is not None:
         started_side = 0 if run.side == LIVE_SIDE else run.side

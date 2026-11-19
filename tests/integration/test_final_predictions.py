@@ -1,7 +1,7 @@
 import asyncio
 
 from tests.integration._final_fixture import FinalScenarioCase
-from elo_bot.features.finals.lifecycle import confirm_bracket, resolve_final
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.predictions import PredictionAction, apply_prediction_action, begin_prediction, change_prediction_state
 from elo_bot.features.finals.prediction_ui import prediction_view
 from elo_bot.core.finals import FinalError, NODE_IDS
@@ -30,10 +30,9 @@ class TestFinalPredictions(FinalScenarioCase):
                 choices = (final.nodes[node].contestants if not final.nodes[node].feeders
                            else [prediction.draft[feeder] for feeder in final.nodes[node].feeders])
                 prediction = await self.action(final, prediction, "pick", node, choices[0])
-            components = prediction_view(final, prediction)
-            body = components[0].to_dict()
-            self.assertEqual(body["type"], 17)
-            self.assertLess(len(str(body)), 6000)
+            embed, rows = prediction_view(final, prediction)
+            self.assertLessEqual(len(rows), 5)
+            self.assertLess(len(embed.description), 4096)
             prediction = await self.action(final, prediction, "next")
         return prediction
 
@@ -91,7 +90,7 @@ class TestFinalPredictions(FinalScenarioCase):
         barrier.set()
         result, _ = await asyncio.wait_for(asyncio.gather(*tasks), timeout=5)
         saved = await FinalPrediction.get(draft.id)
-        self.assertEqual((await resolve_final()).prediction_state, "CLOSED")
+        self.assertEqual((await final_for_view()).prediction_state, "CLOSED")
         self.assertEqual(bool(saved.submitted), not isinstance(result, FinalError))
 
     async def test_correction_rescores_original_submission_and_forfeit_removes_eligibility(self):
@@ -101,9 +100,9 @@ class TestFinalPredictions(FinalScenarioCase):
         original = dict(prediction.submitted)
         await change_prediction_state(final, False)
         node_id = next(node.id for node in final.nodes.values() if not node.bye and not node.feeders)
-        await self.scheduled_pairing(await resolve_final(), node_id)
+        await self.scheduled_pairing(await final_for_view(), node_id)
         for version, reverse, forfeit in ((0, False, False), (1, True, False), (2, True, True)):
-            current = await resolve_final()
+            current = await final_for_view()
             node = current.nodes[node_id]
             winner = node.contestants[int(reverse)]
             await submit_result(FinalResultSubmission(final_id=final.id, node_id=node_id, actor_id="manager",
@@ -116,5 +115,5 @@ class TestFinalPredictions(FinalScenarioCase):
             self.assertEqual(saved.submitted, original)
             self.assertEqual(saved.eligible, 0 if forfeit else 1)
             self.assertEqual(saved.points, int(not reverse and not forfeit))
-            self.assertEqual(saved.scoring_revision, (await resolve_final()).result_revision)
+            self.assertEqual(saved.scoring_revision, (await final_for_view()).result_revision)
             await recover_final(final)

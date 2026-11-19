@@ -25,6 +25,7 @@ from elo_bot.features.base_store.start import StoredStartState
 from elo_bot.db import Match, Player
 from elo_bot.features.matches import attack_bases
 from elo_bot.features.matches import resources
+from elo_bot.core.finals import is_final_match
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +101,10 @@ async def host_war_automatically(
         match_doc = await attack_bases.choose_bases(
             match_doc.token, player_user, opponent_user, return_match_data=True,
         )
+        # A Final plays all seven districts, so a partial set must not reach Helper.
+        if is_final_match(match_doc) and (refusal := attack_bases.missing_bases_message(match_doc, (opponent,))):
+            await ctx.send(refusal, ephemeral=True)
+            return
         base_links = [base.link for base in match_doc.participants[opponent].bases if base and base.link]
         if not base_links:
             await ctx.send(f"{ERROR_EMOJI} No opponent bases are available for Helper hosting.", ephemeral=True)
@@ -118,22 +123,26 @@ async def host_war_automatically(
     if not await confirm_helper_availability(runtime, ctx, create_request.job_type):
         return
 
-    started_message = await war_start.start_war(
-        runtime.bot,
-        ctx,
-        war_start.WarStart(
-            match=match_doc,
-            player=request.player,
-            host=request.host,
-            clan=request.clan,
-            coc_client=runtime.bot.coc_client,
-            reply=war_start.SelfHostedWarStartReply(),
-            scout=request.scout,
-            clan_reservation=request.clan_reservation,
-            side_reservation=request.side_reservation,
-            stored_start=request.stored_start,
-        ),
-    )
+    try:
+        started_message = await war_start.start_war(
+            runtime.bot,
+            ctx,
+            war_start.WarStart(
+                match=match_doc,
+                player=request.player,
+                host=request.host,
+                clan=request.clan,
+                coc_client=runtime.bot.coc_client,
+                reply=war_start.SelfHostedWarStartReply(),
+                scout=request.scout,
+                clan_reservation=request.clan_reservation,
+                side_reservation=request.side_reservation,
+                stored_start=request.stored_start,
+            ),
+        )
+    except war_start.WarStartRefused as refusal:
+        await ctx.send(str(refusal), ephemeral=True)
+        return
     if not started_message:
         await ctx.send(
             f"{ERROR_EMOJI} **{request.clan.name}** is currently occupied.\n\n"

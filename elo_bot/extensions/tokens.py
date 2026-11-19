@@ -10,6 +10,8 @@ from elo_bot.discord.pagination import build_page_button, build_page_jump_modal,
 from elo_bot.core.finals import FinalError
 from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
 from elo_bot.db.token_models import TokenLedgerEntry
+from elo_bot.discord.members import member_guild
+from elo_bot.features.tokens.history import ledger_label, market_scopes, open_bet_lines
 
 
 class TokenCommands(ipy.Extension):
@@ -31,6 +33,12 @@ class TokenCommands(ipy.Extension):
             embed.add_field(name="**Committed**", value=f"{committed:,} {TOKEN_EMOJI}")
             if debt:
                 embed.add_field(name="**Debt**", value=f"{debt:,} {TOKEN_EMOJI}")
+            lines = await open_bet_lines(wallet, await member_guild(ctx))
+            while lines:
+                value = lines.pop(0)
+                while lines and len(value) + len(lines[0]) + 1 <= 1024:
+                    value += "\n" + lines.pop(0)
+                embed.add_field(name="**Open Bets**", value=value, inline=False)
             embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
             await ctx.send(embed=embed, ephemeral=True)
         except FinalError as error:
@@ -38,12 +46,16 @@ class TokenCommands(ipy.Extension):
 
     async def _history(self, ctx, page, *, edit=False):
         wallet = await self._wallet(ctx)
-        entries = await TokenLedgerEntry.find({"wallet_id": wallet.id}).sort([("created_at", -1), ("_id", -1)]).to_list()
+        entries = await TokenLedgerEntry.find({"wallet_id": wallet.id, "kind": {"$ne": "identity"}}).sort(
+            [("created_at", -1), ("_id", -1)]).to_list()
         pages = max(1, math.ceil(len(entries) / 10))
         page = parse_page_number(str(page), pages)
         selected = entries[(page - 1) * 10:page * 10]
+        scopes = await market_scopes({entry.market_id for entry in selected if entry.market_id})
         embed = ipy.Embed(title="**Token History**", color=COLOR, description="\n".join(
-            f"{entry.kind.title()}: {entry.amount:+,} {TOKEN_EMOJI}" + (f" · {entry.market_id.split(':')[1]}" if entry.market_id else "")
+            f"{ledger_label(entry)} {entry.amount:+,} {TOKEN_EMOJI}"
+            + (f" · {scopes[entry.market_id]}" if entry.market_id in scopes else "")
+            + f" · {ipy.Timestamp.fromtimestamp(entry.created_at).format(ipy.TimestampStyles.RelativeTime)}"
             for entry in selected) or "No token activity.")
         embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
         owner = str(ctx.author.id)

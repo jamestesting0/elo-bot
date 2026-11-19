@@ -40,6 +40,7 @@ from elo_bot.features.matches.cleanup import (
     has_pending_match_operation,
     has_reserved_match_slots,
 )
+from elo_bot.features.matches.controls import check_current_match
 from elo_bot.features.matches.lifecycle import (
     MatchChannelUnavailable,
     build_district_confirmation_modal,
@@ -88,6 +89,12 @@ class MatchLifecycleCommands:
 
             return
 
+        if not await check_current_match(ctx, match):
+            return
+        if is_final_match(match):
+            await ctx.send("Final districts are fixed. A manager can resume its thread with `/final round start`.",
+                           ephemeral=True)
+            return
         if match.thread:
             await ctx.message.edit(components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} The match is already in process, is too late to select districts now.",
@@ -413,6 +420,11 @@ class MatchLifecycleCommands:
             await ctx.send(f"{ERROR_EMOJI} It seems that this match is invalidated.", ephemeral=True)
             return
 
+        if not await check_current_match(ctx, match):
+            return
+        if is_final_match(match):
+            await ctx.send(f"{ERROR_EMOJI} Ask a manager to cancel the Final with `/final cancel`.", ephemeral=True)
+            return
         if match.thread:
             await ctx.send(f"{ERROR_EMOJI} The match has already started.", ephemeral=True)
             return

@@ -67,7 +67,9 @@ from elo_bot.features.hosting.sequential.runs import open_run_refusal
 from elo_bot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elo_bot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag
 from elo_bot.features.matches.attack_bases import is_missing_scout_view
-from elo_bot.features.matches.controls import check_match_control, reject_outdated_match_control, update_match_control
+from elo_bot.features.matches.controls import (
+    check_match_control, reject_outdated_match_control, update_match_control, check_current_match,
+)
 from elo_bot.features.matches.lifecycle import send_warnings
 from elo_bot.features.matches.message_lock import coordinated_match_message
 from elo_bot.features.matches.messages import (
@@ -86,6 +88,7 @@ from elo_bot.features.matches.resources import (
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.features.matches.tips import choose_tip
 from elo_bot.core.match_results import is_match_finished
+from elo_bot.features.finals.hosting import check_final_start
 
 
 class MatchHostingCommands:
@@ -121,7 +124,7 @@ class MatchHostingCommands:
     async def _start_war(self, ctx: ipy.SlashContext | ipy.ComponentContext, player: int,
                          clan: str, host: ipy.User = None, scout: bool = False, slot: str = None,
                          automatic: bool = False, district: str | None = None,
-                         stored_reservation_id: str | None = None, sequential: bool = False):
+                         stored_reservation_id: str | None = None, sequential: bool | None = False):
         await ctx.defer(ephemeral=True)
 
         if not host:
@@ -133,6 +136,8 @@ class MatchHostingCommands:
                            f"this command in a 1v1 thread!", ephemeral=True)
             return
 
+        if not await check_current_match(ctx, match):
+            return
         if is_match_finished(match, player=player):
             player_id = match.participants[player].user_id
             await ctx.send(f"{ERROR_EMOJI} The match has already finished for <@{player_id}>.", ephemeral=True)
@@ -141,6 +146,8 @@ class MatchHostingCommands:
         if refusal := await open_run_refusal(match, player):
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
+        if sequential is None:
+            sequential = automatic and district is None and is_final_match(match)
         if sequential and (district is not None or not is_final_match(match)):
             await ctx.send(f"{ERROR_EMOJI} Sequential hosting plays all seven districts of a Final match. "
                            "Leave `district` blank.", ephemeral=True)
@@ -192,6 +199,12 @@ class MatchHostingCommands:
                 )
             finally:
                 side_reservation.release()
+            return
+
+        try:
+            await check_final_start(match, player)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
 
         stored_clan, stored_slot = get_participant_base_store(match.participants[player])
@@ -379,20 +392,24 @@ class MatchHostingCommands:
                 case unreachable:
                     assert_never(unreachable)
 
-            started_message = await war_start.start_war(
-                self.bot,
-                ctx,
-                war_start.WarStart(
-                    match=match,
-                    player=player,
-                    host=host,
-                    clan=clan_obj,
-                    coc_client=self.coc_client,
-                    reply=reply,
-                    scout=scout,
-                    stored_start=stored_start,
-                ),
-            )
+            try:
+                started_message = await war_start.start_war(
+                    self.bot,
+                    ctx,
+                    war_start.WarStart(
+                        match=match,
+                        player=player,
+                        host=host,
+                        clan=clan_obj,
+                        coc_client=self.coc_client,
+                        reply=reply,
+                        scout=scout,
+                        stored_start=stored_start,
+                    ),
+                )
+            except war_start.WarStartRefused as refusal:
+                await ctx.send(str(refusal), ephemeral=True)
+                return
             if not started_message:
                 await ctx.send(
                     f"{ERROR_EMOJI} **{clan_obj.name}** is currently occupied.\n\n"
@@ -465,13 +482,13 @@ class MatchHostingCommands:
     )
     @ipy.slash_option(
         name="sequential",
-        description="Host all seven Final districts in one Helper job",
+        description="Host all seven Final districts in one Helper job (on by default for Finals)",
         opt_type=ipy.OptionType.BOOLEAN,
         required=False,
     )
     async def match_war_autostart(self, ctx: ipy.SlashContext, player: int,
                                   clan: str, scout: bool = False,
-                                  district: str | None = None, sequential: bool = False):
+                                  district: str | None = None, sequential: bool | None = None):
         await self._start_war(
             ctx,
             player,
@@ -585,6 +602,8 @@ class MatchHostingCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         if is_match_finished(match, player=player):
             player_id = match.participants[player].user_id
             await ctx.send(f"{ERROR_EMOJI} The match has already finished for <@{player_id}>.", ephemeral=True)
@@ -790,6 +809,8 @@ class MatchHostingCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
@@ -881,8 +902,18 @@ class MatchHostingCommands:
     )
     @ipy.slash_option(
         name="sequential",
-        description="Host all seven Final districts in one Helper job",
+        description="Host all seven Final districts in one Helper job (on by default for Finals)",
         opt_type=ipy.OptionType.BOOLEAN,
+        required=False,
+    )
+    @ipy.slash_option(
+        name="attacks_first",
+        description="Sequential only: post this player's challenge first; leave blank to post both together",
+        opt_type=ipy.OptionType.INTEGER,
+        choices=[
+            ipy.SlashCommandChoice(name="Player 1", value=0),
+            ipy.SlashCommandChoice(name="Player 2", value=1),
+        ],
         required=False,
     )
     async def match_autostart(
@@ -891,7 +922,8 @@ class MatchHostingCommands:
             clan: str,
             scout: bool = False,
             district: str | None = None,
-            sequential: bool = False,
+            sequential: bool | None = None,
+            attacks_first: int | None = None,
     ) -> None:
         await self._start_live(
             ctx,
@@ -902,6 +934,7 @@ class MatchHostingCommands:
                 requested_by=str(ctx.author.id),
                 district=district,
                 sequential=sequential,
+                attacks_first=attacks_first,
             ),
         )
 
@@ -1000,6 +1033,8 @@ class MatchHostingCommands:
                            f"this command in a 1v1 thread!", ephemeral=True)
             return
 
+        if not await check_current_match(ctx, match):
+            return
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
@@ -1007,13 +1042,25 @@ class MatchHostingCommands:
         if refusal := await open_run_refusal(match):
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
+        if request.sequential is None:
+            request = replace(request, sequential=request.automatic and request.district is None
+                              and is_final_match(match))
         if request.sequential and (request.district is not None or not is_final_match(match)):
             await ctx.send(f"{ERROR_EMOJI} Sequential hosting plays all seven districts of a Final match. "
                            "Leave `district` blank.", ephemeral=True)
             return
+        if request.attacks_first is not None and not request.sequential:
+            await ctx.send(f"{ERROR_EMOJI} `attacks_first` only applies to sequential hosting.", ephemeral=True)
+            return
 
         if request.district is not None:
             await self._host_live_district(ctx, request, match)
+            return
+
+        try:
+            await check_final_start(match, None)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
 
         # disallow if a war-style match already initiated for one side
@@ -1127,6 +1174,7 @@ class MatchHostingCommands:
                     scout=scout,
                     requested_by=str(ctx.author.id),
                     stored_reservation_id=request.stored_reservation_id,
+                    attacks_first=request.attacks_first,
                 ),
             )
             return
@@ -1192,6 +1240,8 @@ class MatchHostingCommands:
                     f"{await available_resource_clans_text()}",
                     ephemeral=True,
                 )
+            case live_start.LiveStartRefused():
+                return
             case live_start.LiveStartClanUnavailable():
                 await ctx.send(
                     f"{ERROR_EMOJI} **{clan_obj.name}** is currently occupied.\n\n"
@@ -1224,6 +1274,8 @@ class MatchHostingCommands:
                            f"this command in a 1v1 thread!", ephemeral=True)
             return
 
+        if not await check_current_match(ctx, match):
+            return
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return

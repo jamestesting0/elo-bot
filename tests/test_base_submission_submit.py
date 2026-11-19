@@ -95,11 +95,11 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sent["embed"].description, BASE_LINK)
         self.assertEqual(
             self._field(sent["embed"], "Submitter"),
-            "**[Submitter Name](<https://discordapp.com/users/123>)**",
+            "**[Submitter Name](<https://discordapp.com/users/123?tab=wishlist>)**",
         )
         self.assertEqual(
             self._field(sent["embed"], "Builder"),
-            "**[Builder Name](<https://discordapp.com/users/456>)**",
+            "**[Builder Name](<https://discordapp.com/users/456?tab=wishlist>)**",
         )
         self.assertNotIn("<@", self._field(sent["embed"], "Submitter"))
         self.assertNotIn("ID:", self._field(sent["embed"], "Builder"))

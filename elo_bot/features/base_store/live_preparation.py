@@ -10,6 +10,8 @@ from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.features.results.operations import result_input_error
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.db import BaseStore, Match
+from elo_bot.core.finals import FinalError
+from elo_bot.features.matches.controls import update_match
 
 
 def live_storage_error(match: Match) -> str | None:
@@ -35,8 +37,11 @@ async def prepare_live_storage(
             return BaseStorePreparationFailure(f"{ERROR_EMOJI} {reason}")
         if [p.user_id for p in match.participants] != [p.user_id for p in source.participants]:
             return BaseStorePreparationFailure(f"{ERROR_EMOJI} The match participants changed. Storage was not started.")
-        for index in (0, 1):
-            await runtime._base_store_choose_bases(match, index)
+        try:
+            for index in (0, 1):
+                await runtime._base_store_choose_bases(match, index)
+        except FinalError as error:
+            return BaseStorePreparationFailure(f"{ERROR_EMOJI} {error}")
         match = await Match.find_one({"token": source.token, "thread": source.thread})
         if match is None:
             return BaseStorePreparationFailure(f"{ERROR_EMOJI} This match is no longer available.")
@@ -84,8 +89,8 @@ async def prepare_live_storage(
             })
             updates[f"participants.{index}.base_store"] = stores[index].model_dump()
             updates[f"participants.{index}.opponent_bases_stored"] = True
-        write = await match.get_pymongo_collection().update_one(query, {"$set": updates})
-        if write.matched_count != 1:
+        write = await update_match(match, query, {"$set": updates})
+        if not write:
             return BaseStorePreparationFailure(
                 f"{ERROR_EMOJI} The match changed while bases were being prepared. Storage was not started."
             )

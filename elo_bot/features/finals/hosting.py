@@ -10,6 +10,42 @@ from elo_bot.core.finals import FinalError, ROUND_NODES
 from elo_bot.db import EloFinal, Match
 from elo_bot.db import Clan
 from elo_bot.db.token_models import FinalBettingMarket
+from elo_bot.db.season_models import EloFinalMatch
+from elo_bot.features.finals.lifecycle import ongoing_final
+
+
+def require_startable(final: EloFinal, current: Match, source: Match, player: int | None) -> EloFinalMatch:
+    node = require_current_match(final, current)
+    if (node.contestants != [participant.user_id for participant in source.participants]
+            or node.result_id is not None or final.state in {"CANCELLING", "CANCELLED", "COMPLETED"}):
+        raise FinalError("This match belongs to an earlier pairing or an official result. Use `/final bracket view`.")
+    round_name = next(name for name, nodes in ROUND_NODES.items() if node.id in nodes)
+    require_round_ready(final, round_name)
+    if final.prediction_state == "OPEN":
+        raise FinalError("Predictions are still open. Ask a manager to close them before starting.")
+    sides = (0, 1) if player is None else (player,)
+    scheduled = all(current.scheduled_times[side] is not None for side in sides)
+    if scheduled and current.is_war and player is None:
+        raise FinalError("This Final match is scheduled war-style. Use `/match war start` or `/match war autostart`, "
+                         "or reschedule it with `/match schedule`.")
+    if scheduled and not current.is_war and player is not None:
+        raise FinalError("This Final match is scheduled live. Use `/match start` or `/match autostart`, "
+                         "or reschedule it with `/match war schedule`.")
+    if not scheduled or current.scheduled_times != node.scheduled_times:
+        raise FinalError("Schedule this Final match with `/match schedule` or `/match war schedule` before hosting.")
+    return node
+
+
+async def check_final_start(source: Match, player: int | None) -> None:
+    """Refuse an unstartable Final match before any bases, Helper prompts or reservations are touched."""
+    if not is_final_match(source):
+        return
+    final = await EloFinal.get(PydanticObjectId(source.final_id))
+    current = await Match.get(source.id)
+    if final is None or current is None:
+        raise FinalError("This Final match is unavailable.")
+    await ongoing_final(final.id)
+    require_startable(final, current, source, player)
 
 
 async def accept_final_start(source: Match, actor_id: str, *, clan_tag: str | None = None,
@@ -29,18 +65,9 @@ async def accept_final_start(source: Match, actor_id: str, *, clan_tag: str | No
             raise FinalError("This Final match is unavailable.")
         final = EloFinal.model_validate(final_row)
         current = Match.model_validate(match_row)
-        node = require_current_match(final, current)
-        if (node.contestants != [participant.user_id for participant in source.participants]
-                or node.result_id is not None or final.state in {"CANCELLING", "CANCELLED", "COMPLETED"}):
-            raise FinalError("This match belongs to an earlier pairing or an official result. Use `/final match view`.")
-        round_name = next(name for name, nodes in ROUND_NODES.items() if node.id in nodes)
-        require_round_ready(final, round_name)
-        if final.prediction_state == "OPEN":
-            raise FinalError("Predictions are open. A manager must use `/final predictions close` before hosting.")
+        await ongoing_final(final.id, session=session)
+        node = require_startable(final, current, source, player)
         sides = (0, 1) if player is None else (player,)
-        if (current.is_war != (player is not None) or any(current.scheduled_times[side] is None for side in sides)
-                or current.scheduled_times != node.scheduled_times):
-            raise FinalError("Schedule this Final match with `/match schedule` or `/match war schedule` before hosting.")
         claim = f"{source.id}:{node.contestant_revision}:{node.attempt}"
         if all(current.final_started_times[side] is not None for side in sides):
             return

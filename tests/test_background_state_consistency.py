@@ -11,6 +11,8 @@ from beanie import PydanticObjectId
 from beanie.odm.settings.document import DocumentSettings
 
 from elo_bot.app import errors
+from elo_bot.config.ids import MAIN_GUILD
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.discord import runtime
 import elo_bot.extensions.final as final_commands
 import elo_bot.extensions.leaderboard as leaderboards
@@ -25,13 +27,17 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
                 with patch.object(EloFinal, "_document_settings", settings):
                     seed = EloFinal.model_construct(
                         id=PydanticObjectId(), season_number=1, player_nicknames={"100": "Original", "200": "Keep"},
-                        schema_version=2, season_id=PydanticObjectId(), active=True, entrant_ids=["100", "200"],
+                        schema_version=2, active=True, entrant_ids=["100", "200"],
                     )
                     seed._save_state()
                     row = seed.model_dump(by_alias=True)
                     cog = final_commands.FinalCommands(MagicMock(ext={}))
-                    ctx = MagicMock(spec=ipy.SlashContext, send=AsyncMock())
-                    removal_ctx = MagicMock(spec=ipy.SlashContext, send=AsyncMock())
+                    ctx = MagicMock(spec=ipy.SlashContext, guild_id=MAIN_GUILD, send=AsyncMock())
+                    removal_ctx = MagicMock(spec=ipy.SlashContext, guild_id=MAIN_GUILD, send=AsyncMock())
+                    ctx.guild = SimpleNamespace(fetch_member=AsyncMock(return_value=None))
+                    ctx.author.has_role.return_value = False
+                    removal_ctx.guild = SimpleNamespace(fetch_member=AsyncMock(return_value=None))
+                    removal_ctx.author.has_role.return_value = False
                     target = MagicMock(id=100, mention="<@100>")
 
                     async def find(*_args, **_kwargs):
@@ -39,7 +45,7 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
                         model._save_state()
                         return model
 
-                    async def conditional_update(query, change):
+                    async def conditional_update(query, change, **_kwargs):
                         if "$unset" in change:
                             for path in change["$unset"]:
                                 field, key = path.split(".")
@@ -57,23 +63,28 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
                         row["player_nicknames"]["100"] = change["$set"]["player_nicknames.100"]
                         return SimpleNamespace(matched_count=1)
 
+                    async def commit(action):
+                        return await action(None)
+
                     collection = MagicMock(
                         update_one=AsyncMock(side_effect=conditional_update),
                     )
                     with (
                         patch.object(EloFinal, "get_pymongo_collection", return_value=collection),
-                        patch.object(cog, "_edition", new=AsyncMock(side_effect=find)),
+                        patch.object(cog, "_ongoing_edition", new=AsyncMock(side_effect=find)),
+                        patch("elo_bot.features.finals.lifecycle.ongoing_final", new=AsyncMock(side_effect=find)),
+                        patch("elo_bot.features.finals.lifecycle.transaction", new=AsyncMock(side_effect=commit)),
                     ):
                         await cog.final_player_nick.callback.func(cog, ctx, target, "Changed")
 
                     if concurrent_removal:
                         self.assertNotIn("100", row["player_nicknames"])
                         self.assertNotIn("100", row["entrant_ids"])
-                        self.assertNotIn("Updated", ctx.send.await_args.args[0])
+                        self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
                         self.assertIn("Removed", removal_ctx.send.await_args.args[0])
                     else:
                         self.assertEqual(row["player_nicknames"]["100"], "Changed")
-                        self.assertIn("Updated", ctx.send.await_args.args[0])
+                        self.assertTrue(ctx.send.await_args.args[0].startswith(str(SUCCESS_EMOJI)))
                     self.assertEqual(row["player_nicknames"]["200"], "Keep")
 
     async def test_final_player_removal_reaches_persisted_dictionary(self) -> None:
@@ -81,7 +92,7 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
         with patch.object(EloFinal, "_document_settings", settings):
             model = EloFinal.model_construct(
                 id=PydanticObjectId(), season_number=1, player_nicknames={"100": "Remove", "200": "Keep"},
-                schema_version=2, season_id=PydanticObjectId(), active=True, entrant_ids=["100", "200"],
+                schema_version=2, active=True, entrant_ids=["100", "200"],
             )
             model._save_state()
             persisted = model.model_dump(by_alias=True)
@@ -103,17 +114,19 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
 
             collection = MagicMock(update_one=AsyncMock(side_effect=update))
             cog = final_commands.FinalCommands(MagicMock(ext={}))
-            ctx = MagicMock(spec=ipy.SlashContext, send=AsyncMock())
-            ctx.author.has_role.return_value = True
+            ctx = MagicMock(spec=ipy.SlashContext, guild_id=MAIN_GUILD, send=AsyncMock())
+            ctx.guild = SimpleNamespace(fetch_member=AsyncMock(return_value=None))
+            ctx.author.has_role.return_value = False
             with (
                 patch.object(EloFinal, "get_pymongo_collection", return_value=collection),
-                patch.object(cog, "_edition", new=AsyncMock(return_value=model)),
+                patch.object(cog, "_ongoing_edition", new=AsyncMock(return_value=model)),
+                patch("elo_bot.features.finals.lifecycle.ongoing_final", new=AsyncMock(return_value=model)),
             ):
                 await cog.final_player_remove.callback.func(cog, ctx, MagicMock(id=100, mention="<@100>"))
 
             self.assertEqual(persisted["player_nicknames"], {"200": "Keep"})
-            self.assertEqual(updates, [{"$unset": {"player_nicknames.100": "", "seeds.100": "", "archived_elo.100": ""},
-                                       "$pull": {"entrant_ids": "100", "byes": "100"},
+            self.assertEqual(updates, [{"$unset": {"player_nicknames.100": "", "seed_elo.100": ""},
+                                       "$pull": {"entrant_ids": "100", "nickname_overrides": "100"},
                                        "$inc": {"revision": 1, "setup_revision": 1}}])
             self.assertEqual(persisted["entrant_ids"], ["200"])
             self.assertEqual(persisted["setup_revision"], 1)

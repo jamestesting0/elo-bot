@@ -8,7 +8,7 @@ from pymongo import AsyncMongoClient
 
 from elo_bot.config.settings import DATA_BASES
 from elo_bot.config.ids import FINAL_CHANNEL, MAIN_GUILD
-from elo_bot.features.finals.lifecycle import add_entrant, confirm_bracket, resolve_final, start_final
+from elo_bot.features.finals.lifecycle import add_entrant, confirm_bracket, final_for_view, start_final
 from elo_bot.features.finals.matches import prepare_match, schedule_final_match
 from elo_bot.features.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes
 from elo_bot.features.finals.recovery import recover_final
@@ -35,13 +35,13 @@ async def run():
                 players=[PlayerSeasonData(player_id=str(user), elo=1000-user) for user in range(1,10)]).insert()
             for user in range(1,10):
                 await Player(id=str(user), user_id=str(user), tag=f"#P{user}", elo=2000, highest_elo=2100).insert()
-            final = await start_final(None, MAIN_GUILD, FINAL_CHANNEL)
+            final = await start_final(MAIN_GUILD, FINAL_CHANNEL)
             for user in range(1, 6):
                 final = await add_entrant(final, str(user), f"Player {user}")
             await confirm_bracket(final, "manager")
             await ensure_wallet("9")
         elif action == "exercise":
-            final = await resolve_final()
+            final = await final_for_view()
             node_id = next(node.id for node in final.nodes.values() if node.id.startswith("QF") and not node.bye)
             market = await open_market(final, node_id)
             for user, side in ((9, 0), (8, 1)):
@@ -49,7 +49,7 @@ async def run():
                     amount=5000, expected_version=0, action_key=f"stake:{user}"))
             source = await prepare_match(final, node_id)
             await schedule_final_match(source, 1700000000)
-            final = await resolve_final()
+            final = await final_for_view()
             node = final.nodes[node_id]
             for revision, reverse in ((0, False), (1, True)):
                 await submit_result(FinalResultSubmission(final_id=final.id, node_id=node_id, actor_id="manager",
@@ -60,7 +60,7 @@ async def run():
                 await recover_final(final)
                 if not revision:
                     other_node = "SF2" if node_id in {"QF1", "QF2"} else "SF1"
-                    other = await open_market(await resolve_final(), other_node)
+                    other = await open_market(await final_for_view(), other_node)
                     await apply_bet(BetAction(market_id=other.id, user_id="9", contestant=other.contestants[0],
                         amount=10000, expected_version=0, action_key="spend-winnings"))
         elif action != "snapshot":

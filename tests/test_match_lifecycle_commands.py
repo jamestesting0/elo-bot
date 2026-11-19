@@ -482,10 +482,10 @@ class TestMatchCommands(MatchCommandsCase):
         embed = kwargs.get('embed')
         self.assertIsNotNone(embed)
         self.assertIn("Upcoming Elo Matches", embed.title)
-        self.assertIn("**[Player 111](<https://discordapp.com/users/111>)** vs. "
-                      "**[Player 222](<https://discordapp.com/users/222>)**", embed.description)
-        self.assertIn("**[Player 333](<https://discordapp.com/users/333>)** vs. "
-                      "**[Player 444](<https://discordapp.com/users/444>)**", embed.description)
+        self.assertIn("**[Player 111](<https://discordapp.com/users/111?tab=wishlist>)** vs. "
+                      "**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)**", embed.description)
+        self.assertIn("**[Player 333](<https://discordapp.com/users/333?tab=wishlist>)** vs. "
+                      "**[Player 444](<https://discordapp.com/users/444?tab=wishlist>)**", embed.description)
         self.assertIn("[Test Clan (#CLAN1)]", embed.description)
 
     @patch_sites(('elo_bot.extensions.match.sync_base_store_slots', 'elo_bot.extensions.match.base_store.sync_base_store_slots', 'elo_bot.extensions.match.dashboards.sync_base_store_slots'), new_callable=AsyncMock)

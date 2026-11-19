@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from elo_bot.features.finals.lifecycle import resolve_final
 from elo_bot.core.finals import FinalError
 from elo_bot.features.tokens.wallets import ensure_wallet
 from elo_bot.discord.mentions import mention_user
@@ -8,6 +7,7 @@ from elo_bot.db import EloFinal, Player
 from elo_bot.db.final_models import FinalPrediction
 from elo_bot.db.token_models import TokenLedgerEntry, TokenWallet
 from elo_bot.config.emojis import RANK_EMOJIS, TOKEN_EMOJI
+from elo_bot.features.finals.lifecycle import final_for_view
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,7 +34,7 @@ async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
                 by_user[player.user_id] = await ensure_wallet(player.user_id)
         values = [(wallet.user_id, max(wallet.balance, 0), 0, max(-wallet.balance, 0))
                   for wallet in by_user.values()]
-        scope = "Current Season"
+        scope = "Lifetime"
     else:
         if season == "All Seasons":
             finals = await EloFinal.find_all().to_list()
@@ -42,7 +42,7 @@ async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
             scope = "All Seasons"
         else:
             try:
-                final = await resolve_final(int(season) if season.isdigit() else None)
+                final = await final_for_view(int(season) if season.isdigit() else None)
             except FinalError:
                 return []
             final_ids = str(final.id)

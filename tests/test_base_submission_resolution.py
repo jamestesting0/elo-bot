@@ -146,7 +146,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         # Then a durable rejection explains the duplicate and the bank is untouched.
         self.assertEqual(self.row["resolution"]["phase"], "rejected")
         self.assertEqual(self.row["resolution"]["reason"], "This base link already exists in the base bank.")
-        self.assertEqual(self.review_status(), "Rejected by **[Member 789](<https://discordapp.com/users/789>)**")
+        self.assertEqual(self.review_status(), "Rejected by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.assertIn("already exists in the base bank", next(
             field.value for field in self.message.embeds[0].fields if field.name == "Rejection Reason"
         ))
@@ -181,7 +181,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
             await self.accept(self.context())
         # Then it republishes the saved rejection, without inserting a base.
         self.assertEqual(self.row["resolution"]["phase"], "rejected")
-        self.assertEqual(self.review_status(), "Rejected by **[Member 789](<https://discordapp.com/users/789>)**")
+        self.assertEqual(self.review_status(), "Rejected by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.base_collection.insert_one.assert_not_awaited()
 
     async def test_accepted_decision_survives_failed_delete_and_stale_reject(self) -> None:
@@ -195,7 +195,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
             await self.reject(stale)
 
         # Then: the stored acceptance is irreversible and visible with one notification.
-        self.assertEqual(self.review_status(), "Accepted by **[Member 789](<https://discordapp.com/users/789>)**")
+        self.assertEqual(self.review_status(), "Accepted by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.assertEqual(self.row["resolution"]["phase"], "accepted")
         self.assertEqual(len(self.bases), 1)
         self.submitter.send.assert_awaited_once()
@@ -214,7 +214,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         await self.accept(retry, quality="Excellent", builder="999")
 
         # Then: exactly one base exists with the original decision and a terminal review.
-        self.assertEqual(self.review_status(), "Accepted by **[Member 789](<https://discordapp.com/users/789>)**")
+        self.assertEqual(self.review_status(), "Accepted by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.assertEqual(self.row["resolution"]["phase"], "accepted")
         stored = self.bases[self.row["resolution"]["base_id"]]
         self.assertEqual((stored["quality"], stored["builder_id"]), ("Great", "456"))
@@ -325,7 +325,7 @@ class TestBaseSubmissionResolution(unittest.IsolatedAsyncioTestCase):
         await self.accept(ctx, quality="Excellent", builder="999")
 
         # Then: the persisted moderator decision and no-builder sentinel remain unchanged.
-        self.assertEqual(self.review_status(), "Accepted by **[Member 789](<https://discordapp.com/users/789>)**")
+        self.assertEqual(self.review_status(), "Accepted by **[Member 789](<https://discordapp.com/users/789?tab=wishlist>)**")
         self.assertEqual(self.row["resolution"]["quality"], "Great")
         self.assertIsNone(next(iter(self.bases.values()))["builder_id"])
         self.base_collection.insert_one.assert_awaited_once()

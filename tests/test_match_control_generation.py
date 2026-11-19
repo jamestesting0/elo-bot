@@ -116,7 +116,7 @@ class TestMatchControlGeneration(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.match.hosts[0], "999")
         payload = self.ctx.message.edit.await_args.kwargs["embed"]
         self.assertEqual(payload["description"], "")
-        self.assertEqual(payload["fields"][1]["value"], "**[Host](<https://discordapp.com/users/999>)**")
+        self.assertEqual(payload["fields"][1]["value"], "**[Host](<https://discordapp.com/users/999?tab=wishlist>)**")
         self.assertIn(str(SUCCESS_EMOJI), self.ctx.send.await_args.args[0])
 
 

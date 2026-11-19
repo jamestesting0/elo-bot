@@ -57,6 +57,10 @@ class WarStart:
     stored_start: StoredStartState | None = None
 
 
+class WarStartRefused(Exception):
+    """The start was refused; the message is the reason to show the user."""
+
+
 @dataclass(frozen=True, slots=True)
 class WarAbort:
     match: Match
@@ -77,12 +81,8 @@ async def start_war(
     if (participant.base_store is not None or participant.opponent_bases_stored) and (
             store is None or (store.reservation_id is not None and store.message_id is None)
     ):
-        await ctx.send(
-            f"{ERROR_EMOJI} Base storage is incomplete. Wait for **Bases Stored**, "
-            "or use its Undo control before storing again.",
-            ephemeral=True,
-        )
-        return None
+        raise WarStartRefused(f"{ERROR_EMOJI} Base storage is incomplete. Wait for **Bases Stored**, "
+                              "or use its Undo control before storing again.")
     expected_control = start.stored_start or (
         StoredStartState.capture_stores(match_doc, (player,)) if store is not None
         else FreshWarStartState.capture(match_doc, player)
@@ -100,8 +100,7 @@ async def start_war(
             expected_source=dict(expected_control.binding_filter()) if is_final_match(match_doc) else None)
     except FinalError as error:
         reservation.release()
-        await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
-        return None
+        raise WarStartRefused(f"{ERROR_EMOJI} {error}") from error
     except BaseException:
         reservation.release()
         raise

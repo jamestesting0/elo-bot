@@ -86,11 +86,6 @@ from pydantic import ValidationError
 class MatchResultCommands:
     @ipy.component_callback(re.compile(r"^submit_button\|\w+$"))
     async def result_submit_button(self, ctx: ipy.ComponentContext):
-        if (not ctx.author.has_role(STAFF_ROLE) and not ctx.author.has_role(SEN_ROLE) and
-                not ctx.author.has_role(MODERATOR_ROLE)):
-            await ctx.send(f"{ERROR_EMOJI} Only staffs are allowed to submit results.", ephemeral=True)
-            return
-
         _, token = ctx.custom_id.split("|")
 
         match: Match | None = await Match.find_one(Match.token == token)
@@ -104,6 +99,11 @@ class MatchResultCommands:
                 await show_source_result_form(ctx, match)
             except FinalError as error:
                 await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            return
+
+        if (not ctx.author.has_role(STAFF_ROLE) and not ctx.author.has_role(SEN_ROLE) and
+                not ctx.author.has_role(MODERATOR_ROLE)):
+            await ctx.send(f"{ERROR_EMOJI} Only staffs are allowed to submit results.", ephemeral=True)
             return
 
         # prevent staff who are also players (unless they're the bot owner)
@@ -594,7 +594,7 @@ class MatchResultCommands:
 
         if is_final_match(match):
             try:
-                await show_source_result_form(ctx, match, correction=True)
+                await show_source_result_form(ctx, match)
             except FinalError as error:
                 await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return

@@ -13,6 +13,8 @@ from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.db import Match
+from elo_bot.core.finals import FINAL_SELF_HOSTING_REFUSAL, is_final_match
+from elo_bot.features.matches.controls import check_current_match
 
 
 async def resolve_live_storage(ctx: ipy.ComponentContext) -> tuple[Match, str] | None:
@@ -20,6 +22,8 @@ async def resolve_live_storage(ctx: ipy.ComponentContext) -> tuple[Match, str] |
     match = await Match.find_one({"token": token, "thread": str(ctx.channel.id)})
     if match is None or str(ctx.author.id) not in [p.user_id for p in match.participants[:2]]:
         await ctx.send(f"{ERROR_EMOJI} Only a match participant can use these stored bases.", ephemeral=True)
+        return None
+    if not await check_current_match(ctx, match):
         return None
     stores = live_stores(match, reservation_id)
     if not stores or any(store.message_id != int(ctx.message.id) for _, store in stores):
@@ -51,6 +55,9 @@ async def request_stored_live_match(coordinator: LiveRequestCoordinator, ctx: ip
     if resolved is None:
         return
     match, reservation_id = resolved
+    if is_final_match(match):
+        await ctx.send(f"{ERROR_EMOJI} {FINAL_SELF_HOSTING_REFUSAL}", ephemeral=True)
+        return
     if hosting_started(match) or any(is_match_finished(match, player=i) for i in (0, 1)):
         await ctx.send(f"{ERROR_EMOJI} This match has already started or finished.", ephemeral=True)
         return

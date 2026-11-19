@@ -130,6 +130,31 @@ class TestFinalRendering(unittest.TestCase):
                 with self.assertRaisesRegex(FinalError, "template dimensions changed"):
                     render_bracket(self.edition(8))
 
+    def test_eliminated_bye_and_champion_text_use_distinct_plate_colors(self):
+        final = self.edition(5)
+        node = final.nodes["QF4"]
+        node.winner = node.contestants[1]
+        node.state = "DECIDED"
+        final.champion = node.winner
+        with Image.open(BytesIO(render_bracket(final))) as image:
+            bye_colors = set(image.crop(NAME_PLATES[1]).getdata())
+            loser_colors = set(image.crop(NAME_PLATES[6]).getdata())
+            winner_colors = set(image.crop(NAME_PLATES[7]).getdata())
+            champion_colors = set(image.crop(NAME_PLATES[-1]).getdata())
+        self.assertIn((141, 144, 194), bye_colors)
+        self.assertIn((141, 144, 194), loser_colors)
+        self.assertIn((255, 255, 255), winner_colors)
+        self.assertIn((255, 215, 94), champion_colors)
+
+    def test_ties_and_changed_pairings_render_short_advancement_labels(self):
+        final = self.edition(8)
+        for node_id in ("QF1", "SF1", "F1"):
+            final.nodes[node_id].state = "TIED"
+        labels = bracket_labels(final)
+        self.assertEqual([labels[index] for index in (8, 12, 14)], ["TIE"] * 3)
+        final.nodes["SF1"].state = "NEEDS_MANAGER"
+        self.assertEqual(bracket_labels(final)[12], "TBD")
+
     def test_removed_champion_is_not_rendered_after_correction(self):
         final = self.edition(8)
         final.champion = "3"

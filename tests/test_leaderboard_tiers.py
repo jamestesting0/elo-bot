@@ -90,7 +90,7 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
         ctx.values = ["Good"]
         await self.cog.lb_tier_select.callback.func(self.cog, ctx)
         self.assertIn("`5`", ctx.message.embeds[0].description)
-        self.assertIn("/multi>", ctx.message.embeds[0].description)
+        self.assertIn("/multi?tab=wishlist>", ctx.message.embeds[0].description)
         rows, size, _ = await self.cog._board_rows("Hitrate", "1", 100, 200, 0, self.cog._seasons_cache, "Good")
         self.assertEqual([row.user_id for row in rows], ["multi"])
         self.assertEqual(size, 1)
@@ -166,9 +166,9 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
         ctx.custom_id = f"lb_right|{LB_ENTRIES_PER_PAGE}"
         await self.cog.lb_pagination.callback.func(self.cog, ctx)
         self.assertEqual(ctx.message.components[-1].components[1].label, "2/2")
-        self.assertIn("/10>", ctx.message.embeds[0].description)
+        self.assertIn("/10?tab=wishlist>", ctx.message.embeds[0].description)
         await self.cog.lb_page_modal.callback.func(self.cog, ctx, page="1")
-        self.assertIn("/0>", ctx.message.embeds[0].description)
+        self.assertIn("/0?tab=wishlist>", ctx.message.embeds[0].description)
 
         ctx.values = ["All Seasons"]
         await self.cog.lb_season_select.callback.func(self.cog, ctx)
@@ -185,7 +185,7 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
 
         ctx.values = ["Excellent"]
         await self.cog.lb_tier_select.callback.func(self.cog, ctx)
-        self.assertNotIn("/0>", ctx.message.embeds[0].description)
+        self.assertNotIn("/0?tab=wishlist>", ctx.message.embeds[0].description)
         self.assertTrue(ctx.message.components[-1].components[-1].disabled)
         self.assertEqual([o.value for o in ctx.message.components[-2].components[0].options if o.default],
                          ["Excellent"])
@@ -196,4 +196,4 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
                          ["Excellent"])
         ctx.values = ["Good"]
         await self.cog.lb_tier_select.callback.func(self.cog, ctx)
-        self.assertIn("/0>", ctx.message.embeds[0].description)
+        self.assertIn("/0?tab=wishlist>", ctx.message.embeds[0].description)

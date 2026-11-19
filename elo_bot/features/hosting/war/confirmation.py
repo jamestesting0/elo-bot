@@ -39,9 +39,11 @@ async def confirm_pending_opponent_bases(
     submission_pending = (
         len(fields) > 4
         and any(f"{mention} wish to submit bases." in fields[4].value
-                for mention in (f"<@{opponent_id}>", f"users/{opponent_id}>)", f"users/{opponent_id}>)**"))
+                for mention in (f"<@{opponent_id}>", f"users/{opponent_id}>)", f"users/{opponent_id}>)**",
+                                f"users/{opponent_id}?tab=wishlist>)", f"users/{opponent_id}?tab=wishlist>)**"))
         and not any(f"{mention} has submitted bases." in fields[4].value
-                    for mention in (f"<@{opponent_id}>", f"users/{opponent_id}>)", f"users/{opponent_id}>)**"))
+                    for mention in (f"<@{opponent_id}>", f"users/{opponent_id}>)", f"users/{opponent_id}>)**",
+                                    f"users/{opponent_id}?tab=wishlist>)", f"users/{opponent_id}?tab=wishlist>)**"))
     )
     if not submission_pending:
         return True

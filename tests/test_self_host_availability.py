@@ -280,7 +280,7 @@ class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
         ctx = self.make_context()
         match = self.make_match()
         fields = [MagicMock() for _ in range(5)]
-        fields[4].value = "- **[Opponent](<https://discordapp.com/users/200>)** wish to submit bases."
+        fields[4].value = "- **[Opponent](<https://discordapp.com/users/200?tab=wishlist>)** wish to submit bases."
         ctx.channel.fetch_pinned_messages.return_value = [MagicMock(embeds=[MagicMock(fields=fields)])]
         self.bot.wait_for_component = AsyncMock(side_effect=TimeoutError)
 

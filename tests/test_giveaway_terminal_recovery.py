@@ -53,7 +53,7 @@ class TestGiveawayTerminalRecovery(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result)
         self.assertEqual(self.row, expected)
         self.assertEqual(self.message.embeds[0].title, "Prize Giveaway `(Ended)`")
-        self.assertIn("Winner: **[Member 100](<https://discordapp.com/users/100>)**",
+        self.assertIn("Winner: **[Member 100](<https://discordapp.com/users/100?tab=wishlist>)**",
                       self.message.embeds[0].fields[0].value)
         self.assertEqual(self.message.embeds[0].description, "Sponsor terms.")
         self.assertEqual(len(self.message.embeds[0].fields), 1)

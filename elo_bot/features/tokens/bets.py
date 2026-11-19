@@ -1,6 +1,5 @@
 import time
 
-from beanie import PydanticObjectId
 from pydantic import BaseModel, ConfigDict, Field
 
 from elo_bot.features.finals.persistence import transaction
@@ -9,6 +8,8 @@ from elo_bot.features.tokens.wallets import ensure_wallet
 from elo_bot.db import EloFinal, Player
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 from elo_bot.features.tokens.settlement import set_settlement_intent
+from elo_bot.config.emojis import TOKEN_EMOJI
+from elo_bot.features.finals.lifecycle import ongoing_final
 
 
 class BetAction(BaseModel):
@@ -23,7 +24,7 @@ class BetAction(BaseModel):
 
 async def open_market(final: EloFinal, node_id: str) -> FinalBettingMarket:
     async def open_pairing(session):
-        current = EloFinal.model_validate(await EloFinal.get_pymongo_collection().find_one({"_id": final.id}, session=session))
+        current = await ongoing_final(final.id, session=session)
         node = current.nodes.get(node_id)
         if (node is None or node.bye or not all(node.contestants) or node.result_id or node.first_actual_started_at
                 or not current.active or current.repair_pending or current.state in {"CANCELLING", "CANCELLED"}):
@@ -60,8 +61,7 @@ async def apply_bet(request: BetAction) -> FinalBet:
             raise FinalError("This market or wallet is unavailable.")
         market = FinalBettingMarket.model_validate(market_row)
         current_wallet = TokenWallet.model_validate(wallet_row)
-        final_row = await EloFinal.get_pymongo_collection().find_one({"_id": PydanticObjectId(market.final_id)}, session=session)
-        final = EloFinal.model_validate(final_row)
+        final = await ongoing_final(market.final_id, session=session)
         bet_id = f"{market.id}:{wallet.id}"
         old_row = await FinalBet.get_pymongo_collection().find_one({"_id": bet_id}, session=session)
         old = FinalBet.model_validate(old_row) if old_row else None
@@ -74,7 +74,7 @@ async def apply_bet(request: BetAction) -> FinalBet:
         if (market.state != "OPEN" or not final.active or final.repair_pending
                 or final.state in {"CANCELLING", "CANCELLED"}
                 or final.nodes[market.node_id].contestant_revision != market.contestant_revision):
-            raise FinalError("Betting is closed for this pairing.")
+            raise FinalError("Betting is closed for this match.")
         if current_wallet.user_id != request.user_id or await Player.get_pymongo_collection().find_one(
             {"user_id": request.user_id}, session=session,
         ) is None:
@@ -88,7 +88,7 @@ async def apply_bet(request: BetAction) -> FinalBet:
         if contestant not in market.contestants or request.amount == 0 and previous == 0:
             raise FinalError("Choose a contestant and a positive stake, or cancel an active bet.")
         if current_wallet.balance < 0 and (request.amount > previous or old and contestant != old.contestant):
-            raise FinalError(f"Cover your {abs(current_wallet.balance)} token debt before increasing or switching a bet.")
+            raise FinalError(f"Repay your {abs(current_wallet.balance):,} {TOKEN_EMOJI} debt before increasing or switching a bet.")
         difference = previous - request.amount
         if difference < 0 and current_wallet.balance + difference < 0:
             raise FinalError("Insufficient Available Tokens.")
@@ -118,8 +118,17 @@ async def apply_bet(request: BetAction) -> FinalBet:
 
 
 async def close_market(market_id: str) -> None:
-    await FinalBettingMarket.get_pymongo_collection().update_one({"_id": market_id, "state": "OPEN"},
-        {"$set": {"state": "CLOSED"}, "$inc": {"version": 1}})
+    async def close(session):
+        collection = FinalBettingMarket.get_pymongo_collection()
+        market = FinalBettingMarket.model_validate(await collection.find_one({"_id": market_id}, session=session))
+        final = await ongoing_final(market.final_id, session=session)
+        if final.state in {"CANCELLING", "CANCELLED"}:
+            raise FinalError("This Final was cancelled.")
+        await collection.update_one({"_id": market_id, "state": "OPEN"},
+            {"$set": {"state": "CLOSED"}, "$inc": {"version": 1}}, session=session)
+        await EloFinal.get_pymongo_collection().update_one({"_id": final.id},
+            {"$inc": {"revision": 1}}, session=session)
+    await transaction(close)
 
 
 async def void_market(market_id: str, actor: str, reason: str) -> None:
@@ -129,7 +138,9 @@ async def void_market(market_id: str, actor: str, reason: str) -> None:
         collection = FinalBettingMarket.get_pymongo_collection()
         market = FinalBettingMarket.model_validate(await collection.find_one({"_id": market_id}, session=session))
         final_collection = EloFinal.get_pymongo_collection()
-        final = EloFinal.model_validate(await final_collection.find_one({"_id": PydanticObjectId(market.final_id)}, session=session))
+        final = await ongoing_final(market.final_id, session=session)
+        if final.state in {"CANCELLING", "CANCELLED"}:
+            raise FinalError("This Final was cancelled.")
         if market.void_reason:
             return
         if market.state not in {"OPEN", "CLOSED"} or final.nodes[market.node_id].winner or final.repair_pending:

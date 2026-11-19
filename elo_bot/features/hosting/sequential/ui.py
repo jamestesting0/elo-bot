@@ -2,9 +2,10 @@ import time
 
 import interactions as ipy
 
-from elo_bot.config.emojis import CROSS_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI
+from elo_bot.config.emojis import CROSS_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
 from elo_bot.core.finals import FINAL_DISTRICTS
+from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import Match
 from elo_bot.db.sequential_models import LIVE_SIDE, HelperSequentialRun
 from elo_bot.discord.pagination import build_page_button
@@ -32,12 +33,15 @@ def side_label(side: int) -> str:
 def run_status_line(run: HelperSequentialRun) -> str:
     match run.state:
         case "CREATING":
-            return f"{LOADING_EMOJI} Sending the job to Helper."
+            return f"{LOADING_EMOJI} Sending the match to Helper."
         case "UNCERTAIN":
             return (f"{IMPORTANT_EMOJI} Helper's response could not be confirmed, so the job may be running. "
                     "Staff: run `/match helper recover`.")
         case "ACTIVE":
-            return f"{LOADING_EMOJI} Helper job `{run.job_id}` is **{run.job_status or 'queued'}**."
+            activity = {"queued": "Waiting for a Helper device", "running": "Helper is hosting the match"}.get(
+                run.job_status or "queued", f"Helper job is {run.job_status}")
+            side = "" if run.side == LIVE_SIDE else f" for {side_label(run.side)}"
+            return f"{LOADING_EMOJI} {activity}{side} · checked {relative_time(run.last_polled_at)}"
         case "TERMINAL":
             return f"{IMPORTANT_EMOJI} {run.close_reason}"
 
@@ -59,28 +63,36 @@ def stored_scores(match: Match | None, side: int, district: str) -> str:
     if match is None:
         return ""
     index = FINAL_DISTRICTS.index(district)
-    return " · ".join(
-        f"P{player + 1} `{match.participants[player].result[index] or '-'}`" for player in result_sides(side)
+    scores = [(player, match.participants[player].result[index]) for player in result_sides(side)]
+    if not any(score for _, score in scores):
+        return ""
+    return "".join(
+        f" · P{player + 1} `{f'{get_stars(score)}⭐ {get_destruction(score)}%' if score else '-'}`"
+        for player, score in scores
     )
+
+
+def district_line(state: str, district: str, scores: str) -> str:
+    match state:
+        case "played":
+            return f"{SUCCESS_EMOJI} **{district}**{scores}"
+        case "in progress":
+            return f"{LOADING_EMOJI} **{district}**{scores}"
+        case _:
+            return f"➖ {district}{scores}"
 
 
 def district_lines(run: HelperSequentialRun, match: Match | None) -> str:
     result = run_result(run)
-    return "\n".join(
-        f"**{district}**: {round_state(result, district)} · {stored_scores(match, run.side, district)}"
-        for district in run.districts
-    )
+    return "\n".join(district_line(round_state(result, district), district, stored_scores(match, run.side, district))
+                     for district in run.districts)
 
 
 def progress_embed(run: HelperSequentialRun, match: Match | None) -> ipy.Embed:
+    title = f"**{run.final_node_id} · Sequential Hosting**" if run.final_node_id else "**Sequential Hosting**"
     return ipy.Embed(
-        title="**Helper Sequential Hosting**",
-        description=run_status_line(run),
-        fields=[
-            ipy.EmbedField(name="**Side**", value=side_label(run.side), inline=True),
-            ipy.EmbedField(name="**Last Checked**", value=relative_time(run.last_polled_at), inline=True),
-            ipy.EmbedField(name="**Districts**", value=district_lines(run, match)),
-        ],
+        title=title,
+        description=f"{run_status_line(run)}\n\n{district_lines(run, match)}",
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
         color=COLOR,
     )

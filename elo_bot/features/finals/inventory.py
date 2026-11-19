@@ -11,7 +11,7 @@ def inventory(records: list[dict], seasons: list[dict] | None = None,
     report = {
         "mode": "offline-dry-run",
         "duplicates": [season for season, count in counts.items() if count > 1],
-        "needs_season_mapping": [str(row.get("_id")) for row in records if not row.get("season_id")],
+        "needs_season_mapping": [str(row.get("_id")) for row in records if row.get("schema_version") != 2],
         "legacy_score_records": [str(row.get("_id")) for row in records if any(
             row.get(field) for field in ("quarter_finals", "semi_finals", "final")
         )],
@@ -40,7 +40,7 @@ def inventory(records: list[dict], seasons: list[dict] | None = None,
             continue
         archive = candidates[0]
         report["proposals"].append({"id": identity, "set": {"schema_version": 2,
-            "season_id": mapping, "season_number": archive["season_number"], "entrant_ids": entrants,
+            "season_number": archive["season_number"], "entrant_ids": entrants,
             "active": False, "state": "REGISTRATION", "revision": 0, "setup_revision": 0}})
     proposed_seasons = Counter(proposal["set"]["season_number"] for proposal in report["proposals"])
     report["mapped_season_conflicts"] = [season for season, count in proposed_seasons.items() if count > 1]

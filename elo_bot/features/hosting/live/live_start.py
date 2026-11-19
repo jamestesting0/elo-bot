@@ -107,7 +107,12 @@ class LiveStartClanUnavailable:
     pass
 
 
-type LiveStartOutcome = LiveStartSucceeded | LiveStartBusy | LiveStartClanUnavailable
+@dataclass(frozen=True, slots=True)
+class LiveStartRefused:
+    """The Final refused the start; its reason was already sent to the user."""
+
+
+type LiveStartOutcome = LiveStartSucceeded | LiveStartBusy | LiveStartClanUnavailable | LiveStartRefused
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,7 +186,7 @@ async def start_live_match(
                                      else MatchMessageState.capture(fresh_match, 0).binding_filter()) if is_final_match(fresh_match) else None)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
-            return LiveStartBusy()
+            return LiveStartRefused()
         claimed = await resources.claim_resource_clan(
             reservations.clan,
             start.match,

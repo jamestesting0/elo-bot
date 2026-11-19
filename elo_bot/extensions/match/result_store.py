@@ -18,20 +18,19 @@ from elo_bot.config.game import (
     DISTRICT_CHOICES,
     DISTRICT_INDEX,
 )
-from elo_bot.config.ids import (
-    ELO_BLACKLIST_ROLE,
-    LVL2_ROLES,
-)
+from elo_bot.config.ids import LVL2_ROLES
 from elo_bot.config.presentation import (
     ORDINAL_REPRESENTATIONS,
 )
-from elo_bot.core.finals import is_final_match
+from elo_bot.core.finals import is_final_match, FinalError
 from elo_bot.core.match_results import ResultDetectionType, is_valid_match_result_entry
 from elo_bot.db import Match
 from elo_bot.discord.concurrency import CHANNEL_USER_CONCURRENCY_BUCKET
 from elo_bot.extensions.match.groups import result_group
 from elo_bot.features.hosting.self_hosted.invitations import invite_eligible_players
-from elo_bot.features.matches.controls import check_match_control, reject_outdated_match_control
+from elo_bot.features.matches.controls import (
+    check_match_control, reject_outdated_match_control, check_current_match, update_match,
+)
 from elo_bot.features.matches.message_lock import coordinated_match_message, match_message_lock
 from elo_bot.features.matches.messages import (
     MatchMessageState,
@@ -44,6 +43,7 @@ from elo_bot.features.results.operations import (
 )
 from elo_bot.features.hosting.sequential.runs import open_run_refusal
 from elo_bot.integrations.helper_api import HelperScoreAttackLimit
+from elo_bot.features.finals.result_ui import SCORE_PLACEHOLDER, require_source_result_role
 
 
 class MatchResultStoreCommands:
@@ -58,6 +58,12 @@ class MatchResultStoreCommands:
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, the match has probably ended.")
             return
 
+        if is_final_match(match):
+            try:
+                final = await require_source_result_role(ctx, match)
+            except FinalError as error:
+                await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                return
         if not await check_match_control(ctx, match, index):
             return
         if reason := result_input_error(match):
@@ -88,8 +94,9 @@ class MatchResultStoreCommands:
             await ctx.send_modal(ipy.Modal(ipy.ParagraphText(
                 label="Seven district results", custom_id="scores", max_length=100,
                 value="\n".join(results) if all(results) else None,
-                placeholder="Seven lines in district order: stars.destruction",
-            ), title="Store Final Result", custom_id=f"store_modal|{token}|{index}"))
+                placeholder=SCORE_PLACEHOLDER,
+            ), title=f"Season {final.season_number} Final · {match.final_node_id}",
+                custom_id=f"store_modal|{token}|{index}"))
             return
 
         # short text expects strings; use empty string for none
@@ -151,6 +158,12 @@ class MatchResultStoreCommands:
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match.", ephemeral=True)
             return
 
+        if is_final_match(match):
+            try:
+                await require_source_result_role(ctx, match)
+            except FinalError as error:
+                await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                return
         if not await check_match_control(ctx, match, index):
             return
         if reason := result_input_error(match):
@@ -159,11 +172,6 @@ class MatchResultStoreCommands:
         expected = MatchMessageState.capture(match, index)
 
         if is_final_match(match):
-            if (ctx.guild_id != match.routing_guild_id or ctx.author.has_role(ELO_BLACKLIST_ROLE)
-                    or not any(ctx.author.has_role(role) for role in LVL2_ROLES)):
-                await ctx.send(f"{ERROR_EMOJI} A staff member in the Final's server must store these results.",
-                               ephemeral=True)
-                return
             scores = response.get("scores", "").splitlines()
             if len(scores) != 7 or not all(is_valid_match_result_entry(score) for score in scores):
                 await ctx.send(f"{ERROR_EMOJI} Enter seven valid stars.destruction lines.", ephemeral=True)
@@ -200,14 +208,14 @@ class MatchResultStoreCommands:
         if all(updated_results):
             updates[f"submitters.{index}"] = str(ctx.author.id)
         if updates:
-            write = await match.get_pymongo_collection().update_one(
+            write = await update_match(match,
                 {**expected.binding_filter(), "result_operation": None,
                  "final_result_id": None, "final_result_operation": None, "final_superseded": {"$ne": True},
                  "$or": [{"autowin_winner_id": None}, {"autowin_completed": True}],
                  f"participants.{index}.result": list(match.participants[index].result)},
                 {"$set": updates},
             )
-            if write.matched_count != 1:
+            if not write:
                 fresh = await Match.find_one(Match.token == token)
                 if fresh and (reason := result_input_error(fresh)):
                     await ctx.send(f"{ERROR_EMOJI} {reason}", ephemeral=True)
@@ -343,6 +351,8 @@ class MatchResultStoreCommands:
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, please make sure to use "
                            "this command in a 1v1 thread!", ephemeral=True)
             return
+        if not await check_current_match(ctx, match):
+            return
         if reason := result_input_error(match):
             await ctx.send(f"{ERROR_EMOJI} {reason}", ephemeral=True)
             return
@@ -358,7 +368,7 @@ class MatchResultStoreCommands:
             return
 
         field = f"participants.{player}.result"
-        write = await match.get_pymongo_collection().update_one(
+        write = await update_match(match,
             {**MatchMessageState.capture(match, player).binding_filter(), "result_operation": None,
              "recorded_match_id": None, "final_result_id": None, "final_result_operation": None,
              "final_superseded": {"$ne": True},
@@ -366,7 +376,7 @@ class MatchResultStoreCommands:
              field: list(match.participants[player].result)},
             {"$set": {field: [None] * len(match.final_districts), f"submitters.{player}": None}},
         )
-        if write.matched_count != 1:
+        if not write:
             fresh = await Match.find_one(Match.token == match.token)
             reason = result_input_error(fresh) if fresh else None
             await ctx.send(f"{ERROR_EMOJI} {reason or 'The match changed. Check the current result before retrying.'}",
@@ -410,6 +420,8 @@ class MatchResultStoreCommands:
                 f"{ERROR_EMOJI} Unable to fetch a valid match, please make sure to use this command in a 1v1 thread!",
                 ephemeral=True,
             )
+            return
+        if not await check_current_match(ctx, match):
             return
         if str(ctx.author.id) == str(match.participants[player].user_id):
             await ctx.send(
@@ -487,6 +499,12 @@ class MatchResultStoreCommands:
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, please make sure to use "
                            f"this command in a 1v1 thread!", ephemeral=True)
             return
+        if is_final_match(match):
+            try:
+                await require_source_result_role(ctx, match)
+            except FinalError as error:
+                await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                return
         if reason := result_input_error(match):
             await ctx.send(f"{ERROR_EMOJI} {reason}", ephemeral=True)
             return
@@ -511,13 +529,13 @@ class MatchResultStoreCommands:
         # update the participant's result for the specified district
         district_idx = match.final_districts.index(district) if is_final_match(match) else DISTRICT_INDEX[district]
         field = f"participants.{player}.result.{district_idx}"
-        write = await match.get_pymongo_collection().update_one(
+        write = await update_match(match,
             {**MatchMessageState.capture(match, player).binding_filter(), "result_operation": None,
              "$or": [{"autowin_winner_id": None}, {"autowin_completed": True}],
              field: match.participants[player].result[district_idx]},
             {"$set": {field: f"{stars}.{destruction}"}},
         )
-        if write.matched_count != 1:
+        if not write:
             fresh = await Match.find_one(Match.token == match.token)
             reason = result_input_error(fresh) if fresh else None
             await ctx.send(f"{ERROR_EMOJI} {reason or 'The match changed. Check the current result before retrying.'}",

@@ -11,6 +11,8 @@ persisted API: `tests/snapshots/persistence_contract.json` pins them, and changi
 - `ServerState` is a singleton at `_id == "server"`; use its class helpers for atomic updates and fail loudly if
   migration state is absent.
 - `OverrideCode` expiry and uniqueness come from `OVERRIDE_CODE_INDEXES`.
+- `FinalResultDraft` expires through `final_result_draft_expiry`; application callbacks also check expiry.
+  It is registered in bootstrap and `FINAL_DOCUMENT_MODELS`, whose indexes `register_final_indexes` creates.
 - This package imports only `elo_bot.core` and `elo_bot.config`. Types embedded in documents live here
   (`fingerprint_types.py`), not in a feature package.
 - No import-time network or database calls; never bypass a model with an ad-hoc collection name or unindexed query.

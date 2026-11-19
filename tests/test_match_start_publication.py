@@ -71,7 +71,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         payload = self.bot.http.edit_message.await_args.args[0]
         self.assertEqual(payload["embeds"][0]["title"], "**Match Started**")
         self.assertEqual(payload["embeds"][0]["description"], "")
-        self.assertEqual(payload["embeds"][0]["fields"][1]["value"], "**[Host](<https://discordapp.com/users/999>)**")
+        self.assertEqual(payload["embeds"][0]["fields"][1]["value"], "**[Host](<https://discordapp.com/users/999?tab=wishlist>)**")
         self.assertEqual([component["custom_id"] for row in payload["components"] for component in row["components"]],
                          ["host_clan_select|TOKEN|0", "match_host|TOKEN|0", "match_result_store|TOKEN|0",
                           "war_spectate|TOKEN|0|1000", "match_abort|TOKEN|0"])
@@ -266,7 +266,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
                     with (
                         patch.object(Match, "find_one", new=AsyncMock(return_value=self.match)),
                         patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                        patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock),
+                        patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new_callable=AsyncMock),
                         patch_sites(('elo_bot.extensions.match.results.autoqueue_completed_match_participants', 'elo_bot.extensions.match.result_store.autoqueue_completed_match_participants'), new_callable=AsyncMock),
                     ):
                         await match_module.MatchCommands._finish_stored_result_side(cog, self.match, 0)

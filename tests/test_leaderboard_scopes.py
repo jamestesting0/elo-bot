@@ -110,9 +110,9 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
                 payload = ctx.send.await_args.kwargs
                 self.assertEqual(payload["embed"].fields[0].value, "Current Season")
                 self.assertEqual(selected(payload["components"]), ["Current Season"])
-                self.assertIn("/current>", payload["embed"].description.splitlines()[0])
+                self.assertIn("/current?tab=wishlist>", payload["embed"].description.splitlines()[0])
                 if lb_type != "Addiction":
-                    self.assertNotIn("/old>", payload["embed"].description)
+                    self.assertNotIn("/old?tab=wishlist>", payload["embed"].description)
 
     async def test_match_defaults_fall_back_when_current_has_no_eligible_entries(self):
         self.players[1].matches = self.players[1].matches[:4]
@@ -122,8 +122,8 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
                 payload = ctx.send.await_args.kwargs
                 self.assertEqual(payload["embed"].fields[0].value, "All Seasons")
                 self.assertEqual(selected(payload["components"]), ["All Seasons"])
-                self.assertIn("/old>", payload["embed"].description)
-                self.assertNotIn("/current>", payload["embed"].description)
+                self.assertIn("/old?tab=wishlist>", payload["embed"].description)
+                self.assertNotIn("/current?tab=wishlist>", payload["embed"].description)
 
     async def test_explicit_empty_match_scopes_do_not_fall_back(self):
         self.players[1].matches = []
@@ -145,7 +145,7 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["embed"].fields[0].value, "All Seasons")
         self.assertEqual(selected(payload["components"]), ["All Seasons"])
         self.assertIn("`6`", payload["embed"].description)
-        self.assertIn("/zero>", payload["embed"].description)
+        self.assertIn("/zero?tab=wishlist>", payload["embed"].description)
 
     async def test_addiction_explicit_empty_scopes_keep_zero_players(self):
         self.players[1].matches = []
@@ -265,7 +265,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         ]
         self.finals = [
             SimpleNamespace(id=f"final-{number}", season_number=number, active=number == 7,
-                            schema_version=2, season_id=f"archive-{number}")
+                            schema_version=2)
             for number in (3, 7, 9)
         ]
         self.predictions = []
@@ -278,6 +278,14 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         final_model.find_one = AsyncMock(side_effect=lambda query: next(
             (final for final in self.finals if all(getattr(final, key) == value for key, value in query.items())), None
         ))
+
+        def find_finals(query):
+            matches = [final for final in self.finals if all(getattr(final, key) == value for key, value in query.items())]
+            found = MagicMock()
+            found.sort.return_value.first_or_none = AsyncMock(return_value=matches[-1] if matches else None)
+            return found
+
+        final_model.find = MagicMock(side_effect=find_finals)
         predictions_model = self.enterContext(patch("elo_bot.features.finals.leaderboards.FinalPrediction"))
 
         def find_predictions(query):
@@ -419,7 +427,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
             with self.subTest(season=season):
                 ctx = await self.invoke("Tokens", season=season)
                 payload = ctx.send.await_args.kwargs
-                self.assertEqual(payload["embed"].fields[0].value, "Current Season")
+                self.assertEqual(payload["embed"].fields[0].value, "Lifetime")
                 self.assertEqual(len(payload["components"]), 2)
                 self.assertIn("`8,765`", payload["embed"].description)
         self.ensure_wallet.assert_not_awaited()
@@ -434,7 +442,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
                 ctx.values = ["Tokens"] if callback == "lb_type_select" else ["3"]
                 kwargs = {"page": "1"} if callback == "lb_page_modal" else {}
                 await getattr(self.cog, callback).callback.func(self.cog, ctx, **kwargs)
-                self.assertEqual(ctx.message.embeds[0].fields[0].value, "Current Season")
+                self.assertEqual(ctx.message.embeds[0].fields[0].value, "Lifetime")
                 self.assertIn("8,765", ctx.message.embeds[0].description)
 
     async def test_tokens_second_page_and_refresh_keep_current_scope_and_balance(self):
@@ -450,12 +458,12 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         self.assertIn("`19,990`", second_page)
         self.assertEqual(ctx.message.components[-1].components[1].label, "2/2")
         await self.cog.lb_refresh.callback.func(self.cog, ctx)
-        self.assertEqual(ctx.message.embeds[0].fields[0].value, "Current Season")
+        self.assertEqual(ctx.message.embeds[0].fields[0].value, "Lifetime")
         self.assertIn(second_page, ctx.message.embeds[0].description)
         self.assertEqual(ctx.message.components[-1].components[1].label, "2/2")
         await self.cog.lb_page_modal.callback.func(self.cog, ctx, page="1")
         self.assertIn("`20,000`", ctx.message.embeds[0].description)
-        self.assertEqual(ctx.message.embeds[0].fields[0].value, "Current Season")
+        self.assertEqual(ctx.message.embeds[0].fields[0].value, "Lifetime")
 
     async def test_no_finals_or_archives_return_empty_without_crashing(self):
         self.cog._seasons_cache = []
@@ -464,7 +472,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("embed", ctx.send.await_args.kwargs)
         self.assertEqual(await final_board_rows("Predictions", "All Seasons"), [])
         ctx = await self.invoke("Tokens")
-        self.assertEqual(ctx.send.await_args.kwargs["embed"].fields[0].value, "Current Season")
+        self.assertEqual(ctx.send.await_args.kwargs["embed"].fields[0].value, "Lifetime")
 
     async def test_active_final_without_ranked_archives_keeps_selected_scope(self):
         self.cog._seasons_cache = []

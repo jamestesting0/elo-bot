@@ -85,8 +85,8 @@ class TestResultFinalization(ResultFinalizationFixture):
         self.autoqueue.assert_awaited_once_with(self.bot, "TOKEN", ("111", "222"))
         self.assertEqual(
             self.thread.send.await_args.kwargs["embed"].description,
-            f"**[Player 111](<https://discordapp.com/users/111>)** (+5) vs. "
-            f"**[Player 222](<https://discordapp.com/users/222>)** (-5)\n\n**Final Score**\n"
+            f"**[Player 111](<https://discordapp.com/users/111?tab=wishlist>)** (+5) vs. "
+            f"**[Player 222](<https://discordapp.com/users/222?tab=wishlist>)** (-5)\n\n**Final Score**\n"
             f"6{STAR_EMOJI} 270% - 5{STAR_EMOJI} 250%",
         )
 

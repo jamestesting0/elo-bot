@@ -20,7 +20,7 @@ class ResultOperationConflict(RuntimeError):
 
 def result_input_error(match: Match) -> str | None:
     if getattr(match, "final_superseded", False) is True:
-        return "This pairing was superseded. Use `/final match view` for its current contestants."
+        return "This pairing was superseded. Use `/final bracket view` for its current contestants."
     if getattr(match, "format", None) == "elo_final_seven" and (
         match.final_result_operation is not None or match.final_result_id is not None
     ):

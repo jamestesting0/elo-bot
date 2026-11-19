@@ -42,6 +42,7 @@ from elo_bot.features.base_store.raid_task import store_before_raid_weekend
 from elo_bot.features.base_store.start import StoredStartState
 from elo_bot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elo_bot.features.matches.attack_bases import choose_bases
+from elo_bot.features.matches.controls import check_current_match
 from elo_bot.features.matches.resources import (
     ResourceClanReservation,
     ResourceMatchSideReservation,
@@ -167,6 +168,8 @@ class MatchBaseStoreCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         # disallow storing bases if the invoker is one of the players (unless a bot owner)
         is_player = any(str(ctx.author.id) == p.user_id for p in match.participants[:2])
         if is_player and str(ctx.author.id) != str(self.bot.owner.id):
@@ -268,6 +271,8 @@ class MatchBaseStoreCommands:
             )
             return
 
+        if not await check_current_match(ctx, match):
+            return
         p_idx = 0 if player == 0 else 1
         is_player = any(str(ctx.author.id) == p.user_id for p in match.participants[:2])
         if is_player and str(ctx.author.id) != str(self.bot.owner.id) and (
@@ -296,6 +301,8 @@ class MatchBaseStoreCommands:
             await ctx.send(failure, ephemeral=True)
             return
 
+        if not await check_current_match(ctx, match):
+            return
         idx = int(player)
         if idx >= len(match.participants):
             await ctx.send(f"{ERROR_EMOJI} Invalid player index.", ephemeral=True)

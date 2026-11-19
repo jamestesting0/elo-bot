@@ -149,7 +149,7 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
                 patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock) as clear_stores,
                 patch('elo_bot.extensions.match.results.award_helper_once', new_callable=AsyncMock) as credit,
                 patch_sites(('elo_bot.extensions.match.lifecycle.free_match_clans', 'elo_bot.extensions.match.results.free_match_clans'), new_callable=AsyncMock),
-                patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock),
+                patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new_callable=AsyncMock),
                 patch_sites(('elo_bot.extensions.match.results.fetch_user_match_id_choices', 'elo_bot.features.results.recording.fetch_user_match_id_choices'), new_callable=AsyncMock),
                 patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")),
                 patch_sites(('elo_bot.extensions.match.results.schedule_channel_name_edit', 'elo_bot.extensions.match.hosting.schedule_channel_name_edit', 'elo_bot.extensions.match.settings.schedule_channel_name_edit'), new=schedule),
@@ -235,7 +235,7 @@ class TestTerminalAutoqueue(unittest.IsolatedAsyncioTestCase):
                 patch.object(result_store_ui, "notify_stored_result", new_callable=AsyncMock),
                 patch('elo_bot.extensions.match.base_store.clear_participant_base_store', new_callable=AsyncMock),
                 patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock),
-                patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.remove_helper_task'), new_callable=AsyncMock),
+                patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new_callable=AsyncMock),
                 patch_sites(('elo_bot.extensions.match.results.autoqueue_completed_match_participants', 'elo_bot.extensions.match.result_store.autoqueue_completed_match_participants'), new_callable=AsyncMock) as autoqueue,
         ):
             match_model.find_one = AsyncMock(side_effect=[source, fresh])

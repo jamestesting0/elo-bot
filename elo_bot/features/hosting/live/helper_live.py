@@ -40,6 +40,7 @@ class AutomaticLiveHost:
     public_progress: bool = False
     allow_opponent_cancel: bool = False
     stored_reservation_id: str | None = None
+    attacks_first: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +104,11 @@ def parse_paired_live_bases(match: Match, district: str | None = None) -> Paired
     if len(set(player1_links)) != len(player1_links) or len(set(player2_links)) != len(player2_links):
         return None
     return PairedLiveBases(for_player1=player1_links, for_player2=player2_links)
+
+
+def unpaired_bases_message(match: Match) -> str:
+    return (attack_bases.missing_bases_message(match)
+            or f"{ERROR_EMOJI} A complete, distinct pair of bases is required for Helper hosting.")
 
 
 async def host_live_automatically(
@@ -174,10 +180,7 @@ async def host_live_automatically(
             return
         paired_bases = parse_paired_live_bases(match_doc)
         if paired_bases is None:
-            await ctx.send(
-                f"{ERROR_EMOJI} A complete, distinct pair of bases is required for Helper hosting.",
-                ephemeral=True,
-            )
+            await ctx.send(unpaired_bases_message(match_doc), ephemeral=True)
             return
 
         create_request = HelperJobCreateRequest(
@@ -237,6 +240,8 @@ async def host_live_automatically(
                 f"{await resources.available_resource_clans_text()}",
                 ephemeral=True,
             )
+            return
+        case live_start.LiveStartRefused():
             return
         case live_start.LiveStartClanUnavailable():
             await ctx.send(

@@ -45,12 +45,12 @@ class TestMatchCommands(MatchCommandsCase):
 
         with (
                 patch("elo_bot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
-                patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock) as mock_send_bases,
+                patch_sites(('elo_bot.extensions.match.bases.assign_bases', 'elo_bot.features.matches.attack_bases.assign_bases'), new_callable=AsyncMock) as mock_assign_bases,
         ):
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
-            await self.cog.match_war_start.callback(ctx, player=0, clan="#CLAN", scout=False)
+            await self.cog.match_war_start.callback(ctx, player=0, clan="#CLAN")
 
-        mock_send_bases.assert_not_awaited()
+        mock_assign_bases.assert_not_awaited()
         mock_start_slots.assert_awaited_once_with("#CLAN", "12345", bot=self.bot)
         response = ctx.send.call_args[0][0]
         self.assertIn("both base slots", response.lower())
@@ -475,7 +475,6 @@ class TestMatchCommands(MatchCommandsCase):
                 ctx,
                 player=1,
                 clan="#CLAN",
-                scout=True,
             )
 
         available_slots.assert_not_awaited()
@@ -487,7 +486,6 @@ class TestMatchCommands(MatchCommandsCase):
         self.assertEqual(request.player, 1)
         self.assertIs(request.clan, clan)
         self.assertIs(request.host, ctx.author)
-        self.assertTrue(request.scout)
         self.assertIs(request.clan_reservation, clan_reservation)
         self.assertIs(request.side_reservation, side_reservation)
         clan_reservation.release.assert_called_once_with()
@@ -498,11 +496,11 @@ class TestMatchCommands(MatchCommandsCase):
 
         self.assertEqual(command.resolved_name, "match autostart")
         self.assertEqual([str(option.name) for option in command.options],
-                         ["clan", "scout", "district", "sequential", "attacks_first"])
+                         ["clan", "district", "sequential", "attacks_first"])
         self.assertTrue(command.options[0].required)
         self.assertFalse(any(option.required for option in command.options[1:]))
-        self.assertEqual([choice.value for choice in command.options[4].choices], [0, 1])
-        self.assertEqual([str(option.name) for option in self.cog.match_start.options], ["clan", "scout"])
+        self.assertEqual([choice.value for choice in command.options[3].choices], [0, 1])
+        self.assertEqual([str(option.name) for option in self.cog.match_start.options], ["clan"])
         self.assertEqual(len(command.checks), 1)
         self.assertIs(command.max_concurrency.bucket, match_base_store_module.CHANNEL_USER_CONCURRENCY_BUCKET)
         self.assertEqual(command.max_concurrency.concurrent, 1)
@@ -592,7 +590,7 @@ class TestMatchCommands(MatchCommandsCase):
             self.cog.coc_client.get_player = AsyncMock(side_effect=[player1, player2])
             self.cog.coc_client.get_clan = AsyncMock(return_value=clan)
 
-            await self.cog.match_autostart.callback(ctx, clan="#CLAN", scout=True)
+            await self.cog.match_autostart.callback(ctx, clan="#CLAN")
 
         slots.assert_not_awaited()
         live_slots.assert_awaited_once_with("#CLAN", bot=self.bot)
@@ -652,7 +650,6 @@ class TestMatchCommands(MatchCommandsCase):
             player2=MagicMock(tag="#P2"),
             player1_elo=1200,
             player2_elo=1100,
-            scout=False,
             requested_by="999",
         )
         choose_entered = anyio.Event()
@@ -829,7 +826,7 @@ class TestMatchCommands(MatchCommandsCase):
         request = helper_live.AutomaticLiveHost(
             match=match, clan=MagicMock(tag="#CLAN", name="Helper Clan"), host=MagicMock(id=888),
             player1=MagicMock(tag="#P1"), player2=MagicMock(tag="#P2"),
-            player1_elo=1200, player2_elo=1100, scout=False, requested_by="999",
+            player1_elo=1200, player2_elo=1100, requested_by="999",
         )
 
         async def choose_side(_token, _player, opponent, **_kwargs):
@@ -903,7 +900,6 @@ class TestMatchCommands(MatchCommandsCase):
             player2=MagicMock(tag="#P2"),
             player1_elo=1200,
             player2_elo=1100,
-            scout=False,
             requested_by="999",
         )
 
@@ -961,7 +957,6 @@ class TestMatchCommands(MatchCommandsCase):
             player2=MagicMock(tag="#P2"),
             player1_elo=1200,
             player2_elo=1100,
-            scout=False,
             requested_by="999",
         )
         side0 = MagicMock()
@@ -1257,7 +1252,7 @@ class TestMatchCommands(MatchCommandsCase):
     @patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)
-    @patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.match.bases.assign_bases', 'elo_bot.features.matches.attack_bases.assign_bases'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock)
     @patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False)
@@ -1265,7 +1260,7 @@ class TestMatchCommands(MatchCommandsCase):
     @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_match_start_updates_occupancy_before_discord_side_effects(
             self, mock_match, mock_player, _mock_is_raid_weekend, mock_is_clan_available, mock_choose_tip,
-            mock_send_bases, mock_clear_base_stores, mock_free_clan, mock_occupy_clan,
+            mock_assign_bases, mock_clear_base_stores, mock_free_clan, mock_occupy_clan,
             _mock_remove_helper_task, mock_clan_find):
         # Given a valid unstarted match and an available replacement clan.
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1417,8 +1412,8 @@ class TestMatchCommands(MatchCommandsCase):
         mock_free_clan.assert_awaited_once_with("#OLD", expected_thread=str(match.thread))
         mock_occupy_clan.assert_awaited_once_with(match, 0, 1)
         self.assertEqual(collection.update_one.await_args.args[0]["old_msgs.0"], 777)
-        self.assertEqual(mock_send_bases.await_args_list[0].args[:4], (ANY, "TOKEN", 1, 0))
-        self.assertEqual(mock_send_bases.await_args_list[1].args[:4], (ANY, "TOKEN", 0, 1))
+        self.assertEqual(mock_assign_bases.await_args_list[0].args[:4], (ANY, "TOKEN", 1, 0))
+        self.assertEqual(mock_assign_bases.await_args_list[1].args[:4], (ANY, "TOKEN", 0, 1))
         self.assertEqual(match.persistent_host_clans[0], "#CLAN")
         mock_clear_base_stores.assert_not_awaited()
         self.assertEqual(public_channel.send.await_args.args[0], "tip")
@@ -1483,7 +1478,7 @@ class TestMatchCommands(MatchCommandsCase):
         request = live_start.LiveStart(
             match=match, host=MagicMock(id=999), clan=MagicMock(tag="#CLAN"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=1200, player2_elo=1100,
-            scout=False, reply=live_start.AutomaticLiveStartReply(),
+            reply=live_start.AutomaticLiveStartReply(),
         )
         claim_entered = asyncio.Event()
         allow_claim = asyncio.Event()
@@ -1589,7 +1584,6 @@ class TestMatchCommands(MatchCommandsCase):
             player2=MagicMock(),
             player1_elo=1200,
             player2_elo=1100,
-            scout=False,
             reply=live_start.AutomaticLiveStartReply(),
         )
 
@@ -1614,13 +1608,13 @@ class TestMatchCommands(MatchCommandsCase):
     @patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.lifecycle.clear_match_base_stores', 'elo_bot.extensions.match.results.clear_match_base_stores'), new_callable=AsyncMock)
-    @patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.match.bases.assign_bases', 'elo_bot.features.matches.attack_bases.assign_bases'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock, return_value=True)
     @patch('elo_bot.extensions.match.hosting.is_raid_weekend', return_value=False)
     @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
     @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_match_start_persistence_failure_skips_occupancy_and_discord(
-            self, mock_match, mock_player, _mock_is_raid_weekend, _mock_is_clan_available, mock_send_bases,
+            self, mock_match, mock_player, _mock_is_raid_weekend, _mock_is_clan_available, mock_assign_bases,
             mock_clear_base_stores, mock_free_clan, mock_occupy_clan, mock_remove_helper_task, mock_clan_find):
         # Given a valid unstarted match whose initial state write fails.
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -1679,7 +1673,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.channel.send.assert_not_awaited()
         ctx.send.assert_not_awaited()
         self.bot.fetch_channel.assert_not_awaited()
-        mock_send_bases.assert_not_awaited()
+        mock_assign_bases.assert_not_awaited()
         mock_clear_base_stores.assert_not_awaited()
         mock_remove_helper_task.assert_not_awaited()
 
@@ -1716,7 +1710,7 @@ class TestMatchCommands(MatchCommandsCase):
 
         with (
                 patch("elo_bot.extensions.match.MatchCommands.coc_client", new_callable=PropertyMock) as mock_coc_client,
-                patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock) as mock_send_bases,
+                patch_sites(('elo_bot.extensions.match.bases.assign_bases', 'elo_bot.features.matches.attack_bases.assign_bases'), new_callable=AsyncMock) as mock_assign_bases,
         ):
             mock_coc_client.return_value.get_player = AsyncMock(side_effect=[
                 MagicMock(town_hall=3),
@@ -1725,7 +1719,7 @@ class TestMatchCommands(MatchCommandsCase):
             mock_coc_client.return_value.get_clan = AsyncMock(return_value=clan_obj)
             await self.cog.match_start.callback(ctx, clan="#CLAN")
 
-        mock_send_bases.assert_not_awaited()
+        mock_assign_bases.assert_not_awaited()
         match.set.assert_not_awaited()
         mock_start_slots.assert_awaited_once_with("#CLAN", "12345", bot=self.bot)
         response = ctx.send.call_args[0][0]

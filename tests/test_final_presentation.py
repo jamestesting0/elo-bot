@@ -41,7 +41,7 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
         final = self.edition()
         node = final.nodes["QF4"]
         node.winner, node.result_id, node.state = "4", "saved", "DECIDED"
-        final.nodes["SF2"] = EloFinalMatch(id="SF2", contestants=["1", "2"], state="TIED", result_id="tie")
+        final.nodes["SF2"] = EloFinalMatch(id="SF2", contestants=["1", "2"], state="READY")
         result = FinalMatchResult.model_construct(id="saved", snapshot=FinalResultSnapshot(
             contestants=["3", "4"], winner="4", scores={"3": ["2.80"] * 7, "4": ["3.100"] * 7}))
         query = MagicMock(to_list=AsyncMock(return_value=[result]))
@@ -54,9 +54,9 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
         self.assertIn("21⭐ 700%", menu.options[0].description)
         self.assertEqual(await bracket_controls(self.edition()), [])
 
-    async def test_played_tied_and_forfeit_results_show_only_applicable_scores(self):
+    async def test_played_and_forfeit_results_show_only_applicable_scores(self):
         final = self.edition()
-        for outcome, winner in (("Played", "4"), ("Played", None), ("Forfeit", "4")):
+        for outcome, winner in (("Played", "4"), ("Forfeit", "4")):
             with self.subTest(outcome=outcome, winner=winner):
                 snapshot = FinalResultSnapshot(contestants=["3", "4"], winner=winner, outcome=outcome,
                     scores={"3": ["0.0" if outcome == "Forfeit" else "2.80"] * 7,
@@ -71,13 +71,9 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(len(district_rows), 7)
                     self.assertTrue(all(district in row for district, row in zip(FINAL_DISTRICTS, district_rows, strict=True)))
                     self.assertEqual(embed.fields[0].value, f"14{STAR_EMOJI} 560% — 21{STAR_EMOJI} 700%")
-                    if winner:
-                        self.assertIn(f"Left {LOSS_EMOJI}", embed.description)
-                        self.assertIn(f"Right {WIN_EMOJI}", embed.description)
-                        self.assertEqual(len(embed.fields), 1)
-                    else:
-                        self.assertNotIn(str(WIN_EMOJI), embed.description)
-                        self.assertEqual(len(embed.fields), 2)
+                    self.assertIn(f"Left {LOSS_EMOJI}", embed.description)
+                    self.assertIn(f"Right {WIN_EMOJI}", embed.description)
+                    self.assertEqual(len(embed.fields), 1)
 
     async def test_market_pools_render_real_multipliers_and_disable_closed_controls(self):
         final = self.edition()

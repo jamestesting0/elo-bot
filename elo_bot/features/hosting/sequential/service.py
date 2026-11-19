@@ -160,7 +160,7 @@ async def host_war_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: Au
     try:
         started_message = await war_start.start_war(bot, ctx, war_start.WarStart(
             match=match_doc, player=host.player, host=host.host, clan=host.clan, coc_client=bot.coc_client,
-            reply=war_start.SelfHostedWarStartReply(), scout=host.scout, clan_reservation=host.clan_reservation,
+            reply=war_start.SelfHostedWarStartReply(), clan_reservation=host.clan_reservation,
             side_reservation=host.side_reservation, stored_start=host.stored_start,
         ))
     except war_start.WarStartRefused as refusal:
@@ -233,7 +233,7 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
             )
         start_outcome = await live_start.start_live_match(bot, ctx, live_start.LiveStart(
             match=match_doc, host=host.host, clan=host.clan, player1=host.player1, player2=host.player2,
-            player1_elo=host.player1_elo, player2_elo=host.player2_elo, scout=host.scout,
+            player1_elo=host.player1_elo, player2_elo=host.player2_elo,
             reply=live_start.AutomaticLiveStartReply(), reservations=reservations,
             stored_reservation_id=host.stored_reservation_id,
         ))

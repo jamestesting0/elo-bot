@@ -17,6 +17,8 @@ def ledger_label(entry: TokenLedgerEntry) -> str:
             return "Bet"
         case "edit":
             return "Bet changed"
+        case "switch":
+            return "Bet switched"
         case "cancel":
             return "Bet cancelled"
         case "payout":
@@ -27,6 +29,8 @@ def ledger_label(entry: TokenLedgerEntry) -> str:
             return "Payout reversed"
         case "identity":
             return ""
+        case "adjust":
+            return "Manager adjustment"
         case unreachable:
             assert_never(unreachable)
 

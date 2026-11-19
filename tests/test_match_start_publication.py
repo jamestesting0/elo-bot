@@ -102,7 +102,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.assertEqual(self.collection.update_one.await_args_list[1].args[0]["old_msgs.0"], None)
         self.assertEqual(self.message_data["components"], [])
         self.assertEqual(self.message_data["embeds"][0]["title"], "**Match Update Incomplete**")
-        match_bases_module.send_bases.assert_not_awaited()
+        match_bases_module.assign_bases.assert_not_awaited()
         self.bot.http.pin_message.assert_not_awaited()
         self.ctx.send.assert_not_awaited()
 
@@ -117,7 +117,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.assertIsNone(self.persisted["old_msgs.0"])
         self.assertEqual(self.collection.update_one.await_args.args[0]["times.1"], None)
         self.assertEqual(self.message_data["components"], [])
-        match_bases_module.send_bases.assert_not_awaited()
+        match_bases_module.assign_bases.assert_not_awaited()
 
     async def test_live_success_preserves_attacking_order_without_releasing_slots(self) -> None:
         # Given: the committed live match has an existing public announcement.

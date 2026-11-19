@@ -1,7 +1,7 @@
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from elo_bot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.db import BaseStore, Match, Season
 from elo_bot.db.final_models import FinalPrediction
 from elo_bot.db.token_models import FinalBettingMarket, TokenWallet
@@ -38,19 +38,18 @@ class TestFinalGateJourney(FinalUICase):
         self.assertTrue(confirm.edit_origin.await_args.kwargs["content"].startswith(str(SUCCESS_EMOJI)))
         self.assertIsNotNone(self.final.bracket_message_id)
 
-    async def record_result(self, node_id, *, tied=False, winner=None):
+    async def record_result(self, node_id):
         edition = await final_for_view()
         source = await Match.get(edition.nodes[node_id].match_id)
         if not all(source.scheduled_times):
             source = await schedule_final_match(source, int(time.time()) + 3600, player=0)
             await schedule_final_match(source, int(time.time()) + 7200, player=1)
         opened = self.context()
-        await self.cog.final_match_result.callback.func(self.cog, opened, match=node_id,
-            winner=MagicMock(id=int(winner)) if winner else None, reason="Fixture tie decision" if winner else None)
+        await self.cog.final_match_result.callback.func(self.cog, opened, match=node_id)
         modal = self.context()
         modal.custom_id = opened.send_modal.await_args.args[0].custom_id
         await self.cog.final_result_modal.callback.func(self.cog, modal, player1="\n".join(["3.100"] * 7),
-            player2="\n".join(["3.100" if tied else "2.80"] * 7), reason="Fixture tie decision" if winner else None)
+            player2="\n".join(["2.80"] * 7))
         confirm = self.context(component=True)
         confirm.custom_id = modal.send.await_args.kwargs["components"][-1].components[1].custom_id
         await self.cog.final_result_confirmation.callback.func(self.cog, confirm)
@@ -125,14 +124,19 @@ class TestFinalGateJourney(FinalUICase):
             await accept_final_start(source, "9")
             self.assertEqual((await FinalBettingMarket.get(market.id)).state, "CLOSED")
             print("GATE_JOURNEY accepted hosting: predictions closed, QF1 market closed")
-            tie = await self.record_result("QF1", tied=True)
-            self.assertTrue(tie.edit_origin.await_args.kwargs["content"].startswith(str(IMPORTANT_EMOJI)))
-            self.assertEqual((await final_for_view()).nodes["QF1"].state, "TIED")
-            await self.record_result("QF1", tied=True, winner="1")
+            tie = self.context()
+            await self.cog.final_match_result.callback.func(self.cog, tie, match="QF1")
+            tied = self.context()
+            tied.custom_id = tie.send_modal.await_args.args[0].custom_id
+            await self.cog.final_result_modal.callback.func(self.cog, tied, player1="\n".join(["3.100"] * 7),
+                                                           player2="\n".join(["3.100"] * 7))
+            self.assertIn(str(ERROR_EMOJI), str(tied.send.await_args))
+            self.assertIsNone((await final_for_view()).nodes["QF1"].result_id)
+            await self.record_result("QF1")
             self.assertEqual((await FinalBettingMarket.get(market.id)).state, "PAID")
             for node in ("QF2", "QF3", "QF4"):
                 await self.record_result(node)
-            print("GATE_JOURNEY tie/decision/results: Quarterfinals decided, QF1 payout committed")
+            print("GATE_JOURNEY refused tie/results: Quarterfinals decided, QF1 payout committed")
             for nodes in (("SF1", "SF2"), ("F1",)):
                 await self.cog.final_round_start.callback.func(self.cog, self.context())
                 for node in nodes:

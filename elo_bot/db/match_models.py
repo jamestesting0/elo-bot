@@ -17,6 +17,7 @@ class BaseLink(BaseModel):
     image: str
     expiration_date: Optional[float] = None
     base_quality: str | None = None
+    scout_view: bool = False
 
 
 class BaseStore(BaseModel):

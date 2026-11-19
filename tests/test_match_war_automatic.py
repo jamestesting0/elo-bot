@@ -66,7 +66,7 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(autostart)
         self.assertEqual(
             {str(option.name) for option in autostart.options},
-            {"player", "clan", "scout", "district", "sequential"},
+            {"player", "clan", "district", "sequential"},
         )
         district = next(option for option in autostart.options if str(option.name) == "district")
         self.assertFalse(district.required)
@@ -99,7 +99,6 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
                 ctx,
                 player=0,
                 clan="#CLAN",
-                scout=False,
             )
 
         available_slots.assert_awaited_once_with("#CLAN", "12345", bot=self.bot)
@@ -136,7 +135,6 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
                 ctx,
                 player=0,
                 clan="#CLAN",
-                scout=True,
             )
 
         available_slots.assert_awaited_once_with("#CLAN", "12345", bot=self.bot)
@@ -148,7 +146,6 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         self.assertIs(request.match, match)
         self.assertEqual(request.player, 0)
         self.assertIs(request.clan, clan)
-        self.assertTrue(request.scout)
         self.assertIsInstance(request.reply, war_start.SlashWarStartReply)
 
     async def test_autostart_started_side_without_district_stops_before_clan_lookup(self) -> None:

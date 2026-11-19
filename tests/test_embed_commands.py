@@ -3,6 +3,7 @@ import re
 import unittest
 from collections import defaultdict
 from datetime import UTC, datetime
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
@@ -14,13 +15,14 @@ from elo_bot.config.ids import GUILD_IDS
 from elo_bot.core.season_calendar import season_calendar
 from elo_bot.db import BaseStore, ServerState
 from elo_bot.extensions.embed import EmbedCommands
+from elo_bot.features.embeds.readme import README_SECTIONS
 
 
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         resources_module.RESOURCE_CLAN_LOCKS.clear()
 
-    async def test_elo_final_embed_posts_a_details_button_that_answers_privately_with_the_schedule(self):
+    async def test_elo_final_details_opens_private_guide_without_season_dates(self):
         cog = EmbedCommands(MagicMock())
         ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
         ctx.channel.send = AsyncMock()
@@ -28,18 +30,92 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         posted = ctx.channel.send.await_args.kwargs
         button = posted["components"][0].components[0]
         self.assertEqual(button.custom_id, "elo_final_details")
-        details = MagicMock(spec=ipy.ComponentContext, send=AsyncMock())
-        calendar = season_calendar(datetime(2026, 11, 19, tzinfo=UTC), datetime(2026, 10, 4, tzinfo=UTC), None)
-        with patch("elo_bot.extensions.embed.ongoing_season_calendar", new=AsyncMock(return_value=calendar)):
+        details = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), defer=AsyncMock())
+        details.author.id = 123
+        with patch("elo_bot.features.embeds.readme.ongoing_season_calendar", new=AsyncMock()) as calendar:
             await cog.elo_final_details.callback.func(cog, details)
+        calendar.assert_not_awaited()
         reply = details.send.await_args.kwargs
         self.assertTrue(reply["ephemeral"])
-        dates, schedule = reply["embed"].description.split("\n\n", 1)
-        self.assertEqual([int(stamp) for stamp in re.findall(r"<t:(\d+):D>", dates)],
-                         [int(moment.timestamp()) for moment in (calendar.final_selection, calendar.queue_closes,
-                                                                 calendar.season_ends)])
-        with open("assets/embeds/elo_final.md") as source:
-            self.assertEqual(schedule, source.read())
+        with open("assets/embeds/readme/elo_final.md") as source:
+            self.assertEqual(reply["embed"].description, source.read())
+        menu = reply["components"][0].components[0]
+        self.assertEqual([option.value for option in menu.options if option.default], ["elo_final"])
+        self.assertEqual(menu.custom_id, "readme_section|123")
+
+    async def test_information_readme_opens_private_guide_with_all_sections(self):
+        cog = EmbedCommands(MagicMock())
+        ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
+        ctx.channel.send = AsyncMock()
+        await cog.embed.callback.func(cog, ctx, "Elo Information")
+        components = ctx.channel.send.await_args.kwargs["components"]
+        self.assertEqual(len(components), 3)
+        readme_button = components[2].components[0]
+        self.assertEqual(readme_button.custom_id, "readme_button")
+        buttons = [button for row in components for button in row.components]
+        self.assertEqual([button.custom_id for button in buttons if button.style != ipy.ButtonStyle.URL],
+                         ["participate_button", "support_button", "rewards_button", "build_button", "readme_button"])
+        self.assertEqual(sum(button.style == ipy.ButtonStyle.URL for button in buttons), 1)
+        ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock())
+        ctx.author.id = 123
+
+        await cog.readme_button.callback.func(cog, ctx)
+
+        reply = ctx.send.await_args.kwargs
+        self.assertTrue(reply["ephemeral"])
+        self.assertEqual(reply["embed"].description, Path("assets/embeds/readme/getting_started.md").read_text())
+        menu = reply["components"][0].components[0]
+        self.assertEqual([option.value for option in menu.options], list(README_SECTIONS))
+        self.assertEqual([option.value for option in menu.options if option.default], ["getting_started"])
+
+    async def test_readme_navigation_edits_same_message_and_reloads_season_dates(self):
+        cog = EmbedCommands(MagicMock())
+        ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), defer=AsyncMock(), edit_origin=AsyncMock())
+        ctx.author.id = 123
+        ctx.custom_id = "readme_section|123"
+        now = datetime(2026, 11, 19, tzinfo=UTC)
+        calendar = season_calendar(now, datetime(2026, 10, 4, tzinfo=UTC), None)
+        extended = season_calendar(datetime(2026, 12, 1, tzinfo=UTC), datetime(2026, 10, 4, tzinfo=UTC), None)
+        pages = [(section, calendar) for section in README_SECTIONS] + [("seasons", extended)]
+        for section, active_calendar in pages:
+            with self.subTest(section=section):
+                ctx.values = [section]
+                ctx.defer.reset_mock()
+                async def load_calendar(now):
+                    ctx.defer.assert_awaited_once_with(edit_origin=True)
+                    return active_calendar
+
+                with patch("elo_bot.features.embeds.readme.ongoing_season_calendar", side_effect=load_calendar):
+                    await cog.readme_section.callback.func(cog, ctx)
+
+                reply = ctx.edit_origin.await_args.kwargs
+                description = reply["embed"].description
+                if section == "seasons":
+                    dates, description = description.split("\n\n", 1)
+                    expected = [int(moment.timestamp()) for moment in (
+                        active_calendar.final_selection, active_calendar.queue_closes, active_calendar.season_ends)]
+                    self.assertEqual([int(stamp) for stamp in re.findall(r"<t:(\d+):D>", dates)], expected)
+                    self.assertEqual([int(stamp) for stamp in re.findall(r"<t:(\d+):R>", dates)], expected)
+                self.assertEqual(description, Path(f"assets/embeds/readme/{section}.md").read_text())
+                menu = reply["components"][0].components[0]
+                self.assertEqual([option.value for option in menu.options if option.default], [section])
+        ctx.send.assert_not_awaited()
+
+    async def test_readme_navigation_rejects_another_user_and_unknown_section(self):
+        cog = EmbedCommands(MagicMock())
+        for user_id, section in ((456, "seasons"), (123, "../rules")):
+            with self.subTest(user_id=user_id, section=section):
+                ctx = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(),
+                                defer=AsyncMock(), edit_origin=AsyncMock())
+                ctx.author.id = user_id
+                ctx.custom_id = "readme_section|123"
+                ctx.values = [section]
+                with patch("elo_bot.features.embeds.readme.ongoing_season_calendar", new=AsyncMock()) as calendar:
+                    await cog.readme_section.callback.func(cog, ctx)
+                self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+                ctx.edit_origin.assert_not_awaited()
+                ctx.defer.assert_not_awaited()
+                calendar.assert_not_awaited()
 
     async def test_clan_availability_embed_shows_slot_thread_mentions(self):
         bot = MagicMock()
@@ -132,7 +208,7 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
 
     async def test_member_update_without_cached_roles_is_ignored(self):
         cog = EmbedCommands(MagicMock())
-        event = MagicMock(before=None)
+        event = MagicMock(before=ipy.MISSING)
         event.guild.id = GUILD_IDS[0]
         with patch("elo_bot.extensions.embed.Player.find_one", new=AsyncMock()) as lookup:
             await cog.on_member_update.callback(cog, event)

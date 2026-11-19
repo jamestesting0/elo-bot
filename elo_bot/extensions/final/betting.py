@@ -13,7 +13,7 @@ from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import betting_group, final
-from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, void_market
+from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, void_market, projected_return
 from elo_bot.features.tokens.presentation import bet_review, publish_market
 from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
 
@@ -97,11 +97,13 @@ class Betting:
         version = old.version if old else 0
         available, _, debt = await wallet_summary(wallet)
         names = await member_names(await member_guild(ctx), market.contestants)
-        current_bet = ""
-        if old and old.active:
-            current_bet = f"\nYour bet: {old.amount:,} {TOKEN_EMOJI} on {names[old.contestant]}"
+        active = old is not None and old.active
+        current_bet = f"\n{names[old.contestant]} · {old.amount:,} {TOKEN_EMOJI}" if active else ""
         embed = ipy.Embed(title=f"**Season {edition.season_number} Final · {market.node_id} Bet**", color=COLOR,
             description=" vs. ".join(names[user] for user in market.contestants) + current_bet)
+        if active:
+            _, profit = projected_return(market, old, old.contestant, old.amount)
+            embed.add_field(name="**Estimated Profit**", value=f"{profit:,} {TOKEN_EMOJI}")
         embed.add_field(name="**Available Tokens**", value=f"{available:,} {TOKEN_EMOJI}")
         if debt:
             embed.add_field(name="**Debt**", value=f"{debt:,} {TOKEN_EMOJI} · Reduce or cancel your bet to repay.")

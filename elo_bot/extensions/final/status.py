@@ -1,4 +1,5 @@
 import logging
+import time
 
 import interactions as ipy
 from interactions import OptionType, SlashContext, slash_option
@@ -13,6 +14,7 @@ from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final
 from elo_bot.features.base_store.match_adapters import clear_match_base_stores
 from elo_bot.features.finals.recovery import recover_final
+from elo_bot.features.finals.scouting import prepare_open_scouting
 from elo_bot.features.matches.resources import free_match_clans, remove_helper_task
 from elo_bot.features.tokens.wallets import backfill_wallets
 
@@ -30,6 +32,22 @@ class Status:
             for participant in source.participants:
                 await remove_helper_task(source.thread, participant.user_id)
         return await recover_final(edition, bot=self.bot, release_completed=release, release_deleted=deleted)
+
+    async def _delete_expired_threads(self):
+        due = await EloFinal.find({"thread_cleanup_at": {"$lte": int(time.time())}}).to_list()
+        for edition in due:
+            remaining = 0
+            for thread in await self._open_final_threads(edition):
+                try:
+                    await thread.delete(reason=f"Season {edition.season_number} Final threads expired")
+                except ipy.errors.NotFound:
+                    continue
+                except ipy.errors.HTTPException:
+                    logging.getLogger(__name__).exception("Could not delete Final thread %s", thread.id)
+                    remaining += 1
+            if not remaining:
+                await EloFinal.get_pymongo_collection().update_one({"_id": edition.id},
+                                                                   {"$set": {"thread_cleanup_at": None}})
 
     @final.subcommand(sub_cmd_name="recover", sub_cmd_description="Resume unfinished Final updates")
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
@@ -69,6 +87,12 @@ class Status:
                         logging.getLogger(__name__).info("Final %s recovery: %s", edition.id, pending)
                 except (FinalError, PyMongoError, ipy.errors.HTTPException, RuntimeError, LookupError):
                     logging.getLogger(__name__).exception("Final %s recovery failed", edition.id)
+        await self._retire_invitations()
+        await self._delete_expired_threads()
+
+    @ipy.Task.create(ipy.IntervalTrigger(minutes=1))
+    async def prepare_final_scouting(self):
+        await prepare_open_scouting(self.bot)
 
     @ipy.listen(ipy.events.Startup)
     async def on_start(self):
@@ -78,10 +102,11 @@ class Status:
             logging.getLogger(__name__).exception("Token backfill is unavailable; registration and views may retry it")
         await self.recover_pending_finals()
         self.recover_pending_finals.start()
+        self.prepare_final_scouting.start()
 
-    @final.subcommand(sub_cmd_name="status", sub_cmd_description="Show Final readiness and recovery")
+    @final.subcommand(sub_cmd_name="dashboard", sub_cmd_description="Open the Final dashboard")
     @final_action
-    async def final_status(self, ctx: SlashContext):
+    async def final_dashboard(self, ctx: SlashContext):
         await ctx.defer(ephemeral=True)
         edition = await self._edition(ctx)
         await self._show_dashboard(ctx, edition)

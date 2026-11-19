@@ -60,7 +60,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock))
         self.enterContext(patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock))
         self.enterContext(patch_sites(('elo_bot.extensions.match.hosting.available_resource_clans_text', 'elo_bot.extensions.match.settings.available_resource_clans_text', 'elo_bot.features.matches.resources.available_resource_clans_text'), new=AsyncMock(return_value="Available")))
-        self.enterContext(patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock))
+        self.enterContext(patch_sites(('elo_bot.extensions.match.bases.assign_bases', 'elo_bot.features.matches.attack_bases.assign_bases'), new_callable=AsyncMock))
         self.enterContext(patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new_callable=AsyncMock))
         self.enterContext(patch_sites(('elo_bot.extensions.match.results.choose_tip', 'elo_bot.extensions.match.hosting.choose_tip', 'elo_bot.extensions.match.settings.choose_tip', 'elo_bot.features.matches.tips.choose_tip'), new=AsyncMock(return_value="tip")))
         self.enterContext(patch('elo_bot.extensions.match.hosting.get_start_base_store_slot_availability', new=AsyncMock(return_value=(["Slot 1", "Slot 2"], {}))))
@@ -222,7 +222,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
             participant["base_store"] = None
             participant["opponent_bases_stored"] = False
         await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
-            clan=CLAN, host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
+            clan=CLAN, host=self.f.bot.user, automatic=True, requested_by="111",
         ))
         self.assertIn("cannot start a live match", self.replies())
         self.assertFalse(self.f.writes)
@@ -239,7 +239,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
             return await self.f.send_public(*args, **kwargs)
         self.f.channel.send.side_effect = send_public
         await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
-            clan=CLAN, host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
+            clan=CLAN, host=self.f.bot.user, automatic=True, requested_by="111",
         ))
         self.assertEqual(self.f.http.create_payloads, [{
             "type": "host_live_match_on_stored", "requested_by": "111", "payload": {
@@ -253,7 +253,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
 
     async def test_stale_automatic_reservation_id_does_not_use_current_pair(self) -> None:
         await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
-            clan=CLAN, host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
+            clan=CLAN, host=self.f.bot.user, automatic=True, requested_by="111",
             stored_reservation_id="a" * 16,
         ))
         self.assertIn("no longer ready", self.replies())
@@ -263,7 +263,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
 
     async def test_automatic_live_rejects_wrong_clan_when_stored_pair_is_ready(self) -> None:
         await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
-            clan="#OTHER", host=self.f.bot.user, scout=False, automatic=True, requested_by="111",
+            clan="#OTHER", host=self.f.bot.user, automatic=True, requested_by="111",
         ))
         self.assertIn("Start the match in that clan", self.replies())
         self.assertFalse(self.f.http.create_payloads)

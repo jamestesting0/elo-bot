@@ -7,10 +7,9 @@ from typing import Literal
 from pymongo.errors import PyMongoError
 
 import interactions as ipy
-from datetime import UTC, datetime
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, REWARDS_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, REWARDS_IMAGE
 from elo_bot.config.ids import CHAT_CHANNEL, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE
 from elo_bot.config.game import HOST_CLAN_OPTIONS
 from elo_bot.discord.embeds import embed_edit_payload
@@ -20,7 +19,7 @@ from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.members import member_guild
 from elo_bot.features.matches import resources
 from elo_bot.features.embeds.static import STATIC_EMBED_TYPES, static_embed
-from elo_bot.features.seasons.ongoing import ongoing_season_calendar
+from elo_bot.features.embeds.readme import README_SECTIONS, readme_page
 from elo_bot.features.sticky.commands import post_embed_sticky
 
 
@@ -159,30 +158,27 @@ class EmbedCommands(ipy.Extension):
 
     @ipy.component_callback("elo_final_details")
     async def elo_final_details(self, ctx: ipy.ComponentContext):
-        with open("assets/embeds/elo_final.md") as details:
-            schedule = details.read()
-        calendar = await ongoing_season_calendar(datetime.now(UTC))
-        dates = "\n".join(
-            f"**{label}:** <t:{int(moment.timestamp())}:D> · <t:{int(moment.timestamp())}:R>"
-            for label, moment in (("Elo Final selection", calendar.final_selection),
-                                  ("Queue closes", calendar.queue_closes),
-                                  ("Season ends", calendar.season_ends)))
-        embed = ipy.Embed(title="**Season & Elo Final Schedule**", description=f"{dates}\n\n{schedule}",
-                          footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE), color=COLOR)
-        await ctx.send(embed=embed, ephemeral=True)
+        await ctx.defer(ephemeral=True)
+        embed, components = await readme_page("elo_final", int(ctx.author.id))
+        await ctx.send(embed=embed, components=components, ephemeral=True)
 
-    @ipy.component_callback("rules_button")
-    async def rules_button(self, ctx: ipy.ComponentContext):
-        description = open("assets/embeds/rules.md", "r").read()
+    @ipy.component_callback("readme_button")
+    async def readme_button(self, ctx: ipy.ComponentContext):
+        embed, components = await readme_page("getting_started", int(ctx.author.id))
+        await ctx.send(embed=embed, components=components, ephemeral=True)
 
-        embed = ipy.Embed(
-            title="**Elo Rules**",
-            description=description,
-            footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=FOOTER_IMAGE),
-            color=COLOR,
-        )
-
-        await ctx.send(embed=embed, ephemeral=True)
+    @ipy.component_callback(re.compile(r"^readme_section\|\d+$"))
+    async def readme_section(self, ctx: ipy.ComponentContext):
+        if ctx.custom_id.split("|")[1] != str(ctx.author.id):
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
+            return
+        section = ctx.values[0]
+        if section not in README_SECTIONS:
+            await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
+            return
+        await ctx.defer(edit_origin=True)
+        embed, components = await readme_page(section, int(ctx.author.id))
+        await ctx.edit_origin(embed=embed, components=components)
 
     @ipy.component_callback("build_button")
     async def build_button(self, ctx: ipy.ComponentContext):
@@ -313,12 +309,9 @@ class EmbedCommands(ipy.Extension):
     @ipy.listen(ipy.events.MemberUpdate)
     async def on_member_update(self, event: ipy.events.MemberUpdate):
         # An uncached member has no earlier roles, so a newly granted Player role cannot be told apart.
-        if int(event.guild.id) not in GUILD_IDS or event.before is None:
+        if int(event.guild.id) not in GUILD_IDS or event.before is ipy.MISSING:
             return
-
-        before_roles = {int(role.id) for role in event.before.roles}
-        after_roles = {int(role.id) for role in event.after.roles}
-        if not (PLAYER_ROLE not in before_roles and PLAYER_ROLE in after_roles):
+        if event.before.has_role(PLAYER_ROLE) or not event.after.has_role(PLAYER_ROLE):
             return
 
         player = await Player.find_one(Player.user_id == str(event.before.id))

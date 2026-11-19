@@ -10,13 +10,14 @@ from elo_bot.extensions.final.dashboard import Dashboard
 from elo_bot.extensions.final.history import History
 from elo_bot.extensions.final.predictions import Predictions
 from elo_bot.extensions.final.results import Results
+from elo_bot.extensions.final.roster import Roster
 from elo_bot.extensions.final.rounds import Rounds
 from elo_bot.extensions.final.setup import Setup
 from elo_bot.extensions.final.status import Status
 from elo_bot.extensions.final.views import Views
 
 
-class FinalCommands(Status, Dashboard, Confirmations, Views, History, Setup, Bracket, Rounds, Results, Predictions, Betting,
+class FinalCommands(Status, Dashboard, Roster, Confirmations, Views, History, Setup, Bracket, Rounds, Results, Predictions, Betting,
                     Autocomplete, FinalChecks, ipy.Extension):
     final = groups.final
     bracket_group = groups.bracket_group

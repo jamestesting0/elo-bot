@@ -53,8 +53,6 @@ class TestFinalDashboard(unittest.TestCase):
             market.announcement_signature = market_signature(market)
         state = DashboardState(final, markets)
         self.assertIsNone(next_round(state))
-        final.nodes["QF1"].state, final.nodes["QF1"].result_id = "TIED", "tie"
-        self.assertIsNone(next_round(state))
         for key in ("QF1", "QF2", "QF3", "QF4"):
             final.nodes[key].winner = final.nodes[key].contestants[0]
         advance_nodes(final.nodes)
@@ -63,19 +61,17 @@ class TestFinalDashboard(unittest.TestCase):
         self.assertIsNone(next_round(state))
         self.assertEqual(available_actions(DashboardState(final))[0], ("recover", "Retry Now"))
 
-    def test_manager_dashboard_links_threads_and_explains_ties_without_leaking_them(self):
+    def test_manager_dashboard_links_threads_without_leaking_them(self):
         final = self.edition()
         final.state = "RUNNING"
         final.nodes = build_bracket(final, automatic_pairs(final))
         final.nodes["QF2"].thread_id = "777"
-        final.nodes["QF2"].state = "TIED"
         market = FinalBettingMarket.model_construct(id="market", node_id="QF2", state="CLOSED", pools={"3": 1000})
         state = DashboardState(final, [market], 42)
         manager = dashboard_embed(state, {}, manager=True)
         player = dashboard_embed(state, {}, manager=False)
         text = "\n".join(field.value for field in manager.fields)
         self.assertIn("<#777>", text)
-        self.assertIn("`/final match result match:QF2`", text)
         self.assertNotIn("<#", "\n".join(field.value for field in player.fields))
         self.assertEqual([field.name for field in player.fields], ["**Matches**", "**Predictions**", "**Betting**"])
         self.assertTrue(all(len(field.value) <= 1024 for field in manager.fields + player.fields))

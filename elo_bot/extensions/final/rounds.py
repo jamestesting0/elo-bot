@@ -35,6 +35,35 @@ class Rounds:
         controls = dashboard_controls(DashboardState(current), str(ctx.author.id)) if current.prediction_state == "OPEN" else []
         await ctx.send(content, components=controls, ephemeral=True)
 
+    async def _provision_node(self, edition, state, node_id) -> tuple[str | None, bool, list[str]]:
+        """Create the pairing's match thread if missing and open its betting; returns thread, betting open, errors."""
+        node = edition.nodes[node_id]
+        errors = []
+        betting = False
+        thread = node.thread_id
+        if not thread:
+            try:
+                async with policy.QUEUE_OPERATION_LOCK:
+                    source = await prepare_match(edition, node_id)
+                if source is not None:
+                    thread = await lifecycle_module.confirm_match(self.bot, source.token)
+                    await bind_thread(edition, source, thread)
+            except (FinalError, ipy.errors.HTTPException, PyMongoError, ThreadMessageBindingError) as error:
+                errors.append(str(error))
+        if thread:
+            try:
+                market = next((market for market in state.markets if market.node_id == node_id
+                               and market.contestant_revision == node.contestant_revision), None)
+                if node.first_actual_started_at is None:
+                    market = await open_market(edition, node_id)
+                if market is not None and (not market.announcement_id or market.publication_error
+                        or market.announcement_signature != market_signature(market)):
+                    await publish_market(self.bot, edition, market)
+                betting = market is not None and market.state == "OPEN"
+            except (FinalError, ipy.errors.HTTPException, PyMongoError) as error:
+                errors.append(f"Betting: {error}")
+        return thread, betting, errors
+
     async def _start_round(self, edition, guild):
         # Thread names and the bracket use bracket names, so pick up display-name changes first.
         edition = await refresh_display_names(edition, await fetch_members(guild, edition.entrant_ids))
@@ -50,30 +79,9 @@ class Rounds:
             node = edition.nodes[node_id]
             if node.bye or node.winner is not None or node.result_id is not None:
                 continue
-            errors = []
-            thread = node.thread_id
-            if not thread:
-                try:
-                    async with policy.QUEUE_OPERATION_LOCK:
-                        source = await prepare_match(edition, node_id)
-                    if source is not None:
-                        thread = await lifecycle_module.confirm_match(self.bot, source.token)
-                        await bind_thread(edition, source, thread)
-                except (FinalError, ipy.errors.HTTPException, PyMongoError, ThreadMessageBindingError) as error:
-                    errors.append(str(error))
-            if thread:
-                try:
-                    market = next((market for market in state.markets if market.node_id == node_id
-                                   and market.contestant_revision == node.contestant_revision), None)
-                    if node.first_actual_started_at is None:
-                        market = await open_market(edition, node_id)
-                    if market is not None and (not market.announcement_id or market.publication_error
-                            or market.announcement_signature != market_signature(market)):
-                        await publish_market(self.bot, edition, market)
-                    if market is not None and market.state == "OPEN":
-                        markets.append(node_id)
-                except (FinalError, ipy.errors.HTTPException, PyMongoError) as error:
-                    errors.append(f"Betting: {error}")
+            thread, betting, errors = await self._provision_node(edition, state, node_id)
+            if betting:
+                markets.append(node_id)
             completed.append(f"`{node_id}`" + (f" <#{thread}>" if thread else "")
                              + (f" {ERROR_EMOJI} " + " ".join(errors) if errors else ""))
             failed = failed or bool(errors)

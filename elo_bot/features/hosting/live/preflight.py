@@ -6,7 +6,6 @@ import interactions as ipy
 @dataclass(frozen=True, slots=True)
 class LivePreflight:
     clan: str
-    scout: bool
     automatic: bool
     host: ipy.BaseUser | None = None
     requested_by: str | None = None

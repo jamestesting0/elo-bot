@@ -54,19 +54,11 @@ def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
         emoji="🛠️"
     )
 
-    rules_button = ipy.Button(
+    readme_button = ipy.Button(
         style=ipy.ButtonStyle.GRAY,
-        label="Rules",
-        custom_id="rules_button",
-        emoji="📜"
-    )
-
-    docs_button = ipy.Button(
-        style=ipy.ButtonStyle.URL,
-        label="Documentation",
-        url="https://docs.google.com/document/d/1__Ufp_KCFrTaiFMvEouafyGn08quPKkIo50OFvswkUw/edit#heading=h"
-            ".kz8yj8uavt8i",
-        emoji=ipy.PartialEmoji(name="googledocs", id=1294293700775641109)
+        label="README",
+        custom_id="readme_button",
+        emoji="📖"
     )
 
     video_button = ipy.Button(
@@ -78,8 +70,7 @@ def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
     return embed, [
         ipy.ActionRow(participate_button, support_button),
         ipy.ActionRow(rewards_button, build_button),
-        ipy.ActionRow(rules_button, docs_button),
-        ipy.ActionRow(video_button),
+        ipy.ActionRow(readme_button, video_button),
     ]
 
 

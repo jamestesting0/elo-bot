@@ -6,7 +6,10 @@ from elo_bot.features.finals.lifecycle import confirm_bracket
 from elo_bot.core.finals import FinalError
 from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market, projected_return
 from elo_bot.features.tokens.settlement import advance_settlement, recover_market, set_settlement_intent
-from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
+from elo_bot.features.finals.leaderboards import final_board_rows
+from elo_bot.features.tokens.history import ledger_label
+from elo_bot.features.tokens.stats import betting_lines, betting_stats
+from elo_bot.features.tokens.wallets import adjust_balance, ensure_wallet, wallet_summary
 from elo_bot.db import Player
 from elo_bot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
 
@@ -28,12 +31,30 @@ class TestFinalTokens(FinalScenarioCase):
     async def assert_conserved(self):
         wallets = await TokenWallet.find_all().to_list()
         markets = await FinalBettingMarket.find_all().to_list()
-        grants = await TokenLedgerEntry.find({"kind": "grant"}).to_list()
+        grants = await TokenLedgerEntry.find({"kind": {"$in": ["grant", "adjust"]}}).to_list()
         self.assertEqual(sum(wallet.balance for wallet in wallets) + sum(market.escrow for market in markets),
                          sum(entry.amount for entry in grants))
         entries = await TokenLedgerEntry.find_all().to_list()
         for wallet in wallets:
             self.assertEqual(wallet.balance, sum(entry.amount for entry in entries if entry.wallet_id == wallet.id))
+
+    async def test_manager_adjustments_apply_once_and_never_create_debt(self):
+        await adjust_balance("10", 300, "manager", "adjust:1")
+        await adjust_balance("10", 300, "manager", "adjust:1")
+        self.assertEqual((await TokenWallet.get("10")).balance, 5300)
+        with self.assertRaises(FinalError):
+            await adjust_balance("10", -5301, "manager", "adjust:2")
+        async with asyncio.timeout(10):
+            outcomes = await asyncio.gather(*(adjust_balance("10", -5300, "manager", f"adjust:{key}")
+                                              for key in (3, 4)), return_exceptions=True)
+        self.assertEqual(sorted(type(outcome).__name__ for outcome in outcomes), ["FinalError", "TokenWallet"])
+        self.assertEqual((await TokenWallet.get("10")).balance, 0)
+        entries = await TokenLedgerEntry.find({"wallet_id": "10", "kind": "adjust"}).sort("created_at").to_list()
+        self.assertEqual(sorted(entry.amount for entry in entries), [-5300, 300])
+        self.assertEqual(ledger_label(entries[0]), "Manager adjustment")
+        with self.assertRaises(FinalError):
+            await adjust_balance("99", 100, "manager", "adjust:5")
+        await self.assert_conserved()
 
     async def test_grant_is_committed_once_under_concurrency_and_reregistration(self):
         async with asyncio.timeout(5):
@@ -126,6 +147,22 @@ class TestFinalTokens(FinalScenarioCase):
         self.assertEqual(await TokenLedgerEntry.find({"kind": "payout"}).count(), 2)
         self.assertEqual((await FinalBettingMarket.get(self.market.id)).escrow, 0)
         await self.assert_conserved()
+
+    async def test_settled_bets_give_won_profit_and_the_betting_board(self):
+        side, other = self.market.contestants
+        await self.bet(10, 100, other)
+        await self.bet(10, 100, side, version=1)
+        await self.bet(11, 300, other)
+        self.assertEqual((await TokenLedgerEntry.find_one({"wallet_id": "10", "kind": "switch"})).amount, 0)
+        await set_settlement_intent(self.market.id, 1, winner=side)
+        await recover_market(self.market.id)
+        stats = await betting_stats(str(self.final.id))
+        self.assertEqual((stats["10"].won, stats["10"].settled, stats["10"].staked, stats["10"].profit), (1, 1, 100, 300))
+        self.assertEqual((stats["11"].won, stats["11"].profit), (0, -300))
+        self.assertIn("+300", betting_lines(stats["10"]))
+        self.assertIn("`+300.00%`", betting_lines(stats["10"]))
+        rows = await final_board_rows("Betting", None)
+        self.assertEqual([(row.user_id, row.value, row.rank) for row in rows], [("10", 300, 1), ("11", -300, 2)])
 
     async def test_no_winning_stake_and_forfeit_refund(self):
         await self.bet(9, 1000)

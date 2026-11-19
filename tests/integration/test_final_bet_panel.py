@@ -1,7 +1,7 @@
 from elo_bot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
 from elo_bot.db.token_models import FinalBet, TokenWallet
 from elo_bot.features.finals.lifecycle import confirm_bracket
-from elo_bot.features.tokens.bets import close_market, open_market
+from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, open_market
 from tests.integration._final_ui_fixture import FinalUICase
 
 
@@ -42,6 +42,19 @@ class TestFinalBetPanel(FinalUICase):
         self.assertEqual((await FinalBet.find_one({"user_id": "9"})).amount, 1000)
         for client in (transport, modal_transport, review_transport, back_transport, receipt_transport):
             client.http.post_followup.assert_not_awaited()
+
+    async def test_panel_shows_the_current_bet_with_its_estimated_profit(self):
+        side, other = self.market.contestants
+        for user, contestant, amount in (("9", side, 500), ("2", other, 1000)):
+            await apply_bet(BetAction(market_id=self.market.id, user_id=user, contestant=contestant, amount=amount,
+                                      expected_version=0, action_key=f"panel:{user}"))
+        panel = self.context(component=True)
+        panel.custom_id = f"betback|{self.market.id}|9"
+        await self.cog.bet_back.callback.func(self.cog, panel)
+        embed = panel.edit_origin.await_args.kwargs["embed"]
+        self.assertTrue(embed.description.splitlines()[1].endswith(f" · 500 {TOKEN_EMOJI}"))
+        self.assertEqual([(field.name, field.value) for field in embed.fields][:2],
+                         [("**Estimated Profit**", f"1,000 {TOKEN_EMOJI}"), ("**Available Tokens**", f"4,500 {TOKEN_EMOJI}")])
 
     async def test_market_closing_during_modal_retires_the_origin_without_a_bet(self):
         await close_market(self.market.id)

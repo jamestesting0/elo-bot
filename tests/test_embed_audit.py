@@ -245,7 +245,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
                 find_one=AsyncMock(return_value=fixture.match),
             )),
             patch.object(live_start, "mark_store_reserved", new=AsyncMock(return_value=True)),
-            patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new=AsyncMock()),
+            patch_sites(('elo_bot.extensions.match.bases.assign_bases', 'elo_bot.features.matches.attack_bases.assign_bases'), new=AsyncMock()),
             patch_sites(('elo_bot.extensions.match.lifecycle.remove_helper_task', 'elo_bot.extensions.match.results.remove_helper_task', 'elo_bot.extensions.match.result_store.remove_helper_task', 'elo_bot.features.matches.resources.remove_helper_task', 'elo_bot.extensions.final.status.remove_helper_task'), new=AsyncMock()),
             patch.object(live_start, "schedule_channel_name_edit"),
         ):

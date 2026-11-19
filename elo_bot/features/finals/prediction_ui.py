@@ -31,8 +31,8 @@ def prediction_view(final: EloFinal, prediction: FinalPrediction, names: dict[st
         if image_available:
             embed.set_image(url="attachment://prediction.png")
         picks = prediction.submitted if submitted else prediction.draft
-        description += "\n\n" + " · ".join(
-            f"{'Champion' if key == 'F1' else key} {player_names.get(picks[key], mention_user(None, picks[key]))}"
+        description += "\n\n" + "\n".join(
+            f"{'🏆' if key == 'F1' else f'`{key}`'} {player_names.get(picks[key], mention_user(None, picks[key]))}"
             for key in NODE_IDS if key in picks and not final.nodes[key].bye)
     else:
         lines = []
@@ -61,7 +61,8 @@ def prediction_view(final: EloFinal, prediction: FinalPrediction, names: dict[st
         if stage != 3:
             buttons.append(ipy.Button(label="Next", style=ipy.ButtonStyle.PRIMARY,
                 disabled=any(node not in prediction.draft for node in nodes), custom_id=prefix + "next|-"))
-        buttons.append(ipy.Button(label="Submit", style=ipy.ButtonStyle.SUCCESS,
-            disabled=stage != 3 or final.prediction_state != "OPEN", custom_id=prefix + "submit|-"))
+        else:
+            buttons.append(ipy.Button(label="Submit", style=ipy.ButtonStyle.SUCCESS,
+                disabled=final.prediction_state != "OPEN", custom_id=prefix + "submit|-"))
         rows.append(ipy.ActionRow(*buttons))
     return embed, rows

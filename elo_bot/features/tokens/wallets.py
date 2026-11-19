@@ -1,7 +1,9 @@
 import time
 
+from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
+from elo_bot.config.emojis import TOKEN_EMOJI
 from elo_bot.features.finals.persistence import transaction
 from elo_bot.core.finals import FinalError
 from elo_bot.db import Player
@@ -42,6 +44,28 @@ async def ensure_wallet(user_id: str) -> TokenWallet:
         if wallet and wallet.initialized and receipt:
             return wallet
         raise
+
+
+async def adjust_balance(user_id: str, amount: int, actor_id: str, operation_key: str) -> TokenWallet:
+    """Add (positive) or remove (negative) tokens once per operation key; removal never creates debt."""
+    wallet = await ensure_wallet(user_id)
+
+    async def adjust(session):
+        collection = TokenWallet.get_pymongo_collection()
+        if await TokenLedgerEntry.get_pymongo_collection().find_one({"operation_key": operation_key}, session=session):
+            return TokenWallet.model_validate(await collection.find_one({"_id": wallet.id}, session=session))
+        query = {"_id": wallet.id, **({"balance": {"$gte": -amount}} if amount < 0 else {})}
+        updated = await collection.find_one_and_update(query, {"$inc": {"balance": amount, "version": 1}},
+                                                       return_document=ReturnDocument.AFTER, session=session)
+        if updated is None:
+            current = await collection.find_one({"_id": wallet.id}, session=session)
+            raise FinalError(f"Only {max(current['balance'], 0):,} {TOKEN_EMOJI} are available to remove.")
+        entry = TokenLedgerEntry(id=operation_key, operation_key=operation_key, wallet_id=wallet.id, actor_id=actor_id,
+                                 amount=amount, kind="adjust", created_at=int(time.time()))
+        await TokenLedgerEntry.get_pymongo_collection().insert_one(entry.model_dump(by_alias=True), session=session)
+        return TokenWallet.model_validate(updated)
+
+    return await transaction(adjust)
 
 
 async def committed_stakes(wallet_id: str) -> int:

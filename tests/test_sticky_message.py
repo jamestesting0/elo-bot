@@ -291,6 +291,26 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
         self.modules = (sticky_commands,)
         for module in self.modules:
             module._bot_sticky_deletes.clear()
+            module._bot_sticky_posts.clear()
+
+    async def test_a_burst_of_messages_reposts_once_each_and_never_chases_its_own_reposts(self):
+        channel = guild_text()
+        posted = iter(["60", "61"])
+        channel.send = AsyncMock(side_effect=lambda **_: MagicMock(id=next(posted), delete=AsyncMock()))
+        channel.delete_message = AsyncMock()
+        collection = MagicMock(update_one=AsyncMock(return_value=MagicMock(matched_count=1)))
+        with patch.object(sticky_commands.StickyMessage, "get_pymongo_collection", return_value=collection):
+            stored = sticky_document(webhook_id=None, content=None, author_name=None, avatar_url=None,
+                                     embed_type="Elo Final")
+            with patch.object(sticky_commands.StickyMessage, "for_channel", new_callable=AsyncMock,
+                              return_value=[stored]):
+                for message_id in ("20", "21", "60", "61"):
+                    await sticky_commands.on_sticky_message.callback(message_event(channel, message_id))
+
+        self.assertEqual([call.args[0] for call in channel.delete_message.await_args_list], ["11", "60"])
+        self.assertEqual(channel.send.await_count, 2)
+        self.assertEqual(stored.message_id, "61")
+        self.assertEqual(sticky_commands._bot_sticky_posts, set())
 
     async def test_new_message_deletes_and_resends_the_sticky(self):
         for module in self.modules:

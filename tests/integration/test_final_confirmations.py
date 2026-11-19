@@ -1,9 +1,10 @@
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elo_bot.config.emojis import SUCCESS_EMOJI
-from elo_bot.core.finals import NODE_IDS
+from elo_bot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
+from elo_bot.core.finals import FINAL_THREAD_RETENTION, NODE_IDS
 from elo_bot.db import BaseStore, EloFinal, Match
 from elo_bot.db.token_models import FinalBettingMarket, TokenWallet
 from elo_bot.extensions.thread import ThreadCommands
@@ -28,7 +29,7 @@ class TestFinalConfirmations(FinalUICase):
         await source.set({"thread": "777", "participants.0.base_store": store.model_dump(),
                           "participants.0.opponent_bases_stored": True})
         await bind_thread(self.final, source, "777")
-        thread = MagicMock(id=777, delete=AsyncMock())
+        thread = MagicMock(id=777, delete=AsyncMock(), edit=AsyncMock())
         fetch_public = self.bot.fetch_channel.side_effect
 
         async def channel(channel_id):
@@ -53,7 +54,11 @@ class TestFinalConfirmations(FinalUICase):
         self.assertEqual((await TokenWallet.get("9")).balance, 5000)
         self.assertEqual((await Match.get(source.id)).participants[0].base_store, store)
         self.assertTrue((await Match.get(source.id)).final_superseded)
-        self.assertEqual(confirm.edit_origin.await_args.kwargs["content"], f"{SUCCESS_EMOJI} Final cancelled. 1 market refunded.")
+        self.assertEqual(confirm.edit_origin.await_args.kwargs["content"],
+                         f"{SUCCESS_EMOJI} Final cancelled. 1 market refunded. Match threads are archived and will be "
+                         f"deleted <t:{current.thread_cleanup_at}:R>.")
+        thread.edit.assert_awaited_once_with(archived=True, locked=True)
+        self.assertAlmostEqual(current.thread_cleanup_at, time.time() + FINAL_THREAD_RETENTION, delta=60)
         bracket = self.posts[current.bracket_message_id].edit.await_args.kwargs
         self.assertIn("Cancelled", bracket["embed"].description)
         self.assertEqual(next(field.value for field in bracket["embed"].fields if field.name == "**Predictions**"),
@@ -95,6 +100,39 @@ class TestFinalConfirmations(FinalUICase):
         await self.cog.final_management_confirmation.callback.func(self.cog, back)
         self.assertEqual((await EloFinal.get(self.final.id)).model_dump(), before)
         self.assertEqual(back.edit_origin.await_args.kwargs["embed"].title, "**Season 7 Final**")
+
+    async def test_a_prompt_drawn_before_a_result_changed_returns_to_the_current_dashboard(self):
+        ctx = self.context()
+        await self.cog.final_cancel.callback.func(self.cog, ctx, "Fixture cancellation")
+        prompt = ctx.send.await_args.kwargs
+        await (await EloFinal.get(self.final.id)).set({"result_revision": self.final.result_revision + 1})
+        for button in prompt["components"]:
+            with self.subTest(button=button.label):
+                click = self.context(component=True)
+                click.custom_id = button.custom_id
+                await self.cog.final_management_confirmation.callback.func(self.cog, click)
+                shown = click.edit_origin.await_args.kwargs
+                self.assertEqual(shown["embed"].title, "**Season 7 Final**")
+                self.assertEqual(shown["content"].startswith(str(IMPORTANT_EMOJI)), button.label == "Cancel Final")
+        current = await EloFinal.get(self.final.id)
+        self.assertEqual((current.active, current.state), (True, self.final.state))
+
+    async def test_expired_threads_are_deleted_once_and_retried_after_a_failure(self):
+        self.final = await confirm_bracket(self.final, "9")
+        source = await prepare_match(self.final, "QF1")
+        await source.set({"thread": "777"})
+        thread = MagicMock(id=777, delete=AsyncMock(side_effect=[ipy.errors.HTTPException(MagicMock(status=500)), None]))
+        self.bot.fetch_channel = AsyncMock(return_value=thread)
+        final = await EloFinal.get(self.final.id)
+        await final.set({"thread_cleanup_at": int(time.time()) + 60})
+        await self.cog._delete_expired_threads()
+        thread.delete.assert_not_awaited()
+        await final.set({"thread_cleanup_at": int(time.time()) - 1})
+        await self.cog._delete_expired_threads()
+        self.assertIsNotNone((await EloFinal.get(self.final.id)).thread_cleanup_at)
+        await self.cog._delete_expired_threads()
+        self.assertEqual(thread.delete.await_count, 2)
+        self.assertIsNone((await EloFinal.get(self.final.id)).thread_cleanup_at)
 
     async def test_end_requires_confirmation_then_closes_predictions_and_keeps_champion(self):
         self.final = await confirm_bracket(self.final, "9")

@@ -92,8 +92,6 @@ def score_embed(final: EloFinal, node_id: str, snapshot: FinalResultSnapshot,
             if not scoreboard:
                 embed.description += "\n\n" + "\n".join(lines)
                 embed.add_field(name="**Total**", value=" — ".join(totals))
-            if snapshot.winner is None:
-                embed.add_field(name="**Tie**", value="A manager must choose the winner.")
         case unreachable:
             assert_never(unreachable)
     if final.repair_pending:
@@ -109,7 +107,7 @@ async def require_source_result_role(ctx: ipy.InteractionContext, source: Match)
     if ctx.author.has_role(ELO_BLACKLIST_ROLE):
         raise FinalError("You are banned from using Elo commands. Please contact the staff team if you have doubts.")
     node = final.nodes[source.final_node_id]
-    require_result_role(ctx, node.result_id is not None or node.state == "TIED")
+    require_result_role(ctx, node.result_id is not None)
     return final
 
 

@@ -6,8 +6,9 @@ from beanie import PydanticObjectId
 from interactions import Member
 
 from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
-from elo_bot.core.finals import FinalError
+from elo_bot.core.finals import FINAL_SEATS, FINAL_THREAD_RETENTION, FinalError
 from elo_bot.features.finals.persistence import transaction
+from elo_bot.features.finals.invitation_store import withdraw_pending
 from elo_bot.db import EloFinal, Player
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.db.match_models import Match
@@ -21,7 +22,7 @@ async def ongoing_final(final_id: PydanticObjectId | str | None = None, *,
     """Resolve the sole ongoing edition; an old control cannot select another one."""
     final = await EloFinal.find_one({"active": True}, session=session)
     if final_id is not None and (final is None or str(final.id) != str(final_id)):
-        raise FinalError("This view is outdated. Run `/final status` again.")
+        raise FinalError("This view is outdated. Run `/final dashboard` again.")
     if final is None:
         raise FinalError("No Final is running. Start one with `/final start`.")
     return final
@@ -86,20 +87,22 @@ async def update_setup(final: EloFinal, changes: dict, *,
     return saved
 
 
-async def add_entrant(final: EloFinal, user_id: str, nickname: str, *, override: bool = False) -> EloFinal:
-    await ongoing_final(final.id)
-    player = await Player.find_one({"user_id": user_id})
+async def add_entrant(final: EloFinal, user_id: str, nickname: str, *, override: bool = False,
+                      session: AsyncClientSession | None = None) -> EloFinal:
+    await ongoing_final(final.id, session=session)
+    player = await Player.find_one({"user_id": user_id}, session=session)
     if player is None:
         raise FinalError("This player is not registered.")
     saved = await EloFinal.get_pymongo_collection().update_one({
         "_id": final.id, "setup_revision": final.setup_revision, "state": "REGISTRATION", "active": True,
-        "entrant_ids": {"$ne": user_id}, "$expr": {"$lt": [{"$size": "$entrant_ids"}, 8]},
+        "entrant_ids": {"$ne": user_id}, "$expr": {"$lt": [{"$size": "$entrant_ids"}, FINAL_SEATS]},
     }, {"$push": {"entrant_ids": user_id, **({"nickname_overrides": user_id} if override else {})}, "$set": {
         f"player_nicknames.{user_id}": nickname.strip()[:80] or user_id, f"seed_elo.{user_id}": player.elo,
-    }, "$inc": {"revision": 1, "setup_revision": 1}})
+    }, "$inc": {"revision": 1, "setup_revision": 1}}, session=session)
     if not saved.matched_count:
         raise FinalError("The Final is full, this player already joined, or the setup changed. Refresh first.")
-    return await ongoing_final(final.id)
+    await withdraw_pending(final.id, session, user_id=user_id)
+    return await ongoing_final(final.id, session=session)
 
 
 async def refresh_display_names(final: EloFinal, members: dict[str, Member | None]) -> EloFinal:
@@ -170,6 +173,7 @@ async def confirm_bracket(final: EloFinal, owner: str, *, manual: bool = False) 
             "nodes": {key: node.model_dump() for key, node in nodes.items()}, "state": "BRACKET_READY",
             "publication_pending": True,
         }, session=session)
+        await withdraw_pending(final.id, session)
         await rebuild_profiles(saved, session)
         return saved
     return await transaction(confirm)
@@ -203,13 +207,15 @@ async def request_cancellation(final: EloFinal, reason: str) -> None:
             "final_id": str(final.id), "state": {"$in": ["SETTLING", "CORRECTING"]}}, session=session):
             raise FinalError("Finish pending result and payout recovery before cancelling the ongoing Final.")
         await collection.update_one({"_id": final.id}, {"$set": {"state": "CANCELLING", "prediction_state": "CLOSED",
-            "cancel_reason": reason.strip(), "repair_pending": True, "publication_pending": True},
+            "cancel_reason": reason.strip(), "repair_pending": True, "publication_pending": True,
+            "thread_cleanup_at": int(time.time()) + FINAL_THREAD_RETENTION},
             "$inc": {"revision": 1, "result_revision": 1}}, session=session)
         await FinalBettingMarket.get_pymongo_collection().update_many({"final_id": str(final.id), "state": "OPEN"},
             {"$set": {"state": "CLOSED"}, "$inc": {"version": 1}}, session=session)
         await Match.get_pymongo_collection().update_many({
             "final_id": str(final.id), "final_result_id": None,
         }, {"$set": {"final_superseded": True}}, session=session)
+        await withdraw_pending(final.id, session)
     await transaction(cancel)
 
 
@@ -225,7 +231,10 @@ async def end_final(final: EloFinal) -> None:
                 or await FinalBettingMarket.get_pymongo_collection().find_one({"final_id": str(final.id), "$or": [
                     {"escrow": {"$ne": 0}}, {"state": {"$nin": ["PAID", "REFUNDED"]}}]}, session=session)):
             raise FinalError("Resolve every pairing and finish result, prediction, and payout recovery before ending the Final.")
+        now = int(time.time())
         await collection.update_one({"_id": current.id}, {"$set": {"state": "COMPLETED", "active": False,
-            "completed_at": int(time.time()), "publication_pending": True, "prediction_state": "CLOSED"},
+            "completed_at": now, "thread_cleanup_at": now + FINAL_THREAD_RETENTION, "publication_pending": True,
+            "prediction_state": "CLOSED"},
             "$inc": {"revision": 1}}, session=session)
+        await withdraw_pending(final.id, session)
     await transaction(end)

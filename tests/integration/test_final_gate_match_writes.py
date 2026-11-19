@@ -63,8 +63,6 @@ class TestFinalGateMatchWrites(FinalUICase):
             ("match_base_remove", {"player": 0, "district": self.source.final_districts[0]}),
             ("match_base_remove_all", {"player": 0, "override_code": "override"}),
             ("match_base_set", {"player": 0, "base_link": link}),
-            ("match_base_set_image", {"player": 0, "district": self.source.final_districts[0],
-                                      "base_ss": MagicMock(url="https://example.invalid/image")}),
             ("match_base_submit", {"base_link": link}),
             ("match_set_host", {"user": MagicMock(id=8)}),
             ("match_set_clan", {"clan": "#CLAN"}),

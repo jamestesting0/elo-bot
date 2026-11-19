@@ -67,7 +67,7 @@ class MatchPublicationStateMixin:
         collection_patch.start()
         self.addCleanup(collection_patch.stop)
         for boundary in (
-                patch_family(MATCH_MODULE_FAMILY, "send_bases", new_callable=AsyncMock),
+                patch_family(MATCH_MODULE_FAMILY, "assign_bases", new_callable=AsyncMock),
                 patch_family(MATCH_MODULE_FAMILY, "remove_helper_task", new_callable=AsyncMock),
                 patch.object(base_store_storage, "clear_participant_base_store", new_callable=AsyncMock),
                 patch_family(MATCH_MODULE_FAMILY, "clear_match_base_stores", new_callable=AsyncMock),
@@ -117,7 +117,7 @@ class MatchPublicationStateMixin:
             start=live_start.LiveStart(
                 match=self.match, host=ipy.User(client=self.bot, id=999, username="Host", avatar=None),
                 clan=coc.Clan(data={"tag": "#CLAN", "name": "A Clan"}, client=None),
-                player1=MagicMock(), player2=MagicMock(), player1_elo=100, player2_elo=90, scout=False,
+                player1=MagicMock(), player2=MagicMock(), player1_elo=100, player2_elo=90,
                 reply=live_start.AutomaticLiveStartReply(),
             ),
             timestamp=1000,

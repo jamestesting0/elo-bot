@@ -10,7 +10,7 @@ from elo_bot.extensions.match import MatchCommands
 from elo_bot.extensions.tokens import TokenCommands
 from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES, LVL2_ROLES
 from elo_bot.config.game import DISTRICT_CODES
-from elo_bot.config.emojis import ERROR_EMOJI, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI
+from elo_bot.config.emojis import ERROR_EMOJI, LOSS_EMOJI, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
@@ -43,7 +43,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
         node = self.final.nodes["QF1"]
         self.ctx.custom_id = f"finalres|{self.final.id}|QF1|9|0|{node.contestant_revision}|{node.attempt}|-|0"
         self.confirmation = self.context()
-        self.message = SimpleNamespace(id=123)
+        self.message = SimpleNamespace(id=123, timestamp=datetime(2026, 11, 19), edited_timestamp=None)
         self.ctx.send.return_value = self.message
         message = MagicMock(id=888, pin=AsyncMock(), edit=AsyncMock())
         channel = MagicMock(send=AsyncMock(return_value=message), fetch_message=AsyncMock(return_value=message))
@@ -159,8 +159,10 @@ class TestFinalUIConsistency(FinalScenarioCase):
         text = "\n".join(field.value for field in embed.fields)
         self.assertIn("**Avg. Stars:** 0.00", text)
         self.assertIn("**Avg. Destruction:** 0.00%", text)
-        self.assertIn(f"**Available:** 5,000 {TOKEN_EMOJI}", text)
-        self.assertEqual([button.label for button in controls[1].components], ["Matches"])
+        self.assertIn("No bets.", text)
+        self.assertEqual(len(controls), 1)
+        self.assertTrue(all(field.name.startswith("__**") for field in embed.fields))
+        self.assertEqual(embed.description.splitlines()[0], "[#P1](https://link.clashofclans.com/en?action=OpenPlayerProfile&tag=%23P1)")
         row = FinalBoardRow("9", 2, 1, "Season 7 Final", eligible=3)
         self.assertEqual(final_board_text([row], "Predictions"),
                          "🥇 **[❌Invalid Player](<https://discordapp.com/users/9?tab=wishlist>)** `2/3` → `66.67%`")
@@ -257,7 +259,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
         cog = TokenCommands(self.bot)
         await cog.tokens_history.callback.func(cog, self.ctx)
         payload = self.ctx.send.await_args.kwargs
-        self.assertTrue(payload["ephemeral"])
+        self.assertFalse(payload["ephemeral"])
         self.assertIn(f"-1 {TOKEN_EMOJI} · S7 QF1", payload["embed"].description)
         self.assertEqual(len(payload["embed"].description.splitlines()), 10)
         self.assertEqual(payload["embed"].description.count(":R>"), 10)
@@ -312,7 +314,8 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.ctx.custom_id = f"betopen|{market.id}"
         await self.cog.bet_open.callback.func(self.cog, self.ctx)
         chooser = self.ctx.send.await_args.kwargs["embed"]
-        self.assertEqual([field.name for field in chooser.fields], ["**Available Tokens**"])
+        self.assertEqual([(field.name, field.value) for field in chooser.fields][0], ("**Estimated Profit**", f"200 {TOKEN_EMOJI}"))
+        self.assertEqual(chooser.fields[1].name, "**Available Tokens**")
         self.assertIn(f"100 {TOKEN_EMOJI}", chooser.description)
         await TokenWallet.get_pymongo_collection().update_one({"_id": "9"}, {"$set": {"balance": -100}})
         debt_review, _ = await bet_review(market, "9", "1", 50, 1, guild=self.ctx.guild)
@@ -327,6 +330,8 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.assertEqual((await TokenWallet.get("9")).balance, -100)
 
     async def base_setup(self):
+        self.enterContext(patch("elo_bot.extensions.match.bases.store_scout_image",
+                                new=AsyncMock(side_effect=lambda _bot, link, _by, ctx: f"https://cdn.example/{link[-6:]}.webp")))
         source = await prepare_match(self.final, "QF1")
         await source.set({"thread": "777"})
         ctx = self.context(int(source.participants[0].user_id))
@@ -357,7 +362,8 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.assertEqual(recent.name, "__**Recent Matches**__")
         self.assertEqual(recent.value.count("vs."), 1)
         self.assertIn(f"vs. **[❌Invalid Player](<https://discordapp.com/users/{opponent}?tab=wishlist>)**", recent.value)
-        self.assertIn("Loss", recent.value)
+        self.assertIn(f"({LOSS_EMOJI})", recent.value)
+        self.assertNotIn("Loss", recent.value)
         self.assertIn("560% - 21", recent.value)
         self.assertIn("700%", recent.value)
         self.assertNotIn("revision", recent.value.lower())

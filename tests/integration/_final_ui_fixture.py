@@ -22,7 +22,7 @@ class FinalUICase(FinalScenarioCase):
             self.posts[str(message.id)] = message
             return message
 
-        self.channel = MagicMock(send=AsyncMock(side_effect=send),
+        self.channel = MagicMock(send=AsyncMock(side_effect=send), edit=AsyncMock(),
             fetch_message=AsyncMock(side_effect=lambda message: self.posts[str(message)]),
             fetch_messages=AsyncMock(side_effect=lambda **kwargs: list(self.posts.values())))
         self.channel.guild.fetch_member = AsyncMock(return_value=None)

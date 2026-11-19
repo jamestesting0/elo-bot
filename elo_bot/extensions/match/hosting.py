@@ -68,7 +68,6 @@ from elo_bot.features.hosting.live.preflight import LivePreflight
 from elo_bot.features.hosting.sequential.runs import open_run_refusal
 from elo_bot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elo_bot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag
-from elo_bot.features.matches.attack_bases import is_missing_scout_view
 from elo_bot.features.matches.controls import (
     check_match_control, reject_outdated_match_control, update_match_control, check_current_match,
 )
@@ -124,7 +123,7 @@ class MatchHostingCommands:
                     task.start()
 
     async def _start_war(self, ctx: ipy.SlashContext | ipy.ComponentContext, player: int,
-                         clan: str, host: ipy.User = None, scout: bool = False, slot: str = None,
+                         clan: str, host: ipy.User = None, slot: str = None,
                          automatic: bool = False, district: str | None = None,
                          stored_reservation_id: str | None = None, sequential: bool | None = False):
         await ctx.defer(ephemeral=True)
@@ -261,17 +260,6 @@ class MatchHostingCommands:
         opponent = 0 if player else 1
         opponent_id = match.participants[opponent].user_id
 
-        # optional: warn if opponent’s bases are missing scout image(s)
-        if scout:
-            district, link = is_missing_scout_view(match, opponent_id)
-            if district:
-                await ctx.send(
-                    f"{ERROR_EMOJI} The opponent's (Player {opponent + 1}) submitted [base]({link}) for **{district}** "
-                    f"is missing a scout view. Please manually set the scout view by running "
-                    f"{self.bot.mention_command('match base set-image')}!",
-                    ephemeral=True
-                )
-
         stored_start = None
         if is_raid_weekend() and isinstance(ctx, ipy.SlashContext):
             store = held_store(match.participants[player])
@@ -357,7 +345,6 @@ class MatchHostingCommands:
                         player=player,
                         clan=clan_obj,
                         host=host,
-                        scout=scout,
                         clan_reservation=reservation,
                         side_reservation=side_reservation,
                         stored_start=stored_start,
@@ -374,7 +361,6 @@ class MatchHostingCommands:
                         player=player,
                         clan=clan_obj,
                         host=host,
-                        scout=scout,
                         clan_reservation=reservation,
                         side_reservation=side_reservation,
                         stored_start=stored_start,
@@ -405,7 +391,6 @@ class MatchHostingCommands:
                         clan=clan_obj,
                         coc_client=self.coc_client,
                         reply=reply,
-                        scout=scout,
                         stored_start=stored_start,
                     ),
                 )
@@ -441,14 +426,9 @@ class MatchHostingCommands:
         choices=HOST_CLAN_CHOICES,
         required=True
     )
-    @ipy.slash_option(
-        name="scout",
-        description="To allow 10 minutes scout or not",
-        opt_type=ipy.OptionType.BOOLEAN
-    )
     async def match_war_start(self, ctx: ipy.SlashContext | ipy.ComponentContext, player: int,
-                              clan: str, scout: bool = False, slot: str = None):
-        await self._start_war(ctx, player, clan, scout=scout, slot=slot)
+                              clan: str, slot: str = None):
+        await self._start_war(ctx, player, clan, slot=slot)
 
     @war_group.subcommand(sub_cmd_name="autostart", sub_cmd_description="Use Helper to host a war-style match")
     @ipy.max_concurrency(CHANNEL_USER_CONCURRENCY_BUCKET, 1)
@@ -471,11 +451,6 @@ class MatchHostingCommands:
         required=True
     )
     @ipy.slash_option(
-        name="scout",
-        description="To allow 10 minutes scout or not",
-        opt_type=ipy.OptionType.BOOLEAN
-    )
-    @ipy.slash_option(
         name="district",
         description="Rerun one district after this side starts; leave blank to host all",
         opt_type=ipy.OptionType.STRING,
@@ -489,13 +464,12 @@ class MatchHostingCommands:
         required=False,
     )
     async def match_war_autostart(self, ctx: ipy.SlashContext, player: int,
-                                  clan: str, scout: bool = False,
+                                  clan: str,
                                   district: str | None = None, sequential: bool | None = None):
         await self._start_war(
             ctx,
             player,
             clan,
-            scout=scout,
             automatic=True,
             district=district,
             sequential=sequential,
@@ -867,15 +841,10 @@ class MatchHostingCommands:
         choices=HOST_CLAN_CHOICES,
         required=True
     )
-    @ipy.slash_option(
-        name="scout",
-        description="To allow 10 minutes scout or not",
-        opt_type=ipy.OptionType.BOOLEAN
-    )
-    async def match_start(self, ctx: ipy.SlashContext, clan: str, scout: bool = False):
+    async def match_start(self, ctx: ipy.SlashContext, clan: str):
         await self._start_live(
             ctx,
-            LivePreflight(clan=clan, scout=scout, automatic=False),
+            LivePreflight(clan=clan, automatic=False),
         )
 
     @base.subcommand(sub_cmd_name="autostart", sub_cmd_description="Use Helper to host a live match")
@@ -887,11 +856,6 @@ class MatchHostingCommands:
         opt_type=ipy.OptionType.STRING,
         choices=HOST_CLAN_CHOICES,
         required=True,
-    )
-    @ipy.slash_option(
-        name="scout",
-        description="To allow 10 minutes scout or not",
-        opt_type=ipy.OptionType.BOOLEAN,
     )
     @ipy.slash_option(
         name="district",
@@ -920,7 +884,6 @@ class MatchHostingCommands:
             self,
             ctx: ipy.SlashContext,
             clan: str,
-            scout: bool = False,
             district: str | None = None,
             sequential: bool | None = None,
             attacks_first: int | None = None,
@@ -929,7 +892,6 @@ class MatchHostingCommands:
             ctx,
             LivePreflight(
                 clan=clan,
-                scout=scout,
                 automatic=True,
                 requested_by=str(ctx.author.id),
                 district=district,
@@ -1023,7 +985,6 @@ class MatchHostingCommands:
             await ctx.defer(ephemeral=True)
 
         host = request.host
-        scout = request.scout
         if not host:
             host = ctx.author
 
@@ -1138,18 +1099,6 @@ class MatchHostingCommands:
                            ephemeral=True)
             return
 
-        if scout:
-            player_index = 1
-            for pid in (player1_id, player2_id):
-                district, link = is_missing_scout_view(match, str(pid))
-                if district:
-                    await ctx.send(f"{ERROR_EMOJI} Player {player_index}'s submitted [base]({link}) for "
-                                   f"**{district}** is missing a scout view. Please manually set the scout view "
-                                   f"by running {self.bot.mention_command('match base set-image')}!",
-                                   ephemeral=True)
-                    return
-                player_index += 1
-
         clan_obj = await self.coc_client.get_clan(request.clan)
         if is_resource_clan_locked(clan_obj.tag) or not await is_clan_available(clan_obj.tag):
             await ctx.send(
@@ -1171,7 +1120,6 @@ class MatchHostingCommands:
                     player2=player2_acc,
                     player1_elo=p1_doc.elo,
                     player2_elo=p2_doc.elo,
-                    scout=scout,
                     requested_by=str(ctx.author.id),
                     stored_reservation_id=request.stored_reservation_id,
                     attacks_first=request.attacks_first,
@@ -1191,7 +1139,6 @@ class MatchHostingCommands:
                     player2=player2_acc,
                     player1_elo=p1_doc.elo,
                     player2_elo=p2_doc.elo,
-                    scout=scout,
                     requested_by=request.requested_by,
                     public_progress=request.public_progress,
                     allow_opponent_cancel=request.allow_opponent_cancel,
@@ -1226,7 +1173,6 @@ class MatchHostingCommands:
             player2=player2_acc,
             player1_elo=p1_doc.elo,
             player2_elo=p2_doc.elo,
-            scout=scout,
             reply=reply,
             stored_start=stored_start,
         )

@@ -11,10 +11,16 @@ FINAL_DISTRICTS: Final = (
 NODE_IDS: Final = ("QF1", "QF2", "QF3", "QF4", "SF1", "SF2", "F1")
 ROUND_NODES: Final = {"Quarterfinals": NODE_IDS[:4], "Semifinals": NODE_IDS[4:6], "Final": NODE_IDS[6:]}
 type MatchFormat = Literal["ordinary_three", "elo_final_seven"]
+FINAL_SEATS = 8
+# A Final player may scout the opponent's bases this long before their scheduled time; those bases lock then.
+FINAL_SCOUT_WINDOW = 30 * 60
+# Match threads of an ended or cancelled Final are archived, then deleted after this long.
+FINAL_THREAD_RETENTION = 7 * 24 * 60 * 60
+
 type FinalState = Literal["REGISTRATION", "BRACKET_READY", "RUNNING", "COMPLETED",
                           "CANCELLING", "CANCELLED"]
 type PredictionState = Literal["NEVER_OPENED", "OPEN", "CLOSED"]
-type NodeState = Literal["WAITING", "READY", "BYE", "PLAYING", "DECIDED", "TIED", "NEEDS_MANAGER"]
+type NodeState = Literal["WAITING", "READY", "BYE", "PLAYING", "DECIDED", "NEEDS_MANAGER"]
 type Outcome = Literal["Played", "Forfeit"]
 
 

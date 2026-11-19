@@ -10,7 +10,7 @@ sys.path.append(os.getcwd())
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.features.matches.lifecycle import confirm_match
 from elo_bot.extensions.thread import ThreadCommands
-from elo_bot.config.ids import LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
+from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES, MATCH_CHANNEL, STAFF_ROLE
 from elo_bot.db import BaseStore, Participant
 from tests._patch_sites import patch_sites
 import elo_bot.features.matches.lifecycle as lifecycle_module
@@ -174,6 +174,23 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         # Then the normal deletion confirmation is offered.
         self.bot.wait_for_component.assert_awaited_once()
         response.edit_origin.assert_awaited_once()
+
+    async def test_unfinished_final_thread_can_be_deleted_only_after_its_final_closes(self):
+        # Superseded and replaced Final attempts never get the red status, so the Final's state decides.
+        match = MagicMock(final_id="a" * 24)
+        for active, offered in ((True, False), (False, True)):
+            with self.subTest(active=active), \
+                    patch("elo_bot.extensions.thread.Match") as matches, \
+                    patch("elo_bot.extensions.thread.EloFinal") as finals:
+                matches.find_one = AsyncMock(return_value=match)
+                finals.get = AsyncMock(return_value=MagicMock(active=active))
+                ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock(return_value=MagicMock(id=1)))
+                ctx.channel.name = "🟡 QF1 · A vs. B"
+                ctx.channel.parent_channel.id = FINAL_CHANNEL
+                response = MagicMock(custom_id="cancel", edit_origin=AsyncMock())
+                self.bot.wait_for_component = AsyncMock(return_value=MagicMock(ctx=response))
+                await self.cog.thread_delete.callback.func(self.cog, ctx)
+                self.assertEqual(self.bot.wait_for_component.await_count, int(offered))
 
     @patch("elo_bot.extensions.thread.remove_helper_task", new_callable=AsyncMock)
     @patch("elo_bot.features.base_store.storage.clear_match_base_stores", new_callable=AsyncMock)

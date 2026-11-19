@@ -3,9 +3,10 @@ import logging
 import anyio
 
 import interactions as ipy
+from beanie import PydanticObjectId
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elo_bot.config.ids import FINAL_CHANNEL, GUILD_IDS, LVL1_ROLES, MATCH_CHANNEL
-from elo_bot.db import Match
+from elo_bot.db import EloFinal, Match
 import asyncio
 from elo_bot.features.matches.cleanup import delete_unreserved_match, has_pending_match_operation, has_reserved_match_slots
 from elo_bot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
@@ -32,8 +33,12 @@ class ThreadCommands(ipy.Extension):
             return
 
         if "🔴" not in ctx.channel.name and int(ctx.channel.parent_channel.id) in {MATCH_CHANNEL, FINAL_CHANNEL}:
-            await ctx.send(f"{ERROR_EMOJI} The match is not yet finished!", ephemeral=True)
-            return
+            match = await Match.find_one(Match.thread == str(ctx.channel.id))
+            final = await EloFinal.get(PydanticObjectId(match.final_id)) if match and match.final_id else None
+            # Superseded or replaced attempts never turn red, so an ended or cancelled Final releases them all.
+            if final is None or final.active:
+                await ctx.send(f"{ERROR_EMOJI} The match is not yet finished!", ephemeral=True)
+                return
 
         cancel_button = ipy.Button(
             style=ipy.ButtonStyle.DANGER,

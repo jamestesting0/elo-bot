@@ -5,13 +5,19 @@ import interactions as ipy
 
 from elo_bot.config.emojis import IMPORTANT_EMOJI, TOKEN_EMOJI
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
-from elo_bot.core.finals import NODE_IDS, ROUND_NODES
+from elo_bot.core.finals import FINAL_SEATS, NODE_IDS, ROUND_NODES
 from elo_bot.db import EloFinal
+from elo_bot.db.final_invitation_models import FinalInvitation
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.discord.mentions import mention_user
 from elo_bot.features.finals.bracket import seeded_players
+from elo_bot.features.finals.replacement import replaceable_entrants
 from elo_bot.features.finals.labels import market_label, match_line, phase_label, prediction_label
 from elo_bot.features.tokens.presentation import market_signature
+
+
+# Shown above the current dashboard when a control was drawn for an earlier state of the Final.
+FINAL_CHANGED = f"{IMPORTANT_EMOJI} The Final changed since this view opened."
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +25,7 @@ class DashboardState:
     final: EloFinal
     markets: Sequence[FinalBettingMarket] = ()
     submitted: int = 0
+    invitations: Sequence[FinalInvitation] = ()
 
 
 def next_round(state: DashboardState) -> str | None:
@@ -55,9 +62,6 @@ def attention(state: DashboardState) -> list[str]:
     final = state.final
     items = []
     for node in final.nodes.values():
-        if node.state == "TIED":
-            items.append(f"{IMPORTANT_EMOJI} {node.id} is tied. Choose the winner with "
-                         f"`/final match result match:{node.id}`.")
         if node.state == "NEEDS_MANAGER":
             items.append(f"{IMPORTANT_EMOJI} {node.id}: Pairing changed after play started. "
                          "Run `/final round start` to replay it or enter a result.")
@@ -101,11 +105,34 @@ def available_actions(state: DashboardState) -> list[tuple[str, str]]:
     return actions
 
 
+def registering(final: EloFinal) -> bool:
+    return final.active and final.state == "REGISTRATION"
+
+
 def dashboard_controls(state: DashboardState, owner: str) -> list[ipy.ActionRow]:
-    buttons = [ipy.Button(label=label, style=ipy.ButtonStyle.PRIMARY if index == 0 else ipy.ButtonStyle.SECONDARY,
-                          custom_id=f"finaldash|{action}|{state.final.id}|{owner}")
-               for index, (action, label) in enumerate(available_actions(state))]
-    return [ipy.ActionRow(*buttons)] if buttons else []
+    final = state.final
+    buttons = [ipy.Button(label=label, style=ipy.ButtonStyle.SECONDARY, custom_id=f"finaldash|{action}|{final.id}|{owner}")
+               for action, label in available_actions(state)]
+    if registering(final):
+        full = len(final.entrant_ids) >= FINAL_SEATS
+        buttons += [ipy.Button(label=label, style=ipy.ButtonStyle.SECONDARY, disabled=full,
+                               custom_id=f"finalroster|{action}|{final.id}|{owner}")
+                    for action, label in (("add", "Add"), ("invite", "Invite"))]
+    elif replaceable_entrants(final):
+        buttons.append(ipy.Button(label="Replace Player", style=ipy.ButtonStyle.SECONDARY,
+                                  custom_id=f"finalroster|replace|{final.id}|{owner}"))
+    if buttons and not buttons[0].disabled:
+        buttons[0].style = ipy.ButtonStyle.PRIMARY
+    if final.active:
+        buttons.append(ipy.Button(emoji="🔄", style=ipy.ButtonStyle.SECONDARY,
+                                  custom_id=f"finaldash|refresh|{final.id}|{owner}"))
+    rows = [ipy.ActionRow(*buttons[index:index + 5]) for index in range(0, len(buttons), 5)]
+    if registering(final) and state.invitations:
+        rows.append(ipy.ActionRow(ipy.StringSelectMenu(
+            *[ipy.StringSelectOption(label=invitation.display_name[:100], value=str(invitation.id))
+              for invitation in state.invitations[:25]],
+            custom_id=f"finalinvwithdraw|{final.id}|{owner}", placeholder="🗑️ Withdraw an invitation")))
+    return rows
 
 
 def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bool) -> ipy.Embed:
@@ -131,6 +158,10 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
             elo = final.seed_elo.get(user)
             lines.append(f"{seed}. {name} · {elo} Elo" if elo is not None else f"{seed}. {name} · Elo unavailable")
         fields.append(("Entrants", lines))
+    if manager and registering(final) and state.invitations:
+        fields.append(("Pending Invitations", [f"{names.get(invitation.user_id, mention_user(None, invitation.user_id))}"
+                                               f" · expires <t:{invitation.expires_at}:R>"
+                                               for invitation in state.invitations]))
     fields.append(("Predictions", [f"{prediction_label(final.prediction_state)} · {state.submitted:,} submitted"]))
     if state.markets:
         fields.append(("Betting", [f"{market.node_id} · {market_label(market, names)} · "
@@ -138,18 +169,13 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
     if manager:
         fields.append(("Needs attention", attention(state)))
         actions = available_actions(state)
-        ties = [node.id for node in final.nodes.values() if node.state == "TIED"]
-        if ties:
-            rounds = list(ROUND_NODES)
-            tied_round = next(name for name, ids in ROUND_NODES.items() if ties[0] in ids)
-            index = rounds.index(tied_round)
-            step = (f"Resolve {', '.join(ties)}, then start the {rounds[index + 1]}." if index < 2
-                    else "Resolve F1 to decide the champion.")
-            fields.append(("Next step", [step]))
+        if registering(final) and len(final.entrant_ids) < 5:
+            missing = 5 - len(final.entrant_ids)
+            fields.append(("Next step", [f"Add or invite at least {missing} more player{'s' if missing > 1 else ''}."]))
+        elif registering(final) and len(final.entrant_ids) < FINAL_SEATS:
+            fields.append(("Next step", ["Create Bracket, or add or invite more players."]))
         elif actions:
             fields.append(("Next step", [actions[0][1] + "."]))
-        elif final.state == "REGISTRATION":
-            fields.append(("Next step", ["Add at least 5 entrants with `/final add`."]))
     for title, lines in fields:
         while lines:
             value = lines.pop(0)

@@ -29,7 +29,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
         self.request = helper_live.AutomaticLiveHost(
             match=self.match, clan=self.f.clan, host=self.f.bot.user,
             player1=SimpleNamespace(tag="#PPY099"), player2=SimpleNamespace(tag="#LLQ288"),
-            player1_elo=1000, player2_elo=1000, scout=False, requested_by="111",
+            player1_elo=1000, player2_elo=1000, requested_by="111",
             allow_opponent_cancel=True, stored_reservation_id=PAIR,
         )
         self.availability = self.enterContext(patch.object(helper_live, "confirm_helper_availability",
@@ -92,7 +92,7 @@ class TestLiveStoredStart(unittest.IsolatedAsyncioTestCase):
         request = live_start.LiveStart(
             match=self.match, host=self.f.bot.user, clan=self.f.clan,
             player1=self.request.player1, player2=self.request.player2,
-            player1_elo=1000, player2_elo=1000, scout=False,
+            player1_elo=1000, player2_elo=1000,
             reply=live_start.AutomaticLiveStartReply(), stored_reservation_id=PAIR,
         )
         with patch_sites(('elo_bot.extensions.match.hosting.claim_resource_clan', 'elo_bot.extensions.match.settings.claim_resource_clan', 'elo_bot.features.matches.resources.claim_resource_clan'), new=claim):

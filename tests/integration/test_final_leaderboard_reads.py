@@ -30,10 +30,10 @@ class TestFinalLeaderboardReads(FinalScenarioCase):
         rows = await final_board_rows("Predictions", "All Seasons")
 
         self.assertEqual([(row.user_id, row.value, row.eligible, row.rank) for row in rows],
-                         [("1", 8, 102, 1), ("2", 8, 8, 2), ("3", 4, 4, 3), ("4", 0, 0, 4)])
+                         [("2", 8, 8, 1), ("3", 4, 4, 2), ("1", 8, 102, 3), ("4", 0, 0, 4)])
         self.assertEqual({row.scope for row in rows}, {"All Seasons"})
         current_rows = await final_board_rows("Predictions", "Current Season")
-        self.assertEqual([(row.user_id, row.value) for row in current_rows], [("1", 6), ("2", 3), ("4", 0)])
+        self.assertEqual([(row.user_id, row.value) for row in current_rows], [("2", 3), ("1", 6), ("4", 0)])
         self.assertEqual({row.scope for row in current_rows}, {"Season 7 Final"})
 
     async def test_verified_wallets_use_bulk_reads_without_regranting_or_transactions(self):

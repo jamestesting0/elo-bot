@@ -32,6 +32,7 @@ LB_TYPE_OPTIONS = [
     ipy.StringSelectOption(label="Winrate", value="Winrate"),
     ipy.StringSelectOption(label="Hitrate", value="Hitrate"),
     ipy.StringSelectOption(label="Tokens", value="Tokens"),
+    ipy.StringSelectOption(label="Betting", value="Betting"),
     ipy.StringSelectOption(label="Predictions", value="Predictions"),
     ipy.StringSelectOption(label="Capital Peak Hitrate", value="Capital Peak Hitrate"),
     ipy.StringSelectOption(label="Wizard Valley Hitrate", value="Wizard Valley Hitrate"),

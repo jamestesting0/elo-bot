@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from fractions import Fraction
 
 from elo_bot.core.finals import FinalError
+from elo_bot.features.tokens.stats import betting_stats
 from elo_bot.features.tokens.wallets import ensure_wallet
 from elo_bot.discord.mentions import mention_user
 from elo_bot.db import EloFinal, Player
@@ -18,9 +20,17 @@ class FinalBoardRow:
     scope: str
     eligible: int = 0
     debt: int = 0
+    staked: int = 0
 
 
 async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
+    if lb_type == "Betting":
+        stats = await betting_stats()
+        users = {wallet.id: wallet.user_id for wallet in await TokenWallet.find({"_id": {"$in": list(stats)}}).to_list()}
+        ranked = sorted(((users.get(wallet_id, wallet_id), wallet) for wallet_id, wallet in stats.items()),
+                        key=lambda item: (-item[1].profit, -Fraction(item[1].profit, item[1].staked), item[0]))
+        return [FinalBoardRow(user, wallet.profit, index, "Lifetime", wallet.settled, staked=wallet.staked)
+                for index, (user, wallet) in enumerate(ranked, 1)]
     if lb_type == "Tokens":
         players = await Player.find_all().to_list()
         wallets = await TokenWallet.find({"user_id": {"$in": [player.user_id for player in players]}}).to_list()
@@ -34,6 +44,7 @@ async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
                 by_user[player.user_id] = await ensure_wallet(player.user_id)
         values = [(wallet.user_id, max(wallet.balance, 0), 0, max(-wallet.balance, 0))
                   for wallet in by_user.values()]
+        values.sort(key=lambda item: (-item[1], item[0]))
         scope = "Lifetime"
     else:
         if season == "All Seasons":
@@ -53,7 +64,8 @@ async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
             points, eligible = totals.get(prediction.user_id, (0, 0))
             totals[prediction.user_id] = points + prediction.points, eligible + prediction.eligible
         values = [(user_id, points, eligible, 0) for user_id, (points, eligible) in totals.items()]
-    values.sort(key=lambda item: (-item[1], item[0]))
+        # Accuracy first; at equal accuracy more correct picks rank higher (3/3 above 1/1).
+        values.sort(key=lambda item: (-(Fraction(item[1], item[2]) if item[2] else 0), -item[1], item[0]))
     rows = []
     for index, (user, value, eligible, debt) in enumerate(values):
         rows.append(FinalBoardRow(user, value, index + 1, scope, eligible, debt))
@@ -65,5 +77,6 @@ def final_board_text(rows: list[FinalBoardRow], lb_type: str, names: dict[str, s
     return "\n".join((RANK_EMOJIS[row.rank - 1] if row.rank <= 3 else f"**#{row.rank}**")
         + f" {names.get(row.user_id, mention_user(None, row.user_id))} " + (
         f"`{row.value:,}` {TOKEN_EMOJI}" + (f" · Debt: {row.debt:,} {TOKEN_EMOJI}" if row.debt else "") if lb_type == "Tokens" else
+        f"`{row.value:+,}` {TOKEN_EMOJI} · `{row.value / row.staked * 100:+.2f}%`" if lb_type == "Betting" else
         f"`{row.value}/{row.eligible}` → `{row.value / row.eligible * 100 if row.eligible else 0:.2f}%`")
         for row in rows)

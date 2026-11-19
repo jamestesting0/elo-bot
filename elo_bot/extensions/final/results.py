@@ -49,8 +49,8 @@ class Results:
     @match_group.subcommand(sub_cmd_name="result", sub_cmd_description="Submit or correct all seven district scores")
     @slash_option(name="match", description="Match, e.g. QF1", opt_type=OptionType.STRING, required=True,
                   autocomplete=True)
-    @slash_option(name="winner", description="Explicit tie or forfeit winner", opt_type=OptionType.USER)
-    @slash_option(name="reason", description="Correction, tie or forfeit reason", opt_type=OptionType.STRING)
+    @slash_option(name="winner", description="Forfeit winner", opt_type=OptionType.USER)
+    @slash_option(name="reason", description="Correction or forfeit reason", opt_type=OptionType.STRING)
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     @final_action
     async def final_match_result(self, ctx: SlashContext, match: str, winner: ipy.User = None,

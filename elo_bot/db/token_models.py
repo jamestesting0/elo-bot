@@ -30,7 +30,7 @@ class TokenLedgerEntry(Document):
     actor_id: str
     amount: int
     escrow_amount: int = 0
-    kind: Literal["grant", "stake", "edit", "cancel", "payout", "refund", "reversal", "identity"]
+    kind: Literal["grant", "stake", "edit", "cancel", "payout", "refund", "reversal", "identity", "adjust", "switch"]
     identity_from: str | None = None
     identity_to: str | None = None
     market_id: str | None = None

@@ -60,7 +60,6 @@ class LiveStart:
     player2: coc.Player
     player1_elo: int
     player2_elo: int
-    scout: bool
     reply: LiveStartReply
     reservations: live_reservations.LiveStartReservations | None = None
     stored_reservation_id: str | None = None
@@ -294,8 +293,8 @@ async def complete_live_start(
             content=await tips.choose_tip(), components=spectate_controls, public_channel=channel,
         )
 
-    await attack_bases.send_bases(bot, match_doc.token, 1, 0, scout=start.scout)
-    await attack_bases.send_bases(bot, match_doc.token, 0, 1, scout=start.scout)
+    await attack_bases.assign_bases(bot, match_doc.token, 1, 0)
+    await attack_bases.assign_bases(bot, match_doc.token, 0, 1)
     for player in range(len(match_doc.participants)):
         if not await mark_store_reserved(bot, match_doc, player):
             raise BaseStoreMessageConflict("The match started, but its held base-slot message could not be updated.")

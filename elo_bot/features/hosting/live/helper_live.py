@@ -35,7 +35,6 @@ class AutomaticLiveHost:
     player2: coc.Player
     player1_elo: int
     player2_elo: int
-    scout: bool
     requested_by: str
     public_progress: bool = False
     allow_opponent_cancel: bool = False
@@ -218,7 +217,6 @@ async def host_live_automatically(
                 player2=request.player2,
                 player1_elo=request.player1_elo,
                 player2_elo=request.player2_elo,
-                scout=request.scout,
                 reply=live_start.AutomaticLiveStartReply(),
                 reservations=reservations,
                 stored_reservation_id=request.stored_reservation_id,

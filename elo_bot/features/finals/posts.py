@@ -1,8 +1,10 @@
+import logging
 from dataclasses import dataclass
 
 import anyio
 import interactions as ipy
 
+from elo_bot.config.ids import STAFF_CHANNEL
 from elo_bot.discord.message_edits import edit_channel_message
 
 PUBLICATION_LOCKS: dict[str, anyio.Lock] = {}
@@ -42,3 +44,11 @@ async def publish_post(channel: ipy.GuildText | ipy.ThreadChannel, reference: Po
     await edit_channel_message(message, embed=content.embed, components=content.components,
                                attachments=[], file=content.file, allowed_mentions=ipy.AllowedMentions.none())
     return message
+
+
+async def staff_notice(bot: ipy.Client, content: str) -> None:
+    try:
+        channel = await bot.fetch_channel(STAFF_CHANNEL)
+        await channel.send(content, allowed_mentions=ipy.AllowedMentions.none())
+    except ipy.errors.HTTPException:
+        logging.exception("Could not post the Final staff notice: %s", content)

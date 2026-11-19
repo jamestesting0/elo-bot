@@ -1419,7 +1419,6 @@
        "BYE",
        "PLAYING",
        "DECIDED",
-       "TIED",
        "NEEDS_MANAGER"
       ],
       "type": "string"
@@ -1764,6 +1763,18 @@
      "state": {
       "$ref": "#/$defs/FinalState",
       "default": "REGISTRATION"
+     },
+     "thread_cleanup_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Thread Cleanup At"
      }
     },
     "required": [
@@ -2154,6 +2165,124 @@
      "IndexModel({'final_id': 1, 'node_id': 1, 'contestant_revision': 1}, unique=True, name='final_market_contestants')"
     ],
     "name": "final_betting_markets",
+    "use_state_management": true
+   }
+  },
+  "FinalInvitation": {
+   "schema": {
+    "$defs": {
+     "InvitationState": {
+      "enum": [
+       "pending",
+       "accepted",
+       "declined",
+       "expired",
+       "withdrawn",
+       "full"
+      ],
+      "type": "string"
+     },
+     "PydanticObjectId": {
+      "example": "5eb7cf5a86d9755df3a6c593",
+      "maxLength": 24,
+      "minLength": 24,
+      "pattern": "^[0-9a-f]{24}$",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "MongoDB document ObjectID"
+     },
+     "created_at": {
+      "title": "Created At",
+      "type": "integer"
+     },
+     "display_name": {
+      "title": "Display Name",
+      "type": "string"
+     },
+     "dm_channel_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Dm Channel Id"
+     },
+     "dm_message_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Dm Message Id"
+     },
+     "dm_outdated": {
+      "default": false,
+      "title": "Dm Outdated",
+      "type": "boolean"
+     },
+     "expires_at": {
+      "title": "Expires At",
+      "type": "integer"
+     },
+     "final_id": {
+      "$ref": "#/$defs/PydanticObjectId"
+     },
+     "invited_by": {
+      "title": "Invited By",
+      "type": "string"
+     },
+     "season_number": {
+      "title": "Season Number",
+      "type": "integer"
+     },
+     "state": {
+      "$ref": "#/$defs/InvitationState",
+      "default": "pending"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "final_id",
+     "season_number",
+     "user_id",
+     "display_name",
+     "invited_by",
+     "created_at",
+     "expires_at"
+    ],
+    "title": "FinalInvitation",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'final_id': 1, 'user_id': 1}, unique=True, partialFilterExpression={'state': 'pending'}, name='final_invitation_pending')",
+     "IndexModel({'state': 1, 'expires_at': 1}, name='final_invitation_expiry')",
+     "IndexModel({'dm_outdated': 1}, partialFilterExpression={'dm_outdated': True}, name='final_invitation_dm_outdated')"
+    ],
+    "name": "final_invitations",
     "use_state_management": true
    }
   },
@@ -3515,6 +3644,11 @@
        "link": {
         "title": "Link",
         "type": "string"
+       },
+       "scout_view": {
+        "default": false,
+        "title": "Scout View",
+        "type": "boolean"
        }
       },
       "required": [
@@ -6088,7 +6222,9 @@
        "payout",
        "refund",
        "reversal",
-       "identity"
+       "identity",
+       "adjust",
+       "switch"
       ],
       "title": "Kind",
       "type": "string"

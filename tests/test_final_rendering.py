@@ -146,12 +146,8 @@ class TestFinalRendering(unittest.TestCase):
         self.assertIn((255, 255, 255), winner_colors)
         self.assertIn((255, 215, 94), champion_colors)
 
-    def test_ties_and_changed_pairings_render_short_advancement_labels(self):
+    def test_changed_pairings_render_short_advancement_labels(self):
         final = self.edition(8)
-        for node_id in ("QF1", "SF1", "F1"):
-            final.nodes[node_id].state = "TIED"
-        labels = bracket_labels(final)
-        self.assertEqual([labels[index] for index in (8, 12, 14)], ["TIE"] * 3)
         final.nodes["SF1"].state = "NEEDS_MANAGER"
         self.assertEqual(bracket_labels(final)[12], "TBD")
 

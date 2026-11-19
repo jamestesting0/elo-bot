@@ -1,6 +1,7 @@
 import functools
 import re
 import secrets
+import time
 from datetime import datetime
 
 import interactions as ipy
@@ -12,6 +13,7 @@ from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import (
     ERROR_EMOJI,
     IMPORTANT_EMOJI,
+    LOADING_EMOJI,
     SUCCESS_EMOJI,
 )
 from elo_bot.config.game import (
@@ -22,6 +24,7 @@ from elo_bot.config.game import (
 from elo_bot.config.ids import (
     COMMAND_CHANNEL,
     ELO_BLACKLIST_ROLE,
+    LVL1_ROLES,
     LVL2_ROLES,
     LVL3_ROLES,
 )
@@ -36,7 +39,8 @@ from elo_bot.db import BaseLayout, BaseLink, Match, OverrideCode, Participant
 from elo_bot.discord.mentions import mention_user
 from elo_bot.extensions.match.groups import base_group
 from elo_bot.core.finals import FinalError, is_final_match
-from elo_bot.features.matches.attack_bases import send_bases
+from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, scout_opens_at, store_scout_image
+from elo_bot.features.matches.attack_bases import assign_bases
 from elo_bot.features.matches.messages import (
     match_message_embeds,
 )
@@ -284,7 +288,7 @@ class MatchBaseCommands:
                         opponent = 0 if player else 1
                         date = datetime.fromtimestamp(t - 600)
                         task = ipy.Task(
-                            functools.partial(send_bases, self.bot, token, player, opponent),
+                            functools.partial(assign_bases, self.bot, token, player, opponent),
                             ipy.DateTrigger(date)
                         )
                         task.start()
@@ -295,13 +299,13 @@ class MatchBaseCommands:
                     date = datetime.fromtimestamp(t - 600)
 
                     task1 = ipy.Task(
-                        functools.partial(send_bases, self.bot, token, 0, 1),
+                        functools.partial(assign_bases, self.bot, token, 0, 1),
                         ipy.DateTrigger(date)
                     )
                     task1.start()
 
                     task2 = ipy.Task(
-                        functools.partial(send_bases, self.bot, token, 1, 0),
+                        functools.partial(assign_bases, self.bot, token, 1, 0),
                         ipy.DateTrigger(date)
                     )
                     task2.start()
@@ -516,88 +520,6 @@ class MatchBaseCommands:
             ephemeral=True
         )
 
-    @base_group.subcommand(sub_cmd_name="set-image", sub_cmd_description="Set the scout view of a base")
-    @ipy.check(ipy.has_any_role(*LVL2_ROLES))
-    @ipy.slash_option(
-        name="player",
-        description="The player to set base scout view for",
-        opt_type=ipy.OptionType.INTEGER,
-        choices=[
-            ipy.SlashCommandChoice(name="Player 1", value=0),
-            ipy.SlashCommandChoice(name="Player 2", value=1)
-        ],
-        required=True
-    )
-    @ipy.slash_option(
-        name="district",
-        description="The district of the base",
-        opt_type=ipy.OptionType.STRING,
-        choices=DISTRICT_CHOICES,
-        required=True
-    )
-    @ipy.slash_option(
-        name="base_ss",
-        description="The scout view of the base",
-        opt_type=ipy.OptionType.ATTACHMENT,
-        required=True
-    )
-    async def match_base_set_image(self, ctx: ipy.SlashContext, player: int, district: str, base_ss: ipy.Attachment):
-        match: Match | None = await Match.find_one(Match.thread == str(ctx.channel.id))
-        if not match:
-            await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, please make sure to use "
-                           f"this command in a 1v1 thread!", ephemeral=True)
-            return
-
-        if not await check_current_match(ctx, match):
-            return
-        # only host(s) or bot owner may set scout views
-        host_ids = [h for h in (match.hosts or []) if h]
-        if (str(ctx.author.id) not in host_ids) and (str(ctx.author.id) != str(self.bot.owner.id)):
-            await ctx.send(f"{ERROR_EMOJI} Only the host is allowed to set scout views.", ephemeral=True)
-            return
-
-        # district must be assigned for this match
-        if district not in (match.final_districts or []):
-            await ctx.send(
-                f"{ERROR_EMOJI} **{district}** is not chosen for this match, you cannot submit a base for it.",
-                ephemeral=True)
-            return
-
-        # resolve participant and district index
-        p_idx = 0 if player == 0 else 1
-        p: Participant = match.participants[p_idx]
-        district_index = match.final_districts.index(district) if is_final_match(match) else DISTRICT_INDEX[district]
-
-        finished_player = 1 - p_idx if match.is_war else None
-        if is_match_finished(match, player=finished_player):
-            await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
-            return
-
-        # base must exist to set image
-        base = p.bases[district_index] if (p.bases and len(p.bases) > district_index) else None
-        if not base:
-            await ctx.send(f"{ERROR_EMOJI} No base has been submitted by <@{p.user_id}> for **{district}**.",
-                           ephemeral=True)
-            return
-
-        # download -> re-upload to owner -> delete temp
-        token = secrets.token_hex(8)
-        downloaded = await download_file(base_ss.url, f"temp/{token}.webp")
-        if not downloaded:
-            await ctx.send(f"{ERROR_EMOJI} Something went wrong when downloading the image.", ephemeral=True)
-            return
-
-        file_msg = await self.bot.owner.send(file=ipy.File(f"temp/{token}.webp"), silent=True)
-        await delete_file(f"temp/{token}.webp")
-
-        # save image URL on the BaseLink
-        base.image = file_msg.attachments[0].url
-        if not await self._save_match_bases(ctx, match, p_idx):
-            return
-
-        await ctx.send(f"{SUCCESS_EMOJI} You have set <@{p.user_id}>'s base scout view for **{district}**",
-                       ephemeral=True)
-
     @base_group.subcommand(sub_cmd_name="set", sub_cmd_description="Set bases for the match")
     @ipy.check(ipy.has_any_role(*LVL2_ROLES))
     @ipy.slash_option(
@@ -773,6 +695,11 @@ class MatchBaseCommands:
             await ctx.send(f"{ERROR_EMOJI} Base submission is not enabled for this match.", ephemeral=True)
             return
 
+        if is_final_match(match) and base_ss:
+            await ctx.send(f"{ERROR_EMOJI} Final bases get their image from Helper. Submit the link without a "
+                           "screenshot.", ephemeral=True)
+            return
+
         participant_ids = [p.user_id for p in match.participants]
         author_id = str(ctx.author.id)
 
@@ -802,17 +729,22 @@ class MatchBaseCommands:
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
 
-        # time gate: allow submission only up to 10 minutes before match
+        # time gate: Final bases lock when the opponent's scouting opens; others close 10 minutes before the match
         now_ts = int(datetime.now().timestamp())
-        match_time = None
-        if match.times:
-            match_time = match.times[opp_index] if match.is_war else match.times[0]
-        if match_time and (match_time - now_ts) < 600:
-            await ctx.send(
-                f"{ERROR_EMOJI} It is too late to submit now, you can only submit bases 10 minutes before the match.",
-                ephemeral=True
-            )
-            return
+        if is_final_match(match):
+            if self._final_bases_locked(match, opp_index):
+                await ctx.send(f"{ERROR_EMOJI} {FINAL_BASES_LOCKED}", ephemeral=True)
+                return
+        else:
+            match_time = None
+            if match.times:
+                match_time = match.times[opp_index] if match.is_war else match.times[0]
+            if match_time and (match_time - now_ts) < 600:
+                await ctx.send(
+                    f"{ERROR_EMOJI} It is too late to submit now, you can only submit bases 10 minutes before the match.",
+                    ephemeral=True
+                )
+                return
 
         # district from a link; must be one of the assigned districts
         district = DISTRICT_CODES_REVERSED[base_link.split('%')[2]]
@@ -864,7 +796,17 @@ class MatchBaseCommands:
             base_image_url = file_msg.attachments[0].url
 
         # persist on the document (no list-size enforcing per your note)
-        author_participant.bases[d_idx] = BaseLink(link=base_link, image=base_image_url)
+        if is_final_match(match):
+            scout_image = await store_scout_image(self.bot, base_link, author_id, ctx=ctx)
+            if scout_image is None:
+                return
+            # The Helper capture takes a while; scouting may have opened meanwhile.
+            if self._final_bases_locked(match, opp_index):
+                await ctx.send(f"{ERROR_EMOJI} {FINAL_BASES_LOCKED}", ephemeral=True)
+                return
+            author_participant.bases[d_idx] = BaseLink(link=base_link, image=scout_image, scout_view=True)
+        else:
+            author_participant.bases[d_idx] = BaseLink(link=base_link, image=base_image_url)
         if is_final_match(match):
             saved = await update_match(match, {
                 "_id": match.id, "final_base_page_revision": match.final_base_page_revision,
@@ -915,6 +857,53 @@ class MatchBaseCommands:
             f"{SUCCESS_EMOJI} Base submitted for **{district}**.",
             ephemeral=True
         )
+
+    @staticmethod
+    def _final_bases_locked(match: Match, attacker: int) -> bool:
+        opens = scout_opens_at(match, attacker)
+        return opens is not None and time.time() >= opens
+
+    @base_group.subcommand(sub_cmd_name="scout", sub_cmd_description="Scout your opponent's bases before a Final match")
+    @ipy.slash_option(name="match", description="Final match, e.g. QF1 (optional in its thread)",
+                      opt_type=ipy.OptionType.STRING, autocomplete=True)
+    async def match_base_scout(self, ctx: ipy.SlashContext, match: str = None):
+        await ctx.defer(ephemeral=True)
+        try:
+            match = await self._base_command_match(ctx, match)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            return
+        if not match or not is_final_match(match):
+            await ctx.send(f"{ERROR_EMOJI} Scouting is only available for Elo Final matches.", ephemeral=True)
+            return
+        participant_ids = [participant.user_id for participant in match.participants]
+        if str(ctx.author.id) in participant_ids:
+            attackers = [participant_ids.index(str(ctx.author.id))]
+        elif any(ctx.author.has_role(role) for role in LVL1_ROLES):
+            attackers = [0, 1]
+        else:
+            await ctx.send(f"{ERROR_EMOJI} Only the players and managers can scout this match.", ephemeral=True)
+            return
+        opening = [opens for attacker in attackers if (opens := scout_opens_at(match, attacker)) is not None]
+        scouting = [attacker for attacker in attackers if self._final_bases_locked(match, attacker)]
+        if not scouting:
+            await ctx.send(f"{ERROR_EMOJI} Scouting opens <t:{min(opening)}:R>." if opening else
+                           f"{ERROR_EMOJI} Scouting opens 30 minutes before the scheduled match.", ephemeral=True)
+            return
+        for attacker in scouting:
+            defender = match.participants[1 - attacker]
+            embeds = []
+            for district, base in zip(match.final_districts, defender.bases, strict=True):
+                embed = ipy.Embed(title=f"**{district}**", color=COLOR,
+                                  footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE))
+                if base and base.scout_view:
+                    embed.set_image(base.image)
+                else:
+                    embed.description = f"{LOADING_EMOJI} The scout view is being prepared."
+                embeds.append(embed)
+            # A manager sees both sides, so each reply names whose bases it shows.
+            owner = mention_user(await self.bot.fetch_user(defender.user_id)) if len(attackers) == 2 else None
+            await ctx.send(owner, embeds=embeds, ephemeral=True)
 
     @base_group.subcommand(sub_cmd_name="view", sub_cmd_description="View the bases of the match")
     @ipy.check(ipy.has_any_role(*LVL3_ROLES))

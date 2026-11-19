@@ -181,9 +181,9 @@ class TestFinalRedesignCommands(FinalScenarioCase):
         ctx = self.context(final)
         await cog.tokens_balance.callback.func(cog, ctx)
         embed = ctx.send.await_args.kwargs["embed"]
-        self.assertEqual(len(embed.fields), 3)
-        self.assertIn(f"S7 QF2 · 1,000 {TOKEN_EMOJI}", embed.fields[2].value)
-        self.assertIn("https://discordapp.com/users/2?tab=wishlist", embed.fields[2].value)
+        self.assertEqual([field.name for field in embed.fields], ["__**Bets**__", "__**Open Bets**__"])
+        self.assertIn(f"S7 QF2 · 1,000 {TOKEN_EMOJI}", embed.fields[1].value)
+        self.assertIn("https://discordapp.com/users/2?tab=wishlist", embed.fields[1].value)
         await cog.tokens_history.callback.func(cog, ctx)
         payload = ctx.send.await_args.kwargs
         lines = payload["embed"].description.splitlines()

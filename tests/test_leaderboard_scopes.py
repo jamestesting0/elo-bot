@@ -71,7 +71,7 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
 
     def test_slash_and_dropdown_share_requested_order(self):
         expected = [
-            "Elo", "Elo Reversed", "Highest Elo", "Addiction", "Winrate", "Hitrate", "Tokens", "Predictions",
+            "Elo", "Elo Reversed", "Highest Elo", "Addiction", "Winrate", "Hitrate", "Tokens", "Betting", "Predictions",
             "Capital Peak Hitrate", "Wizard Valley Hitrate", "Barbarian Camp Hitrate", "Balloon Lagoon Hitrate",
             "Builder's Workshop Hitrate", "Dragon Cliffs Hitrate", "Golem Quarry Hitrate",
             "Skeleton Park Hitrate", "Goblin Mines Hitrate",
@@ -327,7 +327,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         ctx.message.embeds = [payload["embed"]]
         ctx.message.components = payload["components"]
 
-    async def test_all_seasons_sums_every_final_by_player_and_preserves_points_ties(self):
+    async def test_all_seasons_sums_every_final_and_ranks_by_accuracy_then_correct_picks(self):
         self.prediction(3, "a", 2, 2)
         self.prediction(7, "a", 6, 100)
         self.prediction(3, "b", 5, 5)
@@ -339,36 +339,18 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         rows = await final_board_rows("Predictions", "All Seasons")
         self.assertEqual(
             [(row.user_id, row.value, row.eligible, row.rank, row.scope) for row in rows],
-            [("a", 8, 102, 1, "All Seasons"), ("b", 8, 8, 2, "All Seasons"),
-             ("c", 4, 4, 3, "All Seasons"), ("zero", 0, 0, 4, "All Seasons")],
+            [("b", 8, 8, 1, "All Seasons"), ("c", 4, 4, 2, "All Seasons"),
+             ("a", 8, 102, 3, "All Seasons"), ("zero", 0, 0, 4, "All Seasons")],
         )
 
-    async def test_default_uses_active_final_not_ranked_current_season(self):
+    async def test_default_scope_is_all_seasons(self):
         self.prediction(7, "active", 2, 3)
-        self.prediction(9, "latest", 9, 9)
-        ctx = await self.invoke()
-        payload = ctx.send.await_args.kwargs
-        self.assertEqual(payload["embed"].fields[0].value, "Season 7 Final")
-        self.assertEqual(selected(payload["components"]), ["7"])
-        self.assertIn("`2/3`", payload["embed"].description)
-        self.assertNotIn("/latest>", payload["embed"].description)
-
-    async def test_default_empty_final_falls_back_to_aggregate_not_latest_final(self):
-        self.prediction(7, "draft", 5, 5, submitted_at=None)
-        self.prediction(3, "a", 2, 3)
-        self.prediction(9, "a", 3, 4)
+        self.prediction(3, "active", 1, 1)
         ctx = await self.invoke()
         payload = ctx.send.await_args.kwargs
         self.assertEqual(payload["embed"].fields[0].value, "All Seasons")
         self.assertEqual(selected(payload["components"]), ["All Seasons"])
-        self.assertIn("`5/7`", payload["embed"].description)
-
-    async def test_submitted_zero_score_is_not_an_empty_final(self):
-        self.prediction(7, "zero", 0, 0)
-        self.prediction(3, "old", 10, 10)
-        ctx = await self.invoke()
-        self.assertEqual(ctx.send.await_args.kwargs["embed"].fields[0].value, "Season 7 Final")
-        self.assertIn("`0/0`", ctx.send.await_args.kwargs["embed"].description)
+        self.assertIn("`3/4`", payload["embed"].description)
 
     async def test_explicit_empty_final_scopes_never_fall_back(self):
         self.prediction(3, "old", 10, 10)
@@ -387,7 +369,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         self.assertIn("`2/3`", payload["embed"].description)
         self.assertNotIn("`10/11`", payload["embed"].description)
 
-    async def test_predictions_type_switch_uses_active_final_and_empty_fallback(self):
+    async def test_predictions_type_switch_defaults_to_all_seasons(self):
         self.prediction(3, "old", 2, 3)
         for has_current in (False, True):
             with self.subTest(has_current=has_current):
@@ -398,10 +380,8 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
                 ctx.values = ["Predictions"]
                 await self.cog.lb_type_select.callback.func(self.cog, ctx)
                 payload = ctx.edit.await_args.kwargs
-                self.assertEqual(payload["embeds"][0].fields[0].value,
-                                 "Season 7 Final" if has_current else "All Seasons")
-                self.assertEqual(selected(payload["components"]),
-                                 ["7" if has_current else "All Seasons"])
+                self.assertEqual(payload["embeds"][0].fields[0].value, "All Seasons")
+                self.assertEqual(selected(payload["components"]), ["All Seasons"])
 
     async def test_aggregate_arrows_modal_and_refresh_keep_totals_scope_and_page(self):
         for index in range(LB_ENTRIES_PER_PAGE + 2):
@@ -477,7 +457,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
     async def test_active_final_without_ranked_archives_keeps_selected_scope(self):
         self.cog._seasons_cache = []
         self.prediction(7, "active", 1, 2)
-        ctx = await self.invoke()
+        ctx = await self.invoke(season="7")
         payload = ctx.send.await_args.kwargs
         self.assertEqual(payload["embed"].fields[0].value, "Season 7 Final")
         self.assertEqual(selected(payload["components"]), ["7"])

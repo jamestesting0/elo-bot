@@ -70,13 +70,13 @@ class TestFinalScoreboard(unittest.TestCase):
                 self.assertTrue((448 if side == 0 else 1076) <= x < (532 if side == 0 else 1160))
                 self.assertTrue(y - 22 <= top <= y + 22)
 
-    def test_winner_loser_and_tie_colors_apply_to_names_scores_and_totals(self):
-        for winner in ("1", "2", None):
+    def test_winner_and_loser_colors_apply_to_names_scores_and_totals(self):
+        for winner in ("1", "2"):
             self.snapshot.winner = winner
             with self.subTest(winner=winner), Image.open(BytesIO(
                     render_scoreboard(self.final, self.snapshot, {}))) as image:
                 for side, user in enumerate(("1", "2")):
-                    color = (141, 144, 194) if winner is not None and user != winner else (255, 255, 255)
+                    color = (141, 144, 194) if user != winner else (255, 255, 255)
                     other = (255, 255, 255) if color == (141, 144, 194) else (141, 144, 194)
                     plates = (NAME_PLATES[side], *SCORE_PLATES[side * 14:side * 14 + 14],
                               *TOTAL_PLATES[side * 2:side * 2 + 2])

@@ -3008,6 +3008,51 @@
    "autocomplete_callbacks": {},
    "callback": {
     "closure": [
+     "final_dashboard"
+    ],
+    "name": "final_dashboard"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Elo Final management commands'>",
+   "dm_permission": false,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "FinalCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='final'>",
+   "nsfw": false,
+   "options": null,
+   "parameters": {},
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "final dashboard",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Open the Final dashboard'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='dashboard'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "closure": [
      "final_end"
     ],
     "name": "final_end"
@@ -3879,51 +3924,6 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Open the Elo Final for the ongoing season'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='start'>",
-   "type": "SlashCommand"
-  },
-  {
-   "_application_id": null,
-   "_uses_arg": false,
-   "auto_defer": "Missing",
-   "autocomplete_callbacks": {},
-   "callback": {
-    "closure": [
-     "final_status"
-    ],
-    "name": "final_status"
-   },
-   "checks": [],
-   "cmd_id": {},
-   "contexts": [
-    "ContextType.GUILD"
-   ],
-   "cooldown": "Missing",
-   "default_member_permissions": null,
-   "description": "<LocalisedDesc: default_locale=english_us, value='Elo Final management commands'>",
-   "dm_permission": false,
-   "enabled": true,
-   "error_callback": null,
-   "extension": "FinalCommands",
-   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
-   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
-   "integration_types": [
-    "IntegrationType.GUILD_INSTALL"
-   ],
-   "max_concurrency": "Missing",
-   "name": "<LocalisedName: default_locale=english_us, value='final'>",
-   "nsfw": false,
-   "options": null,
-   "parameters": {},
-   "post_run_callback": null,
-   "pre_run_callback": null,
-   "resolved": "final status",
-   "scope": "1033924790513311756",
-   "scopes": [
-    888075522536505394,
-    1033924790513311756
-   ],
-   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Show Final readiness and recovery'>",
-   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='status'>",
    "type": "SlashCommand"
   },
   {
@@ -5556,6 +5556,69 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_add"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens add",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Add tokens to a player's wallet'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='add'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_balance"
    },
    "checks": [],
@@ -5580,8 +5643,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens balance",
@@ -5624,8 +5691,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens history",
@@ -5636,6 +5707,69 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Show grants, bets, payouts, and corrections'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='history'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_remove"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens remove",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove tokens from a player's wallet'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove'>",
    "type": "SlashCommand"
   },
   {
@@ -8884,6 +9018,51 @@
    "autocomplete_callbacks": {},
    "callback": {
     "closure": [
+     "final_dashboard"
+    ],
+    "name": "final_dashboard"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Elo Final management commands'>",
+   "dm_permission": false,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "FinalCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='final'>",
+   "nsfw": false,
+   "options": null,
+   "parameters": {},
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "final dashboard",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Open the Final dashboard'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='dashboard'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "closure": [
      "final_end"
     ],
     "name": "final_end"
@@ -9755,51 +9934,6 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Open the Elo Final for the ongoing season'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='start'>",
-   "type": "SlashCommand"
-  },
-  {
-   "_application_id": null,
-   "_uses_arg": false,
-   "auto_defer": "Missing",
-   "autocomplete_callbacks": {},
-   "callback": {
-    "closure": [
-     "final_status"
-    ],
-    "name": "final_status"
-   },
-   "checks": [],
-   "cmd_id": {},
-   "contexts": [
-    "ContextType.GUILD"
-   ],
-   "cooldown": "Missing",
-   "default_member_permissions": null,
-   "description": "<LocalisedDesc: default_locale=english_us, value='Elo Final management commands'>",
-   "dm_permission": false,
-   "enabled": true,
-   "error_callback": null,
-   "extension": "FinalCommands",
-   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
-   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
-   "integration_types": [
-    "IntegrationType.GUILD_INSTALL"
-   ],
-   "max_concurrency": "Missing",
-   "name": "<LocalisedName: default_locale=english_us, value='final'>",
-   "nsfw": false,
-   "options": null,
-   "parameters": {},
-   "post_run_callback": null,
-   "pre_run_callback": null,
-   "resolved": "final status",
-   "scope": "888075522536505394",
-   "scopes": [
-    888075522536505394,
-    1033924790513311756
-   ],
-   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Show Final readiness and recovery'>",
-   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='status'>",
    "type": "SlashCommand"
   },
   {
@@ -11432,6 +11566,69 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_add"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens add",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Add tokens to a player's wallet'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='add'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_balance"
    },
    "checks": [],
@@ -11456,8 +11653,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens balance",
@@ -11500,8 +11701,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens history",
@@ -11512,6 +11717,69 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Show grants, bets, payouts, and corrections'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='history'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_remove"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens remove",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove tokens from a player's wallet'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove'>",
    "type": "SlashCommand"
   },
   {
@@ -11949,14 +12217,12 @@
     "SlashCommandOption()",
     "SlashCommandOption()",
     "SlashCommandOption()",
-    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
     "attacks_first": "SlashCommandParameter(name='attacks_first', type=int | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "clan": "SlashCommandParameter(name='clan', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
     "district": "SlashCommandParameter(name='district', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
-    "scout": "SlashCommandParameter(name='scout', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
     "sequential": "SlashCommandParameter(name='sequential', type=bool | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
@@ -12186,6 +12452,53 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "match_base_scout"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='None'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "MatchCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='None'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='base'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='match'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "match": "SlashCommandParameter(name='match', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "match base scout",
+   "scope": "0",
+   "scopes": [
+    0
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Scout your opponent's bases before a Final match'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='scout'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "match_base_set"
    },
    "checks": [
@@ -12243,71 +12556,6 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Set bases for the match'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='set'>",
-   "type": "SlashCommand"
-  },
-  {
-   "_application_id": null,
-   "_uses_arg": false,
-   "auto_defer": "Missing",
-   "autocomplete_callbacks": {},
-   "callback": {
-    "name": "match_base_set_image"
-   },
-   "checks": [
-    {
-     "closure": [
-      [
-       1033926947312517252,
-       1033933093633007707,
-       1079148582579470397,
-       1339318723957489727,
-       1214058812831694858
-      ]
-     ],
-     "factory": "has_any_role.<locals>.check",
-     "name": "check"
-    }
-   ],
-   "cmd_id": {},
-   "contexts": [
-    "ContextType.GUILD",
-    "ContextType.BOT_DM",
-    "ContextType.PRIVATE_CHANNEL"
-   ],
-   "cooldown": "Missing",
-   "default_member_permissions": null,
-   "description": "<LocalisedDesc: default_locale=english_us, value='None'>",
-   "dm_permission": true,
-   "enabled": true,
-   "error_callback": null,
-   "extension": "MatchCommands",
-   "group_description": "<LocalisedDesc: default_locale=english_us, value='None'>",
-   "group_name": "<LocalisedName: default_locale=english_us, value='base'>",
-   "integration_types": [
-    "IntegrationType.GUILD_INSTALL"
-   ],
-   "max_concurrency": "Missing",
-   "name": "<LocalisedName: default_locale=english_us, value='match'>",
-   "nsfw": false,
-   "options": [
-    "SlashCommandOption()",
-    "SlashCommandOption()",
-    "SlashCommandOption()"
-   ],
-   "parameters": {
-    "base_ss": "SlashCommandParameter(name='base_ss', type=<class Attachment>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
-    "district": "SlashCommandParameter(name='district', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
-    "player": "SlashCommandParameter(name='player', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
-   },
-   "post_run_callback": null,
-   "pre_run_callback": null,
-   "resolved": "match base set-image",
-   "scope": "0",
-   "scopes": [
-    0
-   ],
-   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Set the scout view of a base'>",
-   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='set-image'>",
    "type": "SlashCommand"
   },
   {
@@ -13300,12 +13548,10 @@
    "name": "<LocalisedName: default_locale=english_us, value='match'>",
    "nsfw": false,
    "options": [
-    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
-    "clan": "SlashCommandParameter(name='clan', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
-    "scout": "SlashCommandParameter(name='scout', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+    "clan": "SlashCommandParameter(name='clan', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -13438,14 +13684,12 @@
     "SlashCommandOption()",
     "SlashCommandOption()",
     "SlashCommandOption()",
-    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
     "clan": "SlashCommandParameter(name='clan', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
     "district": "SlashCommandParameter(name='district', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "player": "SlashCommandParameter(name='player', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
-    "scout": "SlashCommandParameter(name='scout', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
     "sequential": "SlashCommandParameter(name='sequential', type=bool | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
@@ -13571,13 +13815,11 @@
    "nsfw": false,
    "options": [
     "SlashCommandOption()",
-    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
     "clan": "SlashCommandParameter(name='clan', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
     "player": "SlashCommandParameter(name='player', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
-    "scout": "SlashCommandParameter(name='scout', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
     "slot": "SlashCommandParameter(name='slot', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
@@ -15101,6 +15343,39 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "readme_button"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "EmbedCommands",
+    "id": "readme_button",
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::['readme_button']",
+    "nsfw": false,
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "name": "rewards_button"
     },
     "checks": [],
@@ -15122,39 +15397,6 @@
     ],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['rewards_button']",
-    "nsfw": false,
-    "post_run_callback": null,
-    "pre_run_callback": null,
-    "scopes": [
-     0
-    ],
-    "type": "ComponentCommand"
-   },
-   {
-    "_application_id": null,
-    "auto_defer": "Missing",
-    "callback": {
-     "name": "rules_button"
-    },
-    "checks": [],
-    "cmd_id": {},
-    "contexts": [
-     "ContextType.GUILD",
-     "ContextType.BOT_DM",
-     "ContextType.PRIVATE_CHANNEL"
-    ],
-    "cooldown": "Missing",
-    "default_member_permissions": null,
-    "dm_permission": true,
-    "enabled": true,
-    "error_callback": null,
-    "extension": "EmbedCommands",
-    "id": "rules_button",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
-    "max_concurrency": "Missing",
-    "name": "ComponentCallback::['rules_button']",
     "nsfw": false,
     "post_run_callback": null,
     "pre_run_callback": null,
@@ -16075,6 +16317,40 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "readme_section"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "EmbedCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^readme_section\\\\|\\\\d+$')]",
+    "nsfw": false,
+    "pattern": "^readme_section\\|\\d+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "closure": [
       "bet_back"
      ],
@@ -16296,9 +16572,9 @@
      "IntegrationType.GUILD_INSTALL"
     ],
     "max_concurrency": "Missing",
-    "name": "ComponentCallback::[re.compile('^finaldash\\\\|(bracket|open|close|round|recover|end)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
+    "name": "ComponentCallback::[re.compile('^finaldash\\\\|(bracket|open|close|round|recover|end|refresh)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
     "nsfw": false,
-    "pattern": "^finaldash\\|(bracket|open|close|round|recover|end)\\|[a-f0-9]{24}\\|\\d+$",
+    "pattern": "^finaldash\\|(bracket|open|close|round|recover|end|refresh)\\|[a-f0-9]{24}\\|\\d+$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -16423,6 +16699,93 @@
     "name": "ComponentCallback::[re.compile('^finalhist\\\\|.+$')]",
     "nsfw": false,
     "pattern": "^finalhist\\|.+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
+      "final_invitation_answer"
+     ],
+     "name": "final_invitation_answer"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^finalinvite\\\\|(accept|decline)\\\\|[a-f0-9]{24}$')]",
+    "nsfw": false,
+    "pattern": "^finalinvite\\|(accept|decline)\\|[a-f0-9]{24}$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
+      "final_invitation_withdraw"
+     ],
+     "name": "final_invitation_withdraw"
+    },
+    "checks": [
+     {
+      "closure": [
+       [
+        1033926947312517252,
+        1033933093633007707,
+        1079148582579470397,
+        1339318723957489727
+       ]
+      ],
+      "factory": "has_any_role.<locals>.check",
+      "name": "check"
+     }
+    ],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^finalinvwithdraw\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
+    "nsfw": false,
+    "pattern": "^finalinvwithdraw\\|[a-f0-9]{24}\\|\\d+$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -16819,6 +17182,56 @@
     "name": "ComponentCallback::[re.compile('^finalresult\\\\|.+$')]",
     "nsfw": false,
     "pattern": "^finalresult\\|.+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
+      "final_roster_open"
+     ],
+     "name": "final_roster_open"
+    },
+    "checks": [
+     {
+      "closure": [
+       [
+        1033926947312517252,
+        1033933093633007707,
+        1079148582579470397,
+        1339318723957489727
+       ]
+      ],
+      "factory": "has_any_role.<locals>.check",
+      "name": "check"
+     }
+    ],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^finalroster\\\\|(add|invite|replace)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
+    "nsfw": false,
+    "pattern": "^finalroster\\|(add|invite|replace)\\|[a-f0-9]{24}\\|\\d+$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -18202,6 +18615,9 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "closure": [
+      "token_jump"
+     ],
      "name": "token_jump"
     },
     "checks": [],
@@ -18236,6 +18652,9 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "closure": [
+      "token_page"
+     ],
      "name": "token_page"
     },
     "checks": [],
@@ -19647,6 +20066,57 @@
     "auto_defer": "Missing",
     "callback": {
      "closure": [
+      "final_roster_submit"
+     ],
+     "name": "final_roster_submit"
+    },
+    "checks": [
+     {
+      "closure": [
+       [
+        1033926947312517252,
+        1033933093633007707,
+        1079148582579470397,
+        1339318723957489727
+       ]
+      ],
+      "factory": "has_any_role.<locals>.check",
+      "name": "check"
+     }
+    ],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ModalCallback::[re.compile('^finalrostermodal\\\\|(add|invite|replace)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
+    "nsfw": false,
+    "pattern": "^finalrostermodal\\|(add|invite|replace)\\|[a-f0-9]{24}\\|\\d+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ModalCommand"
+   },
+   {
+    "_application_id": null,
+    "_just_ctx": false,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
       "confirm_occupied_match_modal"
      ],
      "name": "confirm_occupied_match_modal"
@@ -19897,6 +20367,9 @@
     "_just_ctx": false,
     "auto_defer": "Missing",
     "callback": {
+     "closure": [
+      "token_jump_modal"
+     ],
      "name": "token_jump_modal"
     },
     "checks": [],
@@ -20195,6 +20668,38 @@
          1,
          2
         ],
+        "description": "Scout your opponent's bases before a Final match",
+        "description_localizations": null,
+        "integration_types": [
+         0
+        ],
+        "name": "scout",
+        "name_localizations": null,
+        "options": [
+         {
+          "autocomplete": true,
+          "channel_types": null,
+          "choices": [],
+          "description": "Final match, e.g. QF1 (optional in its thread)",
+          "description_localizations": null,
+          "max_length": null,
+          "max_value": null,
+          "min_length": null,
+          "min_value": null,
+          "name": "match",
+          "name_localizations": null,
+          "required": false,
+          "type": 3
+         }
+        ],
+        "type": 1
+       },
+       {
+        "contexts": [
+         0,
+         1,
+         2
+        ],
         "description": "Set bases for the match",
         "description_localizations": null,
         "integration_types": [
@@ -20257,125 +20762,6 @@
           "name": "base_ss",
           "name_localizations": null,
           "required": false,
-          "type": 11
-         }
-        ],
-        "type": 1
-       },
-       {
-        "contexts": [
-         0,
-         1,
-         2
-        ],
-        "description": "Set the scout view of a base",
-        "description_localizations": null,
-        "integration_types": [
-         0
-        ],
-        "name": "set-image",
-        "name_localizations": null,
-        "options": [
-         {
-          "autocomplete": false,
-          "channel_types": null,
-          "choices": [
-           {
-            "name": "Player 1",
-            "name_localizations": null,
-            "value": 0
-           },
-           {
-            "name": "Player 2",
-            "name_localizations": null,
-            "value": 1
-           }
-          ],
-          "description": "The player to set base scout view for",
-          "description_localizations": null,
-          "max_length": null,
-          "max_value": null,
-          "min_length": null,
-          "min_value": null,
-          "name": "player",
-          "name_localizations": null,
-          "required": true,
-          "type": 4
-         },
-         {
-          "autocomplete": false,
-          "channel_types": null,
-          "choices": [
-           {
-            "name": "Capital Peak",
-            "name_localizations": null,
-            "value": "Capital Peak"
-           },
-           {
-            "name": "Wizard Valley",
-            "name_localizations": null,
-            "value": "Wizard Valley"
-           },
-           {
-            "name": "Barbarian Camp",
-            "name_localizations": null,
-            "value": "Barbarian Camp"
-           },
-           {
-            "name": "Balloon Lagoon",
-            "name_localizations": null,
-            "value": "Balloon Lagoon"
-           },
-           {
-            "name": "Builder's Workshop",
-            "name_localizations": null,
-            "value": "Builder's Workshop"
-           },
-           {
-            "name": "Dragon Cliffs",
-            "name_localizations": null,
-            "value": "Dragon Cliffs"
-           },
-           {
-            "name": "Golem Quarry",
-            "name_localizations": null,
-            "value": "Golem Quarry"
-           },
-           {
-            "name": "Skeleton Park",
-            "name_localizations": null,
-            "value": "Skeleton Park"
-           },
-           {
-            "name": "Goblin Mines",
-            "name_localizations": null,
-            "value": "Goblin Mines"
-           }
-          ],
-          "description": "The district of the base",
-          "description_localizations": null,
-          "max_length": null,
-          "max_value": null,
-          "min_length": null,
-          "min_value": null,
-          "name": "district",
-          "name_localizations": null,
-          "required": true,
-          "type": 3
-         },
-         {
-          "autocomplete": false,
-          "channel_types": null,
-          "choices": [],
-          "description": "The scout view of the base",
-          "description_localizations": null,
-          "max_length": null,
-          "max_value": null,
-          "min_length": null,
-          "min_value": null,
-          "name": "base_ss",
-          "name_localizations": null,
-          "required": true,
           "type": 11
          }
         ],
@@ -21397,21 +21783,6 @@
          {
           "autocomplete": false,
           "channel_types": null,
-          "choices": [],
-          "description": "To allow 10 minutes scout or not",
-          "description_localizations": null,
-          "max_length": null,
-          "max_value": null,
-          "min_length": null,
-          "min_value": null,
-          "name": "scout",
-          "name_localizations": null,
-          "required": false,
-          "type": 5
-         },
-         {
-          "autocomplete": false,
-          "channel_types": null,
           "choices": [
            {
             "name": "Capital Peak",
@@ -21651,21 +22022,6 @@
           "name_localizations": null,
           "required": true,
           "type": 3
-         },
-         {
-          "autocomplete": false,
-          "channel_types": null,
-          "choices": [],
-          "description": "To allow 10 minutes scout or not",
-          "description_localizations": null,
-          "max_length": null,
-          "max_value": null,
-          "min_length": null,
-          "min_value": null,
-          "name": "scout",
-          "name_localizations": null,
-          "required": false,
-          "type": 5
          }
         ],
         "type": 1
@@ -21835,21 +22191,6 @@
         "name_localizations": null,
         "required": true,
         "type": 3
-       },
-       {
-        "autocomplete": false,
-        "channel_types": null,
-        "choices": [],
-        "description": "To allow 10 minutes scout or not",
-        "description_localizations": null,
-        "max_length": null,
-        "max_value": null,
-        "min_length": null,
-        "min_value": null,
-        "name": "scout",
-        "name_localizations": null,
-        "required": false,
-        "type": 5
        },
        {
         "autocomplete": false,
@@ -22208,21 +22549,6 @@
         "name_localizations": null,
         "required": true,
         "type": 3
-       },
-       {
-        "autocomplete": false,
-        "channel_types": null,
-        "choices": [],
-        "description": "To allow 10 minutes scout or not",
-        "description_localizations": null,
-        "max_length": null,
-        "max_value": null,
-        "min_length": null,
-        "min_value": null,
-        "name": "scout",
-        "name_localizations": null,
-        "required": false,
-        "type": 5
        }
       ],
       "type": 1
@@ -25610,7 +25936,7 @@
           "autocomplete": false,
           "channel_types": null,
           "choices": [],
-          "description": "Explicit tie or forfeit winner",
+          "description": "Forfeit winner",
           "description_localizations": null,
           "max_length": null,
           "max_value": null,
@@ -25625,7 +25951,7 @@
           "autocomplete": false,
           "channel_types": null,
           "choices": [],
-          "description": "Correction, tie or forfeit reason",
+          "description": "Correction or forfeit reason",
           "description_localizations": null,
           "max_length": null,
           "max_value": null,
@@ -25787,6 +26113,19 @@
         "type": 3
        }
       ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0
+      ],
+      "description": "Open the Final dashboard",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "dashboard",
+      "name_localizations": null,
       "type": 1
      },
      {
@@ -26095,19 +26434,6 @@
        0
       ],
       "name": "start",
-      "name_localizations": null,
-      "type": 1
-     },
-     {
-      "contexts": [
-       0
-      ],
-      "description": "Show Final readiness and recovery",
-      "description_localizations": null,
-      "integration_types": [
-       0
-      ],
-      "name": "status",
       "name_localizations": null,
       "type": 1
      }
@@ -26939,6 +27265,11 @@
         "name": "Tokens",
         "name_localizations": null,
         "value": "Tokens"
+       },
+       {
+        "name": "Betting",
+        "name_localizations": null,
+        "value": "Betting"
        },
        {
         "name": "Predictions",
@@ -27874,6 +28205,53 @@
        1,
        2
       ],
+      "description": "Add tokens to a player's wallet",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "add",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Tokens to add",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": true,
+        "type": 4
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Show Available Tokens, stakes, and debt",
       "description_localizations": null,
       "integration_types": [
@@ -27881,6 +28259,23 @@
       ],
       "name": "balance",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
       "type": 1
      },
      {
@@ -27896,6 +28291,70 @@
       ],
       "name": "history",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Remove tokens from a player's wallet",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "remove",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Tokens to remove",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": true,
+        "type": 4
+       }
+      ],
       "type": 1
      }
     ]
@@ -30543,7 +31002,7 @@
           "autocomplete": false,
           "channel_types": null,
           "choices": [],
-          "description": "Explicit tie or forfeit winner",
+          "description": "Forfeit winner",
           "description_localizations": null,
           "max_length": null,
           "max_value": null,
@@ -30558,7 +31017,7 @@
           "autocomplete": false,
           "channel_types": null,
           "choices": [],
-          "description": "Correction, tie or forfeit reason",
+          "description": "Correction or forfeit reason",
           "description_localizations": null,
           "max_length": null,
           "max_value": null,
@@ -30720,6 +31179,19 @@
         "type": 3
        }
       ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0
+      ],
+      "description": "Open the Final dashboard",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "dashboard",
+      "name_localizations": null,
       "type": 1
      },
      {
@@ -31028,19 +31500,6 @@
        0
       ],
       "name": "start",
-      "name_localizations": null,
-      "type": 1
-     },
-     {
-      "contexts": [
-       0
-      ],
-      "description": "Show Final readiness and recovery",
-      "description_localizations": null,
-      "integration_types": [
-       0
-      ],
-      "name": "status",
       "name_localizations": null,
       "type": 1
      }
@@ -31872,6 +32331,11 @@
         "name": "Tokens",
         "name_localizations": null,
         "value": "Tokens"
+       },
+       {
+        "name": "Betting",
+        "name_localizations": null,
+        "value": "Betting"
        },
        {
         "name": "Predictions",
@@ -32807,6 +33271,53 @@
        1,
        2
       ],
+      "description": "Add tokens to a player's wallet",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "add",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Tokens to add",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": true,
+        "type": 4
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Show Available Tokens, stakes, and debt",
       "description_localizations": null,
       "integration_types": [
@@ -32814,6 +33325,23 @@
       ],
       "name": "balance",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
       "type": 1
      },
      {
@@ -32829,6 +33357,70 @@
       ],
       "name": "history",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Remove tokens from a player's wallet",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "remove",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Tokens to remove",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": true,
+        "type": 4
+       }
+      ],
       "type": 1
      }
     ]
@@ -33003,6 +33595,17 @@
    "owner": "ChallengeCommands",
    "state": {
     "delta": "datetime.timedelta(seconds=600)"
+   },
+   "trigger": "IntervalTrigger"
+  },
+  {
+   "attr": "prepare_final_scouting",
+   "callback": {
+    "name": "prepare_final_scouting"
+   },
+   "owner": "FinalCommands",
+   "state": {
+    "delta": "datetime.timedelta(seconds=60)"
    },
    "trigger": "IntervalTrigger"
   },

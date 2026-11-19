@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 import anyio
 import interactions as ipy
 
-from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.core.finals import FinalError
 from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.db.final_models import FinalMatchResult
@@ -182,22 +182,15 @@ class TestFinalResultDrafts(FinalUICase):
         self.assertTrue(ctx.edit_origin.await_args.kwargs["content"].startswith(str(ERROR_EMOJI)))
         self.channel.send.assert_not_awaited()
 
-    async def test_tie_receipt_names_the_manager_decision_without_claiming_advancement(self):
+    async def test_tied_scores_are_refused_before_a_preview_exists(self):
         node = self.final.nodes["QF1"]
         ctx = self.context()
         ctx.custom_id = f"finalres|{self.final.id}|QF1|9|0|{node.contestant_revision}|{node.attempt}|-|0"
         await self.cog.final_result_modal.callback.func(self.cog, ctx, player1="\n".join(["3.100"] * 7),
                                                        player2="\n".join(["3.100"] * 7))
-        draft = await FinalResultDraft.find_one({"state": "PENDING"})
-        confirmation = self.context(component=True)
-        confirmation.custom_id = f"finalconfirm|{draft.id}"
-        await self.cog.final_result_confirmation.callback.func(self.cog, confirmation)
-        self.assertEqual((await final_for_view()).nodes["QF1"].state, "TIED")
-        receipt = confirmation.edit_origin.await_args.kwargs
-        self.assertTrue(receipt["content"].startswith(str(IMPORTANT_EMOJI)))
-        self.assertIn("`/final match result match:QF1`", receipt["content"])
-        self.assertIsNone((await final_for_view()).nodes["QF1"].winner)
-        self.assertEqual(receipt["components"], [])
+        self.assertIn(str(ERROR_EMOJI), str(ctx.send.await_args))
+        self.assertIsNone(await FinalResultDraft.find_one({}))
+        self.assertIsNone((await final_for_view()).nodes["QF1"].result_id)
 
     async def test_forfeit_receipt_follows_the_committed_refund(self):
         market = await open_market(self.final, "QF1")

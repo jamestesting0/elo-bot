@@ -36,9 +36,11 @@ def _finish_channel_name_edit(channel_id: int, task: asyncio.Task[None]) -> None
         })
 
 
-def schedule_channel_name_edit(channel: ipy.BaseChannel, status_prefix: str) -> asyncio.Task[None]:
+def schedule_channel_name_edit(channel: ipy.BaseChannel, status_prefix: str,
+                               suffix: str | None = None) -> asyncio.Task[None]:
     channel_id = int(channel.id)
-    suffix = channel.name.partition(" ")[2]
+    if suffix is None:
+        suffix = channel.name.partition(" ")[2]
     _LATEST_CHANNEL_NAMES[channel_id] = f"{status_prefix} {suffix}"
 
     task = _CHANNEL_NAME_EDIT_TASKS.get(channel_id)

@@ -5,8 +5,7 @@ import interactions as ipy
 from beanie.odm.operators.find.comparison import NotIn
 
 from elo_bot.config.emojis import IMPORTANT_EMOJI, ERROR_EMOJI
-from elo_bot.config.game import DISTRICT_CODES_REVERSED
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, LEGACY_UNAVAILABLE_IMAGE, UNAVAILABLE_IMAGE
+from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, UNAVAILABLE_IMAGE
 from elo_bot.db import BaseLayout, BaseLink, Match, Player
 from elo_bot.core.finals import is_final_match, FinalError
 from elo_bot.features.matches.base_selection import district_base_quality, ensure_secondary_base_index, get_base_quality
@@ -15,49 +14,11 @@ from elo_bot.features.finals.matches import require_ongoing_match
 from elo_bot.features.matches.controls import update_match
 
 
-def is_missing_scout_view(match: Match, player_id: str | int):
-    player_id = str(player_id)
-    participant = next((p for p in match.participants if p.user_id == player_id), None)
-    if not participant:
-        return None, None
-
-    for i, base in enumerate(participant.bases):
-        if not base:
-            continue
-
-        if not base.image or base.image in (UNAVAILABLE_IMAGE, LEGACY_UNAVAILABLE_IMAGE):
-            # Get district name and return the missing base link
-            district = match.final_districts[i] if i < len(match.final_districts) else None
-            if not district and base.link:
-                # fallback if final_districts not filled properly
-                district = DISTRICT_CODES_REVERSED.get(base.link.split('%')[2], "Unknown")
-
-            return district, base.link
-
-    return None, None
-
-
-async def send_bases(bot: ipy.Client, token: str, player: int, opponent: int, scout: bool = True):
+async def assign_bases(bot: ipy.Client, token: str, player: int, opponent: int) -> None:
     match = await Match.find_one(Match.token == token)
-    p_index = player
-    player = await bot.fetch_user(match.participants[player].user_id)
-    opponent = await bot.fetch_user(match.participants[opponent].user_id)
-
-    base_embeds = await choose_bases(token, player, opponent)
-    if not scout:
-        return
-
-    try:
-        if (not match.is_war and not match.hosts[0]) or (match.is_war and not match.hosts[p_index]):
-            await player.send(f"{IMPORTANT_EMOJI} It is 10 minutes before the match <#{match.thread}> and "
-                              f"no host is available. Please reschedule your match, and make sure there is a "
-                              f"host for it.")
-
-            return
-
-        await player.send(f"Bases you will attack for the match <#{match.thread}>", embeds=base_embeds)
-    except ipy.errors.Forbidden:
-        pass
+    player_user = await bot.fetch_user(match.participants[player].user_id)
+    opponent_user = await bot.fetch_user(match.participants[opponent].user_id)
+    await choose_bases(token, player_user, opponent_user)
 
 
 def missing_bases_message(match: Match, sides: tuple[int, ...] = (0, 1)) -> str | None:

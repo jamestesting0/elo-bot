@@ -8,6 +8,7 @@ from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS, LVL1_ROLES
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Player
+from elo_bot.discord.decorators import ignore_repeated_clicks
 from elo_bot.features.finals import lifecycle
 
 
@@ -21,7 +22,8 @@ async def final_member(ctx: ipy.InteractionContext, edition: EloFinal | None = N
 def final_action[Owner, **P](
     callback: Callable[Concatenate[Owner, ipy.InteractionContext, P], Awaitable[None]],
 ) -> Callable[Concatenate[Owner, ipy.InteractionContext, P], Awaitable[None]]:
-    """Answer expected domain failures using the interaction's acknowledged state."""
+    """Answer expected domain failures using the interaction's acknowledged state; ignore double clicks."""
+    @ignore_repeated_clicks
     @wraps(callback)
     async def wrapped(self: Owner, ctx: ipy.InteractionContext, *args: P.args, **kwargs: P.kwargs) -> None:
         try:

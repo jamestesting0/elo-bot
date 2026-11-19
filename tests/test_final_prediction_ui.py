@@ -40,6 +40,14 @@ class TestFinalPredictionNavigation(unittest.TestCase):
         prediction.draft[played] = final.nodes[played].contestants[0]
         self.assertFalse(self.next_button(final, prediction).disabled)
 
+    def test_submit_appears_only_on_the_review_step(self):
+        final, prediction = self.fixture(8)
+        for stage in range(3):
+            with self.subTest(stage=stage):
+                prediction.stage = stage
+                _, rows = prediction_view(final, prediction)
+                self.assertNotIn("Submit", [button.label for button in rows[-1].components])
+
     def test_review_cannot_advance_even_with_complete_draft(self):
         final, prediction = self.fixture(8)
         prediction.stage = 3
@@ -49,8 +57,11 @@ class TestFinalPredictionNavigation(unittest.TestCase):
         prediction.draft["QF2"] = "1"
         embed, _ = prediction_view(final, prediction, {"0": "**[Player Zero](<https://discordapp.com/users/0?tab=wishlist>)**"})
         text = embed.description
-        self.assertIn("QF1 **[Player Zero](<https://discordapp.com/users/0?tab=wishlist>)**", text)
-        self.assertIn("QF2 **[❌Invalid Player](<https://discordapp.com/users/1?tab=wishlist>)**", text)
+        picks = text.split("\n\n", 1)[1].split("\n")
+        self.assertEqual([line.split(" ", 1)[0] for line in picks],
+                         ["`QF1`", "`QF2`", "`QF3`", "`QF4`", "`SF1`", "`SF2`", "🏆"])
+        self.assertEqual(picks[0], "`QF1` **[Player Zero](<https://discordapp.com/users/0?tab=wishlist>)**")
+        self.assertEqual(picks[1], "`QF2` **[❌Invalid Player](<https://discordapp.com/users/1?tab=wishlist>)**")
 
     def test_wizard_embed_names_every_select_and_fits_five_rows(self):
         final, prediction = self.fixture(8)

@@ -149,34 +149,6 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Forfeit", text)
         self.assertEqual(text.count("<:cocstar:826130043251982416>"), 2)
 
-    async def test_official_tie_is_displayed_without_win_loss_markers(self):
-        final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13,
-            entrant_ids=[str(i) for i in range(8)], player_nicknames={})
-        final.nodes = build_bracket(final, automatic_pairs(final))
-        node = final.nodes["QF1"]
-        node.result_id, node.winner, node.outcome, node.state = "tied", None, "Played", "TIED"
-        result = FinalMatchResult.model_construct(id="tied", node_id="QF1", source_match_id=None,
-            snapshot=SimpleNamespace(contestants=["0", "7"], winner=None, outcome="Played",
-                scores={"0": ["3.100"] * 7, "7": ["3.100"] * 7}, actual_started_at=1234567890))
-        prediction = FinalPrediction.model_construct(submitted={"QF1": "0"})
-        self.cog._edition = AsyncMock(return_value=final)
-        ctx = MagicMock(guild_id=MAIN_GUILD, defer=AsyncMock(), send=AsyncMock())
-        ctx.author.has_role.return_value = False
-        ctx.guild.fetch_member = AsyncMock(return_value=None)
-        query = MagicMock(to_list=AsyncMock(return_value=[result]))
-        with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
-                patch.object(FinalMatchResult, "find", return_value=query):
-            await self.cog.final_predict.callback.func(self.cog, ctx, 13)
-        payload = ctx.send.await_args.kwargs
-        text = payload["embed"].description
-        self.assertTrue(payload["ephemeral"])
-        self.assertIn("<t:1234567890:R>", text)
-        self.assertIn("Tie", text)
-        self.assertEqual(text.count("21<:cocstar:826130043251982416> 700%"), 2)
-        self.assertNotIn("<:upkey:", text)
-        self.assertNotIn("<:downkey:", text)
-        self.assertEqual(payload["embed"].fields, [])
-
     async def test_stale_prediction_totals_match_current_official_picks(self):
         final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13, result_revision=3,
             entrant_ids=[str(i) for i in range(8)], player_nicknames={})

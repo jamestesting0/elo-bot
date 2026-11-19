@@ -81,15 +81,19 @@ class TestFinalTiming(FinalScenarioCase):
         self.assertEqual((await Match.get(self.source.id)).scheduled_times, [None, None])
         self.assertEqual((await final_for_view()).nodes["QF1"].scheduled_times, [None, None])
 
-    async def test_unscheduled_or_partly_scheduled_played_results_do_not_write(self):
-        for side in (None, 0):
-            if side is not None:
-                self.source = await schedule_final_match(self.source, 1700000000, player=side)
-            with self.subTest(side=side), self.assertRaisesRegex(FinalError, "Schedule both sides"):
-                await submit_result(await self.request())
+    async def test_played_results_are_recorded_without_a_schedule(self):
+        await submit_result(await self.request())
+        result = await FinalMatchResult.find_one({"node_id": "QF1"})
+        self.assertEqual((result.snapshot.outcome, result.snapshot.scheduled_times, result.snapshot.actual_started_at),
+                         ("Played", [None, None], None))
+        node = (await final_for_view()).nodes["QF1"]
+        self.assertEqual((node.result_id, node.winner), (result.id, node.contestants[0]))
+
+    async def test_played_results_need_the_pairings_match(self):
+        await (await final_for_view()).set({"nodes.QF1.match_id": None})
+        with self.assertRaises(FinalError):
+            await submit_result(await self.request())
         self.assertEqual(await FinalMatchResult.count(), 0)
-        self.assertIsNone((await final_for_view()).nodes["QF1"].result_id)
-        self.assertEqual((await Match.get(self.source.id)).participants[0].result, [None] * 7)
 
     async def test_acceptance_requires_matching_live_or_requested_war_schedule(self):
         market = await open_market(await final_for_view(), "QF1")
@@ -281,7 +285,7 @@ class TestFinalTiming(FinalScenarioCase):
         with self.assertRaises(ipy.errors.Forbidden):
             await start_live_match(bot, ctx, LiveStart(match=source, host=MagicMock(id=9),
                 clan=MagicMock(tag="#TIMING"), player1=MagicMock(), player2=MagicMock(),
-                player1_elo=2000, player2_elo=2000, scout=False, reply=ManualLiveStartReply(slot_instruction="")))
+                player1_elo=2000, player2_elo=2000, reply=ManualLiveStartReply(slot_instruction="")))
         saved = await Match.get(source.id)
         self.assertIsNotNone(saved.final_started_at)
         self.assertEqual(saved.scheduled_times, [1700000000, 1700000000])

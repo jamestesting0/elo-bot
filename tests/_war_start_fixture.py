@@ -60,7 +60,7 @@ class WarStartFixture(unittest.IsolatedAsyncioTestCase):
         collection_patch.start()
         self.addCleanup(collection_patch.stop)
         for boundary in (
-                patch_family(MATCH_MODULE_FAMILY, "send_bases", new_callable=AsyncMock),
+                patch_family(MATCH_MODULE_FAMILY, "assign_bases", new_callable=AsyncMock),
                 patch_family(MATCH_MODULE_FAMILY, "remove_helper_task", new_callable=AsyncMock),
                 patch.object(base_store_storage, "clear_participant_base_store", new_callable=AsyncMock),
         ):

@@ -109,6 +109,8 @@ class EloFinal(Document):
     result_progress: dict[str, FinalResultProgress] = Field(default_factory=dict)
     cancel_reason: str | None = None
     completed_at: int | None = None
+    # When the archived match threads are deleted; cleared once they are gone.
+    thread_cleanup_at: int | None = None
     quarter_finals: List[EloFinalMatch] = Field(default_factory=list)
     semi_finals: List[EloFinalMatch] = Field(default_factory=list)
     final: List[EloFinalMatch] = Field(default_factory=list)

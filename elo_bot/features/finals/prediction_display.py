@@ -52,15 +52,11 @@ def finished_results(final: EloFinal, results: list[FinalMatchResult],
         left, right = snapshot.contestants
         def participant(user):
             name = names.get(user, mention_user(None, user))
-            if snapshot.winner is None:
-                return name
             return f"{name} {WIN_EMOJI if snapshot.winner == user else LOSS_EMOJI}"
         heading = f"{participant(left)} vs. {participant(right)}"
         if snapshot.outcome == "Forfeit":
             lines.append(f"{heading} (Forfeit)")
             continue
-        if snapshot.winner is None:
-            heading += " (Tie)"
         if result.id in starts:
             heading += f" <t:{starts[result.id]}:R>"
         totals = [f"{sum(get_stars(score) for score in snapshot.scores[user])}{STAR_EMOJI} "

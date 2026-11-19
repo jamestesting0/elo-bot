@@ -8,9 +8,6 @@ from elo_bot.discord.mentions import mention_user
 def result_receipt(final: EloFinal, result: FinalMatchResult, names: dict[str, str], *,
                    pending: bool = False, round_completed: bool = False) -> str:
     winner = result.snapshot.winner
-    if winner is None:
-        return (f"{IMPORTANT_EMOJI} Result saved as a tie. A manager must choose the winner with "
-                f"`/final match result match:{result.node_id}`.")
     if pending:
         return f"{SUCCESS_EMOJI} Result saved. {IMPORTANT_EMOJI} Bracket and payout updates are pending and retry automatically."
     forfeit = result.snapshot.outcome == "Forfeit"

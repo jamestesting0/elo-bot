@@ -4,8 +4,6 @@ from elo_bot.features.finals.results import FinalResultSubmission, submit_result
 from elo_bot.core.finals import FinalError
 from elo_bot.db import Match, Player, RecordedMatch
 from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile
-from elo_bot.features.finals.recovery import recover_final
-from dataclasses import replace
 
 
 class TestFinalResults(FinalScenarioCase):
@@ -44,32 +42,15 @@ class TestFinalResults(FinalScenarioCase):
         self.assertEqual((await submit_result(request)).id, result.id)
         self.assertEqual(await FinalMatchResult.count(), 1)
 
-    async def test_tie_is_official_without_inventing_advancement(self):
+    async def test_tied_scores_and_played_winner_overrides_are_refused(self):
         final, source = await self.pairing()
-        scores = {participant.user_id: ["0.00"] * 7 for participant in source.participants}
-        result = await submit_result(self.request(final, source, scores=scores))
-        saved = await final_for_view()
-        self.assertIsNone(result.snapshot.winner)
-        self.assertEqual(saved.nodes["QF1"].state, "TIED")
-        self.assertIsNone(saved.nodes["SF1"].contestants[0])
-        self.assertEqual((await FinalPlayerProfile.get(source.participants[0].user_id)).editions[str(final.id)].losses, 0)
-
-    async def test_manager_tie_decision_creates_an_official_revision_and_advances_explicit_winner(self):
-        final, source = await self.pairing()
-        scores = {participant.user_id: ["2.80"] * 7 for participant in source.participants}
-        initial = await submit_result(self.request(final, source, scores=scores))
-        await recover_final(final)
-        current = await final_for_view()
-        winner = source.participants[1].user_id
-        decided = await submit_result(replace(self.request(current, source, scores=scores, winner=winner,
-            reason="Manager tiebreak decision"), operation_key="tie-decision"))
-        saved = await final_for_view()
-        self.assertEqual((initial.snapshot.winner, decided.snapshot.winner), (None, winner))
-        self.assertEqual(decided.previous_id, initial.id)
-        self.assertEqual(saved.nodes["QF1"].state, "DECIDED")
-        self.assertEqual(saved.nodes["SF1"].contestants[0], winner)
-        self.assertEqual(await FinalMatchResult.count(), 2)
-        self.assertEqual(await RecordedMatch.count(), 0)
+        tied = {participant.user_id: ["2.80"] * 7 for participant in source.participants}
+        for request in (self.request(final, source, scores=tied),
+                        self.request(final, source, winner=source.participants[1].user_id, reason="Override")):
+            with self.subTest(winner=request.winner), self.assertRaises(FinalError):
+                await submit_result(request)
+        self.assertEqual(await FinalMatchResult.count(), 0)
+        self.assertIsNone((await final_for_view()).nodes["QF1"].result_id)
 
     async def test_forfeit_uses_explicit_winner_without_played_statistics(self):
         final, source = await self.pairing()

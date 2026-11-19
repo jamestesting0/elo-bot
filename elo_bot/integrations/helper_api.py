@@ -240,7 +240,7 @@ class HelperPreserveBaseLinkPayload(HelperModel):
 
 class HelperGetBaseImagePayload(HelperModel):
     base_link: str
-    scout_view: Literal[False] = False
+    scout_view: bool = False
     filetype: Literal["webp"] = "webp"
     keep_secret: bool
 

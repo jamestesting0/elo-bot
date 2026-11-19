@@ -102,7 +102,8 @@ async def apply_bet(request: BetAction) -> FinalBet:
                        version=(old.version if old else 0) + 1, action_id=request.action_key)
         entry = TokenLedgerEntry(id=request.action_key, operation_key=request.action_key, wallet_id=wallet.id,
                                  actor_id=request.user_id, amount=difference, escrow_amount=-difference,
-                                 kind="cancel" if request.amount == 0 else ("edit" if previous else "stake"),
+                                 kind="cancel" if request.amount == 0 else (
+                                     ("switch" if old.contestant != contestant else "edit") if previous else "stake"),
                                  market_id=market.id, created_at=int(time.time()))
         await TokenLedgerEntry.get_pymongo_collection().insert_one(entry.model_dump(by_alias=True), session=session)
         await TokenWallet.get_pymongo_collection().update_one({"_id": wallet.id},

@@ -149,25 +149,19 @@ class TestFinalCallbacks(FinalScenarioCase):
         self.assertEqual((await TokenWallet.get("9")).balance, 4000)
         self.assertEqual((await FinalBet.find_one({"user_id": "9"})).amount, 1000)
 
-    async def test_profile_tokens_and_leaderboard_use_the_same_committed_balance(self):
+    async def test_profile_bets_balance_and_leaderboard_share_the_wallet(self):
         ctx = self.context()
         await self.cog.final_profile.callback.func(self.cog, ctx)
         fields = ctx.send.await_args.kwargs["embed"].fields
-        self.assertIn(f"**Available:** 5,000 {TOKEN_EMOJI}",
-                      next(field.value for field in fields if field.name == "__**Tokens**__"))
+        self.assertEqual(next(field.value for field in fields if field.name == "__**Bets**__"), "No bets.")
         self.assertEqual((await TokenWallet.get("9")).balance, 5000)
         await TokenWallet.get_pymongo_collection().update_one({"_id": "9"}, {"$set": {"balance": -100}})
         ctx.send.reset_mock()
-        await self.cog.final_profile.callback.func(self.cog, ctx)
-        tokens = next(field.value for field in ctx.send.await_args.kwargs["embed"].fields
-                      if field.name == "__**Tokens**__")
-        self.assertIn(f"**Available:** 0 {TOKEN_EMOJI}", tokens)
-        self.assertIn(f"**Debt:** 100 {TOKEN_EMOJI}", tokens)
         wallet = TokenCommands(self.bot)
         await wallet.tokens_balance.callback.func(wallet, ctx)
-        self.assertEqual([(field.name, field.value) for field in ctx.send.await_args.kwargs["embed"].fields],
-                         [("**Available**", f"0 {TOKEN_EMOJI}"),
-                          ("**Committed**", f"0 {TOKEN_EMOJI}"), ("**Debt**", f"100 {TOKEN_EMOJI}")])
+        balance = ctx.send.await_args.kwargs["embed"]
+        self.assertEqual(balance.description, f"**Available:** 0 {TOKEN_EMOJI}\n**Debt:** 100 {TOKEN_EMOJI}")
+        self.assertEqual([(field.name, field.value) for field in balance.fields], [("__**Bets**__", "No bets.")])
         leaderboard = LeaderboardCommands(self.bot)
         rows, total, paged = await leaderboard._board_rows("Tokens", "All Seasons", 0, 0, 0, [])
         self.assertEqual(total, 9)
@@ -206,8 +200,9 @@ class TestFinalCallbacks(FinalScenarioCase):
         ctx.values = ["Predictions"]
         await board.lb_type_select.callback.func(board, ctx)
         message.components = ctx.edit.await_args.kwargs["components"]
-        self.assertEqual(message.embeds[0].fields[0].value, "Season 7 Final")
-        self.assertEqual([option.value for option in message.components[1].components[0].options if option.default], ["7"])
+        self.assertEqual(message.embeds[0].fields[0].value, "All Seasons")
+        self.assertEqual([option.value for option in message.components[1].components[0].options if option.default],
+                         ["All Seasons"])
         ctx.values = ["7"]
         await board.lb_season_select.callback.func(board, ctx)
         await board.lb_refresh.callback.func(board, ctx)

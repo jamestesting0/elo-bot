@@ -19,6 +19,11 @@ _sticky_locks: dict[str, asyncio.Lock] = {}
 _bot_sticky_deletes: set[tuple[str, str]] = set()
 
 
+# Messages this process posted as stickies. A burst of messages can replace a sticky again before the gateway
+# reports the previous repost, which would otherwise look like a new message and repost forever.
+_bot_sticky_posts: set[tuple[str, str]] = set()
+
+
 def sticky_channel_lock(channel_id: str) -> asyncio.Lock:
     return _sticky_locks.setdefault(channel_id, asyncio.Lock())
 
@@ -120,6 +125,7 @@ async def post_embed_sticky(channel, embed_type: str) -> None:
     async with sticky_channel_lock(channel_id):
         embed, components = static_embed(embed_type)
         sent = await channel.send(embed=embed, components=components)
+        _bot_sticky_posts.add((channel_id, str(sent.id)))
         try:
             document = StickyMessage(id=str(sent.id), channel_id=channel_id, message_id=str(sent.id),
                                      embed_type=embed_type)
@@ -143,6 +149,9 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
         return
 
     async with sticky_channel_lock(channel_id):
+        if (channel_id, str(event.message.id)) in _bot_sticky_posts:
+            _bot_sticky_posts.discard((channel_id, str(event.message.id)))
+            return
         stickies = await StickyMessage.for_channel(channel_id)
         if not stickies or any(
             sticky.message_id == str(event.message.id)
@@ -175,6 +184,7 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
                         webhook, thread_id = await sticky_webhook(channel, known)
                     sent = await send_sticky(webhook, sticky.content, sticky.author_name, sticky.avatar_url, thread_id)
                     webhook_id = str(webhook.id)
+                _bot_sticky_posts.add((channel_id, str(sent.id)))
                 try:
                     moved = await sticky.move(str(sent.id), webhook_id)
                 except Exception:

@@ -177,7 +177,7 @@ async def recover_final(final: EloFinal, *, bot=None,
             if source and source.thread and source.final_contestant_revision == node.contestant_revision and source.final_attempt == node.attempt:
                 await bind_thread(final, source, source.thread)
                 continue
-        if final.state not in {"CANCELLING", "CANCELLED"} and node.state in {"TIED", "NEEDS_MANAGER"}:
+        if final.state not in {"CANCELLING", "CANCELLED"} and node.state == "NEEDS_MANAGER":
             pending.append(f"{node.id}: manager-arranged play or a result decision is required.")
         if final.state not in {"CANCELLING", "CANCELLED"} and node.provisioning and not node.thread_id:
             pending.append(f"{node.id}: verify whether its thread was created before retrying.")

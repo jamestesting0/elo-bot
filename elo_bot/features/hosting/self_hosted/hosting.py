@@ -102,7 +102,7 @@ async def start_accepted_live_match(
             return
         await match_commands._start_live(ctx, LivePreflight(
             clan=live_stores(match, stored_reservation_id)[0][1].clan_tag,
-            host=runtime.bot.user, scout=False, automatic=True, requested_by=identity.requester_id,
+            host=runtime.bot.user, automatic=True, requested_by=identity.requester_id,
             defer_response=False, public_progress=True, allow_opponent_cancel=True,
             stored_reservation_id=stored_reservation_id,
         ))
@@ -135,7 +135,6 @@ async def start_accepted_live_match(
         LivePreflight(
             clan=available_clans[0].tag,
             host=runtime.bot.user,
-            scout=False,
             automatic=True,
             requested_by=identity.requester_id,
             defer_response=False,

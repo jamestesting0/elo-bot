@@ -76,7 +76,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
         with self.assertRaises(ipy.errors.Forbidden):
             await start_live_match(bot, ctx, LiveStart(match=source, host=bot.user,
                 clan=MagicMock(tag="#TEST", name="Test"), player1=MagicMock(), player2=MagicMock(),
-                player1_elo=2000, player2_elo=2000, scout=False, reply=ManualLiveStartReply(slot_instruction="")))
+                player1_elo=2000, player2_elo=2000, reply=ManualLiveStartReply(slot_instruction="")))
         saved = await Match.get(source.id)
         self.assertFalse(saved.is_war)
         self.assertIsNotNone(saved.times[0])
@@ -145,7 +145,7 @@ class TestFinalStartWorkflow(FinalScenarioCase):
         with patch.object(attack_bases, "choose_bases", new=AsyncMock()) as choose, \
                 patch.object(HelperEtaReader, "read", new=AsyncMock()) as eta:
             if live:
-                await cog._start_live(ctx, LivePreflight(clan="#TEST", scout=False, automatic=True, requested_by="9"))
+                await cog._start_live(ctx, LivePreflight(clan="#TEST", automatic=True, requested_by="9"))
             else:
                 await cog._start_war(ctx, 0, "#TEST", automatic=True)
         choose.assert_not_awaited()
@@ -184,7 +184,7 @@ class TestFinalStartWorkflow(FinalScenarioCase):
                 patch.object(sequential_service.live_start, "start_live_match",
                              new=AsyncMock(return_value=LiveStartSucceeded(message=MagicMock(id=5)))), \
                 patch.object(sequential_service, "launch_run", new=launched):
-            await cog._start_live(ctx, LivePreflight(clan="#TEST", scout=False, automatic=True, requested_by="9",
+            await cog._start_live(ctx, LivePreflight(clan="#TEST", automatic=True, requested_by="9",
                                                      sequential=None, attacks_first=1))
         launch = launched.await_args.args[2]
         self.assertEqual(launch.request.job_type, "host_sequential_live_match")
@@ -192,7 +192,7 @@ class TestFinalStartWorkflow(FinalScenarioCase):
         self.assertEqual(launch.request.payload.attacks_first, f"#P{player2}")
         self.assertEqual(launch.request.payload.base_links_for_player_1[0], "https://link/1/0")
         cog, ctx = self.command()
-        await cog._start_live(ctx, LivePreflight(clan="#TEST", scout=False, automatic=True, requested_by="9",
+        await cog._start_live(ctx, LivePreflight(clan="#TEST", automatic=True, requested_by="9",
                                                  sequential=False, attacks_first=0))
         self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
         self.assertIn("attacks_first", ctx.send.await_args.args[0])

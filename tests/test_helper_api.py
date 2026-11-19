@@ -295,9 +295,10 @@ class TestHelperBaseImageContract(unittest.TestCase):
                 job_type="get_base_image", requested_by="123",
                 payload=helper_api.HelperPreserveBaseLinkPayload(base_link="https://example/base"),
             )
-        for options in ({"scout_view": True}, {"filetype": "png"}):
-            with self.subTest(options=options), self.assertRaises(ValidationError):
-                helper_api.HelperGetBaseImagePayload(base_link="https://example/base", keep_secret=True, **options)
+        with self.assertRaises(ValidationError):
+            helper_api.HelperGetBaseImagePayload(base_link="https://example/base", keep_secret=True, filetype="png")
+        scout = helper_api.HelperGetBaseImagePayload(base_link="https://example/base", keep_secret=True, scout_view=True)
+        self.assertTrue(scout.model_dump()["scout_view"])
 
     def test_capture_result_is_narrow_and_success_requires_an_artifact(self):
         document = TestHelperJobNotification.job_document("succeeded")

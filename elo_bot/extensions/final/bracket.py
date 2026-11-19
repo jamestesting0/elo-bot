@@ -14,7 +14,6 @@ from elo_bot.extensions.final.groups import bracket_group, final
 from elo_bot.features.finals import lifecycle
 from elo_bot.features.finals.bracket import automatic_pairs
 from elo_bot.features.finals.bracket_editor import editor_view, swapped_pairs
-from elo_bot.features.finals.dashboard import DashboardState, dashboard_controls
 from elo_bot.features.finals.publication import publish_bracket
 
 
@@ -27,7 +26,7 @@ class Bracket:
     @final_action
     async def final_bracket_reset(self, ctx: SlashContext):
         await lifecycle.reset_bracket(await self._ongoing_edition(ctx, access="manager"))
-        await ctx.send(f"{SUCCESS_EMOJI} Bracket reset. Add entrants with `/final add`.", ephemeral=True)
+        await ctx.send(f"{SUCCESS_EMOJI} Bracket reset. Manage entrants with `/final dashboard`.", ephemeral=True)
 
     @bracket_group.subcommand(sub_cmd_name="create", sub_cmd_description="Edit and confirm the seeded bracket")
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
@@ -86,9 +85,7 @@ class Bracket:
                     content = f"{SUCCESS_EMOJI} Bracket confirmed and published: {message.jump_url}"
                 except (FinalError, PyMongoError) as error:
                     content = f"{IMPORTANT_EMOJI} Bracket confirmed. Publishing failed and will retry: {error}"
-                edition = await lifecycle.reload_final(edition)
-                await ctx.edit_origin(content=content, embeds=[],
-                                      components=dashboard_controls(DashboardState(edition), owner))
+                await self._show_dashboard(ctx, await lifecycle.reload_final(edition), outcome=content, edit=True)
                 return
             case _:
                 raise FinalError("This view is outdated. Run `/final bracket create` again.")

@@ -52,7 +52,6 @@ class WarStart:
     clan: coc.Clan
     coc_client: coc.Client
     reply: WarStartReply
-    scout: bool = False
     clan_reservation: 'ResourceClanReservation | None' = None
     side_reservation: 'ResourceMatchSideReservation | None' = None
     stored_start: StoredStartState | None = None
@@ -194,7 +193,7 @@ async def complete_war_start(
         ctx, match_doc, expected_message_state, content=player_obj.mention, embed=embed, components=components,
     )
 
-    await attack_bases.send_bases(bot, token, player, opponent, scout=start.scout)
+    await attack_bases.assign_bases(bot, token, player, opponent)
     if not await mark_store_reserved(bot, match_doc, player):
         raise BaseStoreMessageConflict("The match started, but its held base-slot message could not be updated.")
     channel_status = "🟢" if all(match_doc.hosts) else "🔵"

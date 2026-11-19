@@ -261,7 +261,7 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
         player_query.to_list = AsyncMock(return_value=[player])
         match_types = [
             option.value for option in LB_TYPE_OPTIONS
-            if option.value not in {"Elo", "Elo Reversed", "Highest Elo", "Tokens", "Predictions"}
+            if option.value not in {"Elo", "Elo Reversed", "Highest Elo", "Tokens", "Betting", "Predictions"}
         ]
 
         with patch("elo_bot.extensions.leaderboard.Player") as mock_player, \
@@ -274,7 +274,7 @@ class TestLeaderboardCommands(unittest.IsolatedAsyncioTestCase):
 
             # Then: every match board is ranked for all seasons, the current season, and season 3
             warmed = {(lb_type, season_key) for lb_type, season_key, _start in cog._rankings}
-            self.assertFalse(any(lb_type in {"Tokens", "Predictions"} for lb_type, _season in warmed))
+            self.assertFalse(any(lb_type in {"Tokens", "Betting", "Predictions"} for lb_type, _season in warmed))
             self.assertEqual(
                 warmed,
                 {

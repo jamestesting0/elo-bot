@@ -54,15 +54,17 @@ def submission_snapshot(final: EloFinal, request: FinalResultSubmission) -> Fina
         raise FinalError("Predictions are still open. Ask a manager to close them before submitting the result.")
     if node.result_id is None:
         require_round_ready(final, next(name for name, nodes in ROUND_NODES.items() if node.id in nodes))
-    if (node.result_id is not None or request.outcome == "Forfeit" or request.winner is not None) and not request.reason:
-        raise FinalError("Enter a reason for a correction, tie decision or forfeit.")
+    if (node.result_id is not None or request.outcome == "Forfeit") and not request.reason:
+        raise FinalError("Enter a reason for a correction or forfeit.")
+    if request.outcome == "Played" and request.winner is not None:
+        raise FinalError("A played result takes its winner from the scores. Choose a winner only for a forfeit.")
     contestants = [user for user in node.contestants if user is not None]
+    # Validates the scores before they are totalled.
     FinalResultSnapshot(contestants=contestants, scores=request.scores, winner=request.winner, outcome=request.outcome)
     winner = score_winner(contestants, request.scores) if request.outcome == "Played" else request.winner
-    if request.outcome == "Played" and request.winner is not None:
-        if winner is not None and winner != request.winner:
-            raise FinalError("The selected winner conflicts with the scores.")
-        winner = request.winner
+    if winner is None:
+        # Staff break a tie by replaying a district, so only decided scores can be recorded.
+        raise FinalError("The scores are tied. Replay a district to break the tie, then submit the result.")
     return FinalResultSnapshot(contestants=contestants, scores=request.scores, winner=winner, outcome=request.outcome)
 
 
@@ -103,10 +105,10 @@ async def submit_result(request: FinalResultSubmission, *, session: AsyncClientS
                 snapshot.scheduled_times = list(prior.snapshot.scheduled_times)
                 snapshot.actual_started_at = prior.snapshot.actual_started_at
             else:
-                if not all(node.scheduled_times) or node.match_id is None:
-                    raise FinalError("Schedule both sides of this Final match before recording a played result.")
+                if source is None:
+                    raise FinalError("Start this round before recording a played result.")
                 snapshot.scheduled_times = list(node.scheduled_times)
-                snapshot.actual_started_at = source.final_started_at if source else node.actual_started_at
+                snapshot.actual_started_at = source.final_started_at
         version = node.result_version + 1
         result = FinalMatchResult(
             id=f"{final.id}:{node.id}:{version}", final_id=str(final.id), season_number=final.season_number,
@@ -136,7 +138,7 @@ async def submit_result(request: FinalResultSubmission, *, session: AsyncClientS
         await FinalMatchResult.get_pymongo_collection().insert_one(result.model_dump(by_alias=True), session=session)
         old_nodes = {key: value.model_copy(deep=True) for key, value in final.nodes.items()}
         node.result_id, node.result_version, node.winner, node.outcome = result.id, version, winner, request.outcome
-        node.state = "DECIDED" if winner else "TIED"
+        node.state = "DECIDED"
         changed = advance_nodes(final.nodes)
         for node_id in changed:
             old = old_nodes[node_id]

@@ -75,15 +75,17 @@ async def _board_text(guild, players, lb_type, season_start, season_end, startin
 
 
 def _normalize_season(lb_type: str, season: str | None) -> str:
-    if lb_type in {"Highest Elo", "Tokens"} or season == "Lifetime":
+    if lb_type in {"Highest Elo", "Tokens", "Betting"} or season == "Lifetime":
         return "Current Season"
     if lb_type in {"Elo", "Elo Reversed"} and season == "All Seasons":
         return "Current Season"
-    return "Current Season" if season is None else season
+    if season is None:
+        return "All Seasons" if lb_type == "Predictions" else "Current Season"
+    return season
 
 
 def _scope_window(lb_type: str, season: str, seasons: list[Season]) -> tuple[str, int | float, int | float]:
-    if lb_type == "Tokens":
+    if lb_type in {"Tokens", "Betting"}:
         return "Lifetime", 0, 0
     if lb_type == "Predictions":
         return (f"Season {season} Final" if season.isdigit() else season), 0, 0
@@ -165,7 +167,7 @@ async def construct_leaderboard_string(guild: ipy.Guild, players_sorted: list[Pl
         page = players_sorted
     else:
         page = players_sorted[starting_index:starting_index + LB_ENTRIES_PER_PAGE]
-    if lb_type in {"Tokens", "Predictions"}:
+    if lb_type in {"Tokens", "Predictions", "Betting"}:
         members = await asyncio.gather(*(guild.fetch_member(row.user_id) for row in page))
         return final_board_text(page, lb_type, {row.user_id: mention_user(member, row.user_id, mention_type="Player")
             for row, member in zip(page, members)})
@@ -238,7 +240,7 @@ def _is_live_elo_board(lb_type: str, season_key: str) -> bool:
 
 _MATCH_LEADERBOARD_TYPES = tuple(
     option.value for option in LB_TYPE_OPTIONS if option.value not in _LIVE_ELO_SORT
-    and option.value not in {"Tokens", "Predictions"}
+    and option.value not in {"Tokens", "Predictions", "Betting"}
 )
 _RANK_SCAN_CHUNK = 25
 
@@ -548,7 +550,7 @@ class LeaderboardCommands(ipy.Extension):
     async def _board_rows(self, lb_type: str, season: str, season_start: int | float,
                           season_end: int | float, starting_index: int,
                           seasons: list[Season], tier: str = "Overall") -> tuple[list, int, bool]:
-        if lb_type in {"Tokens", "Predictions"}:
+        if lb_type in {"Tokens", "Predictions", "Betting"}:
             rows = await final_board_rows(lb_type, season)
             return rows, len(rows), False
         if _is_live_elo_board(lb_type, season):
@@ -581,11 +583,11 @@ class LeaderboardCommands(ipy.Extension):
         has_entries = bool(total)
         if lb_type == "Addiction":
             has_entries = any(get_season_matches(player.matches, season_start, season_end) for player in rows)
-        if use_default and not has_entries and lb_type in (*_MATCH_LEADERBOARD_TYPES, "Predictions"):
+        if use_default and not has_entries and lb_type in _MATCH_LEADERBOARD_TYPES:
             season = "All Seasons"
             scope, season_start, season_end = _scope_window(lb_type, season, seasons)
             rows, total, paged = await self._board_rows(lb_type, season, season_start, season_end, 0, seasons, tier)
-        if lb_type in {"Tokens", "Predictions"} and rows:
+        if lb_type in {"Tokens", "Predictions", "Betting"} and rows:
             scope = rows[0].scope
             if lb_type == "Predictions":
                 season = scope.removeprefix("Season ").removesuffix(" Final")
@@ -603,6 +605,7 @@ class LeaderboardCommands(ipy.Extension):
             ipy.SlashCommandChoice(name="Winrate", value="Winrate"),
             ipy.SlashCommandChoice(name="Hitrate", value="Hitrate"),
             ipy.SlashCommandChoice(name="Tokens", value="Tokens"),
+            ipy.SlashCommandChoice(name="Betting", value="Betting"),
             ipy.SlashCommandChoice(name="Predictions", value="Predictions"),
             ipy.SlashCommandChoice(name="Capital Peak Hitrate", value="Capital Peak Hitrate"),
             ipy.SlashCommandChoice(name="Wizard Valley Hitrate", value="Wizard Valley Hitrate"),
@@ -682,7 +685,7 @@ class LeaderboardCommands(ipy.Extension):
             )
 
             components = [ipy.ActionRow(lb_type_select)]
-            if lb_type not in {"Highest Elo", "Tokens"}:
+            if lb_type not in {"Highest Elo", "Tokens", "Betting"}:
                 select_options = _season_options(lb_type, seasons, season)
 
                 lb_season_select = ipy.StringSelectMenu(
@@ -753,7 +756,7 @@ class LeaderboardCommands(ipy.Extension):
             await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
             return
 
-        if lb_type in {"Tokens", "Predictions"}:
+        if lb_type in {"Tokens", "Predictions", "Betting"}:
             scope = players_sorted[0].scope
         leaderboard = await _board_text(
             ctx.guild, players_sorted, lb_type, season_start, season_end, starting_index, paged=paged, tier=tier
@@ -851,7 +854,7 @@ class LeaderboardCommands(ipy.Extension):
                 return
             starting_index = (page - 1) * LB_ENTRIES_PER_PAGE
 
-        if lb_type in {"Tokens", "Predictions"}:
+        if lb_type in {"Tokens", "Predictions", "Betting"}:
             scope = players_sorted[0].scope
         leaderboard = await _board_text(
             ctx.guild, players_sorted, lb_type, season_start, season_end, starting_index, paged=paged, tier=tier
@@ -916,7 +919,7 @@ class LeaderboardCommands(ipy.Extension):
         )
 
         components = [ipy.ActionRow(lb_type_select)]
-        if lb_type not in {"Highest Elo", "Tokens"}:
+        if lb_type not in {"Highest Elo", "Tokens", "Betting"}:
             select_options = _season_options(lb_type, seasons, season)
 
             lb_season_select = ipy.StringSelectMenu(
@@ -973,7 +976,7 @@ class LeaderboardCommands(ipy.Extension):
         players_sorted, board_size, paged = await self._board_rows(
             lb_type, season, season_start, season_end, 0, seasons, tier
         )
-        if lb_type in {"Tokens", "Predictions"} and players_sorted:
+        if lb_type in {"Tokens", "Predictions", "Betting"} and players_sorted:
             scope = players_sorted[0].scope
             if lb_type == "Predictions":
                 season = scope.removeprefix("Season ").removesuffix(" Final")
@@ -989,7 +992,7 @@ class LeaderboardCommands(ipy.Extension):
         ctx.message.embeds[0].description = leaderboard
         ctx.message.embeds[0].fields[0].value = scope
 
-        if lb_type not in {"Highest Elo", "Tokens"}:
+        if lb_type not in {"Highest Elo", "Tokens", "Betting"}:
             menu = ctx.message.components[1].components[0]
             menu.options = _selected_options(menu.options, season)
 
@@ -1069,7 +1072,7 @@ class LeaderboardCommands(ipy.Extension):
         scope, season_start, season_end = _scope_window(lb_type, season, seasons)
 
         starting_index = 0
-        if lb_type in {"Tokens", "Predictions"} and isinstance(ctx.message.components, list) and len(ctx.message.components) > 1:
+        if lb_type in {"Tokens", "Predictions", "Betting"} and isinstance(ctx.message.components, list) and len(ctx.message.components) > 1:
             if str(ctx.message.interaction.user.id) != str(ctx.author.id):
                 await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
                 return
@@ -1077,7 +1080,7 @@ class LeaderboardCommands(ipy.Extension):
         players_sorted, board_size, paged = await self._board_rows(
             lb_type, season, season_start, season_end, 0, seasons, tier
         )
-        if lb_type in {"Tokens", "Predictions"} and players_sorted:
+        if lb_type in {"Tokens", "Predictions", "Betting"} and players_sorted:
             scope = players_sorted[0].scope
         if not players_sorted and not _is_hitrate(lb_type):
             await ctx.send(f"{ERROR_EMOJI} There are no players in this leaderboard.", ephemeral=True)
@@ -1098,7 +1101,7 @@ class LeaderboardCommands(ipy.Extension):
             menu = ctx.message.components[1].components[0]
             menu.options = _selected_options(menu.options, season)
 
-        if lb_type in {"Tokens", "Predictions"} and isinstance(ctx.message.components, list) and len(ctx.message.components) > 1:
+        if lb_type in {"Tokens", "Predictions", "Betting"} and isinstance(ctx.message.components, list) and len(ctx.message.components) > 1:
             starting_index = min(starting_index, (board_size - 1) // LB_ENTRIES_PER_PAGE * LB_ENTRIES_PER_PAGE)
             ctx.message.components[-1] = ipy.ActionRow(
                 ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️",
@@ -1110,7 +1113,7 @@ class LeaderboardCommands(ipy.Extension):
                            disabled=starting_index + LB_ENTRIES_PER_PAGE >= board_size),
             )
 
-        if lb_type in {"Tokens", "Predictions"}:
+        if lb_type in {"Tokens", "Predictions", "Betting"}:
             await edit_channel_message(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
         else:
             await edit_channel_message(ctx.message, embeds=ctx.message.embeds)

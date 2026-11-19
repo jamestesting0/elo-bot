@@ -103,6 +103,10 @@ embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
   `suppress_embeds=True`.
 - **Emphasis:** bold for the state or quantity that matters (`**cancelled**`, `**disabled**`, `**all**`),
   italics for reminders and notes (`{IMPORTANT_EMOJI} *Please kick the players out of the clan!*`).
+  In guides, put supplementary notes and exceptions in separate italic paragraphs, including confirmation
+  timeouts, base-submission reminders and the Final's district/replay note. Keep main instructions,
+  section introductions and numbered rules in regular text. Escape literal asterisk markers (`\*`)
+  so they do not accidentally italicize rule text.
   Messages are embeds, so markdown headings (`##`) and small text (`-#`) are not used.
 
 ## Ranked rows
@@ -200,7 +204,8 @@ hosting: show it with `LOADING_EMOJI` and its job ID until the job reports back.
   (`f"**Stars:** {avg:.2f}{STAR_EMOJI} - {opp_avg:.2f}{STAR_EMOJI}"`). Final profiles use Avg. Stars and Avg. Destruction. Recent Matches lists
   `vs. {opponent} ({elo change}) {relative time}` then both scores, and Final player history shows the
   current official result once per match.
-- Prediction leaderboard rows use rank or medal, name, `correct/eligible` and an arrow to the percentage,
+- Prediction leaderboards rank by accuracy, then by correct picks. Rows use rank or medal, name,
+  `correct/eligible` and an arrow to the percentage,
   for example `` 🥇 **@Dominik** `0/1` → `0.00%` ``. Do not repeat Correct Predictions and Accuracy on every row.
 - A bet chooser shows the current bet and Available Tokens; Debt appears only when present and explains the
   restriction. Review shows player, stake and Estimated Profit, plus Debt when present. Omit gross return and
@@ -221,9 +226,12 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Bracket names (images, selects, thread names) are the player's Discord display name, refreshed before
   the bracket, a round's threads or a scoreboard is published. A nickname set with `/final add nickname:`
   or `/final nick` overrides it. Quarterfinals follow seeds: QF1 1v8, QF2 2v7, QF3 3v6, QF4 4v5.
-- `/embed Elo Final` posts a short description with a 📅 Details button. Details answers privately with
-  the season's dates computed on click (Elo Final selection, queue close, season end, each as
-  `<t:…:D> · <t:…:R>`) above `assets/embeds/elo_final.md`. The ongoing season ends on the first Monday of Feb,
+- `/embed Elo Information` has a 📖 README button opening a private guide with a section select.
+  Sections live in `assets/embeds/readme/`; navigation edits the same private message.
+  Rewards and Base Building keep their own buttons.
+- `/embed Elo Final` posts a short description with a 📅 Details button opening the guide's Elo Final page.
+  Only Seasons shows dates computed on click (Elo Final selection, queue close, season end, each as
+  `<t:…:D> · <t:…:R>`). The Elo Final page mentions the Final channel. The ongoing season ends on the first Monday of Feb,
   Apr, Jun, Aug, Oct or Dec at 07:00 UTC after its `/season reset`; selection is 10 days earlier and the queue
   closes 3 days earlier. If the ongoing season has no Final (a cancelled one does not count) three days after
   its selection date, the season is extended and all dates move to the next boundary.
@@ -234,10 +242,32 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   Entrants are seeded by their Elo when they are added.
 - Final commands take `final_season`, an autocomplete of seasons that have a Final (newest first). A season
   restarted after a cancellation shows its latest Final. The ranked `season` autocomplete is separate.
-- `/final status` is private. Managers see thread links, attention items, the next step and the available
+- `/final dashboard` is private. Its controls end with an emoji-only 🔄 refresh button. Managers see thread links, attention items, the next step and the available
   actions. Players see Matches, Predictions and Betting without thread links or manager controls.
   During setup, managers see entrants in Elo seeding order, one linked name per line. Dashboard action
   feedback goes above the updated embed.
+- Until the bracket is created, the manager dashboard shows Add and Invite (disabled at 8 entrants).
+  Each opens a modal with one user select capped at the open seats; every picked player is checked on their own
+  and the outcome goes above the refreshed dashboard (`✅ Invited A, B`, then one `❌ Name: reason` line each).
+  Pending invitations are listed with their expiry and can be withdrawn from a select.
+- An invitation is a DM (`**Season N Final · Invitation**`, Accept and Decline) that expires after 24 hours. The
+  first players to accept take the seats; everything is re-checked on Accept. A closed invitation keeps its title,
+  loses its buttons and states the outcome. Accepts and declines post one line, without pings, in the staff
+  channel. Creating the bracket, cancelling or ending the Final withdraws pending invitations.
+- After the bracket is created, Replace Player swaps a quarterfinal entrant whose first match has not started
+  (for a bye, their semifinal). The replacement keeps the slot, inherits predictions on that player and is seeded
+  by their current Elo. A pairing whose round started keeps its thread: it is renamed, its opening message mentions
+  the replacement, they join it (pinged once) and the leaving player is removed. Bets on the old pairing are refunded
+  and a new market opens. Stored bases must be undone first. Started matches use `/final match forfeit`.
+- Ending or cancelling a Final archives and locks its match threads; the reply states when they are deleted,
+  7 days later, by the recovery task. `/thread delete` removes one sooner once the Final is no longer running.
+- Bets show `**Won:** `x/y` → `%`` and `**Profit:** +1,250 🪙 · `+41.67%``, counting settled bets only: per Final
+  on the Final profile, overall on `/tokens balance` (Available, Debt when owed, Bets, Open Bets while in play) and
+  on the Betting leaderboard (ranked by profit). `/tokens history` labels are inline code (`` `Bet switched` ``).
+- Final and token buttons ignore double clicks: a second click while the first runs, or a click on a view the
+  same user's earlier click already replaced, is acknowledged without a reply (`ignore_repeated_clicks`).
+- `/tokens add` and `/tokens remove` (level-1 roles) change a player's Available tokens and show as a Manager
+  adjustment in `/tokens history`. Remove never takes more than the Available balance.
 - `/final bracket create` opens one seeded draft owned by the manager. The select swaps exactly two
   slots. Reset restores Elo seeding; Confirm publishes and pins the saved bracket; Cancel discards the
   draft. Confirm uses `SUCCESS` and `TICK_EMOJI`; Cancel uses `DANGER` and `CROSS_EMOJI`.
@@ -245,9 +275,9 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   Predictions while predictions remain open. The dashboard and slash commands use the same actions.
 - Predictions live on the pinned bracket post: a Predictions field (`Open · 42 submitted`) and, while
   predictions are open, a Predict button that is removed when they close. The private wizard lists the
-  page's pairings in the embed with one winner select each (seed Elo in the options), then Back, Next
-  and Submit; a page never exceeds five rows. Review shows the bracket image, a line of picks, Back and
-  Submit. The submitted screen keeps the image and offers Edit Picks until closure.
+  page's pairings in the embed with one winner select each (seed Elo in the options), then Back and
+  Next; a page never exceeds five rows. Review shows the bracket image, one pick per line (`` `QF1` Name ``, 🏆
+  for the champion), Back and Submit. The submitted screen keeps the image and offers Edit Picks until closure.
 - `/final predictions view` lists submitted predictions (`1. **Spyke** · 🏆 Kaito · \`3/5\``, score once a
   match is played) with a "🔍 View a player's picks" select that anyone can use: it opens that player's card
   privately and leaves the list unchanged; `player:` opens one card directly. A card is the marked bracket
@@ -259,13 +289,17 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   retires the panel's controls.
 - Result previews last 15 minutes and survive a restart. Persistent Confirm and Cancel callbacks
   recheck the owner, role, Final and match before saving. Saved replies identify who advances; the next
-  round is called ready only by the result that completes the current round. A tie asks for a manager
-  decision. Failed follow-up work keeps the saved result and shows pending updates.
+  round is called ready only by the result that completes the current round. Tied scores are refused; staff
+  replay a district to break the tie. Failed follow-up work keeps the saved result and shows pending updates.
 - A played Final result is posted in its match thread and in the Final channel with a scoreboard image
   (`attachment://scoreboard.png`, rendered on `assets/finals/elo_final_scoreboard.png`): nicknames,
-  avatars, stars and destruction per district and in total, the loser muted, both sides white for a tie. The
-  embed keeps the title, `A ▼ vs. B ▲` and any Tie or Recovery field; the district lines and Total
+  avatars, stars and destruction per district and in total, the loser muted. The
+  embed keeps the title, `A ▼ vs. B ▲` and any Recovery field; the district lines and Total
   appear only when the image fails. Forfeits have no scoreboard. Corrections edit both posts.
+- Final bases are submitted as links; Helper captures each one's scout view (no uploads). A side's bases lock
+  30 minutes before the opponent's scheduled time, when `/match base scout` opens for that opponent (managers see
+  both sides, each from its own time). Missing bases are then filled with Excellent Helper bases and scouted.
+  Normal matches have no scouting.
 - A Final match thread has only Submit Result. Players submit bases with `/match base submit` in the
   thread; an older Submit Bases button on a Final thread points there instead of opening a form.
 - Final hosting: `/match autostart` and `/match war autostart` run one sequential Helper job for all seven

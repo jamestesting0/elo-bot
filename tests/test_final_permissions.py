@@ -26,7 +26,7 @@ class TestFinalPermissions(unittest.IsolatedAsyncioTestCase):
     async def test_every_manager_command_rejects_staff_through_the_global_handler(self):
         cog = FinalCommands(MagicMock(ext={}))
         public = {"final bracket view", "final predict", "final predictions view", "final profile", "final matches",
-                  "final status"}
+                  "final dashboard"}
         commands = [command for _, command in inspect.getmembers(cog)
                     if isinstance(command, ipy.SlashCommand) and command.sub_cmd_name
                     and command.resolved_name not in public]
@@ -110,7 +110,7 @@ class TestFinalPermissions(unittest.IsolatedAsyncioTestCase):
             ctx.guild_id = MAIN_GUILD if blacklisted else 1
             ctx.author.has_role.side_effect = lambda role: blacklisted and role == ELO_BLACKLIST_ROLE
             cog._edition = AsyncMock()
-            await cog.final_status.callback.func(cog, ctx)
+            await cog.final_dashboard.callback.func(cog, ctx)
             cog._edition.assert_not_awaited()
             self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
             self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))

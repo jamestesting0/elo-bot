@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
+from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view, remove_entrant
@@ -38,9 +39,19 @@ class TestFinalDashboardControls(FinalUICase):
         stale = self.context(component=True)
         stale.custom_id = ctx.custom_id
         await self.cog.final_dashboard_action.callback.func(self.cog, stale)
-        self.assertEqual(stale.edit_origin.await_args.kwargs["content"],
-                         f"{ERROR_EMOJI} This view is outdated. Run `/final status` again.")
+        refreshed = stale.edit_origin.await_args.kwargs
+        self.assertTrue(refreshed["content"].startswith(str(IMPORTANT_EMOJI)))
+        self.assertEqual(refreshed["embed"].title, f"**Season {self.final.season_number} Final**")
+        self.assertEqual({button.custom_id for row in refreshed["components"] for button in row.components}, actions)
         self.assertEqual((await final_for_view()).prediction_state, "OPEN")
+
+        refused = self.context(component=True)
+        refused.custom_id = f"finaldash|close|{self.final.id}|9"
+        with patch.object(type(self.cog), "_set_predictions", new=AsyncMock(side_effect=FinalError("Refused"))):
+            await self.cog.final_dashboard_action.callback.func(self.cog, refused)
+        shown = refused.edit_origin.await_args.kwargs
+        self.assertEqual(shown["content"], f"{ERROR_EMOJI} Refused")
+        self.assertEqual({button.custom_id for row in shown["components"] for button in row.components}, actions)
 
     async def test_editor_owns_complete_seeded_draft_and_rejects_stale_or_foreign_swaps(self):
         ctx = self.context()
@@ -72,8 +83,10 @@ class TestFinalDashboardControls(FinalUICase):
         self.assertIsNotNone(current.bracket_message_id)
         self.posts[current.bracket_message_id].pin.assert_awaited_once()
         self.assertIn("Bracket confirmed and published", confirm.edit_origin.await_args.kwargs["content"])
+        matches = next(field for field in confirm.edit_origin.await_args.kwargs["embed"].fields if "Matches" in field.name)
+        self.assertEqual(matches.value.count("\n") + 1, 7)
         self.assertEqual([button.label for row in confirm.edit_origin.await_args.kwargs["components"]
-                          for button in row.components], ["Open Predictions", "Start Quarterfinals"])
+                          for button in row.components], ["Open Predictions", "Start Quarterfinals", "Replace Player", None])
 
     async def test_round_posts_only_non_bye_markets_and_surfaces_independent_failures(self):
         self.final = await confirm_bracket(self.final, "9")

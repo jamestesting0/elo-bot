@@ -34,7 +34,6 @@ class AutomaticWarHost:
     player: int
     clan: coc.Clan
     host: ipy.BaseUser
-    scout: bool = False
     submitter_id: str | None = None
     clan_reservation: 'ResourceClanReservation | None' = None
     side_reservation: 'ResourceMatchSideReservation | None' = None
@@ -134,7 +133,6 @@ async def host_war_automatically(
                 clan=request.clan,
                 coc_client=runtime.bot.coc_client,
                 reply=war_start.SelfHostedWarStartReply(),
-                scout=request.scout,
                 clan_reservation=request.clan_reservation,
                 side_reservation=request.side_reservation,
                 stored_start=request.stored_start,

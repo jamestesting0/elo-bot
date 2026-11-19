@@ -208,7 +208,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         bot, ctx, _ = self.transport(source)
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
-            scout=False, reply=ManualLiveStartReply(slot_instruction=""))
+            reply=ManualLiveStartReply(slot_instruction=""))
         with self.assertRaises(FinalError) as refusal:
             await accept_final_start(source, "host", clan_tag="#REVIEW", player=None)
         self.assertIsInstance(await start_live_match(bot, ctx, start), LiveStartRefused)
@@ -225,7 +225,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         bot, ctx, _ = self.transport(source)
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
-            scout=False, reply=ManualLiveStartReply(slot_instruction=""))
+            reply=ManualLiveStartReply(slot_instruction=""))
         with patch_sites(('elo_bot.extensions.match.hosting.claim_resource_clan', 'elo_bot.extensions.match.settings.claim_resource_clan', 'elo_bot.features.matches.resources.claim_resource_clan'), new=AsyncMock(return_value=False)):
             first = await start_live_match(bot, ctx, start)
         self.assertIsInstance(first, LiveStartClanUnavailable)
@@ -251,7 +251,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         bot, ctx, _ = self.transport(source)
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
-            scout=False, reply=ManualLiveStartReply(slot_instruction=""))
+            reply=ManualLiveStartReply(slot_instruction=""))
         with patch('elo_bot.features.matches.resources.occupy_clan', new=AsyncMock(side_effect=RuntimeError("occupancy failed"))):
             with self.assertRaisesRegex(RuntimeError, "occupancy failed"):
                 await start_live_match(bot, ctx, start)
@@ -266,7 +266,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         bot, ctx, _ = self.transport(source)
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
-            scout=False, reply=ManualLiveStartReply(slot_instruction=""))
+            reply=ManualLiveStartReply(slot_instruction=""))
 
         async def accept_then_change(*args, **kwargs):
             await accept_final_start(*args, **kwargs)
@@ -288,7 +288,7 @@ class TestFinalHostingTiming(FinalScenarioCase):
         ctx.channel.send.side_effect = ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
         start = LiveStart(match=source, host=bot.user, clan=MagicMock(tag="#REVIEW", name="Review"),
             player1=MagicMock(), player2=MagicMock(), player1_elo=2000, player2_elo=2000,
-            scout=False, reply=ManualLiveStartReply(slot_instruction=""))
+            reply=ManualLiveStartReply(slot_instruction=""))
         with patch("elo_bot.features.hosting.live.live_start.datetime") as clock:
             clock.now.return_value.timestamp.return_value = source.scheduled_times[0]
             with self.assertRaises(ipy.errors.Forbidden):

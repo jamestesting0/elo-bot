@@ -1,3 +1,4 @@
+import logging
 import re
 
 import interactions as ipy
@@ -14,7 +15,7 @@ from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.features.finals import lifecycle
-from elo_bot.features.finals.dashboard import available_actions
+from elo_bot.features.finals.dashboard import FINAL_CHANGED, available_actions
 
 
 class Confirmations:
@@ -29,6 +30,22 @@ class Confirmations:
             except ipy.errors.NotFound:
                 continue
         return list(threads.values())
+
+    async def _archive_threads(self, threads, cleanup_at: int) -> str:
+        """Archive and lock the threads; returns the note for the end or cancel reply."""
+        failed = 0
+        for thread in threads:
+            try:
+                await thread.edit(archived=True, locked=True)
+            except ipy.errors.HTTPException:
+                logging.exception("Could not archive Final thread %s", thread.id)
+                failed += 1
+        if not threads:
+            return ""
+        note = f" Match threads are archived and will be deleted <t:{cleanup_at}:R>."
+        if failed:
+            note += f" {IMPORTANT_EMOJI} {failed} could not be archived."
+        return note
 
     async def _confirm_final_action(self, ctx, edition, action, *, reason="", edit=False):
         owner = str(ctx.author.id)
@@ -67,10 +84,12 @@ class Confirmations:
             raise FinalError("You cannot interact with another user's components.")
         await ctx.defer(edit_origin=True)
         edition = await self._ongoing_edition(ctx, final_id, access="manager")
-        if int(revision) != edition.result_revision:
-            raise FinalError("This view is outdated. Run `/final status` again.")
         if action == "back":
             await self._show_dashboard(ctx, edition, edit=True)
+            return
+        if int(revision) != edition.result_revision:
+            # A result changed after this prompt was drawn, so the manager confirms against the current Final.
+            await self._show_dashboard(ctx, edition, edit=True, outcome=FINAL_CHANGED)
             return
         if action == "end":
             await self._recover(edition)
@@ -87,16 +106,18 @@ class Confirmations:
         except (FinalError, PyMongoError) as error:
             pending = [str(error)]
         current = await lifecycle.reload_final(edition)
+        threads = await self._open_final_threads(current)
+        archive_note = await self._archive_threads(threads, current.thread_cleanup_at)
         controls = []
         if action == "cancel":
             count = await FinalBettingMarket.find({"final_id": final_id, "state": "REFUNDED"}).count()
             content = (f"{IMPORTANT_EMOJI} Cancellation saved. Refunds are still being paid and retry automatically."
                        if current.state != "CANCELLED" else
                        f"{SUCCESS_EMOJI} Final cancelled. {count} {'market' if count == 1 else 'markets'} refunded.")
-            threads = await self._open_final_threads(current)
             if threads:
                 controls = [ipy.Button(label=f"Delete {len(threads)} Match {'Thread' if len(threads) == 1 else 'Threads'}", emoji=CROSS_EMOJI,
                     style=ipy.ButtonStyle.DANGER, custom_id=f"finalthreads|{final_id}|{owner}")]
+        content += archive_note
         if pending and (action == "end" or current.state == "CANCELLED"):
             content += f" {IMPORTANT_EMOJI} Public updates are pending and retry automatically."
         await ctx.edit_origin(content=content, embeds=[], components=controls)
@@ -111,7 +132,7 @@ class Confirmations:
         await ctx.defer(edit_origin=True)
         edition = await EloFinal.get(PydanticObjectId(final_id))
         if edition is None or edition.state not in {"CANCELLING", "CANCELLED"}:
-            raise FinalError("This view is outdated. Run `/final status` again.")
+            raise FinalError("This view is outdated. Run `/final dashboard` again.")
         await self._access(ctx, edition, access="manager")
         deleted = 0
         failed = []

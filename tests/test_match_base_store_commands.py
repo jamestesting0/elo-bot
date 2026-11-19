@@ -839,12 +839,12 @@ class TestMatchCommands(MatchCommandsCase):
     @patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock)
     @patch("elo_bot.features.base_store.storage.clear_participant_base_store", new_callable=AsyncMock)
-    @patch_sites(('elo_bot.extensions.match.bases.send_bases', 'elo_bot.features.matches.attack_bases.send_bases'), new_callable=AsyncMock)
+    @patch_sites(('elo_bot.extensions.match.bases.assign_bases', 'elo_bot.features.matches.attack_bases.assign_bases'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.base_store.is_clan_available', 'elo_bot.extensions.match.hosting.is_clan_available'), new_callable=AsyncMock)
     @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
     @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_match_war_start_from_stored_button_retains_slot_after_sending_bases(
-            self, mock_match, mock_player, mock_is_clan_available, mock_send_bases,
+            self, mock_match, mock_player, mock_is_clan_available, mock_assign_bases,
             mock_clear_base_store, _mock_free_clan, _mock_occupy_clan, mock_clan_find,
             _mock_remove_helper_task):
         events = []
@@ -933,7 +933,7 @@ class TestMatchCommands(MatchCommandsCase):
         collection.update_one = AsyncMock(side_effect=record_binding)
         collection.find_one = AsyncMock(return_value={"_id": match.id})
         _mock_occupy_clan.side_effect = lambda *_args: events.append("occupy")
-        mock_send_bases.side_effect = lambda *_args, **_kwargs: events.append("send_bases")
+        mock_assign_bases.side_effect = lambda *_args, **_kwargs: events.append("assign_bases")
 
         mock_match.find_one = AsyncMock(return_value=match)
 
@@ -961,7 +961,7 @@ class TestMatchCommands(MatchCommandsCase):
 
             await self.cog.start_match_button.callback.func(self.cog, ctx)
 
-        self.assertEqual(events, ["occupy", "pending", "bind", "activate", "send_bases", "slot_reserved"])
+        self.assertEqual(events, ["occupy", "pending", "bind", "activate", "assign_bases", "slot_reserved"])
         self.assertEqual(start_message.edit.await_args.kwargs["embed"]["title"], "**Match Started**")
         self.assertTrue(start_message.edit.await_args.kwargs["components"])
         completion_writes = [item for item in collection.update_one.await_args_list
@@ -969,7 +969,7 @@ class TestMatchCommands(MatchCommandsCase):
         self.assertEqual(len(completion_writes), 1)
         self.assertEqual(completion_writes[0].args[0]["old_msgs.0"], 777)
         self.assertEqual(match.old_msgs[0], 777)
-        mock_send_bases.assert_awaited_once_with(ANY, "TOKEN", 0, 1, scout=False)
+        mock_assign_bases.assert_awaited_once_with(ANY, "TOKEN", 0, 1)
         self.assertEqual(match.attach_base_store_message.await_args_list,
                          [call(0, 888, ready=True), call(0, 888, ready=False)])
         self.assertEqual(match.participants[0].base_store.message_id, 888)

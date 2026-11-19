@@ -39,16 +39,9 @@ def bracket_labels(final: EloFinal, picks: dict[str, str] | None = None) -> list
     for node_id in NODE_IDS[:4]:
         node = final.nodes[node_id]
         labels.extend(name(user, "BYE" if node.bye else "TBD") for user in node.contestants)
-    for node_id in NODE_IDS[:4]:
-        node = final.nodes[node_id]
-        winner = node.winner if picks is None else picks.get(node_id)
-        labels.append(name(winner, "TIE" if picks is None and node.state == "TIED" else "TBD"))
-    for node_id in NODE_IDS[4:6]:
-        node = final.nodes[node_id]
-        winner = node.winner if picks is None else picks.get(node_id)
-        labels.append(name(winner, "TIE" if picks is None and node.state == "TIED" else "TBD"))
-    champion_empty = "TIE" if picks is None and final.nodes["F1"].state == "TIED" else "TBD"
-    labels.append(name(final.champion if picks is None else picks.get("F1"), champion_empty))
+    for node_id in NODE_IDS[:6]:
+        labels.append(name(final.nodes[node_id].winner if picks is None else picks.get(node_id), "TBD"))
+    labels.append(name(final.champion if picks is None else picks.get("F1"), "TBD"))
     return labels
 
 
@@ -77,6 +70,34 @@ def fitted_label(text: str, width: int = 168, size: int = 24) -> tuple[str, Imag
         text = text[:-1]
         bounds = font.getbbox(text + "…", stroke_width=1)
     return text + "…", font
+
+
+BADGE_SIZE = 30
+# Pillow draws shapes without anti-aliasing, so badges are drawn this many times larger and scaled down.
+BADGE_SUPERSAMPLE = 8
+BADGE_STROKES = {
+    "correct": [((-7, 0), (-2, 5), (8, -6))],
+    "incorrect": [((-6, -6), (6, 6)), ((-6, 6), (6, -6))],
+    "excluded": [((-7, 0), (7, 0))],
+}
+BADGE_COLORS = {"correct": "#147a38", "incorrect": "#a32727", "excluded": "#4b5260"}
+
+
+def status_badge(status: str) -> Image.Image:
+    scale = BADGE_SUPERSAMPLE
+    size = BADGE_SIZE * scale
+    center = size / 2
+    with Image.new("RGBA", (size, size)) as large:
+        draw = ImageDraw.Draw(large)
+        draw.ellipse((scale, scale, size - scale, size - scale), fill=BADGE_COLORS[status], outline="white",
+                     width=2 * scale)
+        stroke = 3 * scale
+        for points in BADGE_STROKES[status]:
+            scaled = [(center + dx * scale, center + dy * scale) for dx, dy in points]
+            draw.line(scaled, fill="white", width=stroke, joint="curve")
+            for px, py in (scaled[0], scaled[-1]):
+                draw.ellipse((px - stroke / 2, py - stroke / 2, px + stroke / 2, py + stroke / 2), fill="white")
+        return large.resize((BADGE_SIZE, BADGE_SIZE), Image.Resampling.LANCZOS)
 
 
 def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
@@ -113,15 +134,8 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
             if node_id not in picks or status not in ("correct", "incorrect", "excluded"):
                 continue
             x, y = center[0] + (115 if node_id == "F1" else 102), center[1]
-            color = {"correct": "#147a38", "incorrect": "#a32727", "excluded": "#4b5260"}[status]
-            draw.ellipse((x - 14, y - 14, x + 14, y + 14), fill=color, outline="white", width=2)
-            if status == "correct":
-                draw.line(((x - 7, y), (x - 2, y + 5), (x + 8, y - 6)), fill="white", width=3)
-            elif status == "incorrect":
-                draw.line(((x - 6, y - 6), (x + 6, y + 6)), fill="white", width=3)
-                draw.line(((x - 6, y + 6), (x + 6, y - 6)), fill="white", width=3)
-            else:
-                draw.line(((x - 7, y), (x + 7, y)), fill="white", width=3)
+            with status_badge(status) as badge:
+                image.paste(badge, (x - badge.width // 2, y - badge.height // 2), badge)
     with BytesIO() as output:
         image.save(output, format="PNG")
         image.close()
@@ -138,7 +152,7 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
         draw = ImageDraw.Draw(image)
         labels = []
         for side, user in enumerate(snapshot.contestants):
-            color = "#8d90c2" if snapshot.winner is not None and user != snapshot.winner else "white"
+            color = "#8d90c2" if user != snapshot.winner else "white"
             labels.append((final.player_nicknames.get(user, user), SCOREBOARD_NAMES[side], color, 26))
             if user in avatars:
                 try:

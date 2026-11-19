@@ -57,8 +57,6 @@ def match_status(node: EloFinalMatch) -> str:
             return "Not scheduled" if node.thread_id else "Not started"
         case "PLAYING":
             return "Live"
-        case "TIED":
-            return "Tie · awaiting decision"
         case "NEEDS_MANAGER":
             return "Awaiting a manager decision"
         case unreachable:

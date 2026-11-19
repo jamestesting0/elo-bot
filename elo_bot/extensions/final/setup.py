@@ -20,7 +20,7 @@ class Setup:
         await self._access(ctx, access="manager")
         edition = await lifecycle.start_final(ctx.guild_id, FINAL_CHANNEL)
         await ctx.send(f"{SUCCESS_EMOJI} Season {edition.season_number} Final created. "
-                       "Add entrants with `/final add`.", ephemeral=True)
+                       "Set it up with `/final dashboard`.", ephemeral=True)
 
     @final.subcommand(
         sub_cmd_name="add",

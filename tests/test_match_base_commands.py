@@ -41,51 +41,6 @@ class TestMatchCommands(MatchCommandsCase):
     @patch('elo_bot.extensions.match.bases.validators')
     @patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout'))
     @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
-    async def test_match_base_set_image_success(self, mock_match, mock_base_layout, mock_validators):
-        # Setup
-        ctx = MagicMock(spec=ipy.SlashContext)
-        ctx.author.has_any_role.return_value = True
-        ctx.defer = AsyncMock()
-        ctx.send = AsyncMock()
-        ctx.channel.id = 999
-
-        mock_validators.url.return_value = True
-
-        # Mock Match
-        mock_match_doc = MagicMock()
-        mock_base = MagicMock()
-        mock_match_doc.participants = [
-            MagicMock(user_id="111", bases=[mock_base, None, None]),
-            MagicMock(user_id="222")
-        ]
-        mock_match_doc.hosts = [str(ctx.author.id)]
-        mock_match_doc.final_districts = ["Barbarian Camp"]
-        mock_match_doc.save_changes = AsyncMock()
-        mock_match.find_one = AsyncMock(return_value=mock_match_doc)
-
-        attachment = MagicMock(spec=ipy.Attachment)
-        attachment.url = "http://image.url"
-        attachment.content_type = "image/png"
-
-        mock_base_layout.find_one = AsyncMock(return_value=mock_base)
-
-        # Execute
-        # Mock download_file (imported in elo_bot.extensions.match)
-        self.bot.owner.send = AsyncMock()
-        self.bot.owner.send.return_value.attachments = [MagicMock(url="http://new_image")]
-
-        with patch('elo_bot.extensions.match.bases.download_file', new=AsyncMock(return_value=True)):
-             with patch('elo_bot.extensions.match.bases.delete_file', new=AsyncMock()):
-                 await self.cog.match_base_set_image.callback(ctx, player=0, district="Barbarian Camp", base_ss=attachment)
-
-        # Verify
-        mock_match_doc.save_changes.assert_called_once()
-        ctx.send.assert_called()
-        self.assertIn("set", ctx.send.call_args[0][0])
-
-    @patch('elo_bot.extensions.match.bases.validators')
-    @patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout'))
-    @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
     async def test_match_base_set_success(self, mock_match, mock_base_layout, mock_validators):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
@@ -187,37 +142,6 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send.assert_called()
         self.assertIn("Here are", ctx.send.call_args[0][0])
         self.assertIsInstance(ctx.send.call_args[1]['embeds'][0], ipy.Embed)
-
-    @patch('elo_bot.extensions.match.bases.download_file', new_callable=AsyncMock)
-    @patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'))
-    async def test_match_base_set_image_checks_finished_opponent(self, mock_match, mock_download):
-        ctx = MagicMock(spec=ipy.SlashContext)
-        ctx.author.id = 999
-        ctx.channel.id = 123
-        ctx.send = AsyncMock()
-
-        match = MagicMock(spec=Match)
-        match.is_autowin = False
-        match.is_war = True
-        match.hosts = ["999", None]
-        match.final_districts = ["Barbarian Camp", "Skeleton Park", "Dragon Cliffs"]
-        match.participants = [
-            MagicMock(user_id="111", result=[None, None, None], bases=[MagicMock(), None, None]),
-            MagicMock(user_id="222", result=["3.100", "2.90", "2.80"], bases=[None, None, None]),
-        ]
-        match.save_changes = AsyncMock()
-        mock_match.find_one = AsyncMock(return_value=match)
-
-        await self.cog.match_base_set_image.callback(
-            ctx,
-            player=0,
-            district="Barbarian Camp",
-            base_ss=MagicMock(spec=ipy.Attachment),
-        )
-
-        mock_download.assert_not_awaited()
-        match.save_changes.assert_not_awaited()
-        self.assertIn("finished", ctx.send.call_args[0][0].lower())
 
     @patch.object(OverrideCode, "is_valid", new_callable=AsyncMock)
     @patch_sites(('elo_bot.extensions.match.bases.BaseLayout', 'elo_bot.features.matches.attack_bases.BaseLayout', 'elo_bot.features.results.recording.BaseLayout'))

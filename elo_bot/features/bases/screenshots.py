@@ -19,17 +19,26 @@ from elo_bot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 
 
 async def capture_base_screenshot(
-        base_link: str, requested_by: str, filename: str, *, ctx: ipy.SlashContext, keep_secret: bool = False,
+        base_link: str, requested_by: str, filename: str, *, ctx: ipy.InteractionContext | None,
+        keep_secret: bool = False, scout_view: bool = False,
 ) -> bool:
-    """Capture and validate a Helper artifact; the caller owns a successful temporary file."""
+    """Capture and validate a Helper artifact; the caller owns a successful temporary file.
+
+    Without a context the capture runs in the background and failures are logged instead of shown.
+    """
     path = Path(filename)
     accepted = False
     last_content = f"{LOADING_EMOJI} Requesting a screenshot from Helper..."
-    progress = await ctx.send(last_content, ephemeral=True)
+    progress = await ctx.send(last_content, ephemeral=True) if ctx else None
 
     async def report(content: str) -> None:
         nonlocal last_content
         if content == last_content:
+            return
+        if ctx is None:
+            if content.startswith(str(ERROR_EMOJI)):
+                logging.warning("Helper screenshot for %s failed: %s", base_link, content)
+            last_content = content
             return
         try:
             await ctx.edit(progress, content=content)
@@ -44,7 +53,7 @@ async def capture_base_screenshot(
             return False
         request = HelperJobCreateRequest(
             job_type="get_base_image", requested_by=requested_by,
-            payload=HelperGetBaseImagePayload(base_link=base_link, keep_secret=keep_secret),
+            payload=HelperGetBaseImagePayload(base_link=base_link, keep_secret=keep_secret, scout_view=scout_view),
         )
 
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:

@@ -16757,6 +16757,43 @@
     "auto_defer": "Missing",
     "callback": {
      "closure": [
+      "final_result_edit"
+     ],
+     "name": "final_result_edit"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^finaledit\\\\|[a-f0-9]{24}$')]",
+    "nsfw": false,
+    "pattern": "^finaledit\\|[a-f0-9]{24}$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
       "final_result_select"
      ],
      "name": "final_result_select"
@@ -19521,6 +19558,44 @@
     "name": "ModalCallback::[re.compile('^finalhistmodal\\\\|.+$')]",
     "nsfw": false,
     "pattern": "^finalhistmodal\\|.+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ModalCommand"
+   },
+   {
+    "_application_id": null,
+    "_just_ctx": false,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
+      "final_result_edit_score"
+     ],
+     "name": "final_result_edit_score"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ModalCallback::[re.compile('^finaleditscore\\\\|[a-f0-9]{24}\\\\|[01]\\\\|[0-6]$')]",
+    "nsfw": false,
+    "pattern": "^finaleditscore\\|[a-f0-9]{24}\\|[01]\\|[0-6]$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [

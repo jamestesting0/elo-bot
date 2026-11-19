@@ -52,7 +52,7 @@ class TestFinalGateJourney(FinalUICase):
         await self.cog.final_result_modal.callback.func(self.cog, modal, player1="\n".join(["3.100"] * 7),
             player2="\n".join(["3.100" if tied else "2.80"] * 7), reason="Fixture tie decision" if winner else None)
         confirm = self.context(component=True)
-        confirm.custom_id = modal.send.await_args.kwargs["components"].components[1].custom_id
+        confirm.custom_id = modal.send.await_args.kwargs["components"][-1].components[1].custom_id
         await self.cog.final_result_confirmation.callback.func(self.cog, confirm)
         self.assertEqual(confirm.edit_origin.await_args.kwargs["components"], [])
         return confirm

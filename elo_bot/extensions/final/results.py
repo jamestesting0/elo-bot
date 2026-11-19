@@ -5,9 +5,10 @@ from interactions import OptionType, SlashContext, slash_option
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 
-from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
-from elo_bot.core.finals import FinalError
+from elo_bot.core.finals import FINAL_DISTRICTS, FinalError
+from elo_bot.core.match_results import is_valid_match_result_entry
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import member_names
@@ -17,11 +18,18 @@ from elo_bot.features.finals import lifecycle
 from elo_bot.features.finals.result_drafts import (
     ResultDraftExpired,
     create_result_draft,
+    edit_result_draft,
     finish_result_draft,
     result_draft,
 )
 from elo_bot.features.finals.result_receipts import result_receipt
-from elo_bot.features.finals.result_ui import require_result_role, result_embed, result_form, score_embed
+from elo_bot.features.finals.result_ui import (
+    preview_controls,
+    require_result_role,
+    result_embed,
+    result_form,
+    score_embed,
+)
 from elo_bot.features.finals.results import FinalResultSubmission
 
 
@@ -85,12 +93,7 @@ class Results:
                 reason=response.get("reason"),
             )
             draft = await create_result_draft(edition, request)
-            snapshot = draft.snapshot
-            guild = await member_guild(ctx)
-            names = await member_names(guild, snapshot.contestants)
-            preview = score_embed(edition, node_id, snapshot, names)
-            if request.reason:
-                preview.add_field(name="**Reason**", value=request.reason)
+            preview, controls = await self._result_preview(ctx, edition, draft)
         except (FinalError, ValidationError) as error:
             await ctx.send(f"{ERROR_EMOJI} " + (str(error) if isinstance(error, FinalError)
                                                else "Enter seven valid stars.destruction lines per player."), ephemeral=True)
@@ -98,11 +101,46 @@ class Results:
         except PyMongoError:
             await ctx.send(f"{ERROR_EMOJI} Could not create confirmation. Submit the result again.", ephemeral=True)
             return
-        controls = ipy.ActionRow(
-            ipy.Button(label="Cancel", emoji=CROSS_EMOJI, style=ipy.ButtonStyle.DANGER, custom_id=f"finalcancel|{draft.id}"),
-            ipy.Button(label="Confirm", emoji=TICK_EMOJI, style=ipy.ButtonStyle.SUCCESS, custom_id=f"finalconfirm|{draft.id}"),
-        )
         await ctx.send("Confirm this result?", embed=preview, components=controls, ephemeral=True)
+
+    async def _result_preview(self, ctx, edition, draft):
+        names = await member_names(await member_guild(ctx), draft.snapshot.contestants)
+        preview = score_embed(edition, draft.node_id, draft.snapshot, names)
+        if draft.reason:
+            preview.add_field(name="**Reason**", value=draft.reason)
+        return preview, preview_controls(edition, draft)
+
+    @ipy.component_callback(re.compile(r"^finaledit\|[a-f0-9]{24}$"))
+    @final_action
+    async def final_result_edit(self, ctx: ipy.ComponentContext):
+        try:
+            draft = await result_draft(ctx.custom_id.split("|")[1], str(ctx.author.id), ctx.guild_id)
+        except ResultDraftExpired as error:
+            await ctx.edit_origin(content=f"{ERROR_EMOJI} {error}", embeds=[], components=[])
+            return
+        edition = await self._ongoing_edition(ctx, str(draft.final_id))
+        side, district = ctx.values[0].split("|")
+        user = draft.snapshot.contestants[int(side)]
+        await ctx.send_modal(ipy.Modal(
+            ipy.ShortText(label=f"{edition.player_nicknames[user]} · {FINAL_DISTRICTS[int(district)]}"[:45],
+                          custom_id="score", value=draft.snapshot.scores[user][int(district)], max_length=10,
+                          placeholder="e.g. 2.83"),
+            title=f"Season {edition.season_number} Final · {draft.node_id}",
+            custom_id=f"finaleditscore|{draft.id}|{side}|{district}"))
+
+    @ipy.modal_callback(re.compile(r"^finaleditscore\|[a-f0-9]{24}\|[01]\|[0-6]$"))
+    @final_action
+    async def final_result_edit_score(self, ctx: ipy.ModalContext, score: str):
+        _, draft_id, side, district = ctx.custom_id.split("|")
+        # Checked before deferring so a typo leaves the preview in place instead of replacing it with the error.
+        if not is_valid_match_result_entry(score):
+            raise FinalError("Enter the score as stars.destruction, e.g. 2.83.")
+        await ctx.defer(edit_origin=True)
+        draft = await result_draft(draft_id, str(ctx.author.id), ctx.guild_id)
+        draft = await edit_result_draft(draft, draft.snapshot.contestants[int(side)], int(district), score)
+        edition = await self._ongoing_edition(ctx, str(draft.final_id))
+        preview, controls = await self._result_preview(ctx, edition, draft)
+        await ctx.send("Confirm this result?", embed=preview, components=controls)
 
     @ipy.component_callback(re.compile(r"^final(confirm|cancel)\|[a-f0-9]{24}$"))
     @final_action

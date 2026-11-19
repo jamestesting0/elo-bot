@@ -76,7 +76,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.assertEqual((await final_for_view()).nodes["QF1"].result_version, 0)
         preview = self.ctx.send.await_args
         self.assertTrue(preview.kwargs["ephemeral"])
-        self.assertEqual([button.label for button in preview.kwargs["components"].components], ["Cancel", "Confirm"])
+        self.assertEqual([button.label for button in preview.kwargs["components"][-1].components], ["Cancel", "Confirm"])
         embed = preview.kwargs["embed"]
         rows = [line for line in embed.description.splitlines() if any(district in line for district in FINAL_DISTRICTS)]
         self.assertEqual(len(rows), 7)

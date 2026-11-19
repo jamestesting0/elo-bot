@@ -210,7 +210,8 @@ hosting: show it with `LOADING_EMOJI` and its job ID until the job reports back.
   player's match page shows the current official result without staff notes or duplicate correction entries.
 - Base entry uses `/match base submit`, which accepts links and attachments. Score entry uses the
   seven-score modal followed by an ephemeral result preview with Cancel and Confirm; Confirm rechecks role,
-  ownership and the current match before saving.
+  ownership and the current match before saving. A played preview also has an Edit a score select (one option
+  per player and district) that opens a one-score modal and redraws the preview; only its owner can edit.
 
 Check layouts at desktop and narrow widths: wrapping, readable numbers, action labels and disabled states.
 Preserve the bot's existing styling rather than adding decorative headings, icons or controls to fill space.

@@ -37,6 +37,35 @@ async def result_draft(draft_id: str, owner: str, guild_id: int) -> FinalResultD
     return draft
 
 
+def _draft_submission(draft: FinalResultDraft, scores: dict[str, list[str]]) -> FinalResultSubmission:
+    return FinalResultSubmission(final_id=draft.final_id, node_id=draft.node_id,
+        actor_id=draft.owner_id, operation_key=f"final-draft:{draft.id}", expected_version=draft.expected_version,
+        contestant_revision=draft.contestant_revision, attempt=draft.attempt, scores=scores,
+        winner=draft.explicit_winner, outcome=draft.snapshot.outcome, reason=draft.reason)
+
+
+async def edit_result_draft(draft: FinalResultDraft, contestant: str, district: int, score: str) -> FinalResultDraft:
+    async def edit(session):
+        collection = FinalResultDraft.get_pymongo_collection()
+        row = await collection.find_one({"_id": draft.id, "expires_at": {"$gt": datetime.now(timezone.utc)}},
+                                         session=session)
+        if row is None:
+            raise ResultDraftExpired()
+        current = FinalResultDraft.model_validate(row)
+        if current.state == "CANCELLED":
+            raise FinalError("Submission cancelled.")
+        if current.state == "CONFIRMED":
+            raise FinalError("This result was already saved.")
+        final = await ongoing_final(current.final_id, session=session)
+        scores = {user: list(entries) for user, entries in current.snapshot.scores.items()}
+        scores[contestant][district] = score
+        current.snapshot = submission_snapshot(final, _draft_submission(current, scores))
+        await collection.update_one({"_id": current.id}, {"$set": {"snapshot": current.snapshot.model_dump()}},
+                                    session=session)
+        return current
+    return await transaction(edit)
+
+
 async def finish_result_draft(draft: FinalResultDraft, *, cancel: bool = False) -> tuple[FinalMatchResult | None, bool]:
     async def finish(session):
         collection = FinalResultDraft.get_pymongo_collection()
@@ -56,10 +85,7 @@ async def finish_result_draft(draft: FinalResultDraft, *, cancel: bool = False) 
         node = final.nodes.get(current.node_id)
         if node is None or node.match_id != current.source_match_id:
             raise FinalError("The match changed. Open its current result form.")
-        request = FinalResultSubmission(final_id=current.final_id, node_id=current.node_id,
-            actor_id=current.owner_id, operation_key=f"final-draft:{current.id}", expected_version=current.expected_version,
-            contestant_revision=current.contestant_revision, attempt=current.attempt, scores=current.snapshot.scores,
-            winner=current.explicit_winner, outcome=current.snapshot.outcome, reason=current.reason)
+        request = _draft_submission(current, current.snapshot.scores)
         round_ids = next(ids for ids in ROUND_NODES.values() if current.node_id in ids)
         round_completed = current.round_completed if current.state == "CONFIRMED" else (
             not final.nodes[current.node_id].winner and current.snapshot.winner is not None

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 import anyio
+import interactions as ipy
 
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.core.finals import FinalError
@@ -39,7 +40,7 @@ class TestFinalResultDrafts(FinalUICase):
         indexes = await FinalResultDraft.get_pymongo_collection().index_information()
         self.assertEqual(indexes["final_result_draft_expiry"]["expireAfterSeconds"], 0)
         self.assertEqual(indexes["final_result_draft_expiry"]["key"], [("expires_at", 1)])
-        self.assertEqual(preview.send.await_args.kwargs["components"].components[1].custom_id, f"finalconfirm|{draft.id}")
+        self.assertEqual(preview.send.await_args.kwargs["components"][-1].components[1].custom_id, f"finalconfirm|{draft.id}")
         restarted_bot = MagicMock(ext={}, fetch_channel=self.bot.fetch_channel)
         restarted_bot.user.id = 42
         cog = FinalCommands(restarted_bot)
@@ -60,6 +61,65 @@ class TestFinalResultDrafts(FinalUICase):
         await cog.final_result_confirmation.callback.func(cog, second)
         self.assertEqual(await FinalMatchResult.count(), 1)
         self.assertEqual((await final_for_view()).nodes["QF1"].result_version, 1)
+
+    def edit_context(self, draft, side, district, user=9):
+        ctx = self.context(user)
+        ctx.__class__ = ipy.ModalContext
+        ctx.custom_id = f"finaleditscore|{draft.id}|{side}|{district}"
+        return ctx
+
+    async def test_edited_score_redraws_the_winner_and_is_the_one_confirmed(self):
+        preview, draft = await self.preview()
+        first, second = draft.snapshot.contestants
+        select = preview.send.await_args.kwargs["components"][0].components[0]
+        self.assertEqual(len(select.options), 14)
+        opener = self.context(component=True)
+        opener.custom_id, opener.values = select.custom_id, ["0|6"]
+        await self.cog.final_result_edit.callback.func(self.cog, opener)
+        modal = opener.send_modal.await_args.args[0]
+        self.assertEqual((modal.custom_id, modal.components[0].value), (f"finaleditscore|{draft.id}|0|6", "3.100"))
+        for district in range(7):
+            await self.cog.final_result_edit_score.callback.func(self.cog, self.edit_context(draft, 0, district),
+                                                                 score="0.00")
+        edited = await FinalResultDraft.get(draft.id)
+        self.assertEqual(edited.snapshot.scores[first], ["0.00"] * 7)
+        self.assertEqual(edited.snapshot.scores[second], ["2.80"] * 7)
+        self.assertEqual(edited.snapshot.winner, second)
+        confirmation = self.context(component=True)
+        confirmation.custom_id = f"finalconfirm|{draft.id}"
+        await self.cog.final_result_confirmation.callback.func(self.cog, confirmation)
+        saved = await FinalMatchResult.find_all().first_or_none()
+        self.assertEqual((saved.snapshot.scores[first], saved.snapshot.winner), (["0.00"] * 7, second))
+
+    async def test_invalid_foreign_expired_and_confirmed_edits_never_write(self):
+        _, draft = await self.preview()
+        first = draft.snapshot.contestants[0]
+        invalid = self.edit_context(draft, 0, 0)
+        await self.cog.final_result_edit_score.callback.func(self.cog, invalid, score="4.50")
+        invalid.defer.assert_not_awaited()
+        self.assertTrue(invalid.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
+        foreign = self.context(8, component=True)
+        foreign.custom_id, foreign.values = f"finaledit|{draft.id}", ["0|0"]
+        await self.cog.final_result_edit.callback.func(self.cog, foreign)
+        foreign.send_modal.assert_not_awaited()
+        self.assertTrue(foreign.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
+        self.assertEqual((await FinalResultDraft.get(draft.id)).snapshot.scores[first], ["3.100"] * 7)
+        confirmation = self.context(component=True)
+        confirmation.custom_id = f"finalconfirm|{draft.id}"
+        await self.cog.final_result_confirmation.callback.func(self.cog, confirmation)
+        late = self.edit_context(draft, 0, 0)
+        await self.cog.final_result_edit_score.callback.func(self.cog, late, score="0.00")
+        self.assertTrue(late.edit.await_args.kwargs["content"].startswith(str(ERROR_EMOJI)))
+        saved = await FinalMatchResult.find_all().first_or_none()
+        self.assertEqual(saved.snapshot.scores[first], ["3.100"] * 7)
+        self.assertEqual((await FinalResultDraft.get(draft.id)).snapshot.scores[first], ["3.100"] * 7)
+        await FinalResultDraft.get_pymongo_collection().update_one(
+            {"_id": draft.id}, {"$set": {"expires_at": datetime.now(timezone.utc) - timedelta(seconds=1)}})
+        expired = self.context(component=True)
+        expired.custom_id, expired.values = f"finaledit|{draft.id}", ["0|0"]
+        await self.cog.final_result_edit.callback.func(self.cog, expired)
+        expired.send_modal.assert_not_awaited()
+        self.assertEqual(expired.edit_origin.await_args.kwargs["components"], [])
 
     async def test_foreign_expired_cancelled_and_revoked_drafts_never_save(self):
         _, draft = await self.preview()

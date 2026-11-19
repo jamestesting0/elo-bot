@@ -2,7 +2,7 @@ import interactions as ipy
 from typing import Final, assert_never
 
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
-from elo_bot.config.emojis import STAR_EMOJI, WIN_EMOJI
+from elo_bot.config.emojis import CROSS_EMOJI, STAR_EMOJI, TICK_EMOJI, WIN_EMOJI
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, LVL1_ROLES, LVL2_ROLES
 from elo_bot.core.finals import FinalError
 from elo_bot.db import Match
@@ -10,6 +10,7 @@ from elo_bot.core.finals import FINAL_DISTRICTS, Outcome
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.discord.mentions import mention_user
 from elo_bot.db import EloFinal, EloFinalMatch
+from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.db.final_models import FinalMatchResult, FinalResultSnapshot
 from elo_bot.features.finals.labels import matchup
 from elo_bot.features.finals.matches import require_ongoing_match
@@ -47,6 +48,21 @@ def result_form(final: EloFinal, node: EloFinalMatch, owner: str, previous: Fina
     if previous or winner is not None or outcome == "Forfeit":
         fields.append(ipy.ShortText(label="Reason", custom_id="reason", value=reason, max_length=300, required=True))
     return ipy.Modal(*fields, title=f"Season {final.season_number} Final · {node.id}", custom_id=custom_id)
+
+
+def preview_controls(final: EloFinal, draft: FinalResultDraft) -> list[ipy.ActionRow]:
+    buttons = ipy.ActionRow(
+        ipy.Button(label="Cancel", emoji=CROSS_EMOJI, style=ipy.ButtonStyle.DANGER, custom_id=f"finalcancel|{draft.id}"),
+        ipy.Button(label="Confirm", emoji=TICK_EMOJI, style=ipy.ButtonStyle.SUCCESS, custom_id=f"finalconfirm|{draft.id}"),
+    )
+    if draft.snapshot.outcome == "Forfeit":
+        return [buttons]
+    options = [ipy.StringSelectOption(label=f"{final.player_nicknames[user]} · {district}"[:100], value=f"{side}|{index}",
+                                      description=f"{get_stars(score)}★ {get_destruction(score)}%")
+               for side, user in enumerate(draft.snapshot.contestants)
+               for index, (district, score) in enumerate(zip(FINAL_DISTRICTS, draft.snapshot.scores[user]))]
+    return [ipy.ActionRow(ipy.StringSelectMenu(*options, placeholder="Edit a score", custom_id=f"finaledit|{draft.id}")),
+            buttons]
 
 
 def result_embed(final: EloFinal, result: FinalMatchResult, names: dict[str, str] | None = None,

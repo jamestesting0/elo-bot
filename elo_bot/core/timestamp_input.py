@@ -13,7 +13,7 @@ _ALIASES: Final = {
 _WORDS: Final = DATE_WORDS | {
     "today", "tomorrow", "yesterday", "tonight", "noon", "midnight", "before", "after", "this", "next", "last",
     "previous", "weekend", "start", "beginning", "end", "first", "of",
-    "in", "on", "at", "from", "now", "ago", "and", "the", "am", "pm", "st", "nd", "rd", "th", "t",
+    "in", "on", "at", "from", "now", "ago", "and", "the", "am", "pm", "st", "nd", "rd", "th", "t", "clock", "oclock",
 }
 _WORD: Final = re.compile(r"[a-z]+")
 _REVERSED_DURATION: Final = re.compile(r"(seconds?|minutes?|hours?|days?|weeks?|months?|years?) ([0-9]{1,6})")

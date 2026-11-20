@@ -13,8 +13,13 @@ from elo_bot.core.timestamp_input import correction_for, normalize_timestamp_tex
 type Candidate = date | datetime
 CHOICE_COUNT: Final = 7
 MAX_CHOICES: Final = 25
-_CLOCK_TEXT: Final = r"(?:noon|midnight|[0-9]{1,2}(?::[0-9]{2}(?::[0-9]{2})?)?\s*(?:[ap]\.?m\.?)?)"
-_CLOCK: Final = re.compile(r"([0-9]{1,2})(?::([0-9]{2})(?::([0-9]{2}))?)?\s*([ap]\.?m\.?)?")
+_CLOCK_MARKER: Final = r"(?:c|o[ '’]?clock)"
+_MERIDIEM: Final = r"[ap]\.?(?:m\.?)?"
+_CLOCK_TEXT: Final = (rf"(?:noon|midnight|[0-9]{{1,2}}(?::[0-9]{{2}}(?::[0-9]{{2}})?)?\s*"
+                      rf"(?:{_CLOCK_MARKER}\s*)?(?:{_MERIDIEM})?)")
+_CLOCK: Final = re.compile(
+    rf"([0-9]{{1,2}})(?::([0-9]{{2}})(?::([0-9]{{2}}))?)?\s*(?:{_CLOCK_MARKER}\s*)?({_MERIDIEM})?"
+)
 _TRAILING_CLOCK: Final = re.compile(rf"(.+?)[ t]({_CLOCK_TEXT})")
 _LEADING_CLOCK: Final = re.compile(rf"({_CLOCK_TEXT})\s+(.+)")
 _DAYS: Final = {"today": 0, "tonight": 0, "tomorrow": 1, "yesterday": -1,
@@ -22,6 +27,7 @@ _DAYS: Final = {"today": 0, "tonight": 0, "tomorrow": 1, "yesterday": -1,
 _PARTIAL_DURATION: Final = re.compile(r"(?:.+ )?in (?:[0-9]{1,6}|[a-z]+(?:[- ][a-z]+)?)")
 _PARTIAL_DAY: Final = re.compile(r"(?P<week>this |next |last |previous )?(?P<day>[a-z]{2,9})(?P<rest> at .+)?")
 _PARTIAL_CLOCK: Final = re.compile(r"(.*\b[0-9]{1,2}):([0-5]?)")
+_PARTIAL_OCLOCK: Final = re.compile(r"(.*\b[0-9]{1,2})\s*o[ '’]?(?:c(?:l(?:o(?:c)?)?)?)?")
 _BARE_DURATION: Final = re.compile(r"(?:[0-9]{1,6}\s*|[a-z]+(?:[ -][a-z]+)?\s+)[a-z]+(?:[ ,][a-z0-9 ,\-]+)?")
 _WEEK_FIRST: Final = re.compile(r"(this|next|last|previous) week (?:on )?([a-z]+)")
 _WEEK_LAST: Final = re.compile(r"([a-z]+) (this|next|last|previous) week")
@@ -190,6 +196,8 @@ def autocomplete_expressions(text: str) -> tuple[str, ...]:
         return tuple(f"{edge} of {year[1]}{year[2] or ''}" for edge in ("start", "end"))
     if clock := _PARTIAL_CLOCK.fullmatch(text):
         return (f"{clock[1]}:{clock[2] or '0'}0",)
+    if clock := _PARTIAL_OCLOCK.fullmatch(text):
+        return (f"{clock[1]} o'clock",)
     if _PARTIAL_DURATION.fullmatch(text):
         units = ("hours", "days", "weeks") if text.startswith("in ") else ("days", "weeks", "months")
         return (text, *(f"{text} {unit}" for unit in units))

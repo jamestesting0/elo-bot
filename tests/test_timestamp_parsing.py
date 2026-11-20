@@ -76,6 +76,30 @@ class TestTimestampParsing(unittest.TestCase):
         self.assertEqual(days, [(datetime(*day, 18, tzinfo=UTC),)
                                 for day in ((2026, 11, 18), (2026, 11, 30), (2027, 1, 16))])
 
+    def test_clock_suffixes_keep_am_and_pm_choices_until_disambiguated(self):
+        morning = datetime(2026, 11, 17, 1, tzinfo=UTC)
+        afternoon = datetime(2026, 11, 17, 13, tzinfo=UTC)
+        cases = {
+            "tmrw 2c": (morning, afternoon),
+            "tmrw 2 o'clock": (morning, afternoon),
+            "tmrw 2 o’clock": (morning, afternoon),
+            "tmrw 2oclock": (morning, afternoon),
+            "2 o clock tomorrow": (morning, afternoon),
+            "tmrw 2a": (morning,),
+            "tmrw at 2p": (afternoon,),
+            "tmrw 2 p.m.": (afternoon,),
+            "tmrw 2 o’clock pm": (afternoon,),
+        }
+        for phrase, expected in cases.items():
+            with self.subTest(phrase=phrase):
+                choices = timestamp_choices(phrase, MONDAY, BERLIN)
+                self.assertEqual(tuple(submitted_candidates(choice.value, MONDAY, BERLIN)[0] for choice in choices),
+                                 expected)
+                self.assertEqual(resolve_timestamp(phrase, MONDAY, BERLIN), expected)
+        partial = timestamp_choices("tmrw 2 o’cl", MONDAY, BERLIN)
+        self.assertEqual(tuple(submitted_candidates(choice.value, MONDAY, BERLIN)[0] for choice in partial),
+                         (morning, afternoon))
+
     def test_corrected_suggestions_retain_the_intended_date_time_and_units(self):
         for phrase, correction, expected in (
             ("day 1", "in 1 day", datetime(2026, 11, 17, 14, tzinfo=UTC)),

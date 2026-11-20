@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">Rank Protection</title>
+  <defs>
+    <linearGradient id="steel" x1=".1" y1="0" x2=".74" y2="1">
+      <stop stop-color="#f1eeda"/>
+      <stop offset=".38" stop-color="#bfceca"/>
+      <stop offset=".68" stop-color="#869fa5"/>
+      <stop offset="1" stop-color="#617480"/>
+    </linearGradient>
+    <linearGradient id="enamel" x1="0" y1="0" x2=".8" y2="1">
+      <stop stop-color="#83acb0"/>
+      <stop offset=".55" stop-color="#53858e"/>
+      <stop offset="1" stop-color="#3b616f"/>
+    </linearGradient>
+  </defs>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M96 43q17-10 20 4 5 17-11 29l-10 6-2-9 8-5q10-5 8-16-1-6-10 0Z"
+          fill="#90603f" stroke="#594438" stroke-width="2"/>
+    <path d="M102 45q13-8 12 8" fill="none" stroke="#c19968" stroke-width="2"/>
+    <path d="m17 33 40-19 39 6 12 10 3 22q1 39-42 65l-13 5Q15 100 14 66Z"
+          fill="#536674" stroke="#344955" stroke-width="2.5"/>
+    <path d="M17 32q16-10 40-18l37 6 5 12 2 23q0 35-45 63Q18 98 15 67Z"
+          fill="url(#steel)" stroke="#586e76" stroke-width="2"/>
+    <path d="M25 37q16-9 32-14l29 5 5 26q0 28-35 52Q29 90 25 66Z"
+          fill="url(#enamel)" stroke="#4c6771" stroke-width="2.4"/>
+    <path d="m57 24 28 5 5 25q1 27-34 51Z" fill="#294e61" opacity=".32"/>
+    <path d="M20 34q18-11 37-17l32 5m-71 16-1 24" fill="none" stroke="#fff7dd" stroke-width="2.4"/>
+    <path d="M97 48q6 36-40 67" fill="none" stroke="#576d79" stroke-width="2"/>
+    <g fill="#667c82" stroke="#dbe0d1" stroke-width="1">
+      <circle cx="21.5" cy="36" r="2.2"/>
+      <circle cx="92" cy="25" r="2.2"/>
+      <circle cx="56" cy="112" r="2.2"/>
+    </g>
+  </g>
+</svg>

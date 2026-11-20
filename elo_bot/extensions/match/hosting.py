@@ -4,6 +4,7 @@ import functools
 import re
 from dataclasses import replace
 from datetime import datetime
+from time import time
 from typing import assert_never
 
 import interactions as ipy
@@ -29,6 +30,7 @@ from elo_bot.config.game import (
 from elo_bot.config.ids import (
     ADMIN_ROLE,
     BOT_ID,
+    GUILD_IDS,
     LVL2_ROLES,
     MATCH_CHANNEL,
     MODERATOR_ROLE,
@@ -41,7 +43,7 @@ from elo_bot.config.presentation import (
     FOOTER_TEXT,
     GREEN_COLOR,
 )
-from elo_bot.core.parsing import extract_integer
+from elo_bot.core.parsing import future_schedule_timestamp
 from elo_bot.core.raid_weekend import is_raid_weekend
 from elo_bot.db import Match, Player
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
@@ -559,40 +561,15 @@ class MatchHostingCommands:
         opt_type=ipy.OptionType.STRING,
         required=True
     )
-    @coordinated_match_message
-    async def match_war_schedule(self, ctx: ipy.SlashContext, player: int, timestamp: str):
-        await ctx.defer(ephemeral=True)
+    async def match_war_schedule(self, ctx: ipy.SlashContext, player: int, timestamp: str) -> None:
+        await self._schedule_match(ctx, timestamp, player=player)
 
-        ts = extract_integer(timestamp)
-        if not ts:
-            await ctx.send(f"{ERROR_EMOJI} The timestamp you provided is not valid.", ephemeral=True)
-            return
+    @ipy.message_context_menu(name="Match War Schedule", scopes=GUILD_IDS)
+    @ipy.check(ipy.has_any_role(*LVL2_ROLES))
+    async def match_war_schedule_message(self, ctx: ipy.ContextMenuContext) -> None:
+        await self._schedule_match(ctx, war_message=True)
 
-        # find the match by the current thread/channel id
-        match = await Match.find_one(Match.thread == str(ctx.channel.id))
-        if match is None:
-            await ctx.send(
-                f"{ERROR_EMOJI} Unable to fetch a valid match, please make sure to use this command in a 1v1 thread!",
-                ephemeral=True
-            )
-            return
-
-        if not await check_current_match(ctx, match):
-            return
-        if is_match_finished(match, player=player):
-            player_id = match.participants[player].user_id
-            await ctx.send(f"{ERROR_EMOJI} The match has already finished for <@{player_id}>.", ephemeral=True)
-            return
-
-        # prevent scheduling if a live (non-war) match already initiated (mirrors old logic)
-        if (not match.is_war) and any(match.times or []):
-            await ctx.send(f"{ERROR_EMOJI} A live match is already initiated.", ephemeral=True)
-            return
-
-        if ts > 32536799999:
-            await ctx.send(f"{ERROR_EMOJI} The given timestamp is out of range.", ephemeral=True)
-            return
-
+    async def _schedule_war(self, ctx: ipy.InteractionContext, match: Match, player: int, ts: int) -> None:
         # determine embed title (Scheduled/Rescheduled)
         prev_ts = match.times[player]
         title = "**Match Scheduled**"
@@ -667,7 +644,7 @@ class MatchHostingCommands:
             components=[ipy.ActionRow(host_clan_select), ipy.ActionRow(host_button, store_button, abort_button)],
         )
 
-        await ctx.send(f"{SUCCESS_EMOJI} You have successfully scheduled a match for {player_obj.mention}!",
+        await ctx.send(f"{SUCCESS_EMOJI} Match scheduled for {player_obj.mention} at {long_ts}.",
                        ephemeral=True)
 
         # if both players have scheduled times, flip the channel name style
@@ -1205,13 +1182,34 @@ class MatchHostingCommands:
         opt_type=ipy.OptionType.STRING,
         required=True
     )
-    @coordinated_match_message
-    async def match_schedule(self, ctx: ipy.SlashContext, timestamp: str):
-        await ctx.defer(ephemeral=True)
+    async def match_schedule(self, ctx: ipy.SlashContext, timestamp: str) -> None:
+        await self._schedule_match(ctx, timestamp)
 
-        ts = extract_integer(timestamp)
-        if not ts:
-            await ctx.send(f"{ERROR_EMOJI} The timestamp you provided is not valid.", ephemeral=True)
+    @ipy.message_context_menu(name="Match Schedule", scopes=GUILD_IDS)
+    @ipy.check(ipy.has_any_role(*LVL2_ROLES))
+    async def match_schedule_message(self, ctx: ipy.ContextMenuContext) -> None:
+        await self._schedule_match(ctx)
+
+    @acknowledge_privately
+    @coordinated_match_message
+    async def _schedule_match(self, ctx: ipy.SlashContext | ipy.ContextMenuContext, timestamp: str = "",
+                              *, player: int | None = None, war_message: bool = False) -> None:
+        message_author = None
+        if isinstance(ctx, ipy.ContextMenuContext):
+            message = ctx.target
+            if not isinstance(message, ipy.Message):
+                await ctx.send(f"{ERROR_EMOJI} The selected message is unavailable.", ephemeral=True)
+                return
+            if war_message:
+                message_author = str(message.author.id)
+            ts = future_schedule_timestamp(message.content or "", time(), from_message=True)
+            invalid_time = "This message has no future Discord timestamp."
+        else:
+            ts = future_schedule_timestamp(timestamp, time())
+            invalid_time = "Enter a future Discord timestamp or Unix timestamp."
+
+        if ts is None:
+            await ctx.send(f"{ERROR_EMOJI} {invalid_time}", ephemeral=True)
             return
 
         match = await Match.find_one(Match.thread == str(ctx.channel.id))
@@ -1222,20 +1220,31 @@ class MatchHostingCommands:
 
         if not await check_current_match(ctx, match):
             return
-        if is_match_finished(match):
-            await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
+
+        if message_author is not None:
+            player = next((side for side, participant in enumerate(match.participants[:2])
+                           if participant.user_id == message_author), None)
+            if player is None:
+                await ctx.send(f"{ERROR_EMOJI} The message author must be a player in this match.", ephemeral=True)
+                return
+
+        if is_match_finished(match, player=player):
+            suffix = "." if player is None else f" for <@{match.participants[player].user_id}>."
+            await ctx.send(f"{ERROR_EMOJI} The match has already finished{suffix}", ephemeral=True)
             return
 
-        # disallow if a war-style match already initiated for one side
-        if match.is_war and any(match.times or []):
-            await ctx.send(f"{ERROR_EMOJI} A war-style match is already initiated for one of the players.",
-                           ephemeral=True)
+        if match.is_war != (player is not None) and any(match.times or []):
+            refusal = ("A war-style match is already initiated for one of the players." if match.is_war
+                       else "A live match is already initiated.")
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
-        if ts > 32536799999:
-            await ctx.send(f"{ERROR_EMOJI} The given timestamp is out of range.", ephemeral=True)
-            return
+        if player is None:
+            await self._schedule_live(ctx, match, ts)
+        else:
+            await self._schedule_war(ctx, match, player, ts)
 
+    async def _schedule_live(self, ctx: ipy.InteractionContext, match: Match, ts: int) -> None:
         prev_time = next((t for t in (match.times or []) if t), None)
         title = "**Match Scheduled**" if (prev_time is None or prev_time == ts) else "**Match Rescheduled**"
 
@@ -1295,15 +1304,14 @@ class MatchHostingCommands:
         members = await asyncio.gather(guild.fetch_member(p1_id), guild.fetch_member(p2_id))
         public_embed = ipy.Embed(
             title=title,
-            description=("Spectate in the host clan with a TH5 or lower account. "
-                         + (f"Host: {mention_user(host_user, mention_type='Helper')}."
-                            if host_user else "Currently the host is not determined.")),
+            description=("Spectate in the host clan with a TH5 or lower account."
+                         + (f" Host: {mention_user(host_user, mention_type='Helper')}." if host_user else "")),
             fields=[
                 ipy.EmbedField(name="**Players**",
                                value=f"{mention_user(members[0], p1_id)} vs. {mention_user(members[1], p2_id)}"),
                 ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                 ipy.EmbedField(name="**Host Clan**",
-                               value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"),
+                               value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "TBD"),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
             color=GREEN_COLOR,
@@ -1321,7 +1329,7 @@ class MatchHostingCommands:
                 content=tip, public_channel=channel,
             )
 
-        await ctx.send(f"{SUCCESS_EMOJI} Successfully scheduled the match!", ephemeral=True)
+        await ctx.send(f"{SUCCESS_EMOJI} Match scheduled for {long_ts}.", ephemeral=True)
 
         # channel name color based on whether a host is set
         if host_user is None:

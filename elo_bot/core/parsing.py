@@ -1,4 +1,25 @@
 import re
+from typing import Final
+
+
+_MAX_SCHEDULE_TIMESTAMP: Final = 32_536_799_999
+_UNIX_SECONDS: Final = re.compile(r"[0-9]{1,11}")
+_DISCORD_TIMESTAMP: Final = re.compile(r"<t:([0-9]{1,11})(?::[tTdDfFsSR])?>")
+
+
+def future_schedule_timestamp(text: str, now: float, *, from_message: bool = False) -> int | None:
+    """Read a slash argument or find the first future Discord timestamp in message text."""
+    if from_message:
+        candidates = (int(tag[1]) for tag in _DISCORD_TIMESTAMP.finditer(text))
+        return next((ts for ts in candidates if now < ts <= _MAX_SCHEDULE_TIMESTAMP), None)
+
+    value = text.strip().strip("`").strip()
+    if tag := _DISCORD_TIMESTAMP.fullmatch(value):
+        value = tag[1]
+    if _UNIX_SECONDS.fullmatch(value) is None:
+        return None
+    ts = int(value)
+    return ts if now < ts <= _MAX_SCHEDULE_TIMESTAMP else None
 
 
 def get_stars(string: str) -> int:

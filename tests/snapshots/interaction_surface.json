@@ -4717,6 +4717,104 @@
   },
   {
    "_application_id": null,
+   "auto_defer": "Missing",
+   "callback": {
+    "name": "match_schedule_message"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727,
+       1214058812831694858
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "MatchCommands",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedField: default_locale=english_us, value='Match Schedule'>",
+   "nsfw": false,
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "Match Schedule",
+   "scope": "1033924790513311756",
+   "scopes": [
+    1033924790513311756,
+    888075522536505394
+   ],
+   "type": "CommandType.MESSAGE"
+  },
+  {
+   "_application_id": null,
+   "auto_defer": "Missing",
+   "callback": {
+    "name": "match_war_schedule_message"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727,
+       1214058812831694858
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "MatchCommands",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedField: default_locale=english_us, value='Match War Schedule'>",
+   "nsfw": false,
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "Match War Schedule",
+   "scope": "1033924790513311756",
+   "scopes": [
+    1033924790513311756,
+    888075522536505394
+   ],
+   "type": "CommandType.MESSAGE"
+  },
+  {
+   "_application_id": null,
    "_uses_arg": false,
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
@@ -10713,6 +10811,104 @@
   },
   {
    "_application_id": null,
+   "auto_defer": "Missing",
+   "callback": {
+    "name": "match_schedule_message"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727,
+       1214058812831694858
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "MatchCommands",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedField: default_locale=english_us, value='Match Schedule'>",
+   "nsfw": false,
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "Match Schedule",
+   "scope": "888075522536505394",
+   "scopes": [
+    1033924790513311756,
+    888075522536505394
+   ],
+   "type": "CommandType.MESSAGE"
+  },
+  {
+   "_application_id": null,
+   "auto_defer": "Missing",
+   "callback": {
+    "name": "match_war_schedule_message"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727,
+       1214058812831694858
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "MatchCommands",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedField: default_locale=english_us, value='Match War Schedule'>",
+   "nsfw": false,
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "Match War Schedule",
+   "scope": "888075522536505394",
+   "scopes": [
+    1033924790513311756,
+    888075522536505394
+   ],
+   "type": "CommandType.MESSAGE"
+  },
+  {
+   "_application_id": null,
    "_uses_arg": false,
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
@@ -13273,9 +13469,6 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
-    "closure": [
-     "match_schedule"
-    ],
     "name": "match_schedule"
    },
    "checks": [
@@ -13665,9 +13858,6 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
-    "closure": [
-     "match_war_schedule"
-    ],
     "name": "match_war_schedule"
    },
    "checks": [
@@ -27466,6 +27656,36 @@
      2
     ],
     "default_member_permissions": null,
+    "integration_types": [
+     0
+    ],
+    "name": "Match Schedule",
+    "name_localizations": null,
+    "nsfw": false,
+    "type": 3
+   },
+   {
+    "contexts": [
+     0,
+     1,
+     2
+    ],
+    "default_member_permissions": null,
+    "integration_types": [
+     0
+    ],
+    "name": "Match War Schedule",
+    "name_localizations": null,
+    "nsfw": false,
+    "type": 3
+   },
+   {
+    "contexts": [
+     0,
+     1,
+     2
+    ],
+    "default_member_permissions": null,
     "description": "None",
     "description_localizations": null,
     "integration_types": [
@@ -32479,6 +32699,36 @@
       "type": 5
      }
     ]
+   },
+   {
+    "contexts": [
+     0,
+     1,
+     2
+    ],
+    "default_member_permissions": null,
+    "integration_types": [
+     0
+    ],
+    "name": "Match Schedule",
+    "name_localizations": null,
+    "nsfw": false,
+    "type": 3
+   },
+   {
+    "contexts": [
+     0,
+     1,
+     2
+    ],
+    "default_member_permissions": null,
+    "integration_types": [
+     0
+    ],
+    "name": "Match War Schedule",
+    "name_localizations": null,
+    "nsfw": false,
+    "type": 3
    },
    {
     "contexts": [

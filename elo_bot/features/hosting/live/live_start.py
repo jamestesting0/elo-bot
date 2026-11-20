@@ -120,6 +120,7 @@ type LiveStartOutcome = LiveStartSucceeded | LiveStartBusy | LiveStartClanUnavai
 class LiveAbort:
     match: Match
     message: ipy.Message | None
+    pause_scouting: bool = False
 
 
 async def reserve_live_start(match_token: str, clan_tag: str) -> live_reservations.LiveReservationOutcome:
@@ -364,7 +365,7 @@ async def _abort_live_start_locked(
         host_clans=tuple(match_doc.host_clans),
         old_messages=tuple(match_doc.old_msgs),
     )
-    if not await match_doc.abort_started_live_match(expected):
+    if not await match_doc.abort_started_live_match(expected, pause_scouting=abort.pause_scouting):
         return False
     publication_error: ipy.errors.HTTPException | None = None
     for channel_id, message_id, supplied, is_public in (

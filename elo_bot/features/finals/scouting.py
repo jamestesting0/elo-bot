@@ -13,10 +13,15 @@ _PREPARING = asyncio.Lock()
 FINAL_BASES_LOCKED = "Your bases are locked because scouting has opened for this match."
 
 
-def scout_opens_at(match: Match, attacker: int) -> int | None:
-    """When the attacker may scout the opponent's bases. The opponent's bases lock at the same moment."""
+def scheduled_scout_opens_at(match: Match, attacker: int) -> int | None:
     scheduled = match.scheduled_times[attacker]
     return None if scheduled is None else scheduled - FINAL_SCOUT_WINDOW
+
+
+def scout_opens_at(match: Match, attacker: int) -> int | None:
+    if attacker in match.final_scouting_paused_sides:
+        return None
+    return scheduled_scout_opens_at(match, attacker)
 
 
 async def _prepare_side(bot: ipy.Client, match: Match, attacker: int) -> None:

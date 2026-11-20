@@ -6,12 +6,13 @@ import interactions as ipy
 
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CODES_REVERSED
+from elo_bot.core.finals import FinalError
 from elo_bot.db import BaseLayout, BaseLink, Match
 from elo_bot.discord import runtime
 from elo_bot.extensions.match import MatchCommands
-from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.finals.hosting import accept_final_start, check_final_start
 from elo_bot.features.finals.lifecycle import confirm_bracket
-from elo_bot.features.finals.matches import bind_thread, prepare_match
+from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
 from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, prepare_open_scouting
 from elo_bot.features.matches.attack_bases import choose_bases
 from tests.integration._final_ui_fixture import FinalUICase
@@ -55,6 +56,87 @@ class TestFinalScouting(FinalUICase):
     async def submit(self, ctx, district: str, **options):
         with patch("elo_bot.extensions.match.bases.find_match_thread_announcement", new=AsyncMock(return_value=None)):
             await self.cog.match_base_submit.callback.func(self.cog, ctx, base_link=self.link(district), **options)
+
+    async def check_manual_abort(self, *, war: bool, publication_fails: bool = False):
+        at = int(time.time()) + 20 * 60
+        if war:
+            self.source = await schedule_final_match(self.source, at, player=0)
+            self.source = await schedule_final_match(self.source, at, player=1)
+        else:
+            self.source = await schedule_final_match(self.source, at)
+        await accept_final_start(self.source, "9", player=0 if war else None)
+        base = BaseLink(link="saved", image="https://cdn.example/scout.webp", scout_view=True)
+        await self.source.set({"old_msgs.0": 555, "participants.0.bases.0": base.model_dump(),
+                               "participants.1.bases.0": base.model_dump()})
+        player = self.player(0)
+        await self.cog.match_base_scout.callback.func(self.cog, player)
+        panel = player.send.await_args
+        self.assertEqual(panel.kwargs["embed"].image.url, base.image)
+
+        ctx = self.context(component=war)
+        ctx.channel.id = 777
+        ctx.bot = self.bot
+        ctx.message = MagicMock(id=555, embeds=[ipy.Embed(title="**Match Started**")])
+        ctx.channel.fetch_message = AsyncMock(return_value=ctx.message)
+        if war:
+            ctx.custom_id = f"match_abort|{self.source.token}|0"
+            callback = self.cog.abort_match_button
+            module = "elo_bot.features.hosting.war.war_start"
+        else:
+            callback = self.cog.match_abort
+            module = "elo_bot.features.hosting.live.live_start"
+        error = ipy.errors.HTTPException(MagicMock(status=502, reason="Bad Gateway")) if publication_fails else None
+        with patch(f"{module}.edit_channel_message", new=AsyncMock(side_effect=error)), \
+                patch(f"{module}.mark_store_reserved", new=AsyncMock(return_value=True)), \
+                patch(f"{module}.schedule_channel_name_edit"):
+            if publication_fails:
+                with self.assertRaises(ipy.errors.HTTPException):
+                    await callback.callback.func(self.cog, ctx)
+                ctx.send.assert_not_awaited()
+            else:
+                await callback.callback.func(self.cog, ctx)
+                self.assertEqual(ctx.send.await_args.args[0], f"{SUCCESS_EMOJI} The match has been aborted.")
+
+        saved = await Match.get(self.source.id)
+        self.assertEqual(saved.scheduled_times, [at, at])
+        self.assertEqual([p.bases[0] for p in saved.participants], [base, base])
+        self.assertEqual(saved.times, [None, at] if war else [None, None])
+        with self.assertRaisesRegex(FinalError, "Reschedule it"):
+            await check_final_start(saved, 0 if war else None)
+        if war:
+            await check_final_start(saved, 1)
+
+        for side in (0, 1):
+            scout = self.player(side)
+            await self.cog.match_base_scout.callback.func(self.cog, scout)
+            if side == 1 and war:
+                self.assertEqual(scout.send.await_args.kwargs["embed"].image.url, base.image)
+            else:
+                self.assertNotIn("embed", scout.send.await_args.kwargs)
+                self.assertIn("rescheduled", scout.send.await_args.args[0])
+
+        reopened = await self.select(panel, 0, 0, user=player.author.id)
+        self.assertIsNone(reopened.edit_origin.await_args.kwargs["embed"].image)
+        self.assertIn("rescheduled", reopened.edit_origin.await_args.kwargs["embed"].description)
+
+        new_time = at + 3600
+        rescheduled = await schedule_final_match(saved, new_time, player=0 if war else None)
+        await check_final_start(rescheduled, 0 if war else None)
+        early = self.player(0)
+        await self.cog.match_base_scout.callback.func(self.cog, early)
+        self.assertIn(f"<t:{new_time - 1800}:R>", early.send.await_args.args[0])
+        with patch("elo_bot.features.finals.scout_ui.time.time", return_value=new_time - 1800):
+            reopened = await self.select(panel, 0, 0, user=player.author.id)
+        self.assertEqual(reopened.edit_origin.await_args.kwargs["embed"].image.url, base.image)
+
+    async def test_manual_live_abort_hides_both_scout_views_until_rescheduling(self):
+        await self.check_manual_abort(war=False)
+
+    async def test_manual_live_abort_closes_scouting_even_if_discord_update_fails(self):
+        await self.check_manual_abort(war=False, publication_fails=True)
+
+    async def test_manual_war_abort_hides_only_that_sides_scout_view_until_rescheduling(self):
+        await self.check_manual_abort(war=True)
 
     async def test_submission_uses_the_scout_view_and_locks_when_the_opponent_can_scout(self):
         districts = self.source.final_districts

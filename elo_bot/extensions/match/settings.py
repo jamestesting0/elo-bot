@@ -177,7 +177,7 @@ class MatchSettingsCommands:
                     ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                     ipy.EmbedField(
                         name="**Host Clan**",
-                        value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "TBD"
+                        value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"
                     ),
                 ],
                 footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),

@@ -409,7 +409,7 @@ class TestMatchCommands(MatchCommandsCase):
             hosts=("999", None),
             host_clans=("#CURRENT", None),
             old_messages=(777, None),
-        ))
+        ), pause_scouting=True)
         match.set.assert_not_awaited()
         self.assertEqual(match.persistent_host_clans, ["#PREFERRED", None])
         old_message.delete.assert_not_awaited()

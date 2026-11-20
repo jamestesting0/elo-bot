@@ -67,6 +67,7 @@ class WarAbort:
     match: Match
     player: int
     message: ipy.Message
+    pause_scouting: bool = False
 
 
 @coordinated_match_message
@@ -307,6 +308,7 @@ async def _abort_war_start_locked(ctx: ipy.ComponentContext | ipy.SlashContext, 
             match_doc.hosts[player],
             old_clan,
             expected_old_message,
+            pause_scouting=abort.pause_scouting,
     ):
         return False
     publication_error: ipy.errors.HTTPException | None = None

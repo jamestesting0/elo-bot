@@ -678,7 +678,7 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} You are not the host of this match.", ephemeral=True)
             return
 
-        abort = war_start.WarAbort(match=match, player=index, message=ctx.message)
+        abort = war_start.WarAbort(match=match, player=index, message=ctx.message, pause_scouting=True)
         aborted = await war_start.abort_war_start(ctx, abort)
         if not aborted:
             await ctx.send(
@@ -799,7 +799,7 @@ class MatchHostingCommands:
         )
         aborted = await live_start.abort_live_start(
             ctx,
-            live_start.LiveAbort(match=match, message=old_msg),
+            live_start.LiveAbort(match=match, message=old_msg, pause_scouting=True),
         )
         if not aborted:
             await ctx.send(
@@ -1311,7 +1311,7 @@ class MatchHostingCommands:
                                value=f"{mention_user(members[0], p1_id)} vs. {mention_user(members[1], p2_id)}"),
                 ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                 ipy.EmbedField(name="**Host Clan**",
-                               value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "TBD"),
+                               value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
             color=GREEN_COLOR,

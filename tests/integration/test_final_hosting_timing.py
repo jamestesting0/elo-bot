@@ -23,6 +23,7 @@ from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.predictions import change_prediction_state
 from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elo_bot.features.finals.scouting import scout_opens_at
 from elo_bot.core.finals import FINAL_SELF_HOSTING_REFUSAL, FinalError
 from elo_bot.features.matches.messages import MatchMessageState
 from elo_bot.features.matches.timing import hosting_started
@@ -128,6 +129,9 @@ class TestFinalHostingTiming(FinalScenarioCase):
             return
         self.assertIsNone(saved.times[0])
         self.assertIsNone(saved.host_clans[0])
+        self.assertEqual(saved.scheduled_times, original.scheduled_times)
+        self.assertIsNotNone(scout_opens_at(saved, 0))
+        self.assertIsNotNone(scout_opens_at(saved, 1))
         self.assertEqual((await Clan.find_one({"tag": "#REVIEW"})).availability_str, "Available")
         self.assertFalse(hosting_started(saved, 0))
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
@@ -359,14 +363,15 @@ class TestFinalHostingTiming(FinalScenarioCase):
                 if live:
                     expected = ExpectedLiveStartState(tuple(stale.times), tuple(stale.hosts),
                                                       tuple(stale.host_clans), tuple(stale.old_msgs))
-                    aborted = await stale.abort_started_live_match(expected)
+                    aborted = await stale.abort_started_live_match(expected, pause_scouting=True)
                 else:
                     aborted = await stale.abort_started_war_side(
-                        0, stale.times[0], stale.hosts[0], stale.host_clans[0], stale.old_msgs[0])
+                        0, stale.times[0], stale.hosts[0], stale.host_clans[0], stale.old_msgs[0], pause_scouting=True)
                 self.assertFalse(aborted)
                 saved = await Match.get(source.id)
                 self.assertEqual(saved.final_hosting_times, [200, 200])
                 self.assertEqual(saved.times, source.times)
+                self.assertEqual(saved.final_scouting_paused_sides, [])
 
     async def test_legacy_side_abort_preserves_other_sides_ambiguous_hosting(self):
         _, source = await self.pairing()
@@ -445,16 +450,18 @@ class TestFinalHostingTiming(FinalScenarioCase):
         await Match.get_pymongo_collection().update_one({"_id": source.id}, {
             "$set": {"hosts": ["host0", "host1"], "host_clans": ["#OLD0", "#OLD1"],
                      "old_msgs": [101, 102]},
-            "$unset": {"final_hosting_times": "", "final_legacy_hosting_evidence": ""},
+            "$unset": {"final_hosting_times": "", "final_legacy_hosting_evidence": "", "final_scouting_paused_sides": ""},
         })
         first, second = await asyncio.gather(Match.get(source.id), Match.get(source.id))
         outcomes = await asyncio.gather(
-            first.abort_started_war_side(0, first.times[0], first.hosts[0], first.host_clans[0], first.old_msgs[0]),
+            first.abort_started_war_side(0, first.times[0], first.hosts[0], first.host_clans[0], first.old_msgs[0],
+                                         pause_scouting=True),
             second.abort_started_war_side(1, second.times[1], second.hosts[1], second.host_clans[1],
-                                          second.old_msgs[1]),
+                                          second.old_msgs[1], pause_scouting=True),
         )
         self.assertEqual(outcomes, [True, True])
         saved = await Match.get(source.id)
         self.assertEqual(saved.times, [None, None])
         self.assertEqual(saved.final_legacy_hosting_evidence, [False, False])
+        self.assertCountEqual(saved.final_scouting_paused_sides, [0, 1])
         self.assertFalse(hosting_started(saved))

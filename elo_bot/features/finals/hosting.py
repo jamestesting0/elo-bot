@@ -30,6 +30,10 @@ def require_startable(final: EloFinal, current: Match, source: Match, player: in
         if current.is_war:
             raise FinalError("This is a war-style match. Use `/match war start` or `/match war autostart`.")
         raise FinalError("This is a live match. Use `/match start` or `/match autostart`.")
+    sides = (0, 1) if player is None else (player,)
+    if any(side in current.final_scouting_paused_sides for side in sides):
+        command = "/match schedule" if player is None else "/match war schedule"
+        raise FinalError(f"This match was aborted. Reschedule it with `{command}` before starting.")
     return node
 
 

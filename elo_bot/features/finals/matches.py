@@ -61,6 +61,7 @@ async def schedule_final_match(source: Match, timestamp: int, *, player: int | N
             raise FinalError("Hosting has already started or the schedule uses another match format.")
         current.is_war = player is not None
         node.scheduled_is_war = current.is_war
+        current.final_scouting_paused_sides = [side for side in current.final_scouting_paused_sides if side not in sides]
         for side in sides:
             current.scheduled_times[side] = timestamp
             current.times[side] = timestamp
@@ -70,7 +71,7 @@ async def schedule_final_match(source: Match, timestamp: int, *, player: int | N
         final.revision += 1
         await Match.get_pymongo_collection().update_one({"_id": current.id}, {"$set": {
             "is_war": current.is_war, "times": current.times, "scheduled_times": current.scheduled_times,
-            "hosts": current.hosts,
+            "hosts": current.hosts, "final_scouting_paused_sides": current.final_scouting_paused_sides,
         }}, session=session)
         await EloFinal.get_pymongo_collection().replace_one({"_id": final.id}, final.model_dump(by_alias=True),
                                                            session=session)

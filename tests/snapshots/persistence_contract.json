@@ -4637,6 +4637,13 @@
       ],
       "default": null
      },
+     "final_scouting_paused_sides": {
+      "items": {
+       "type": "integer"
+      },
+      "title": "Final Scouting Paused Sides",
+      "type": "array"
+     },
      "final_start_claim": {
       "anyOf": [
        {

@@ -88,6 +88,7 @@ class Match(Document):
     final_hosting_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
     final_legacy_hosting_evidence: list[bool] = Field(default_factory=lambda: [False, False], min_length=2, max_length=2)
     scheduled_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
+    final_scouting_paused_sides: list[int] = Field(default_factory=list)
     final_thread_creation_claimed: bool = False
     final_base_page_revision: int = 0
     result_operation: MatchResultOperation | None = None
@@ -276,6 +277,8 @@ class Match(Document):
             expected_host: str | None,
             expected_host_clan: str | None,
             expected_old_message: int,
+            *,
+            pause_scouting: bool = False,
     ) -> bool:
         await self.ensure_persistent_host_clans()
         await self.ensure_final_hosting_times()
@@ -301,7 +304,10 @@ class Match(Document):
             if "final_legacy_hosting_evidence" in self.model_fields_set:
                 query[f"final_legacy_hosting_evidence.{player}"] = self.final_legacy_hosting_evidence[player]
                 updates[f"final_legacy_hosting_evidence.{player}"] = False
-        result = await self.get_pymongo_collection().update_one(query, {"$set": updates})
+        abort_update: dict[str, JsonValue] = {"$set": updates}
+        if self.format == "elo_final_seven" and pause_scouting:
+            abort_update["$addToSet"] = {"final_scouting_paused_sides": player}
+        result = await self.get_pymongo_collection().update_one(query, abort_update)
         if result.matched_count == 0:
             return False
         self.times[player] = None
@@ -310,10 +316,12 @@ class Match(Document):
         if self.format == "elo_final_seven":
             self.final_hosting_times[player] = None
             self.final_legacy_hosting_evidence[player] = False
+            if pause_scouting and player not in self.final_scouting_paused_sides:
+                self.final_scouting_paused_sides.append(player)
         self._save_state()
         return True
 
-    async def abort_started_live_match(self, expected: ExpectedLiveStartState) -> bool:
+    async def abort_started_live_match(self, expected: ExpectedLiveStartState, *, pause_scouting: bool = False) -> bool:
         await self.ensure_persistent_host_clans()
         await self.ensure_final_hosting_times()
         query: dict[str, JsonValue | PydanticObjectId] = {
@@ -335,6 +343,8 @@ class Match(Document):
                 "final_superseded": False, "final_result_id": None, "final_result_operation": None})
             query["final_hosting_times"] = list(self.final_hosting_times)
             updates["final_hosting_times"] = [None, None]
+            if pause_scouting:
+                updates["final_scouting_paused_sides"] = [0, 1]
             if "final_legacy_hosting_evidence" in self.model_fields_set:
                 query["final_legacy_hosting_evidence"] = list(self.final_legacy_hosting_evidence)
                 updates["final_legacy_hosting_evidence"] = [False, False]
@@ -347,6 +357,8 @@ class Match(Document):
         if self.format == "elo_final_seven":
             self.final_hosting_times = [None, None]
             self.final_legacy_hosting_evidence = [False, False]
+            if pause_scouting:
+                self.final_scouting_paused_sides = [0, 1]
         self._save_state()
         return True
 

@@ -317,6 +317,9 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   and use the district dropdown to browse one image at a time in a private message. LVL1 managers can also select
   either player's attacking view. Each view follows that player's schedule and shows the other player's
   bases. Missing submissions are filled with Excellent Helper bases and scouted.
+  A manual abort pauses scouting for both live players or the aborted war side. Reschedule before hosting
+  again. Scouting reopens 30 minutes before the new time and uses any saved scout images. Helper rollbacks
+  keep the scouting window.
 - `/final match forfeit` takes the forfeiting player and finds their unfinished pairing. The manager enters
   a reason and confirms that the opponent advances. Any bets on the forfeited match are refunded.
 - A Final match thread has only Submit Result. Players submit bases with `/match base submit` in the

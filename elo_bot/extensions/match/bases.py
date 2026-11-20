@@ -40,7 +40,7 @@ from elo_bot.extensions.match.groups import base_group
 from elo_bot.core.finals import is_final_match
 from elo_bot.features.finals.scout_images import store_scout_image
 from elo_bot.features.finals.scout_ui import scout_opening_text, scout_panel
-from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, scout_opens_at
+from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, scheduled_scout_opens_at, scout_opens_at
 from elo_bot.features.matches.attack_bases import assign_bases
 from elo_bot.features.matches.messages import (
     match_message_embeds,
@@ -846,7 +846,7 @@ class MatchBaseCommands:
 
     @staticmethod
     def _final_bases_locked(match: Match, attacker: int) -> bool:
-        opens = scout_opens_at(match, attacker)
+        opens = scheduled_scout_opens_at(match, attacker)
         return opens is not None and time.time() >= opens
 
     @staticmethod
@@ -868,10 +868,13 @@ class MatchBaseCommands:
         if not attackers:
             await ctx.send(f"{ERROR_EMOJI} Only the players and managers can scout this match.", ephemeral=True)
             return
-        attacker = next((side for side in attackers if self._final_bases_locked(match, side)), None)
+        openings = {side: at for side in attackers if (at := scout_opens_at(match, side)) is not None}
+        now = time.time()
+        attacker = next((side for side, at in openings.items() if now >= at), None)
         if attacker is None:
-            opens = min((at for side in attackers if (at := scout_opens_at(match, side)) is not None), default=None)
-            await ctx.send(f"{ERROR_EMOJI} {scout_opening_text(opens)}", ephemeral=True)
+            paused = any(side in match.final_scouting_paused_sides for side in attackers)
+            message = scout_opening_text(min(openings.values(), default=None), paused=paused)
+            await ctx.send(f"{ERROR_EMOJI} {message}", ephemeral=True)
             return
         embed, controls = scout_panel(match, str(ctx.author.id), attacker, 0, manager=len(attackers) == 2)
         await ctx.send(embed=embed, components=controls, ephemeral=True)

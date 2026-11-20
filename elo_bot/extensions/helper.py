@@ -44,7 +44,7 @@ async def extract_player_tags(client: coc.Client, str_input: str, context: ipy.S
             await client.get_player(s)
         except coc.errors.NotFound:
             if context:
-                await context.send(f"<:error:827078558140334100> `{s}` is invalid.", ephemeral=True)
+                await context.send(f"{ERROR_EMOJI} `{s}` is invalid.", ephemeral=True)
 
             continue
 

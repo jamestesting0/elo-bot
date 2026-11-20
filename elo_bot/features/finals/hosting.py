@@ -12,6 +12,7 @@ from elo_bot.db import Clan
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.db.season_models import EloFinalMatch
 from elo_bot.features.finals.lifecycle import ongoing_final
+from elo_bot.features.matches.timing import final_hosting_format_is_set
 
 
 def require_startable(final: EloFinal, current: Match, source: Match, player: int | None) -> EloFinalMatch:
@@ -23,16 +24,12 @@ def require_startable(final: EloFinal, current: Match, source: Match, player: in
     require_round_ready(final, round_name)
     if final.prediction_state == "OPEN":
         raise FinalError("Predictions are still open. Ask a manager to close them before starting.")
-    sides = (0, 1) if player is None else (player,)
-    scheduled = all(current.scheduled_times[side] is not None for side in sides)
-    if scheduled and current.is_war and player is None:
-        raise FinalError("This Final match is scheduled war-style. Use `/match war start` or `/match war autostart`, "
-                         "or reschedule it with `/match schedule`.")
-    if scheduled and not current.is_war and player is not None:
-        raise FinalError("This Final match is scheduled live. Use `/match start` or `/match autostart`, "
-                         "or reschedule it with `/match war schedule`.")
-    if not scheduled or current.scheduled_times != node.scheduled_times:
-        raise FinalError("Schedule this Final match with `/match schedule` or `/match war schedule` before hosting.")
+    if current.scheduled_times != node.scheduled_times:
+        raise FinalError("This Final match's schedule is inconsistent. Ask a manager to check the pairing.")
+    if final_hosting_format_is_set(current) and current.is_war != (player is not None):
+        if current.is_war:
+            raise FinalError("This is a war-style match. Use `/match war start` or `/match war autostart`.")
+        raise FinalError("This is a live match. Use `/match start` or `/match autostart`.")
     return node
 
 
@@ -97,7 +94,9 @@ async def accept_final_start(source: Match, actor_id: str, *, clan_tag: str | No
         for side in sides:
             current.final_started_times[side] = current.final_started_times[side] or now
         await Match.get_pymongo_collection().update_one({"_id": source.id}, {"$set": {
+            "is_war": player is not None,
             "final_start_claim": claim, "final_started_at": current.final_started_at or now,
+            "match_stake_closed": True,
             "final_started_times": current.final_started_times,
         }}, session=session)
 

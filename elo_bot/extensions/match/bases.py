@@ -38,12 +38,14 @@ from elo_bot.db import BaseLayout, BaseLink, Match, OverrideCode, Participant
 from elo_bot.discord.mentions import mention_user
 from elo_bot.extensions.match.groups import base_group
 from elo_bot.core.finals import is_final_match
+from elo_bot.features.finals.scout_images import store_scout_image
 from elo_bot.features.finals.scout_ui import scout_opening_text, scout_panel
-from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, scout_opens_at, store_scout_image
+from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, scout_opens_at
 from elo_bot.features.matches.attack_bases import assign_bases
 from elo_bot.features.matches.messages import (
     match_message_embeds,
 )
+from elo_bot.features.matches.message_lock import match_message_lock
 from elo_bot.features.matches.thread_messages import (
     find_match_thread_announcement,
 )
@@ -54,16 +56,21 @@ from elo_bot.features.matches.controls import check_current_match, update_match
 
 
 class MatchBaseCommands:
-    async def _save_match_bases(self, ctx, match, player) -> bool:
+    async def _save_match_bases(self, ctx, match, player, *, district: int | None = None) -> bool:
         if not is_final_match(match):
             await match.save_changes()
             return True
         if not await check_current_match(ctx, match):
             return False
         field = f"participants.{player}.bases"
-        if not await update_match(match, {"_id": match.id}, {"$set": {
-                field: [base.model_dump() if base else None for base in match.participants[player].bases]},
-                "$inc": {"final_base_page_revision": 1}}):
+        bases = match.participants[player].bases
+        if district is None:
+            changes = {field: [base.model_dump() if base else None for base in bases]}
+        else:
+            base = bases[district]
+            changes = {f"{field}.{district}": base.model_dump() if base else None}
+        if not await update_match(match, {"_id": match.id, "final_base_page_revision": match.final_base_page_revision},
+                                  {"$set": changes, "$inc": {"final_base_page_revision": 1}}):
             await ctx.send(f"{ERROR_EMOJI} The match changed. Your bases were not changed.", ephemeral=True)
             return False
         return True
@@ -239,30 +246,31 @@ class MatchBaseCommands:
         # persist match update
         await match.save_changes()
 
-        # update pinned match embed
-        thread = await self.bot.fetch_channel(match.thread)
-        match_msg = await find_match_thread_announcement(thread, match, self.bot.user.id)
-        if match_msg is None:
-            await ctx.send(
-                f"{ERROR_EMOJI} Your bases were saved, but the match message could not be updated. "
-                "Please ask a host to notify the helpers.",
-                ephemeral=True,
-            )
-            return
-        if not match_msg.pinned:
-            await match_msg.pin()
+        async with match_message_lock(match.thread):
+            # update pinned match embed
+            thread = await self.bot.fetch_channel(match.thread)
+            match_msg = await find_match_thread_announcement(thread, match, self.bot.user.id)
+            if match_msg is None:
+                await ctx.send(
+                    f"{ERROR_EMOJI} Your bases were saved, but the match message could not be updated. "
+                    "Please ask a host to notify the helpers.",
+                    ephemeral=True,
+                )
+                return
+            if not match_msg.pinned:
+                await match_msg.pin()
 
-        embed = match_msg.embeds[0]
-        note = f"- {mention_user(ctx.author)} has submitted bases."
-        if len(embed.fields) < 5:
-            embed.add_field(name="**Notes**", value=note)
-        elif not re.search(
-                rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}(?:\?tab=wishlist)?>\)(?:\*\*)?) has submitted bases\.",
-                embed.fields[4].value,
-        ):
-            embed.fields[4].value += f"\n{note}"
+            embed = match_msg.embeds[0]
+            note = f"- {mention_user(ctx.author)} has submitted bases."
+            if len(embed.fields) < 5:
+                embed.add_field(name="**Notes**", value=note)
+            elif not re.search(
+                    rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}(?:\?tab=wishlist)?>\)(?:\*\*)?) has submitted bases\.",
+                    embed.fields[4].value,
+            ):
+                embed.fields[4].value += f"\n{note}"
 
-        await edit_channel_message(match_msg, embeds=match_message_embeds(match_msg.embeds))
+            await edit_channel_message(match_msg, embeds=match_message_embeds(match_msg.embeds))
 
         await ctx.send(f"{SUCCESS_EMOJI} Your bases are submitted!", components=[], ephemeral=True)
 
@@ -493,7 +501,7 @@ class MatchBaseCommands:
 
         # remove base and persist to Mongo
         p.bases[district_index] = None
-        if not await self._save_match_bases(ctx, match, p_idx):
+        if not await self._save_match_bases(ctx, match, p_idx, district=district_index):
             return
 
         await ctx.send(
@@ -615,7 +623,7 @@ class MatchBaseCommands:
 
         # write into the document and persist
         p.bases[d_idx] = BaseLink(link=base_link, image=base_image_url)
-        if not await self._save_match_bases(ctx, match, p_idx):
+        if not await self._save_match_bases(ctx, match, p_idx, district=d_idx):
             return
 
         await ctx.send(
@@ -703,9 +711,12 @@ class MatchBaseCommands:
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
 
-        # time gate: Final bases lock when the opponent's scouting opens; others close 10 minutes before the match
+        # Final bases lock at scouting or start, whichever comes first.
         now_ts = int(datetime.now().timestamp())
         if is_final_match(match):
+            if match.final_started_times[opp_index] is not None:
+                await ctx.send(f"{ERROR_EMOJI} Your bases are locked because your opponent has started.", ephemeral=True)
+                return
             if self._final_bases_locked(match, opp_index):
                 await ctx.send(f"{ERROR_EMOJI} {FINAL_BASES_LOCKED}", ephemeral=True)
                 return
@@ -786,6 +797,7 @@ class MatchBaseCommands:
                 "_id": match.id, "final_base_page_revision": match.final_base_page_revision,
                 "final_superseded": False, "final_result_id": None,
                 f"participants.{author_index}.user_id": author_id,
+                f"final_started_times.{opp_index}": None,
                 "times": match.times,
             }, {"$set": {f"participants.{author_index}.bases.{d_idx}": author_participant.bases[d_idx].model_dump()},
                 "$inc": {"final_base_page_revision": 1}})
@@ -795,36 +807,37 @@ class MatchBaseCommands:
         else:
             await match.save_changes()
 
-        # edit the pinned match message to inform helpers (unchanged behavior)
-        try:
-            match_msg = await find_match_thread_announcement(ctx.channel, match, self.bot.user.id)
-        except ipy.errors.HTTPException:
-            await ctx.send(f"{ERROR_EMOJI} Base saved. The match message could not be updated; notify the host.",
-                           ephemeral=True)
-            return
-        if match_msg is None:
-            await ctx.send(
-                f"{ERROR_EMOJI} Your base was saved, but the match message could not be updated. "
-                "Please ask a host to notify the helpers.",
-                ephemeral=True,
-            )
-            return
-        try:
-            if not match_msg.pinned:
-                await match_msg.pin()
-            note = f"- {mention_user(ctx.author)} has submitted bases."
-            if len(match_msg.embeds[0].fields) < 5:
-                match_msg.embeds[0].add_field(name="**Notes**", value=note)
-            elif not re.search(
-                    rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}(?:\?tab=wishlist)?>\)(?:\*\*)?) has submitted bases\.",
-                    match_msg.embeds[0].fields[4].value,
-            ):
-                match_msg.embeds[0].fields[4].value += f"\n{note}"
-            await edit_channel_message(match_msg, embeds=match_message_embeds(match_msg.embeds))
-        except ipy.errors.HTTPException:
-            await ctx.send(f"{ERROR_EMOJI} Base saved. The match message could not be updated; notify the host.",
-                           ephemeral=True)
-            return
+        async with match_message_lock(ctx.channel.id):
+            # edit the pinned match message to inform helpers (unchanged behavior)
+            try:
+                match_msg = await find_match_thread_announcement(ctx.channel, match, self.bot.user.id)
+            except ipy.errors.HTTPException:
+                await ctx.send(f"{ERROR_EMOJI} Base saved. The match message could not be updated; notify the host.",
+                               ephemeral=True)
+                return
+            if match_msg is None:
+                await ctx.send(
+                    f"{ERROR_EMOJI} Your base was saved, but the match message could not be updated. "
+                    "Please ask a host to notify the helpers.",
+                    ephemeral=True,
+                )
+                return
+            try:
+                if not match_msg.pinned:
+                    await match_msg.pin()
+                note = f"- {mention_user(ctx.author)} has submitted bases."
+                if len(match_msg.embeds[0].fields) < 5:
+                    match_msg.embeds[0].add_field(name="**Notes**", value=note)
+                elif not re.search(
+                        rf"(?:<@!?{ctx.author.id}>|users/{ctx.author.id}(?:\?tab=wishlist)?>\)(?:\*\*)?) has submitted bases\.",
+                        match_msg.embeds[0].fields[4].value,
+                ):
+                    match_msg.embeds[0].fields[4].value += f"\n{note}"
+                await edit_channel_message(match_msg, embeds=match_message_embeds(match_msg.embeds))
+            except ipy.errors.HTTPException:
+                await ctx.send(f"{ERROR_EMOJI} Base saved. The match message could not be updated; notify the host.",
+                               ephemeral=True)
+                return
 
         await ctx.send(
             f"{SUCCESS_EMOJI} Base submitted for **{district}**.",

@@ -1,4 +1,4 @@
-**Elo** is a point-based ranking system, which provides a fun and competitive alternative to raids. Make sure to check out the **giveaways** in <#1214445497109057556> every season!
+{season_dates}
 
 **Hall of Fame**
 <:coctrophy:890210394524770306> S1 Elo King: **[Dhan](<https://discordapp.com/users/863762436654104597>)**

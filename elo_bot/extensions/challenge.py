@@ -18,6 +18,8 @@ from elo_bot.discord.mentions import mention_user
 from elo_bot.features.queue.policy import QUEUE_OPERATION_LOCK
 from elo_bot.features.matches.lifecycle import confirm_match, get_district_options
 from elo_bot.features.matches.occupancy import is_player_occupied
+from elo_bot.core.finals import FinalError
+from elo_bot.features.tokens.challenge_items import accept_challenge, insert_challenge, owned_challenge_code
 
 
 CHALLENGE_ACCEPT_LOCK = asyncio.Lock()
@@ -198,7 +200,9 @@ class ChallengeCommands(ipy.Extension):
             await self.challenge_send.cooldown.reset(ctx)
             return
 
-        has_override = await OverrideCode.is_valid("challenge", override_code)
+        staff_override = await OverrideCode.is_valid("challenge", override_code)
+        item_override = None if staff_override else await owned_challenge_code(str(ctx.author.id), override_code)
+        has_override = staff_override or item_override is not None
 
         player_last_challenge = get_last_challenge(player.matches, str(ctx.author.id))
         if (player_last_challenge and player_last_challenge.opponent == str(opponent.id) and
@@ -320,7 +324,7 @@ class ChallengeCommands(ipy.Extension):
                 value=message
             )
 
-        if has_override and not await OverrideCode.consume("challenge", override_code):
+        if staff_override and not await OverrideCode.consume("challenge", override_code):
             await ctx.send(
                 f"{ERROR_EMOJI} The override code has expired or was already used.",
                 ephemeral=True,
@@ -358,13 +362,21 @@ class ChallengeCommands(ipy.Extension):
                 confirmation_tracking=True,
                 is_war=True,
                 is_challenge=True,
+                token_rewards=True,
                 challenge_activity_override=has_override,
                 base_submission=base_submission,
                 wizard_valley_available=wizard_valley_available,
                 capital_peak_available=capital_peak_available,
                 participants=[challenger, opponent_participant],
             )
-            await match.insert()
+            if item_override is None and player.token_items_active is not True and opponent_player.token_items_active is not True:
+                await match.insert()
+            else:
+                try:
+                    await insert_challenge(match, item_override)
+                except FinalError as error:
+                    await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                    return
 
         district_selects = [
             ipy.StringSelectMenu(
@@ -395,16 +407,24 @@ class ChallengeCommands(ipy.Extension):
         ]
 
         try:
-            await opponent.send(embed=embed, components=components)
-        except ipy.errors.Forbidden:
-            command_channel = await self.bot.fetch_channel(COMMAND_CHANNEL)
-
-            await command_channel.send(
-                f"{player.mention}\n{message}\n\n"
-                f"*This message is sent here, because you have disabled direct messages.*",
-                embed=embed,
-                components=components
-            )
+            try:
+                await opponent.send(embed=embed, components=components)
+            except ipy.errors.Forbidden:
+                command_channel = await self.bot.fetch_channel(COMMAND_CHANNEL)
+                await command_channel.send(
+                    f"{opponent.mention}\n{message}\n\n"
+                    f"*This message is sent here, because you have disabled direct messages.*",
+                    embed=embed,
+                    components=components
+                )
+        except ipy.errors.HTTPException as error:
+            if match.token_challenge_use and error.status in {400, 401, 403, 404}:
+                if await delete_unreserved_match(match, pre_thread=True):
+                    await ctx.send(f"{ERROR_EMOJI} Could not send the challenge. Challenge Override returned.",
+                                   ephemeral=True)
+                    await self.challenge_send.cooldown.reset(ctx)
+                    return
+            raise
 
         cancel_button = ipy.Button(
             style=ipy.ButtonStyle.DANGER,
@@ -504,7 +524,14 @@ class ChallengeCommands(ipy.Extension):
             if match.confirmation_tracking:
                 participant.confirmed_at = datetime.now().timestamp()
                 participant.confirmation_method = "manual"
-            await match.save_changes()
+            if match.token_challenge_use is not None:
+                try:
+                    await accept_challenge(match)
+                except FinalError as error:
+                    await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                    return
+            else:
+                await match.save_changes()
 
             # update challenger last_challenged
             challenger_participant = next((p for p in match.participants if p.user_id != str(ctx.author.id)), None)

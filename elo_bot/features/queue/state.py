@@ -104,6 +104,10 @@ def normalize_queue_timestamps(queue: Queue, now: float | None = None) -> bool:
         if player_id not in active_player_ids:
             queue.district_selections.pop(player_id)
             changed = True
+    for player_id in list(queue.token_attempts):
+        if player_id not in active_player_ids:
+            queue.token_attempts.pop(player_id, None)
+            changed = True
 
     return changed
 
@@ -127,16 +131,20 @@ def remove_player_from_queue(queue: Queue, player: Player | str) -> bool:
 
     get_queue_entered_at(queue).pop(player_id, None)
     queue.district_selections.pop(player_id, None)
+    queue.token_attempts.pop(player_id, None)
     return removed
 
 
 def move_player_between_queues(source_queue: Queue, target_queue: Queue, player: Player, now: float):
     player_id = str(player.user_id)
     selection = source_queue.district_selections.get(player_id)
+    token_attempt = source_queue.token_attempts.get(player_id)
     if remove_player_from_queue(source_queue, player_id):
         add_player_to_queue(target_queue, player, now)
         if selection is not None:
             target_queue.district_selections.setdefault(player_id, selection)
+        if token_attempt is not None:
+            target_queue.token_attempts.setdefault(player_id, token_attempt)
 
 
 async def remove_matched_queue_attempts(match: Match) -> None:

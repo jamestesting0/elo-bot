@@ -2,6 +2,11 @@ from beanie import PydanticObjectId
 from pydantic import JsonValue
 
 from elo_bot.db import Match
+from elo_bot.features.finals.persistence import transaction
+from elo_bot.features.tokens.challenge_items import return_challenge_code
+from elo_bot.features.tokens.queue_items import finish_district_items
+from elo_bot.features.tokens.ranked import release_protections
+from elo_bot.features.tokens.stakes import reconcile_stake
 
 
 def has_pending_match_operation(match: Match) -> bool:
@@ -47,5 +52,19 @@ async def delete_unreserved_match(
             {"$or": [{"autowin_winner_id": None}, {"autowin_completed": True}]},
         ]
     collection = match.get_pymongo_collection()
+    if match.match_stake_enabled is True or match.token_challenge_use or match.token_districts or match.token_protections:
+        async def delete_with_tokens(session):
+            row = await collection.find_one_and_delete(query, session=session)
+            if row is None:
+                return await collection.find_one({"_id": match.id}, {"_id": 1}, session=session) is None
+            captured = Match.model_validate(row)
+            if captured.match_stake_enabled:
+                await reconcile_stake(str(captured.id), deleted=captured, session=session)
+            await return_challenge_code(captured, session)
+            await finish_district_items(captured, consume=captured.thread is not None, session=session)
+            await release_protections(captured, session)
+            return True
+
+        return await transaction(delete_with_tokens)
     result = await collection.delete_one(query)
     return result.deleted_count == 1 or await collection.find_one({"_id": match.id}, {"_id": 1}) is None

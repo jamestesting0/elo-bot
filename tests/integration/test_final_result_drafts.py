@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 import anyio
@@ -7,11 +8,13 @@ from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.core.finals import FinalError
 from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.db.final_models import FinalMatchResult
+from elo_bot.db import Match
 from elo_bot.extensions.final import FinalCommands
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view, reset_bracket
 from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.result_drafts import finish_result_draft
 from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market
+from elo_bot.features.tokens.stakes import set_stake
 from elo_bot.db.token_models import FinalBettingMarket, TokenWallet
 from tests.integration._final_ui_fixture import FinalUICase
 
@@ -61,6 +64,36 @@ class TestFinalResultDrafts(FinalUICase):
         await cog.final_result_confirmation.callback.func(cog, second)
         self.assertEqual(await FinalMatchResult.count(), 1)
         self.assertEqual((await final_for_view()).nodes["QF1"].result_version, 1)
+
+    async def test_result_correction_receipt_matches_the_committed_stake_reversal(self):
+        match = await Match.get(self.final.nodes["QF1"].match_id)
+        users = [participant.user_id for participant in match.participants]
+        for user in users:
+            await set_stake(match, user, 500)
+        _, draft = await self.preview()
+        confirm = self.context(component=True)
+        confirm.custom_id = f"finalconfirm|{draft.id}"
+        await self.cog.final_result_confirmation.callback.func(self.cog, confirm)
+        self.assertEqual([(await TokenWallet.get(user)).balance for user in users], [5500, 4500])
+
+        opened = self.context()
+        opened.channel.id = 777
+        await self.cog.final_match_result.callback.func(self.cog, opened)
+        correction = self.context()
+        correction.custom_id = opened.send_modal.await_args.args[0].custom_id
+        await self.cog.final_result_modal.callback.func(
+            self.cog, correction, player1="\n".join(["2.80"] * 7), player2="\n".join(["3.100"] * 7),
+            reason="Rechecked the scores",
+        )
+        draft = await FinalResultDraft.find_one({"state": "PENDING"})
+        confirm = self.context(component=True)
+        confirm.custom_id = f"finalconfirm|{draft.id}"
+        await self.cog.final_result_confirmation.callback.func(self.cog, confirm)
+        response = confirm.edit_origin.await_args.kwargs["content"]
+        self.assertTrue(response.startswith(str(SUCCESS_EMOJI)))
+        balances = [(await TokenWallet.get(user)).balance for user in users]
+        self.assertEqual(balances, [4500, 5500])
+        print("RESULT_CORRECTION", json.dumps({"response": response, "users": users, "balances": balances}))
 
     def edit_context(self, draft, side, district, user=9):
         ctx = self.context(user)

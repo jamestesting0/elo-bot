@@ -8,13 +8,16 @@ from pymongo import IndexModel
 from elo_bot.core.finals import FinalError
 from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalPrediction
 from elo_bot.db.season_models import EloFinal
-from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elo_bot.db.token_models import (
+    FinalBet, FinalBettingMarket, ParticipantStake, TokenAward, TokenItemUse, TokenLedgerEntry, TokenWallet,
+)
 from elo_bot.db.match_models import Match
 from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.db.final_invitation_models import FinalInvitation
 
 FINAL_DOCUMENT_MODELS = (FinalMatchResult, FinalPlayerProfile, FinalPrediction, FinalResultDraft, FinalInvitation,
-                         TokenWallet, TokenLedgerEntry, FinalBettingMarket, FinalBet)
+                         TokenWallet, TokenLedgerEntry, FinalBettingMarket, FinalBet,
+                         TokenItemUse, ParticipantStake, TokenAward)
 
 
 async def register_final_indexes() -> None:

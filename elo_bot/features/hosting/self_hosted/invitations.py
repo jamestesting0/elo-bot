@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import Sequence
 from hashlib import sha256
@@ -9,13 +10,61 @@ from beanie import Link
 from interactions.api.http.route import Route
 from pymongo.errors import PyMongoError
 
-from elo_bot.config.ids import AUTOMATIC_MATCH_THREAD, LVL2_ROLES
+from elo_bot.config.ids import AUTOMATIC_MATCH_THREAD, BOT_ID, ELO_BLACKLIST_ROLE, LVL2_ROLES, MAIN_GUILD
 from elo_bot.core.match_results import is_valid_complete_match_result
 from elo_bot.db import Match, Player, RecordedMatch
 from elo_bot.db.final_models import FinalPlayerProfile
 
 
 INVITATION_LOCKS: dict[str, anyio.Lock] = {}
+PAIRING_GRANTS: dict[str, asyncio.Task[None]] = {}
+
+
+async def is_automatic_thread_member(bot: ipy.Client, user_id: str) -> bool:
+    try:
+        await bot.http.request(Route(
+            "GET", "/channels/{thread_id}/thread-members/{user_id}",
+            thread_id=AUTOMATIC_MATCH_THREAD, user_id=user_id,
+        ))
+    except ipy.errors.NotFound as error:
+        if error.code == 10003:
+            raise
+        return False
+    return True
+
+
+async def grant_at_pairing(bot: ipy.Client, user_id: str) -> None:
+    async with INVITATION_LOCKS.setdefault(user_id, anyio.Lock()):
+        if await is_automatic_thread_member(bot, user_id):
+            return
+        try:
+            member = await bot.fetch_member(user_id, MAIN_GUILD, force=True)
+        except ipy.errors.NotFound:
+            return
+        if member is None or member.has_role(ELO_BLACKLIST_ROLE) or any(member.has_role(role) for role in LVL2_ROLES):
+            return
+        player = await Player.find_one({"user_id": user_id}, fetch_links=True)
+        if player and await has_two_completed_matches(player):
+            await bot.http.add_thread_member(AUTOMATIC_MATCH_THREAD, int(user_id))
+
+
+def schedule_pairing_grants(bot: ipy.Client, match: Match) -> None:
+    if bot.user is None or bot.user.id != BOT_ID:
+        return
+    for participant in match.participants:
+        user_id = participant.user_id
+        if user_id in PAIRING_GRANTS:
+            continue
+        task = asyncio.create_task(grant_at_pairing(bot, user_id), name=f"self-host:{match.id}:{user_id}")
+        PAIRING_GRANTS[user_id] = task
+        task.add_done_callback(_pairing_grant_finished)
+
+
+def _pairing_grant_finished(task: asyncio.Task[None]) -> None:
+    _, _, user_id = task.get_name().split(":")
+    PAIRING_GRANTS.pop(user_id)
+    if not task.cancelled() and (error := task.exception()) is not None:
+        logging.error("Self-host grant %s failed", task.get_name(), exc_info=error)
 
 
 async def has_two_completed_matches(player: Player) -> bool:
@@ -78,15 +127,7 @@ async def invite_eligible_players(bot: ipy.Client, user_ids: Sequence[str], *, p
                     continue
                 if not await has_two_completed_matches(player):
                     continue
-                # An individual lookup also covers members beyond the first page of the thread member list.
-                try:
-                    await bot.http.request(Route(
-                        "GET", "/channels/{thread_id}/thread-members/{user_id}",
-                        thread_id=AUTOMATIC_MATCH_THREAD, user_id=user_id,
-                    ))
-                except ipy.errors.NotFound:
-                    pass
-                else:
+                if await is_automatic_thread_member(bot, user_id):
                     continue
 
                 thread = await bot.fetch_channel(AUTOMATIC_MATCH_THREAD)

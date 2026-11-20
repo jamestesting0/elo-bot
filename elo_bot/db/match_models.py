@@ -97,6 +97,13 @@ class Match(Document):
     is_war: bool = True
     is_challenge: bool = False
     challenge_activity_override: bool = False
+    token_rewards: bool = False
+    token_challenge_use: str | None = None
+    token_districts: dict[str, str] = Field(default_factory=dict)
+    token_protections: dict[str, str] = Field(default_factory=dict)
+    match_stake_enabled: bool = False
+    match_stake_closed: bool = False
+    match_stake_revision: int = 0
     wizard_valley_available: bool = False
     capital_peak_available: bool = False
     is_autowin: bool = False

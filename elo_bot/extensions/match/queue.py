@@ -30,6 +30,7 @@ from elo_bot.features.matches.queued_districts import (
 from elo_bot.features.queue.matching import queue_player, run_queue_matching_trigger
 from elo_bot.features.queue.policy import QUEUE_OPERATION_LOCK, QUEUE_TIERS
 from elo_bot.features.queue.state import QueueOutcomeStatus, autoqueue_expiry, remove_player_from_queue
+from elo_bot.features.tokens.queue_items import release_queue_items
 
 
 class QueueCommands:
@@ -46,8 +47,10 @@ class QueueCommands:
         async with QUEUE_OPERATION_LOCK:
             for tier in QUEUE_TIERS:
                 queue = await Queue.find_one(Queue.tier == tier, fetch_links=True)
+                attempt = queue.token_attempts.get(str(ctx.author.id)) if queue else None
                 if queue and remove_player_from_queue(queue, str(ctx.author.id)):
                     await queue.save_changes()
+                    await release_queue_items(attempt)
                     player_removed = True
 
         if player_removed:

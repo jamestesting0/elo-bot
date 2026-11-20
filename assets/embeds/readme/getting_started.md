@@ -12,6 +12,19 @@
 
 *If only one player confirms, the bot confirms for the other after 12 hours. If neither confirms, it cancels the match.*
 
+**Self-Hosting**
+After you've completed two matches, the bot adds you to the automatic match thread when it finds your next queued match. Use `/self host war` or `/self host live` in the match thread.
+
+**Tokens**
+Played ranked matches pay 200 <:token:1555865080711876660> for a win or 100 <:token:1555865080711876660> for a loss or draw. Use `/tokens shop` to buy items and `/tokens inventory` to use them.
+- **Queue Priority Pro** · 800 <:token:1555865080711876660> · Start one queue tier higher.
+- **Queue Priority Ultra** · 1,600 <:token:1555865080711876660> · Start two queue tiers higher.
+- **District Choice** · 1,800 <:token:1555865080711876660> · Pick one eligible district for your next queued match.
+- **Challenge Override** · 2,400 <:token:1555865080711876660> · Get a private challenge code.
+- **Rank Protection** · 3,600 <:token:1555865080711876660> · Protect your league boundary on one loss per season.
+
+Use `/match stake` in a queued match thread before either player starts. Enter an amount, or `all-in` to use your full available balance within the 1,000 <:token:1555865080711876660> cap. Update your pending offer with the same command or enter 0 to withdraw it. The winner takes both locked stakes.
+
 **Useful Commands**
 - `/match autoqueue`: queue again after each completed match
 - `/preset district add`: save preferred districts

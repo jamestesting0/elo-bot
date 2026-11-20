@@ -10,14 +10,13 @@ from elo_bot.config.emojis import ERROR_EMOJI
 
 
 HELPER_QUEUE_PROMPT_THRESHOLD_SECONDS: Final = 30
-BASE_STORE_CANCELLED_MESSAGE: Final = f"{ERROR_EMOJI} Helper base storage was cancelled."
 type HelperStoredBaseContext = ipy.SlashContext | ipy.ComponentContext
 
 
 def _cancelled_message(job_type: stored_bases.HelperStoredBaseJobType) -> str:
     match job_type:
         case "store_bases":
-            return BASE_STORE_CANCELLED_MESSAGE
+            return f"{ERROR_EMOJI} Helper base storage was cancelled."
         case "host_war_match_on_stored":
             return f"{ERROR_EMOJI} Helper stored-base match start was cancelled."
         case "remove_bases":

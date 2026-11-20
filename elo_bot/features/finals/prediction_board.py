@@ -114,7 +114,7 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=COLOR,
                       description="\n\n".join(parts) or None)
     if eligible:
-        embed.add_field(name="**Predictions**", value=f"`{points}/{eligible}` → `{100 * points / eligible:.2f}%`")
+        embed.add_field(name="**Predictions**", value=f"`{points}/{eligible}`")
     embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
     try:
         image = await anyio.to_thread.run_sync(render_bracket, final, prediction.submitted, statuses)

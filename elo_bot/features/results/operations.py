@@ -3,12 +3,18 @@ from typing import Literal
 from datetime import datetime
 
 from pymongo.errors import DuplicateKeyError
+from beanie import PydanticObjectId
 
 from elo_bot.db import BaseLayout, Match, Player, RecordedMatch
 from elo_bot.db.result_models import MatchResultOperation, ResultBaseRollback, ResultRecordSnapshot
 from elo_bot.features.results.records import remove_base_record
 from elo_bot.config.emojis import LOSS_EMOJI, WIN_EMOJI
 from elo_bot.core.parsing import get_destruction, get_stars
+from elo_bot.features.finals.persistence import transaction
+from elo_bot.features.tokens.ranked import apply_ranked_awards, protect_result, release_protections, reverse_ranked_awards
+from elo_bot.features.tokens.stakes import reconcile_stake
+from elo_bot.features.tokens.items import finish_use
+from elo_bot.db.token_models import ParticipantStake, TokenItemUse
 
 
 class ResultOperationConflict(RuntimeError):
@@ -41,13 +47,54 @@ async def cancel_result_operation(match: Match, recorded: RecordedMatch) -> None
     operation = match.result_operation
     if not operation or not operation.record:
         return
-    result = await Match.get_pymongo_collection().update_one(
-        {"_id": match.id, "result_operation.key": operation.key,
-         "result_operation.record.id": recorded.id, "result_operation.record.operation_key": recorded.operation_key},
-        {"$set": {"result_operation.cancelled": True}},
-    )
+    query = {"_id": match.id, "result_operation.key": operation.key,
+             "result_operation.record.id": recorded.id, "result_operation.record.operation_key": recorded.operation_key}
+    change = {"$set": {"result_operation.cancelled": True}}
+    collection = Match.get_pymongo_collection()
+    if match.token_rewards is True or match.match_stake_enabled is True or match.token_protections:
+        async def cancel(session):
+            result = await collection.update_one(query, change, session=session)
+            if result.matched_count:
+                if match.token_rewards:
+                    await reverse_ranked_awards(str(match.id), operation.key, session)
+                if match.match_stake_enabled:
+                    await reconcile_stake(str(match.id), session=session)
+                await release_protections(match, session, restore_used=True)
+            return result
+        result = await transaction(cancel)
+    else:
+        result = await collection.update_one(query, change)
     if result.matched_count != 1:
         raise ResultOperationConflict(match.token)
+
+
+async def delete_archived_result(record: RecordedMatch) -> bool:
+    source, _, revision = (record.operation_key or "").partition(":")
+    if not PydanticObjectId.is_valid(source) or not revision or record.manual_submission_key:
+        return False
+
+    async def remove(session):
+        deleted = await RecordedMatch.get_pymongo_collection().delete_one(
+            {"_id": record.id, "operation_key": record.operation_key}, session=session)
+        if not deleted.deleted_count:
+            raise ResultOperationConflict(source, "This match record was already deleted or replaced.")
+        reference = record.to_ref()
+        for player, stats in record.players.items():
+            await Player.get_pymongo_collection().update_one(
+                {"user_id": player, "matches": reference},
+                {"$inc": {"elo": -stats.elo_change}, "$pull": {"matches": reference}}, session=session)
+        cancellation = f"cancel:{revision}"
+        await reverse_ranked_awards(source, revision, session)
+        stake = await ParticipantStake.get_pymongo_collection().find_one(
+            {"_id": source, "$or": [{"settlement_key": revision}, {"state": "locked"}]}, session=session)
+        if stake is not None:
+            await reconcile_stake(source, official_outcome=(cancellation, None), session=session)
+        async for row in TokenItemUse.get_pymongo_collection().find(
+                {"target": source, "slot": "protection", "state": {"$in": ["reserved", "used"]}}, session=session):
+            await finish_use(TokenItemUse.model_validate(row), session, consume=False)
+
+    await transaction(remove)
+    return True
 
 
 async def completed_result_changes(match: Match) -> tuple[str, str]:
@@ -143,11 +190,22 @@ async def persist_result_record(match: Match, candidate: RecordedMatch) -> Recor
     operation_key = f"{match.id}:{operation.key}"
     if operation.record is None:
         candidate.operation_key = operation_key
-        snapshot = ResultRecordSnapshot.model_validate(candidate.model_dump())
-        result = await Match.get_pymongo_collection().update_one(
-            {"_id": match.id, "result_operation.key": operation.key, "result_operation.record": None},
-            {"$set": {"result_operation.record": snapshot.model_dump()}},
-        )
+        query = {"_id": match.id, "result_operation.key": operation.key, "result_operation.record": None}
+        collection = Match.get_pymongo_collection()
+        if match.token_protections:
+            async def prepare(session):
+                protected = candidate.model_copy(deep=True)
+                await protect_result(match, protected, session)
+                snapshot = ResultRecordSnapshot.model_validate(protected.model_dump())
+                result = await collection.update_one(query, {"$set": {"result_operation.record": snapshot.model_dump()}},
+                                                     session=session)
+                if not result.matched_count:
+                    raise ResultOperationConflict(match.token)
+                return result, snapshot
+            result, snapshot = await transaction(prepare)
+        else:
+            snapshot = ResultRecordSnapshot.model_validate(candidate.model_dump())
+            result = await collection.update_one(query, {"$set": {"result_operation.record": snapshot.model_dump()}})
         if result.matched_count:
             operation.record = snapshot
         else:
@@ -201,14 +259,22 @@ async def complete_result_operation(match: Match) -> None:
         raise ResultOperationConflict(match.token)
     if operation.previous_record:
         await RecordedMatch.model_validate(operation.previous_record.model_dump()).delete()
-    result = await Match.get_pymongo_collection().update_one(
-        {
-            "_id": match.id, "result_operation.key": operation.key,
-            "result_operation.cancelled": {"$ne": True},
-            "$or": [{"autowin_winner_id": None}, {"autowin_completed": True}],
-        },
-        {"$set": {"result_operation.completed": True, "recorded_match_id": operation.record.id}},
-    )
+    query = {"_id": match.id, "result_operation.key": operation.key, "result_operation.cancelled": {"$ne": True},
+             "$or": [{"autowin_winner_id": None}, {"autowin_completed": True}]}
+    changes = {"$set": {"result_operation.completed": True, "recorded_match_id": operation.record.id}}
+    collection = Match.get_pymongo_collection()
+    if match.token_rewards is True or match.match_stake_enabled is True:
+        async def complete(session):
+            result = await collection.update_one(query, changes, session=session)
+            if result.matched_count:
+                if match.token_rewards and not match.is_autowin:
+                    await apply_ranked_awards(match, operation.record, operation.key, session)
+                if match.match_stake_enabled:
+                    await reconcile_stake(str(match.id), session=session)
+            return result
+        result = await transaction(complete)
+    else:
+        result = await collection.update_one(query, changes)
     if not result.matched_count:
         raise ResultOperationConflict(match.token)
     operation.completed = True

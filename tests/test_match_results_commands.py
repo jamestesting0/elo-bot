@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, AsyncMock, patch, call
 import interactions as ipy
 from beanie import PydanticObjectId
+from elo_bot.config.presentation import RED_COLOR
 from elo_bot.db import Match, Player
 from tests._patch_sites import patch_sites
 from tests._match_commands_case import MatchCommandsCase
@@ -285,7 +286,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.message.id = 123
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        ctx.message.embeds = [MagicMock(title="**Match Ended**")]
+        ctx.message.embeds = [ipy.Embed(title="**Match Ended**", color=RED_COLOR)]
 
         match = MagicMock(spec=Match)
         match.result_operation = None

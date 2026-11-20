@@ -8,7 +8,7 @@ from pymongo.errors import PyMongoError
 
 import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
-from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, application_emoji
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, REWARDS_IMAGE
 from elo_bot.config.ids import CHAT_CHANNEL, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE
 from elo_bot.config.game import HOST_CLAN_OPTIONS
@@ -89,7 +89,7 @@ class EmbedCommands(ipy.Extension):
             if sticky:
                 await post_embed_sticky(ctx.channel, embed_type)
             else:
-                embed, components = static_embed(embed_type)
+                embed, components = await static_embed(embed_type)
                 await ctx.channel.send(embed=embed, components=components)
 
         elif sticky:
@@ -159,12 +159,12 @@ class EmbedCommands(ipy.Extension):
     @ipy.component_callback("elo_final_details")
     async def elo_final_details(self, ctx: ipy.ComponentContext):
         await ctx.defer(ephemeral=True)
-        embed, components = await readme_page("elo_final", int(ctx.author.id))
+        embed, components = readme_page("elo_final", int(ctx.author.id))
         await ctx.send(embed=embed, components=components, ephemeral=True)
 
     @ipy.component_callback("readme_button")
     async def readme_button(self, ctx: ipy.ComponentContext):
-        embed, components = await readme_page("getting_started", int(ctx.author.id))
+        embed, components = readme_page("getting_started", int(ctx.author.id))
         await ctx.send(embed=embed, components=components, ephemeral=True)
 
     @ipy.component_callback(re.compile(r"^readme_section\|\d+$"))
@@ -177,7 +177,7 @@ class EmbedCommands(ipy.Extension):
             await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
             return
         await ctx.defer(edit_origin=True)
-        embed, components = await readme_page(section, int(ctx.author.id))
+        embed, components = readme_page(section, int(ctx.author.id))
         await ctx.edit_origin(embed=embed, components=components)
 
     @ipy.component_callback("build_button")
@@ -246,7 +246,7 @@ class EmbedCommands(ipy.Extension):
                 label="Elo Manager",
                 value="Elo Manager",
                 description="For important topics such as breach of fairplay and suggestions to the system.",
-                emoji=ipy.PartialEmoji(name="elomanager", id=1294394779487961118)
+                emoji=application_emoji("elomanager")
             ),
             ipy.StringSelectOption(
                 label="1v1 Helper",
@@ -259,7 +259,7 @@ class EmbedCommands(ipy.Extension):
                 label="Bot Developer",
                 value="Bot Developer",
                 description="For issues regarding the Elo bot such as bugs and feature suggestions.",
-                emoji=ipy.PartialEmoji(name="botdeveloper", id=1294394777411915796)
+                emoji=application_emoji("botdeveloper")
             ),
             placeholder="Select the group you wish to consult",
             custom_id="support_select"
@@ -329,7 +329,7 @@ class EmbedCommands(ipy.Extension):
             style=ipy.ButtonStyle.GRAY,
             label="Participate",
             custom_id="participate_button",
-            emoji=ipy.PartialEmoji(name="war", id=1050832305410805760)
+            emoji=application_emoji("war")
         )
 
         guide = open("assets/embeds/quickstart.md", "r").read()

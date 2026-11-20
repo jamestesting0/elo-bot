@@ -7,10 +7,12 @@ from beanie.odm.operators.find.comparison import NotIn
 from elo_bot.config.emojis import IMPORTANT_EMOJI, ERROR_EMOJI
 from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, UNAVAILABLE_IMAGE
 from elo_bot.db import BaseLayout, BaseLink, Match, Player
+from elo_bot.discord import runtime
 from elo_bot.core.finals import is_final_match, FinalError
 from elo_bot.features.matches.base_selection import district_base_quality, ensure_secondary_base_index, get_base_quality
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.features.finals.matches import require_ongoing_match
+from elo_bot.features.finals.scout_images import request_scout_views
 from elo_bot.features.matches.controls import update_match
 
 
@@ -42,7 +44,8 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
     player_doc = await Player.find_one(Player.user_id == str(player.id))
     opponent_doc = await Player.find_one(Player.user_id == str(opponent.id))
     match = await Match.find_one(Match.token == token)
-    if is_final_match(match):
+    final = is_final_match(match)
+    if final:
         await require_ongoing_match(match)
     primary_quality, secondary_quality = get_base_quality(player_doc, opponent_doc, match)
 
@@ -55,6 +58,7 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
     now = datetime.now().timestamp()
     opponent_participant = next(p for p in match.participants if p.user_id == str(opponent.id))
     player_participant = next(p for p in match.participants if p.user_id == str(player.id))
+    assigned = {}
     for base in opponent_participant.bases:
         index += 1
         embed = ipy.Embed(
@@ -106,7 +110,7 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
 
             final_hits = {}
             final_usage = {}
-            if is_final_match(match):
+            if final:
                 history = await FinalMatchResult.find({"snapshot.contestants": str(player.id), "snapshot.outcome": "Played"}).to_list()
                 seen_attempts = set()
                 for result in history:
@@ -156,16 +160,20 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
                 image=chosen_base.image_url,
                 base_quality=chosen_base.quality,
             )
+            if final:
+                assigned[f"participants.{opponent_index}.bases.{index}"] = opponent_participant.bases[index].model_dump()
         else:
             embed.set_image(base.image)
 
         embeds.append(embed)
 
-    if is_final_match(match):
-        field = f"participants.{opponent_index}.bases"
-        if not await update_match(match, {"_id": match.id}, {"$set": {
-                field: [base.model_dump() if base else None for base in opponent_participant.bases]}}):
-            raise FinalError("The match changed. Its bases were not changed.")
+    if final:
+        if assigned:
+            if not await update_match(match, {"_id": match.id, **dict.fromkeys(assigned)}, {
+                    "$set": assigned, "$inc": {"final_base_page_revision": 1}}):
+                raise FinalError("The match changed. Its bases were not changed.")
+            if (bot := getattr(runtime, "bot", None)) is not None:
+                request_scout_views(bot, match.id, opponent_index)
     else:
         await match.save_changes()
 

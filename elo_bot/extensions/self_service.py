@@ -15,6 +15,7 @@ from elo_bot.features.base_store import controls as base_store_controls
 from elo_bot.features.base_store.models import StoredBaseActionRequest
 import elo_bot.features.hosting.war.helper_spectate as helper_spectate
 import elo_bot.features.hosting.self_hosted.hosting as self_hosting
+from elo_bot.features.hosting.self_hosted.invitations import is_automatic_thread_member
 import elo_bot.features.hosting.war.helper_reinvite as helper_reinvite
 from elo_bot.features.matches.resources import (
     format_available_resource_clans, try_reserve_resource_clan, try_reserve_resource_match_side,
@@ -25,7 +26,7 @@ from elo_bot.features.hosting.war.helper_host import (
     AutomaticWarHost,
     host_war_automatically,
 )
-from elo_bot.config.ids import AUTOMATIC_MATCH_THREAD, BOT_ID, LVL2_ROLES
+from elo_bot.config.ids import BOT_ID, LVL2_ROLES
 from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 from elo_bot.features.base_store.start import held_store
@@ -37,8 +38,7 @@ from elo_bot.core.finals import FINAL_SELF_HOSTING_REFUSAL, is_final_match
 
 
 async def is_automatic_match_thread_member(ctx: ipy.BaseContext) -> bool:
-    thread = await ctx.bot.fetch_channel(AUTOMATIC_MATCH_THREAD)
-    return any(int(member._user_id) == int(ctx.author.id) for member in await thread.fetch_members())
+    return await is_automatic_thread_member(ctx.bot, str(ctx.author.id))
 
 
 def is_self_store_available(now: datetime) -> bool:

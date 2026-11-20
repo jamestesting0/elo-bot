@@ -17,10 +17,12 @@ Use `/match base submit` to submit a base link and `/match base view` to review 
 Managers can use `/final match forfeit` to select the forfeiting player, enter a reason and confirm that their opponent advances.
 
 **Predictions**
-Use **Predict** on the pinned bracket post or `/final predict` to pick winners for the whole bracket. Submit and edit your picks until predictions close, before play begins. Once predictions close, `/final predictions view` shows everyone's picks.
+Use **Predict** on the pinned bracket post or `/final predict` to pick winners for the whole bracket. Submit and edit your picks until predictions close, before play begins. Once predictions close, `/final predictions view` shows everyone's picks, sorted by correct picks. A score like `5/7` shows five correct picks across seven scored matches. Each correct pick pays 400 <:token:1555865080711876660> when the Final ends.
 
 **Tokens**
-Registered players get 5,000 <:token:1555865080711876660> once to bet on Final matches. Use `/tokens balance` to check your tokens and `/tokens history` for grants, bets and payouts.
+Registered players get 5,000 <:token:1555865080711876660> once. Use `/tokens balance` to check your tokens and `/tokens history` for wallet activity.
+
+Final opponents can use `/match stake` before either player starts. Enter the same amount to match an offer, or use `all-in` to use your full available balance. If your all-in covers at least half of a larger offer, both amounts stand. Below half, both stakes lock at your amount. The winner takes both locked stakes after a played result.
 
 **Betting**
 Betting posts appear when a round starts. Use **Place / Edit Bet** to back a player.

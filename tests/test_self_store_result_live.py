@@ -88,5 +88,6 @@ class TestSelfStoreResultLive(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await check(self.ctx))
         self.ctx.author.has_role.return_value = False
         self.ctx.author.has_role.side_effect = None
-        self.ctx.bot.fetch_channel = AsyncMock(return_value=MagicMock(fetch_members=AsyncMock(return_value=[])))
+        self.ctx.bot.http.request = AsyncMock(
+            side_effect=ipy.errors.NotFound(SimpleNamespace(status=404, reason="Not Found")))
         self.assertFalse(await check(self.ctx))

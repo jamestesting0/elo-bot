@@ -28,6 +28,7 @@ from elo_bot.features.matches.messages import MatchMessageState, match_message_e
 from elo_bot.features.matches.message_lock import coordinated_match_message, match_message_lock
 from elo_bot.db import Match
 from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.tokens.stake_publication import sync_stake_notes
 from elo_bot.core.finals import FinalError
 from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.db.match_models import ExpectedLiveStartState
@@ -187,6 +188,8 @@ async def start_live_match(
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return LiveStartRefused()
+        if expected_control is not None and is_final_match(fresh_match):
+            expected_control = replace(expected_control, is_war=False)
         claimed = await resources.claim_resource_clan(
             reservations.clan,
             start.match,
@@ -196,6 +199,7 @@ async def start_live_match(
             **({"expected_control": expected_control} if expected_control is not None else {}),
             updates={
                 "is_war": False,
+                "match_stake_closed": True,
                 "times.0": timestamp,
                 "hosts.0": str(start.host.id),
             },
@@ -203,6 +207,7 @@ async def start_live_match(
         if not claimed:
             return LiveStartClanUnavailable()
         message = await complete_live_start(bot, ctx, ClaimedLiveStart(start=start, timestamp=timestamp))
+        await sync_stake_notes(bot, fresh_match)
         return LiveStartSucceeded(message=message)
     finally:
         if owns_reservations:

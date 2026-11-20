@@ -9,7 +9,7 @@ from elo_bot.features.hosting.live.live_start import LiveStart, ManualLiveStartR
 from elo_bot.features.hosting.war.war_start import SelfHostedWarStartReply, WarStart, start_war
 from elo_bot.integrations.helper_api import HelperEta, HelperEtaReader, HelperJobCreator, HelperJobCreateRejected
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
-from elo_bot.features.finals.matches import bind_thread
+from elo_bot.features.finals.matches import bind_thread, prepare_match
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.features.tokens.bets import open_market
 from elo_bot.db import BaseStore, Clan, Match
@@ -27,9 +27,10 @@ from elo_bot.features.matches.timing import hosting_started
 
 
 class TestFinalStartRoutes(FinalScenarioCase):
-    async def pairing(self, *, live=False):
+    async def pairing(self, *, live=False, scheduled=True):
         final = await confirm_bracket(await self.roster(8), "manager")
-        source = await self.scheduled_pairing(final, "QF1", is_war=not live)
+        source = (await self.scheduled_pairing(final, "QF1", is_war=not live) if scheduled
+                  else await prepare_match(final, "QF1"))
         store = BaseStore(clan_tag="#TEST", slot="Slot 1", reservation_id="owned", message_id=555, ready=True)
         await source.set({"thread": "777", "times": [None, None], "participants.0.base_store": store.model_dump(),
                           "participants.0.opponent_bases_stored": True})
@@ -52,7 +53,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
         return bot, ctx
 
     async def test_manual_war_start_closes_before_failed_discord_delivery_and_retains_slot(self):
-        final, source, market = await self.pairing()
+        final, source, market = await self.pairing(scheduled=False)
         bot, ctx = self.transport(ipy.SlashContext)
         async def fail(*args, **kwargs):
             self.assertEqual((await FinalBettingMarket.get(market.id)).state, "CLOSED")
@@ -63,6 +64,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
                 clan=MagicMock(tag="#TEST", name="Test"), coc_client=bot.coc_client, reply=SelfHostedWarStartReply()))
         saved = await Match.get(source.id)
         self.assertIsNotNone(saved.times[0])
+        self.assertEqual(saved.scheduled_times, [None, None])
         self.assertEqual(saved.participants[0].base_store.reservation_id, "owned")
         self.assertIsNotNone((await final_for_view()).first_actual_started_at)
 
@@ -83,7 +85,7 @@ class TestFinalStartRoutes(FinalScenarioCase):
         self.assertEqual(saved.participants[0].base_store.reservation_id, "owned")
 
     async def test_stored_helper_request_receives_seven_districts_after_market_closure(self):
-        final, source, market = await self.pairing()
+        final, source, market = await self.pairing(scheduled=False)
         bot, ctx = self.transport(ipy.ComponentContext)
         runtime = match_module.MatchCommands(bot)
         runtime.helper_api_base_url = "http://127.0.0.1:1"
@@ -119,9 +121,10 @@ class TestFinalStartRoutes(FinalScenarioCase):
 
 
 class TestFinalStartWorkflow(FinalScenarioCase):
-    async def ready(self, *, live):
+    async def ready(self, *, live, scheduled=True):
         final = await confirm_bracket(await self.roster(8), "manager")
-        source = await self.scheduled_pairing(final, "QF1", is_war=not live)
+        source = (await self.scheduled_pairing(final, "QF1", is_war=not live) if scheduled
+                  else await prepare_match(final, "QF1"))
         await source.set({"thread": "777"})
         await Clan(tag="#TEST", name="Test", availability_str="Available").insert()
         await bind_thread(final, await Match.get(source.id), "777")
@@ -172,7 +175,7 @@ class TestFinalStartWorkflow(FinalScenarioCase):
         await check_final_start(await Match.get(war.id), None)
 
     async def test_final_autostart_is_sequential_by_default_and_passes_attacks_first(self):
-        _, source = await self.ready(live=True)
+        _, source = await self.ready(live=True, scheduled=False)
         links = {side: [BaseLink(link=f"https://link/{side}/{index}", image="").model_dump() for index in range(7)]
                  for side in (0, 1)}
         await source.set({"participants.0.bases": links[0], "participants.1.bases": links[1]})

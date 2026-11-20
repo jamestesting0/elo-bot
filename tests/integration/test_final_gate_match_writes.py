@@ -87,7 +87,8 @@ class TestFinalGateMatchWrites(FinalUICase):
                 with self.subTest(cancelled=cancelled, command=name):
                     ctx = self.context()
                     ctx.channel.id = 777
-                    await getattr(self.match_cog, name).callback.func(self.match_cog, ctx, **arguments)
+                    with patch("elo_bot.extensions.match.hosting.time", return_value=1699999000):
+                        await getattr(self.match_cog, name).callback.func(self.match_cog, ctx, **arguments)
                     self.assertEqual((await Match.get(self.source.id)).model_dump(), before)
                     self.assertEqual((await final_for_view()).model_dump(), edition)
                     self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))

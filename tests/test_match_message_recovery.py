@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
+from elo_bot.config.presentation import GREEN_COLOR, RED_COLOR
 from elo_bot.features.matches.message_lock import match_message_lock
 from elo_bot.features.matches.messages import MatchMessageState, publish_match_message
 from elo_bot.features.matches.recovery import _repair_match, _repair_message, repair_match_messages
@@ -20,17 +21,21 @@ class TestMatchMessageRecovery(unittest.IsolatedAsyncioTestCase):
 
     async def test_bound_pending_is_explicitly_incomplete_without_guessing_run_type(self):
         message = self.message()
+        message.embeds[0].color = GREEN_COLOR
         await _repair_message(message, bound=True, ended=False, active=True)
         payload = message.edit.await_args.kwargs
         self.assertEqual(payload["embeds"][0].title, "**Match Update Incomplete**")
+        self.assertEqual(payload["embeds"][0].color, GREEN_COLOR)
         self.assertNotIn("Updating", payload["embeds"][0].description)
         self.assertEqual(payload["components"], [])
 
     async def test_finished_message_clears_every_placeholder_and_preserves_controls(self):
         message = self.message("**Match Ended**", "Done")
+        message.embeds[0].color = GREEN_COLOR
         message.embeds.append(ipy.Embed(description="Loading…"))
         await _repair_message(message, bound=True, ended=True, active=False)
         payload = message.edit.await_args.kwargs
+        self.assertEqual(payload["embeds"][0].color, RED_COLOR)
         self.assertEqual(payload["embeds"][1]["description"], "")
         self.assertNotIn("components", payload)
 

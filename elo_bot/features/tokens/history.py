@@ -4,6 +4,7 @@ import interactions as ipy
 from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import TOKEN_EMOJI
+from elo_bot.core.token_items import ITEMS
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
 from elo_bot.discord.mentions import member_names
@@ -31,6 +32,20 @@ def ledger_label(entry: TokenLedgerEntry) -> str:
             return ""
         case "adjust":
             return "Manager adjustment"
+        case "purchase":
+            return ITEMS[entry.item].name if entry.item is not None else "Item purchase"
+        case "match_hold":
+            return "Match stake"
+        case "match_payout":
+            return "Match stake payout"
+        case "match_refund":
+            return "Match stake refund"
+        case "match_correction":
+            return "Match stake correction"
+        case "activity_reward":
+            return "Match reward"
+        case "prediction_reward":
+            return "Prediction reward"
         case unreachable:
             assert_never(unreachable)
 

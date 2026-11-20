@@ -10,11 +10,13 @@ from elo_bot.core.finals import FINAL_SEATS, FINAL_THREAD_RETENTION, FinalError
 from elo_bot.features.finals.persistence import transaction
 from elo_bot.features.finals.invitation_store import withdraw_pending
 from elo_bot.db import EloFinal, Player
-from elo_bot.db.token_models import FinalBettingMarket
+from elo_bot.db.token_models import FinalBettingMarket, ParticipantStake
 from elo_bot.db.match_models import Match
 from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 from elo_bot.features.finals.profiles import rebuild_profiles
 from elo_bot.features.seasons.ongoing import ongoing_season_number, season_final
+from elo_bot.features.tokens.awards import freeze_prediction_awards
+from elo_bot.features.tokens.stakes import reconcile_stake
 
 
 async def ongoing_final(final_id: PydanticObjectId | str | None = None, *,
@@ -215,6 +217,9 @@ async def request_cancellation(final: EloFinal, reason: str) -> None:
         await Match.get_pymongo_collection().update_many({
             "final_id": str(final.id), "final_result_id": None,
         }, {"$set": {"final_superseded": True}}, session=session)
+        async for stake in ParticipantStake.get_pymongo_collection().find({
+                "final_id": str(final.id), "state": {"$in": ["offer", "locked"]}}, session=session):
+            await reconcile_stake(stake["_id"], session=session)
         await withdraw_pending(final.id, session)
     await transaction(cancel)
 
@@ -229,9 +234,12 @@ async def end_final(final: EloFinal) -> None:
                 or any(not current.result_progress[node.result_id.replace(".", "_")].completed
                        for node in current.nodes.values() if node.result_id)
                 or await FinalBettingMarket.get_pymongo_collection().find_one({"final_id": str(final.id), "$or": [
-                    {"escrow": {"$ne": 0}}, {"state": {"$nin": ["PAID", "REFUNDED"]}}]}, session=session)):
+                    {"escrow": {"$ne": 0}}, {"state": {"$nin": ["PAID", "REFUNDED"]}}]}, session=session)
+                or await ParticipantStake.get_pymongo_collection().find_one({
+                    "final_id": str(final.id), "state": {"$in": ["offer", "locked"]}}, session=session)):
             raise FinalError("Resolve every pairing and finish result, prediction, and payout recovery before ending the Final.")
         now = int(time.time())
+        await freeze_prediction_awards(current, session)
         await collection.update_one({"_id": current.id}, {"$set": {"state": "COMPLETED", "active": False,
             "completed_at": now, "thread_cleanup_at": now + FINAL_THREAD_RETENTION, "publication_pending": True,
             "prediction_state": "CLOSED"},

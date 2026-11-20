@@ -16,6 +16,7 @@ from elo_bot.app.backups import backup_database1, backup_database2, sync_databas
 from elo_bot.app.client import create_client
 from elo_bot.app.events import on_raid_weekend_end
 from elo_bot.app.extensions import EXTENSIONS
+from elo_bot.config.emojis import configure_application_emojis
 from elo_bot.config.settings import COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWORD, DATA_BASES, MONGO_DB_URL
 from elo_bot.db import (
     AUDIT_LOG_INDEXES,
@@ -46,7 +47,9 @@ from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile, FinalP
 from elo_bot.db.fingerprint_models import BASE_FINGERPRINT_INDEXES, EXTRACTION_RUN_INDEXES, FINGERPRINT_TASK_INDEXES
 from elo_bot.db.sequential_models import SEQUENTIAL_RUN_INDEXES, HelperSequentialRun
 from elo_bot.db.timestamp_models import TIMESTAMP_DRAFT_INDEXES, TimestampDraft, TimestampPreference
-from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
+from elo_bot.db.token_models import (
+    FinalBet, FinalBettingMarket, ParticipantStake, TokenAward, TokenItemUse, TokenLedgerEntry, TokenWallet,
+)
 
 BETA_SYNC_FROM_MAIN = False
 
@@ -114,6 +117,9 @@ async def main():
             FinalInvitation,
             TokenWallet,
             TokenLedgerEntry,
+            TokenItemUse,
+            ParticipantStake,
+            TokenAward,
             FinalBettingMarket,
             FinalBet,
             HelperSequentialRun,
@@ -171,5 +177,6 @@ async def main():
 
 def run(entry_file: str) -> None:
     version = "main" if "main" in os.path.basename(entry_file) else "beta"
+    configure_application_emojis(version)
     create_client(version)
     asyncio.run(main())

@@ -9,7 +9,7 @@ from elo_bot.core.finals import FINAL_DISTRICTS, FinalError, ROUND_NODES
 from elo_bot.db import EloFinal, Match, Participant, Player
 from elo_bot.db.season_models import EloFinalMatch
 from elo_bot.features.matches.messages import MatchMessageState
-from elo_bot.features.matches.timing import hosting_started
+from elo_bot.features.matches.timing import final_hosting_format_is_set, hosting_started
 from elo_bot.features.finals.lifecycle import ongoing_final
 
 
@@ -57,7 +57,7 @@ async def schedule_final_match(source: Match, timestamp: int, *, player: int | N
         if (hosting_started(current, player)
                 or any(current.final_started_times[side] is not None and current.times[side] is not None
                        for side in sides)
-                or current.is_war != (player is not None) and any(current.scheduled_times)):
+                or (current.is_war != (player is not None) and final_hosting_format_is_set(current))):
             raise FinalError("Hosting has already started or the schedule uses another match format.")
         current.is_war = player is not None
         node.scheduled_is_war = current.is_war

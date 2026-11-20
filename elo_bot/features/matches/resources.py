@@ -187,6 +187,9 @@ async def claim_resource_clan(
         match_updates[f"persistent_host_clans.{player1_index}"] = reservation.clan_tag
         previous_values = {}
         for field in match_updates:
+            if field == "match_stake_closed":
+                # A durable start acceptance closes offers even if occupying the clan later fails.
+                continue
             path = field.split(".")
             value = getattr(fresh_match, path[0])
             previous_values[field] = copy.deepcopy(value if len(path) == 1 else value[int(path[1])])

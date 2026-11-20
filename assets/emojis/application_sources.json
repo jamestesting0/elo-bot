@@ -1,0 +1,159 @@
+{
+  "SuperMiner": {
+    "legacy_id": "1117878503564652649"
+  },
+  "alex": {
+    "legacy_id": "1194625714281009232"
+  },
+  "botdeveloper": {
+    "legacy_id": "1294394777411915796"
+  },
+  "challenge_override": {
+    "file": "items/challenge_override.png"
+  },
+  "clan": {
+    "legacy_id": "889118685841743922"
+  },
+  "cocstar": {
+    "legacy_id": "826130043251982416"
+  },
+  "coctrophy": {
+    "legacy_id": "890210394524770306"
+  },
+  "dh5": {
+    "legacy_id": "1213709280889536522"
+  },
+  "district_choice": {
+    "file": "items/district_choice.png"
+  },
+  "downkey": {
+    "legacy_id": "1213689168350150696"
+  },
+  "elitebb": {
+    "legacy_id": "1333357024725045279"
+  },
+  "elomanager": {
+    "legacy_id": "1294394779487961118"
+  },
+  "error": {
+    "legacy_id": "827078558140334100"
+  },
+  "giveaway": {
+    "animated": true,
+    "legacy_id": "822063886067826761"
+  },
+  "goldpass": {
+    "legacy_id": "947797613825105950"
+  },
+  "golme": {
+    "legacy_id": "1076988404773945414"
+  },
+  "grandbuilder": {
+    "legacy_id": "1294298302069739642"
+  },
+  "important": {
+    "animated": true,
+    "legacy_id": "885813921552957450"
+  },
+  "knight": {
+    "legacy_id": "1212989400611291176"
+  },
+  "legendtrophy": {
+    "legacy_id": "837969340627550259"
+  },
+  "loading": {
+    "animated": true,
+    "legacy_id": "823977927732625440"
+  },
+  "queue_priority_pro": {
+    "file": "items/queue_priority_pro.png"
+  },
+  "queue_priority_ultra": {
+    "file": "items/queue_priority_ultra.png"
+  },
+  "rank_protection": {
+    "file": "items/rank_protection.png"
+  },
+  "stafficon": {
+    "legacy_id": "822135593059876895"
+  },
+  "success": {
+    "legacy_id": "827078558220288030"
+  },
+  "superchad": {
+    "legacy_id": "1038633927176376381"
+  },
+  "swordsclashing": {
+    "animated": true,
+    "legacy_id": "911680328660295690"
+  },
+  "th1": {
+    "legacy_id": "1029674082947563520"
+  },
+  "th10": {
+    "legacy_id": "1029674084902109194"
+  },
+  "th11": {
+    "legacy_id": "1036199860602417182"
+  },
+  "th12": {
+    "legacy_id": "826132048548462728"
+  },
+  "th13": {
+    "legacy_id": "826516473446268979"
+  },
+  "th14": {
+    "legacy_id": "1029671664985853952"
+  },
+  "th15": {
+    "legacy_id": "1029066441678401596"
+  },
+  "th16": {
+    "legacy_id": "1184217457083301978"
+  },
+  "th2": {
+    "legacy_id": "1198390520058216549"
+  },
+  "th3": {
+    "legacy_id": "1029674081198538783"
+  },
+  "th4": {
+    "legacy_id": "1029674079780872202"
+  },
+  "th5": {
+    "legacy_id": "1029674077994098708"
+  },
+  "th6": {
+    "legacy_id": "1029674076379283508"
+  },
+  "th7": {
+    "legacy_id": "1029674074567352351"
+  },
+  "th8": {
+    "legacy_id": "1029674073049010266"
+  },
+  "th9": {
+    "legacy_id": "1029674071362912277"
+  },
+  "token": {
+    "legacy_id": "1555865080711876660"
+  },
+  "touchgrass": {
+    "legacy_id": "1054896140824359053"
+  },
+  "upkey": {
+    "legacy_id": "1213689170342715443"
+  },
+  "war": {
+    "legacy_id": "1050832305410805760"
+  },
+  "whitecross": {
+    "legacy_id": "892818096665006141"
+  },
+  "whitetick": {
+    "legacy_id": "892818096291733616"
+  },
+  "youtube": {
+    "legacy_id": "1124367780788056074"
+  }
+}

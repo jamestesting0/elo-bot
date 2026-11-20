@@ -48,7 +48,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response["ephemeral"])
         self.assertEqual(response["image_bytes"], render_bracket(final, picks, {}))
         self.assertNotEqual(response["image_bytes"], render_bracket(final))
-        self.assertEqual(response["embed"].fields[0].value, "`2/3` → `66.67%`")
+        self.assertEqual(response["embed"].fields[0].value, "`2/3`")
 
     async def test_missing_prediction_remains_private_error(self):
         self.cog._edition = AsyncMock(return_value=EloFinal.model_construct(id=PydanticObjectId()))
@@ -112,7 +112,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
             await self.cog.final_predict.callback.func(self.cog, ctx, 13)
         payload = ctx.send.await_args.kwargs
         self.assertTrue(payload["ephemeral"])
-        self.assertEqual(payload["embed"].fields[0].value, "`1/1` → `100.00%`")
+        self.assertEqual(payload["embed"].fields[0].value, "`1/1`")
         self.assertEqual(payload["embed"].fields[-2].value, "Image unavailable.")
         self.assertIn("QF1:", payload["embed"].fields[-1].value)
 
@@ -167,7 +167,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
         with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
                 patch.object(FinalMatchResult, "find", return_value=query):
             await self.cog.final_predict.callback.func(self.cog, ctx, 13)
-        self.assertEqual(ctx.send.await_args.kwargs["embed"].fields[0].value, "`1/2` → `50.00%`")
+        self.assertEqual(ctx.send.await_args.kwargs["embed"].fields[0].value, "`1/2`")
 
     async def test_unknown_official_start_stays_unknown_before_and_after_source_removal(self):
         final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13,

@@ -123,7 +123,7 @@ async def sticky(ctx: ipy.SlashContext, message: str) -> None:
 async def post_embed_sticky(channel, embed_type: str) -> None:
     channel_id = str(channel.id)
     async with sticky_channel_lock(channel_id):
-        embed, components = static_embed(embed_type)
+        embed, components = await static_embed(embed_type)
         sent = await channel.send(embed=embed, components=components)
         _bot_sticky_posts.add((channel_id, str(sent.id)))
         try:
@@ -163,6 +163,7 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
         webhook = thread_id = None
         for sticky in stickies:
             old_message_id = sticky.message_id
+            embed_post = await static_embed(sticky.embed_type) if sticky.embed_type else None
             note_bot_sticky_delete(channel_id, old_message_id)
             try:
                 await channel.delete_message(old_message_id)
@@ -175,8 +176,8 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
                 raise
 
             try:
-                if sticky.embed_type:
-                    embed, components = static_embed(sticky.embed_type)
+                if embed_post is not None:
+                    embed, components = embed_post
                     sent, webhook_id = await channel.send(embed=embed, components=components), None
                 else:
                     if webhook is None:

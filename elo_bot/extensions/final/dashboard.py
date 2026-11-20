@@ -3,7 +3,7 @@ from typing import assert_never
 
 import interactions as ipy
 
-from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, render_emoji_markup
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.core.finals import FinalError
 from elo_bot.db.final_models import FinalPrediction
@@ -26,6 +26,8 @@ class Dashboard:
         return DashboardState(edition, markets, submitted, invitations)
 
     async def _show_dashboard(self, ctx, edition, *, outcome=None, edit=False):
+        if outcome:
+            outcome = render_emoji_markup(outcome)
         manager = any(ctx.author.has_role(role) for role in LVL1_ROLES)
         state = await self._dashboard_state(edition)
         names = await member_names(await member_guild(ctx), [

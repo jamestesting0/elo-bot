@@ -3,6 +3,9 @@ from pydantic import JsonValue
 
 from elo_bot.db import Match, Player
 from elo_bot.core.finals import FinalError
+from elo_bot.features.finals.persistence import transaction
+from elo_bot.features.tokens.ranked import release_protections
+from elo_bot.features.tokens.stakes import reconcile_stake
 
 
 async def claim_autowin(match: Match, winner_id: str, actor_id: str, reason: str) -> Match:
@@ -49,9 +52,19 @@ async def mark_autowin(match: Match, *, completed: bool = False) -> None:
     values = {"is_autowin": True}
     if completed:
         values["autowin_completed"] = True
-    result = await Match.get_pymongo_collection().update_one(
-        {"_id": match.id, "autowin_winner_id": match.autowin_winner_id}, {"$set": values},
-    )
+    collection = Match.get_pymongo_collection()
+    query = {"_id": match.id, "autowin_winner_id": match.autowin_winner_id}
+    if completed and (match.match_stake_enabled is True or match.token_protections):
+        async def complete(session):
+            result = await collection.update_one(query, {"$set": values}, session=session)
+            if result.matched_count:
+                if match.match_stake_enabled:
+                    await reconcile_stake(str(match.id), session=session)
+                await release_protections(match, session)
+            return result
+        result = await transaction(complete)
+    else:
+        result = await collection.update_one(query, {"$set": values})
     if not result.matched_count:
         raise LookupError(match.token)
     match.is_autowin = True

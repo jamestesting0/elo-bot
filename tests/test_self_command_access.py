@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import AsyncMock, MagicMock, call
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import interactions as ipy
 
@@ -12,6 +13,7 @@ class TestSelfCommandAccess(unittest.IsolatedAsyncioTestCase):
         self.bot = MagicMock(spec=ipy.Client)
         self.bot.ext = {}
         self.bot.fetch_channel = AsyncMock()
+        self.bot.http = MagicMock(request=AsyncMock())
         self.cog = SelfCommands(self.bot)
 
     def make_context(self, caller_id: int, role_ids: set[int]) -> MagicMock:
@@ -36,41 +38,31 @@ class TestSelfCommandAccess(unittest.IsolatedAsyncioTestCase):
         await self.assert_self_command_access(ctx, expected=True)
 
         # Then role access short-circuits without querying the automatic-match thread.
-        self.bot.fetch_channel.assert_not_awaited()
+        self.bot.http.request.assert_not_awaited()
 
     async def test_self_commands_allow_automatic_match_thread_member_without_lvl2_role(self) -> None:
         # Given a caller without an LVL2 role who belongs to the automatic-match thread.
         ctx = self.make_context(caller_id=123, role_ids=set())
-        thread_member = MagicMock()
-        thread_member._user_id = ctx.author.id
-        thread = MagicMock(spec=ipy.ThreadChannel)
-        thread.fetch_members = AsyncMock(return_value=[thread_member])
-        self.bot.fetch_channel.return_value = thread
+        self.bot.http.request.return_value = {"user_id": str(ctx.author.id)}
 
         # When both self-service command checks run.
         await self.assert_self_command_access(ctx, expected=True)
 
         # Then membership in the configured thread grants access.
-        self.bot.fetch_channel.assert_has_awaits([
-            call(AUTOMATIC_MATCH_THREAD),
-            call(AUTOMATIC_MATCH_THREAD),
-            call(AUTOMATIC_MATCH_THREAD),
-        ])
+        for request in self.bot.http.request.await_args_list:
+            self.assertEqual(request.args[0].url.rsplit("/", 4)[-4:],
+                             ["channels", str(AUTOMATIC_MATCH_THREAD), "thread-members", "123"])
 
     async def test_self_commands_deny_caller_without_lvl2_role_or_thread_membership(self) -> None:
         # Given a caller who has neither an LVL2 role nor automatic-thread membership.
         ctx = self.make_context(caller_id=123, role_ids=set())
-        other_member = MagicMock()
-        other_member._user_id = 999
-        thread = MagicMock(spec=ipy.ThreadChannel)
-        thread.fetch_members = AsyncMock(return_value=[other_member])
-        self.bot.fetch_channel.return_value = thread
+        self.bot.http.request.side_effect = ipy.errors.NotFound(SimpleNamespace(status=404, reason="Not Found"))
 
         # When both self-service command checks run.
         await self.assert_self_command_access(ctx, expected=False)
 
         # Then the lack of both access paths denies both commands.
-        self.assertEqual(thread.fetch_members.await_count, 3)
+        self.assertEqual(self.bot.http.request.await_count, 3)
 
 
 if __name__ == "__main__":

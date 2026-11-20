@@ -2,6 +2,10 @@ from elo_bot.core.finals import is_final_match
 from elo_bot.db import Match
 
 
+def final_hosting_format_is_set(match: Match) -> bool:
+    return any(match.scheduled_times) or match.final_started_at is not None or hosting_started(match)
+
+
 def hosting_started(match: Match, player: int | None = None) -> bool:
     """Distinguish committed hosting from schedules and accepted requests."""
     sides = (0, 1) if player is None else (player,)

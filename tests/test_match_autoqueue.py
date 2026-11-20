@@ -12,10 +12,23 @@ from elo_bot.features.queue.policy import QUEUE_TIER_AGED, QUEUE_TIER_MIXED, QUE
 from tests._patch_sites import patch_sites
 import elo_bot.features.matches.occupancy as occupancy_module
 import elo_bot.features.queue.state as state_module
+import elo_bot.features.queue.matching as matching
 import elo_bot.extensions.match.queue as match_queue_module
 
 
 class TestQueueCore(unittest.IsolatedAsyncioTestCase):
+    async def test_paid_priority_cannot_buy_past_recent_opponent_guard_in_mixed_tier(self):
+        from_player = self.make_player("111", 1000)
+        opponent = self.make_player("222", 1000)
+        mixed = self.make_queue(QUEUE_TIER_MIXED, [opponent])
+        with (patch.object(matching, "get_last_opponent", new=AsyncMock(return_value="111")),
+              patch.object(matching, "is_player_occupied", new=AsyncMock(return_value=None))):
+            self.assertIs(await matching.find_queue_opponent(from_player, "222", mixed, 200), opponent)
+            self.assertIsNone(await matching.find_queue_opponent(
+                from_player, "222", mixed, 200, token_attempt="queue:boost:paid-entry"))
+            mixed.token_attempts["222"] = "queue:boost:paid-candidate"
+            self.assertIsNone(await matching.find_queue_opponent(from_player, "222", mixed, 200))
+
     async def asyncSetUp(self):
         self.bot = MagicMock()
         self.bot.user.id = BOT_ID
@@ -36,7 +49,7 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
 
     @staticmethod
     def make_player(user_id: str, elo: int, priority: bool = False):
-        player = MagicMock(spec=Player)
+        player = MagicMock(spec=Player, token_items_active=False)
         player.user_id = user_id
         player.elo = elo
         player.priority = priority
@@ -48,7 +61,7 @@ class TestQueueCore(unittest.IsolatedAsyncioTestCase):
 
     @staticmethod
     def make_queue(tier: int, players=None, entered_at=None):
-        queue = MagicMock(spec=Queue)
+        queue = MagicMock(spec=Queue, token_attempts={})
         queue.tier = tier
         queue.players = list(players or [])
         queue.entered_at = dict(entered_at or {})

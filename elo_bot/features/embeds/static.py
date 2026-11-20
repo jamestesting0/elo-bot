@@ -1,23 +1,36 @@
+from datetime import UTC, datetime
+
 import interactions as ipy
 
+from elo_bot.config.emojis import application_emoji, render_emoji_markup
 from elo_bot.config.presentation import BANNER_IMAGE, COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.features.seasons.ongoing import ongoing_season_calendar
 
 STATIC_EMBED_TYPES = ("Elo Information", "Elo Final")
 
 
-def static_embed(embed_type: str) -> tuple[ipy.Embed, list[ipy.ActionRow]]:
-    """Fixed /embed posts; sticky reposts rebuild them from here so their buttons keep working."""
+async def static_embed(embed_type: str) -> tuple[ipy.Embed, list[ipy.ActionRow]]:
+    """Build preset /embed posts for initial publication and sticky reposts."""
     match embed_type:
         case "Elo Information":
-            return elo_information()
+            return await elo_information()
         case "Elo Final":
             return elo_final()
     raise ValueError(f"Unknown static embed: {embed_type}")
 
 
-def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
-    with open("assets/embeds/information.md") as source:
-        description = source.read()
+async def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
+    calendar = await ongoing_season_calendar(datetime.now(UTC))
+    dates = "\n".join(
+        f"**{label}** · <t:{int(moment.timestamp())}:D> · <t:{int(moment.timestamp())}:R>"
+        for label, moment in (
+            ("Elo Final", calendar.final_selection),
+            ("Queue closes", calendar.queue_closes),
+            ("Season ends", calendar.season_ends),
+        )
+    )
+    with open("assets/embeds/information.md", encoding="utf-8") as source:
+        description = render_emoji_markup(source.read().format(season_dates=dates))
     embed = ipy.Embed(
         title="**Clan Capital Elo System**",
         description=description,
@@ -30,21 +43,21 @@ def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
         style=ipy.ButtonStyle.GRAY,
         label="Participate",
         custom_id="participate_button",
-        emoji=ipy.PartialEmoji(name="war", id=1050832305410805760)
+        emoji=application_emoji("war")
     )
 
     build_button = ipy.Button(
         style=ipy.ButtonStyle.GRAY,
         label="Base Building",
         custom_id="build_button",
-        emoji=ipy.PartialEmoji(name="grandbuilder", id=1294298302069739642)
+        emoji=application_emoji("grandbuilder")
     )
 
     rewards_button = ipy.Button(
         style=ipy.ButtonStyle.GRAY,
         label="Rewards",
         custom_id="rewards_button",
-        emoji=ipy.PartialEmoji(name="goldpass", id=947797613825105950)
+        emoji=application_emoji("goldpass")
     )
 
     support_button = ipy.Button(
@@ -65,7 +78,7 @@ def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
         style=ipy.ButtonStyle.URL,
         label="Youtube",
         url="https://www.youtube.com/watch?v=1bUDs5g-YOE&list=PLCBSjHpUFbfGiwqK-xf1R5FdGqrFBf3rk&pp=gAQB",
-        emoji=ipy.PartialEmoji(name="youtube", id=1124367780788056074)
+        emoji=application_emoji("youtube")
     )
     return embed, [
         ipy.ActionRow(participate_button, support_button),

@@ -1,4 +1,6 @@
 import unittest
+import asyncio
+import json
 from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -9,6 +11,7 @@ from beanie import PydanticObjectId
 from beanie.odm.fields import ExpressionField, LinkInfo, LinkTypes
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
+from interactions.api.http.http_client import HTTPClient
 
 from elo_bot.extensions import match as commands
 from elo_bot.db import Match, Participant, Player, Queue, ServerState
@@ -21,6 +24,8 @@ import elo_bot.features.queue.state as state_module
 import elo_bot.extensions.match.lifecycle as match_lifecycle_module
 import elo_bot.extensions.match.queue as match_queue_module
 import elo_bot.extensions.match.results as match_results_module
+from elo_bot.features.hosting.self_hosted.invitations import PAIRING_GRANTS
+from elo_bot.extensions.self_service import is_automatic_match_thread_member
 
 
 DISTRICTS = ["Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"]
@@ -59,6 +64,7 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
                       for user_id in self.players}
         self.bot = MagicMock(user=MagicMock(id=commands.BOT_ID), owner=MagicMock(id=999),
                              fetch_user=AsyncMock(side_effect=lambda uid: self.users[str(uid)]))
+        self.bot.http.request = AsyncMock(return_value={"user_id": "111"})
         self.main_guild = MagicMock(fetch_member=AsyncMock(
             side_effect=lambda uid: MagicMock(id=int(uid), display_name=f"Player {uid}"),
         ))
@@ -556,6 +562,78 @@ class TestQueuedDistrictSelection(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(row.components[0].max_values == 1 for row in rows[:3]))
         self.assertEqual([button.label for button in rows[3].components], ["Cancel", "Confirm"])
         self.confirm_thread.assert_not_awaited()
+
+    async def test_match_found_is_sent_while_the_self_host_lookup_is_waiting(self):
+        self.seed()
+        self.seed("222")
+        entered = anyio.Event()
+        release = anyio.Event()
+
+        async def wait_for_membership(_route):
+            entered.set()
+            await release.wait()
+            return {"user_id": "111"}
+
+        self.bot.http.request.side_effect = wait_for_membership
+        with anyio.fail_after(2):
+            match = await self.pair()
+            await entered.wait()
+            try:
+                self.assertIn(match.token, self.matches)
+                self.assertFalse(self.queues[3].players)
+                self.users["111"].send.assert_awaited_once()
+                self.users["222"].send.assert_awaited_once()
+                self.assertFalse(PAIRING_GRANTS["111"].done())
+            finally:
+                release.set()
+            for task in list(PAIRING_GRANTS.values()):
+                await task
+
+    async def test_failed_self_host_join_recovers_on_the_next_pairing_through_discord_sdk(self):
+        events = []
+        members = {"222"}
+        attempts = 0
+
+        async def request(route):
+            nonlocal attempts
+            user = route.url.rsplit("/", 1)[-1]
+            events.append((route.method, route.url.removeprefix("https://discord.com/api/v10")))
+            if route.method == "GET":
+                if user in members:
+                    return {"user_id": user}
+                raise ipy.errors.NotFound(SimpleNamespace(status=404, reason="Unknown Member"), discord_code=10007)
+            self.assertEqual(route.method, "PUT")
+            attempts += 1
+            if attempts == 1:
+                raise ipy.errors.Forbidden(SimpleNamespace(status=403, reason="Missing Permissions"))
+            members.add(user)
+            return None
+
+        http = HTTPClient()
+        http.request = AsyncMock(side_effect=request)
+        self.bot.http = http
+        self.bot.fetch_member = AsyncMock(return_value=MagicMock(has_role=MagicMock(return_value=False)))
+        with patch("elo_bot.features.hosting.self_hosted.invitations.has_two_completed_matches",
+                   new=AsyncMock(return_value=True)):
+            self.seed()
+            self.seed("222")
+            with self.assertLogs(level="ERROR"):
+                first = await self.pair()
+                await asyncio.gather(*PAIRING_GRANTS.values(), return_exceptions=True)
+            self.assertIn(first.token, self.matches)
+            self.users["111"].send.assert_awaited_once()
+            self.assertNotIn("111", members)
+            self.matches.clear()
+            self.seed()
+            self.seed("222")
+            second = await self.pair()
+            await asyncio.gather(*PAIRING_GRANTS.values())
+        self.assertIn(second.token, self.matches)
+        self.assertEqual(self.users["111"].send.await_count, 2)
+        self.assertEqual(attempts, 2)
+        ctx = SimpleNamespace(bot=self.bot, author=SimpleNamespace(id=111))
+        self.assertTrue(await is_automatic_match_thread_member(ctx))
+        print("SELF_HOST_HTTP", json.dumps(events))
 
     async def test_unavailable_locked_districts_use_random_same_group_without_secondary_presets(self):
         self.players["111"].secondary_district_presets = list(DISTRICTS)

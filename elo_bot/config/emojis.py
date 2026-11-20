@@ -1,21 +1,71 @@
+import json
+import os
+from pathlib import Path
+import re
+
 import interactions as ipy
 
-SUCCESS_EMOJI = ipy.PartialEmoji.from_str("<:success:827078558220288030>")
-ERROR_EMOJI = ipy.PartialEmoji.from_str("<:error:827078558140334100>")
-TOKEN_EMOJI = ipy.PartialEmoji(name="token", id=1555865080711876660)
-STAR_EMOJI = ipy.PartialEmoji.from_str("<:cocstar:826130043251982416>")
-ALEX_EMOJI = ipy.PartialEmoji(name="alex", id=1194625714281009232)
-WIN_EMOJI = ipy.PartialEmoji(name="upkey", id=1213689170342715443)
-LOSS_EMOJI = ipy.PartialEmoji(name="downkey", id=1213689168350150696)
-TICK_EMOJI = ipy.PartialEmoji(name="whitetick", id=892818096291733616)
-CROSS_EMOJI = ipy.PartialEmoji(name="whitecross", id=892818096665006141)
-STAFF_EMOJI = ipy.PartialEmoji(name="stafficon", id=822135593059876895)
-DISTRICT_EMOJI = ipy.PartialEmoji(name="dh5", id=1213709280889536522)
-CLAN_EMOJI = ipy.PartialEmoji(name="clan", id=889118685841743922)
-IMPORTANT_EMOJI = ipy.PartialEmoji(name="important", id=885813921552957450, animated=True)
-GIVEAWAY_EMOJI = ipy.PartialEmoji(name="giveaway", id=822063886067826761, animated=True)
-CLASHING_SWORD_EMOJI = ipy.PartialEmoji(name="swordsclashing", id=911680328660295690, animated=True)
-LOADING_EMOJI = ipy.PartialEmoji(name="loading", id=823977927732625440, animated=True)
+_EMOJI_DIR = Path(__file__).resolve().parents[2] / "assets" / "emojis"
+_SOURCES = json.loads((_EMOJI_DIR / "application_sources.json").read_text(encoding="utf-8"))
+_LEGACY_NAMES = {entry["legacy_id"]: name for name, entry in _SOURCES.items() if "legacy_id" in entry}
+_CUSTOM_EMOJI = re.compile(r"<a?:\w+:(\d+)>")
+
+
+def _fallback_id(name: str, entry: dict) -> str | None:
+    if "legacy_id" in entry:
+        return entry["legacy_id"]
+    value = os.getenv(f"EMOJI_{name.upper()}", "")
+    return value if value.isascii() and value.isdecimal() else None
+
+
+_EMOJIS = {
+    name: ipy.PartialEmoji(name=name, id=_fallback_id(name, entry), animated=entry.get("animated", False))
+    for name, entry in _SOURCES.items()
+}
+TOKEN_ITEM_EMOJIS = {
+    name: _EMOJIS[name] for name, entry in _SOURCES.items() if "file" in entry and _EMOJIS[name].id
+}
+
+
+def application_emoji(name: str) -> ipy.PartialEmoji:
+    return _EMOJIS[name]
+
+
+def configure_application_emojis(version: str) -> None:
+    mapping = _EMOJI_DIR / "application_ids.json"
+    ids = json.loads(mapping.read_text(encoding="utf-8")).get(version, {}) if mapping.exists() else {}
+    TOKEN_ITEM_EMOJIS.clear()
+    for name, entry in _SOURCES.items():
+        emoji = _EMOJIS[name]
+        emoji.id = ids.get(name) or _fallback_id(name, entry)
+        if "file" in entry and emoji.id:
+            TOKEN_ITEM_EMOJIS[name] = emoji
+
+
+def render_emoji_markup(text: str) -> str:
+    def replace(match: re.Match[str]) -> str:
+        name = _LEGACY_NAMES.get(match[1])
+        return str(_EMOJIS[name]) if name else match[0]
+
+    return _CUSTOM_EMOJI.sub(replace, text)
+
+
+SUCCESS_EMOJI = application_emoji("success")
+ERROR_EMOJI = application_emoji("error")
+TOKEN_EMOJI = application_emoji("token")
+STAR_EMOJI = application_emoji("cocstar")
+ALEX_EMOJI = application_emoji("alex")
+WIN_EMOJI = application_emoji("upkey")
+LOSS_EMOJI = application_emoji("downkey")
+TICK_EMOJI = application_emoji("whitetick")
+CROSS_EMOJI = application_emoji("whitecross")
+STAFF_EMOJI = application_emoji("stafficon")
+DISTRICT_EMOJI = application_emoji("dh5")
+CLAN_EMOJI = application_emoji("clan")
+IMPORTANT_EMOJI = application_emoji("important")
+GIVEAWAY_EMOJI = application_emoji("giveaway")
+CLASHING_SWORD_EMOJI = application_emoji("swordsclashing")
+LOADING_EMOJI = application_emoji("loading")
 RANK_EMOJIS = ["🥇", "🥈", "🥉"]
 RANK_REVERSED_EMOJIS = ["🤡", "🐷", "🌚"]
 BASE_QUALITY_EMOJIS = {
@@ -25,28 +75,11 @@ BASE_QUALITY_EMOJIS = {
     "Excellent": "🏆",
     "Private": "🔒"
 }
-TOWNHALL_EMOJIS = {
-    1: ipy.PartialEmoji.from_str("<:th1:1029674082947563520>"),
-    2: ipy.PartialEmoji.from_str("<:th2:1198390520058216549>"),
-    3: ipy.PartialEmoji.from_str("<:th3:1029674081198538783>"),
-    4: ipy.PartialEmoji.from_str("<:th4:1029674079780872202>"),
-    5: ipy.PartialEmoji.from_str("<:th5:1029674077994098708>"),
-    6: ipy.PartialEmoji.from_str("<:th6:1029674076379283508>"),
-    7: ipy.PartialEmoji.from_str("<:th7:1029674074567352351>"),
-    8: ipy.PartialEmoji.from_str("<:th8:1029674073049010266>"),
-    9: ipy.PartialEmoji.from_str("<:th9:1029674071362912277>"),
-    10: ipy.PartialEmoji.from_str("<:th10:1029674084902109194>"),
-    11: ipy.PartialEmoji.from_str("<:th11:1036199860602417182>"),
-    12: ipy.PartialEmoji.from_str("<:th12:826132048548462728>"),
-    13: ipy.PartialEmoji.from_str("<:th13:826516473446268979>"),
-    14: ipy.PartialEmoji.from_str("<:th14:1029671664985853952>"),
-    15: ipy.PartialEmoji.from_str("<:th15:1029066441678401596>"),
-    16: ipy.PartialEmoji.from_str("<:th16:1184217457083301978>")
-}
+TOWNHALL_EMOJIS = {level: application_emoji(f"th{level}") for level in range(1, 17)}
 LEAGUE_EMOJIS = {
-    "Miner Spammer": "<:SuperMiner:1117878503564652649>",
-    "Amateur": "<:golme:1076988404773945414>",
-    "Battle-Tested": "<:knight:1212989400611291176>",
-    "Unstoppable": "<:superchad:1038633927176376381>",
-    "Touch Grass Please": "<:touchgrass:1054896140824359053>"
+    "Miner Spammer": application_emoji("SuperMiner"),
+    "Amateur": application_emoji("golme"),
+    "Battle-Tested": application_emoji("knight"),
+    "Unstoppable": application_emoji("superchad"),
+    "Touch Grass Please": application_emoji("touchgrass")
 }

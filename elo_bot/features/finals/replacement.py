@@ -11,6 +11,7 @@ from elo_bot.features.finals.bracket import advance_nodes
 from elo_bot.features.finals.lifecycle import ongoing_final
 from elo_bot.features.finals.persistence import transaction
 from elo_bot.features.finals.profiles import rebuild_profiles
+from elo_bot.features.tokens.stakes import retire_replaced_stake
 
 STARTED = "Their match has started. Use `/final match forfeit`."
 
@@ -94,6 +95,8 @@ async def replace_entrant(final: EloFinal, leaving: str, joining: str, name: str
         else:
             _reset(node)
         matches = Match.get_pymongo_collection()
+        if source:
+            await retire_replaced_stake(source, session)
         if source and kept.thread_id:
             # Keep the pairing's match and thread; only the player and the revision change.
             for field in ("match_id", "thread_id", "scheduled_times", "scheduled_is_war", "state"):
@@ -103,7 +106,8 @@ async def replace_entrant(final: EloFinal, leaving: str, joining: str, name: str
                                       bases=[None] * 7, result=[None] * 7, confirmed=True, submit_bases=True)
             await matches.update_one({"_id": source.id}, {"$set": {
                 f"participants.{side}": participant.model_dump(),
-                "final_contestant_revision": first.contestant_revision}}, session=session)
+                "final_contestant_revision": first.contestant_revision},
+                "$inc": {"match_stake_revision": 1}}, session=session)
         elif source:
             await matches.update_one({"_id": source.id}, {"$set": {"final_superseded": True}}, session=session)
         current.entrant_ids[current.entrant_ids.index(leaving)] = joining

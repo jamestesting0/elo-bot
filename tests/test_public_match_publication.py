@@ -7,6 +7,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.config.presentation import GREEN_COLOR
 from elo_bot.features.matches.messages import MatchMessagePublicationError, MatchMessageState, publish_match_message
 from elo_bot.features.matches.publication_state import restore_match_publication
 from elo_bot.features.matches.recovery import _attempt_repair_message
@@ -34,7 +35,7 @@ class TestPublicMatchPublication(unittest.IsolatedAsyncioTestCase):
     async def publish(self, existing: ipy.Message | None = None) -> ipy.Message:
         return await publish_match_message(
             self.fixture.ctx, self.fixture.match, MatchMessageState.capture(self.fixture.match, 0),
-            embed=ipy.Embed(title="**Match Started**", description="New host"),
+            embed=ipy.Embed(title="**Match Started**", description="New host", color=GREEN_COLOR),
             public_channel=self.channel, existing_message=existing,
         )
 
@@ -68,10 +69,26 @@ class TestPublicMatchPublication(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sent["embeds"][0]["description"], "Updating…")
         self.assertEqual(sent["components"], [])
         self.assertEqual(self.fixture.message_data["embeds"][0]["title"], "**Match Update Incomplete**")
+        self.assertEqual(self.fixture.message_data["embeds"][0]["color"], GREEN_COLOR)
         self.assertEqual(self.fixture.message_data["components"], [])
         self.assertIsNone(self.fixture.persisted["msg"])
         self.assertIsNone(self.fixture.match.msg)
         self.assertNotIn("public_message_publication", self.fixture.persisted)
+
+    async def test_final_public_announcement_persists_its_bracket_slot(self) -> None:
+        match = self.fixture.match
+        match.format = "elo_final_seven"
+        match.final_id = "final"
+        match.final_node_id = "QF4"
+        match.routing_channel_id = self.channel.id
+        self.fixture.persisted.update(MatchMessageState.capture(match, 0).binding_filter())
+
+        await self.publish()
+
+        self.assertIn("QF4", self.fixture.message_data["embeds"][0].get("author", {}).get("name", ""))
+        publication = match.public_message_publication
+        self.assertEqual(publication.embeds, self.fixture.message_data["embeds"])
+        self.assertFalse(publication.pending)
 
     async def test_changed_durable_run_rejects_existing_publication(self) -> None:
         message = self.existing_message()

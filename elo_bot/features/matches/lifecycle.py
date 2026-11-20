@@ -17,6 +17,7 @@ from elo_bot.db import BaseLink, Match, Participant, Player, EloFinal
 from elo_bot.db.player_models import QueueDistrictSelection
 from elo_bot.discord.mentions import mention_user
 from elo_bot.core.finals import is_final_match
+from elo_bot.features.hosting.self_hosted.invitations import schedule_pairing_grants
 from elo_bot.features.matches.base_selection import get_base_quality
 from elo_bot.features.matches.cleanup import delete_unreserved_match
 from elo_bot.features.matches.thread_messages import (
@@ -27,6 +28,7 @@ from elo_bot.features.matches.thread_messages import (
 from elo_bot.features.queue.policy import QUEUE_OPERATION_LOCK
 from elo_bot.features.queue.state import remove_matched_queue_attempts
 from elo_bot.features.finals.labels import thread_label
+from elo_bot.features.tokens.queue_items import finish_district_items, insert_queued_match
 
 
 def get_district_options(
@@ -85,6 +87,7 @@ def build_district_confirmation_modal(
 async def initiate_match(
         bot: ipy.Client, player1: Player, player2: Player,
         *, on_inserted: Callable[[], Awaitable[None]] | None = None,
+        token_attempts: tuple[str | None, str | None] = (None, None),
         queue_selections: tuple[QueueDistrictSelection | None, QueueDistrictSelection | None] = (None, None),
 ):
     user1 = await bot.fetch_user(player1.user_id)
@@ -139,6 +142,7 @@ async def initiate_match(
     # create and insert a match document
     match = Match(
         token=token,
+        token_rewards=True,
         matched_time=matched_time,
         confirmation_tracking=True,
         base_submission=player1.elo >= BASE_SUBMISSION_THRESHOLD and player2.elo >= BASE_SUBMISSION_THRESHOLD,
@@ -148,9 +152,14 @@ async def initiate_match(
         capital_peak_available=capital_peak_available,
         participants=[p1, p2],
     )
-    await match.insert()
+    if any(token_attempts) or player1.token_items_active is True or player2.token_items_active is True:
+        match.id = PydanticObjectId()
+        await insert_queued_match(match, district_options, token_attempts)
+    else:
+        await match.insert()
     if on_inserted is not None:
         await on_inserted()
+    schedule_pairing_grants(bot, match)
 
     embed = ipy.Embed(
         title="**Match Found**",
@@ -369,6 +378,8 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
 
             if not is_final_match(match):
                 match.final_districts = [district1, district2, district3]
+                for group, district in match.token_districts.items():
+                    match.final_districts[int(group)] = district
             match.thread = str(thread.id)
 
             # only load preset bases when base submission is enabled
@@ -400,6 +411,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
 
             # save updated match
             await match.save_changes()
+        await finish_district_items(match, consume=True)
 
         timestamp_command = bot.interactions_by_scope.get(ipy.GLOBAL_SCOPE, {}).get("timestamp")
         timestamp_mention = "`/timestamp`"

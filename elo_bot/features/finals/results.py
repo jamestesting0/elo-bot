@@ -16,6 +16,7 @@ from elo_bot.db import EloFinal, Match, HelperHistory
 from elo_bot.db.final_models import FinalHelperCredit, FinalMatchResult, FinalResultOperation, FinalResultSnapshot
 from elo_bot.db.season_models import FinalResultProgress
 from elo_bot.features.finals.lifecycle import ongoing_final
+from elo_bot.features.tokens.stakes import final_stake_outcome, reconcile_stake
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +116,8 @@ async def submit_result(request: FinalResultSubmission, *, session: AsyncClientS
             node_id=node.id, contestant_revision=node.contestant_revision, attempt=node.attempt, version=version,
             operation_key=request.operation_key, actor_id=request.actor_id, reason=request.reason,
             previous_id=node.result_id, created_at=int(time.time()), snapshot=snapshot,
-            source_match_id=str(source.id) if source else (str(node.match_id) if node.match_id else None),
+            source_match_id=str(source.id) if source else prior.source_match_id if prior else (
+                str(node.match_id) if node.match_id else None),
             source_token=source.token if source else None, source_thread=source.thread if source else node.thread_id,
             bases={participant.user_id: [base.link if base else None for base in participant.bases]
                    for participant in source.participants} if source else {},
@@ -145,6 +147,12 @@ async def submit_result(request: FinalResultSubmission, *, session: AsyncClientS
             if old.match_id:
                 await Match.get_pymongo_collection().update_one({"_id": old.match_id},
                     {"$set": {"final_superseded": True}}, session=session)
+            old_source = str(old.match_id) if old.match_id else None
+            if old_source is None and old.result_id:
+                old_result = await FinalMatchResult.get(old.result_id, session=session)
+                old_source = old_result.source_match_id if old_result else None
+            if old_source:
+                await reconcile_stake(old_source, official_outcome=("superseded", None), session=session)
         final.champion = final.nodes["F1"].winner
         final.result_revision += 1
         final.predictions_scoring_revision = final.result_revision
@@ -164,6 +172,8 @@ async def submit_result(request: FinalResultSubmission, *, session: AsyncClientS
             for side, participant in enumerate(source.participants):
                 updates[f"participants.{side}.result"] = snapshot.scores[participant.user_id]
             await Match.get_pymongo_collection().update_one({"_id": source.id}, {"$set": updates}, session=session)
+        if result.source_match_id and (source is None or source.match_stake_enabled):
+            await reconcile_stake(result.source_match_id, official_outcome=final_stake_outcome(result), session=session)
         return result
 
     return await commit(session) if session is not None else await transaction(commit)

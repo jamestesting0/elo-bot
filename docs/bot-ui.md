@@ -19,6 +19,12 @@ matches, leaderboards for ranked rows, base and history views for pagination) an
 
 Never hard-code a color, footer, emoji ID or image URL that already has a constant.
 
+EloBot's custom icons use its Discord application emoji bank. The catalog in
+`assets/emojis/application_sources.json` records each source. Startup selects the main or beta IDs from
+`assets/emojis/application_ids.json`. After an approved asset addition, run
+`venv/bin/python scripts/sync_application_emojis.py beta` first, then run it for `main` after verification.
+The sync uploads missing names and records their IDs. It preserves existing app and server emojis.
+
 ## Feedback messages and embeds
 
 The response to an action is plain message content that starts with a status emoji, not an embed:
@@ -269,6 +275,12 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   same user's earlier click already replaced, is acknowledged without a reply (`ignore_repeated_clicks`).
 - `/tokens add` and `/tokens remove` (level-1 roles) change a player's Available tokens and show as a Manager
   adjustment in `/tokens history`. Remove never takes more than the Available balance.
+- `/tokens shop` and `/tokens inventory` are private. A select lists the current page's items.
+  Purchases use an owner-only confirmation. Item emojis use the shared config when registered.
+- `/match stake` replies privately. Show the offer and reply in the match announcement's **Notes** field, one line per player.
+  Use `put 500 {TOKEN_EMOJI} at stake`, `matches the stake with 500 {TOKEN_EMOJI}`, or `went all in (500 {TOKEN_EMOJI})`.
+  Edit the offer's existing line when it changes. Show the actual held amount if a short all-in reduces the offer.
+  Wallet balance lists locked match stakes separately from spectator bets.
 - `/final bracket create` opens one seeded draft owned by the manager. The select swaps exactly two
   slots. Reset restores Elo seeding; Confirm publishes and pins the saved bracket; Cancel discards the
   draft. Confirm uses `SUCCESS` and `TICK_EMOJI`; Cancel uses `DANGER` and `CROSS_EMOJI`.
@@ -282,7 +294,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - `/final predictions view` lists submitted predictions (`1. **Spyke** · 🏆 Kaito · \`3/5\``, score once a
   match is played) with a "🔍 View a player's picks" select that anyone can use: it opens that player's card
   privately and leaves the list unchanged; `player:` opens one card directly. A card is the marked bracket
-  image, the score once a match is played, and the results. Everyone can view after predictions close; LVL1
+  image, the score as `5/7` once a match is played, and the results. Everyone can view after predictions close; LVL1
   managers can view before that, always privately. Only submitted picks appear. Paging stays with the user who ran the command.
   More than 25 predictors page with `◀️` `2/3` `▶️`.
 - Betting stays in one private message through the chooser, amount modal, review, cancellation and
@@ -297,9 +309,11 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   avatars, stars and destruction per district and in total, the loser muted. The
   embed keeps the title, `A ▼ vs. B ▲` and any Recovery field; the district lines and Total
   appear only when the image fails. Forfeits have no scoreboard. Corrections edit both posts.
-- Helper captures the scout image for each Final base. A side's bases lock 30 minutes before the opponent's
-  scheduled time. From then on the opponent can run `/match base scout` in the Final match thread and use
-  the district dropdown to browse one image at a time in a private message. LVL1 managers can also select
+- Helper captures scout images for submitted Final bases and queues captures for assigned Helper bases as
+  soon as they are saved. Pending captures retry automatically. Scouting opens 30 minutes before the
+  attacker's scheduled time. The opponent's bases lock when scouting opens or the start is accepted,
+  whichever comes first. During scouting, attackers can run `/match base scout` in the Final match thread
+  and use the district dropdown to browse one image at a time in a private message. LVL1 managers can also select
   either player's attacking view. Each view follows that player's schedule and shows the other player's
   bases. Missing submissions are filled with Excellent Helper bases and scouted.
 - `/final match forfeit` takes the forfeiting player and finds their unfinished pairing. The manager enters
@@ -309,8 +323,11 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Final hosting: `/match autostart` and `/match war autostart` run one sequential Helper job for all seven
   districts unless `sequential:False` or `district:` is given. Live `attacks_first` posts that player's
   challenge first each cycle; blank posts both together. Unsubmitted districts get Excellent library bases.
-  A start that cannot happen (predictions open, unscheduled, wrong live/war command) is refused before
-  bases are drawn or Helper is asked, with one reply. `/self` hosting is refused for Finals.
+  Final hosting can start without a schedule. Open predictions and a conflicting live or war format
+  prevent a start before bases are drawn or Helper is asked. `/self` hosting is refused for Finals.
+- Schedule commands require a future time. In a match thread, **Match Schedule** and **Match War Schedule**
+  under a message's Apps menu use its first future Discord timestamp. The war action schedules the
+  author’s side and requires the author to be a player in the match.
 - The sequential progress message (`**QF4 · Sequential Hosting**`) has no fields: a status line with the
   last check, then one row per district: ➖ waiting, loading icon for the current district, success icon
   with `2⭐ 83%` scores once stored. Job ids and run details stay in `/match helper status`.

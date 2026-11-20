@@ -92,7 +92,7 @@ class TestPresetBaseRemoval(unittest.IsolatedAsyncioTestCase):
             MagicMock(user_id=user_id, districts=districts, submit_bases=False, bases=[None] * 3)
             for user_id in ("111", "222")
         ]
-        match = MagicMock(participants=participants, base_submission=True, thread=None)
+        match = MagicMock(token_districts={}, participants=participants, base_submission=True, thread=None)
 
         async def save_match() -> None:
             self.assertEqual([p.bases for p in participants], [[None] * 3, [None] * 3])

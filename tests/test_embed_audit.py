@@ -161,6 +161,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         published = AsyncMock()
 
         with (
+            patch.object(match_hosting_module, "time", return_value=1699999000),
             patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=match))),
             patch_sites(('elo_bot.extensions.match.lifecycle.append_helper_task', 'elo_bot.extensions.match.hosting.append_helper_task'), new=AsyncMock()),
             patch_sites(('elo_bot.extensions.match.hosting.publish_match_message', 'elo_bot.extensions.match.settings.publish_match_message'), published),
@@ -203,6 +204,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.bot.fetch_channel.return_value = channel
 
         with (
+            patch.object(match_hosting_module, "time", return_value=1500),
             patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match'), new=MagicMock(find_one=AsyncMock(return_value=match))),
             patch_sites(('elo_bot.extensions.match.lifecycle.append_helper_task', 'elo_bot.extensions.match.hosting.append_helper_task'), new=AsyncMock()),
             patch_sites(('elo_bot.extensions.match.hosting.publish_match_message', 'elo_bot.extensions.match.settings.publish_match_message'), new=AsyncMock()) as published,

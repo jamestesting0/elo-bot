@@ -1,10 +1,11 @@
+import json
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.db import BaseStore, Match, Season
 from elo_bot.db.final_models import FinalPrediction
-from elo_bot.db.token_models import FinalBettingMarket, TokenWallet
+from elo_bot.db.token_models import FinalBettingMarket, TokenLedgerEntry, TokenWallet
 from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.finals.lifecycle import final_for_view
 from elo_bot.features.finals.matches import schedule_final_match
@@ -157,6 +158,14 @@ class TestFinalGateJourney(FinalUICase):
             await self.cog.final_management_confirmation.callback.func(self.cog, end)
             completed = await final_for_view()
             self.assertEqual((completed.state, completed.active), ("COMPLETED", False))
+            awards = await TokenLedgerEntry.find({"wallet_id": "9", "kind": "prediction_reward"}).to_list()
+            self.assertEqual([award.amount for award in awards], [2800])
+            self.assertEqual((await TokenWallet.get("9")).balance, 7800)
+            print("FINAL_PREDICTION_CLOSURE", json.dumps({
+                "response": end.edit_origin.await_args.kwargs["content"],
+                "awards": [award.model_dump(mode="json") for award in awards],
+                "wallet_balance": 7800,
+            }))
             print("GATE_JOURNEY Semifinals/Final/champion/end: COMPLETED, champion 1")
             await Season(season_number=7, start=2, end=3, players=self.archive.players).insert()
             await self.setup_bracket()
@@ -167,7 +176,7 @@ class TestFinalGateJourney(FinalUICase):
             market = await FinalBettingMarket.find_one({"final_id": str(self.final.id), "node_id": "QF1"})
             await apply_bet(BetAction(market_id=market.id, user_id="9", contestant="1", amount=500,
                                      expected_version=0, action_key="second-final-stake"))
-            self.assertEqual((await TokenWallet.get("9")).balance, 4500)
+            self.assertEqual((await TokenWallet.get("9")).balance, 7300)
             prompt = self.context()
             await self.cog.final_cancel.callback.func(self.cog, prompt, reason="Fixture mid-round cancellation")
             cancel = self.context(component=True)
@@ -177,7 +186,7 @@ class TestFinalGateJourney(FinalUICase):
             cancelled = await final_for_view()
             self.assertEqual((cancelled.state, cancelled.active), ("CANCELLED", False))
             self.assertEqual((await Match.get(source.id)).participants[0].base_store, store)
-            self.assertEqual((await TokenWallet.get("9")).balance, 5000)
+            self.assertEqual((await TokenWallet.get("9")).balance, 7800)
             self.assertEqual({market.state for market in await FinalBettingMarket.find(
                 {"final_id": str(cancelled.id)}).to_list()}, {"REFUNDED"})
             self.assertEqual(cancel.edit_origin.await_args.kwargs["components"][0].custom_id,

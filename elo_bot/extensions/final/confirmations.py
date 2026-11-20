@@ -16,6 +16,7 @@ from elo_bot.discord.mentions import member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.features.finals import lifecycle
 from elo_bot.features.finals.dashboard import FINAL_CHANGED, available_actions
+from elo_bot.features.tokens.awards import recover_awards
 
 
 class Confirmations:
@@ -97,6 +98,8 @@ class Confirmations:
             current = await lifecycle.reload_final(edition)
             names = await member_names(await member_guild(ctx), [current.champion])
             content = f"{SUCCESS_EMOJI} Season {current.season_number} Final ended. Champion: {names[current.champion]}."
+            if not await recover_awards(final_id):
+                content += f" {IMPORTANT_EMOJI} Prediction rewards are pending and retry automatically."
         else:
             reason = next(field.value for field in ctx.message.embeds[0].fields if field.name == "**Reason**")
             await lifecycle.request_cancellation(edition, reason)

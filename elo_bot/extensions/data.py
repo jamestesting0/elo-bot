@@ -5,7 +5,7 @@ from elo_bot.features.leaderboards.refresh import request_leaderboard_player_rel
 from elo_bot.features.matches.resources import free_match_clans
 from elo_bot.features.players.match_choices import clear_match_id_choices, forget_match_id_choice
 from elo_bot.features.hosting.war import result_store
-from elo_bot.features.results.operations import cancel_result_operation
+from elo_bot.features.results.operations import ResultOperationConflict, cancel_result_operation, delete_archived_result
 from elo_bot.features.matches.cleanup import delete_unreserved_match, has_reserved_match_slots
 from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
 import interactions as ipy
@@ -427,14 +427,15 @@ class DataCommands(ipy.Extension):
 
             return
 
-        async def remove_record(record: RecordedMatch) -> None:
-            match_reference = record.to_ref()
-            for player_id, stats in record.players.items():
-                await Player.get_pymongo_collection().update_one(
-                    {"user_id": player_id, "matches": match_reference},
-                    {"$inc": {"elo": -stats.elo_change}, "$pull": {"matches": match_reference}},
-                )
-            await record.delete()
+        async def remove_record(record: RecordedMatch, *, archived: bool = False) -> None:
+            if not archived or not await delete_archived_result(record):
+                match_reference = record.to_ref()
+                for player_id, stats in record.players.items():
+                    await Player.get_pymongo_collection().update_one(
+                        {"user_id": player_id, "matches": match_reference},
+                        {"$inc": {"elo": -stats.elo_change}, "$pull": {"matches": match_reference}},
+                    )
+                await record.delete()
             await forget_match_id_choice(self.bot, record.id)
             await ctx.send(f"{SUCCESS_EMOJI} The match is successfully deleted.", ephemeral=True)
             request_leaderboard_player_reload(self.bot)
@@ -463,7 +464,7 @@ class DataCommands(ipy.Extension):
                         related_match = await Match.find_one(association)
                         if related_match:
                             await cancel_result_operation(related_match, current)
-                        await remove_record(current)
+                        await remove_record(current, archived=related_match is None)
                 elif manual_key:
                     lock = result_store.RESULT_FINALIZATION_LOCKS.setdefault(manual_key, anyio.Lock())
                     async with lock, PLAYER_DATA_BOUNDARY.write(data_generation):
@@ -474,8 +475,8 @@ class DataCommands(ipy.Extension):
                         await remove_record(current)
                 else:
                     async with PLAYER_DATA_BOUNDARY.write(data_generation):
-                        await remove_record(recorded_match)
-            except PlayerDataReset as error:
+                        await remove_record(recorded_match, archived=True)
+            except (PlayerDataReset, ResultOperationConflict) as error:
                 await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
     export_group = base.group(name="export", description="")

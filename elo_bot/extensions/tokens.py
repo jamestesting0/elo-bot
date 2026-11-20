@@ -8,22 +8,118 @@ from elo_bot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS, LVL1_ROLES
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.discord.pagination import build_page_button, build_page_jump_modal, parse_page_number, InvalidPageError
 from elo_bot.core.finals import FinalError
+from elo_bot.core.token_items import ITEMS, TokenItem
+from elo_bot.config.game import DISTRICT_INDEX
+from elo_bot.features.tokens import items
+from elo_bot.features.tokens.item_view import PAGES, item_panel
+from elo_bot.features.tokens.awards import recover_awards
+from elo_bot.features.tokens.stake_publication import recover_stakes
+from elo_bot.features.tokens.queue_items import release_orphan_queue_items
 from elo_bot.features.tokens.stats import betting_lines, betting_stats
 from elo_bot.features.tokens.wallets import adjust_balance, ensure_wallet, wallet_summary
-from elo_bot.db.token_models import TokenLedgerEntry
+from elo_bot.db.token_models import ParticipantStake, TokenLedgerEntry
 from elo_bot.discord.decorators import ignore_repeated_clicks
 from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import member_names
 from elo_bot.features.tokens.history import ledger_label, market_scopes, open_bet_lines
 
+ITEM_CONTROL = re.compile(
+    r"^tokenitems\|(page|pick|buy|district|back)\|\d+\|(shop|inventory)\|[01]\|[a-f0-9]{32}(\|[a-z_]+)?$"
+)
+
 
 class TokenCommands(ipy.Extension):
     tokens = ipy.SlashCommand(name="tokens", description="Your token wallet", scopes=GUILD_IDS)
+
+    @ipy.Task.create(ipy.IntervalTrigger(minutes=1))
+    async def recover_token_work(self):
+        await recover_awards()
+        await recover_stakes(self.bot)
+        await items.release_expired_codes()
+        await release_orphan_queue_items()
+
+    @ipy.listen(ipy.events.Startup)
+    async def start_token_recovery(self):
+        self.recover_token_work.start()
 
     async def _wallet(self, ctx):
         if ctx.guild_id not in GUILD_IDS or ctx.author.has_role(ELO_BLACKLIST_ROLE):
             raise FinalError("Use token commands in the Final's server while eligible.")
         return await ensure_wallet(str(ctx.author.id))
+
+    async def _items(self, ctx, mode: str) -> None:
+        await ctx.defer(ephemeral=True)
+        try:
+            embed, controls = await item_panel(await self._wallet(ctx), mode, 0)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            return
+        await ctx.send(embed=embed, components=controls, ephemeral=True)
+
+    @tokens.subcommand(sub_cmd_name="shop", sub_cmd_description="Browse and buy items")
+    async def tokens_shop(self, ctx: ipy.SlashContext):
+        await self._items(ctx, "shop")
+
+    @tokens.subcommand(sub_cmd_name="inventory", sub_cmd_description="View and use your items")
+    async def tokens_inventory(self, ctx: ipy.SlashContext):
+        await self._items(ctx, "inventory")
+
+    @ipy.component_callback(ITEM_CONTROL)
+    async def token_item_control(self, ctx: ipy.ComponentContext) -> None:
+        _, action, owner, mode, raw_page, key, *values = ctx.custom_id.split("|")
+        if owner != str(ctx.author.id):
+            await ctx.send(f"{ERROR_EMOJI} This view belongs to another player.", ephemeral=True)
+            return
+        await ctx.defer(edit_origin=True)
+        try:
+            wallet = await self._wallet(ctx)
+            page = int(raw_page)
+            if not 0 <= page < PAGES:
+                raise FinalError("This page is unavailable.")
+            content = ""
+            district = None
+            if action == "pick":
+                item = TokenItem(ctx.values[0])
+                if mode == "shop":
+                    listing = ITEMS[item]
+                    embed = ipy.Embed(title=f"**{listing.name}**", description=f"{listing.price:,} {TOKEN_EMOJI}",
+                                      color=COLOR, footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE))
+                    await ctx.edit_origin(content="", embed=embed, components=[
+                        ipy.Button(style=ipy.ButtonStyle.SUCCESS, label="Buy",
+                                   custom_id=f"tokenitems|buy|{owner}|{mode}|{page}|{key}|{item}"),
+                        ipy.Button(style=ipy.ButtonStyle.SECONDARY, label="Back",
+                                   custom_id=f"tokenitems|back|{owner}|{mode}|{page}|{key}"),
+                    ])
+                    return
+                if item is TokenItem.DISTRICT:
+                    await ctx.edit_origin(content="", components=[
+                        ipy.ActionRow(ipy.StringSelectMenu(
+                            *(ipy.StringSelectOption(label=name, value=name) for name in DISTRICT_INDEX),
+                            custom_id=f"tokenitems|district|{owner}|{mode}|{page}|{key}",
+                            placeholder="Select a district",
+                        )),
+                        ipy.ActionRow(ipy.Button(style=ipy.ButtonStyle.SECONDARY, label="Back",
+                                                custom_id=f"tokenitems|back|{owner}|{mode}|{page}|{key}")),
+                    ])
+                    return
+            if action == "buy":
+                item = TokenItem(values[0])
+                await items.purchase(wallet, item, key)
+                content = f"{SUCCESS_EMOJI} Purchased {ITEMS[item].name}."
+            elif action in {"pick", "district"}:
+                if action == "district":
+                    district = ctx.values[0]
+                    if district not in DISTRICT_INDEX:
+                        raise FinalError("Select an available district.")
+                    item = TokenItem.DISTRICT
+                use = await items.activate(wallet, item, key, district=district)
+                content = (f"{SUCCESS_EMOJI} Use code `{use.target}` with `/challenge send`."
+                           if item is TokenItem.CHALLENGE and use.state == "armed"
+                           else f"{SUCCESS_EMOJI} {ITEMS[item].name} {'ready' if use.state == 'armed' else use.state}.")
+            embed, controls = await item_panel(await self._wallet(ctx), mode, page)
+            await ctx.edit_origin(content=content, embed=embed, components=controls)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
     @tokens.subcommand(sub_cmd_name="balance", sub_cmd_description="Show Available Tokens, stakes, and debt")
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
@@ -41,6 +137,11 @@ class TokenCommands(ipy.Extension):
                 while lines and len(value) + len(lines[0]) + 1 <= 1024:
                     value += "\n" + lines.pop(0)
                 embed.add_field(name="__**Open Bets**__", value=value, inline=False)
+            stakes = await ParticipantStake.find({"wallets": wallet.id, "state": "locked"}).to_list()
+            if stakes:
+                total = sum(stake.committed_amount(user) for stake in stakes
+                            for user, wallet_id in zip(stake.users, stake.wallets or ()) if wallet_id == wallet.id)
+                embed.add_field(name="**Match Stakes**", value=f"{total:,} {TOKEN_EMOJI}")
             embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
             await ctx.send(embed=embed, ephemeral=hidden)
         except FinalError as error:

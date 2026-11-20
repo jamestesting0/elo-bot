@@ -1,5 +1,5 @@
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import assert_never
 
@@ -19,6 +19,7 @@ from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import HOST_CLAN_OPTIONS
 from elo_bot.db import Match, Player
 from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.tokens.stake_publication import sync_stake_notes
 from elo_bot.core.finals import FinalError, is_final_match
 from elo_bot.features.matches import attack_bases
 from elo_bot.features.matches import resources
@@ -104,12 +105,15 @@ async def start_war(
     except BaseException:
         reservation.release()
         raise
+    if is_final_match(match_doc):
+        expected_control = replace(expected_control, is_war=True)
     if not await resources.claim_resource_clan(
             reservation,
             match_doc,
             player,
             updates={
                 "is_war": True,
+                "match_stake_closed": True,
                 f"times.{player}": timestamp,
                 f"hosts.{player}": host_id,
             },
@@ -117,7 +121,9 @@ async def start_war(
             expected_control=expected_control,
     ):
         return None
-    return await complete_war_start(bot, ctx, start)
+    message = await complete_war_start(bot, ctx, start)
+    await sync_stake_notes(bot, match_doc)
+    return message
 
 
 @coordinated_match_message

@@ -81,7 +81,7 @@ class MatchCommandsCase(unittest.IsolatedAsyncioTestCase):
 
     @staticmethod
     def make_player(user_id: str, elo: int, priority: bool = False):
-        player = MagicMock(spec=Player)
+        player = MagicMock(spec=Player, token_items_active=False)
         player.user_id = user_id
         player.elo = elo
         player.priority = priority
@@ -92,7 +92,7 @@ class MatchCommandsCase(unittest.IsolatedAsyncioTestCase):
         return player
 
     def make_queue(self, tier: int, players=None, entered_at=None):
-        queue = MagicMock(spec=Queue)
+        queue = MagicMock(spec=Queue, token_attempts={})
         queue.tier = tier
         queue.players = list(players or [])
         queue.entered_at = dict(entered_at or {})

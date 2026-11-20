@@ -5799,6 +5799,50 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_inventory"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": null,
+   "parameters": {},
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens inventory",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View and use your items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='inventory'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_remove"
    },
    "checks": [
@@ -5854,6 +5898,50 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove tokens from a player's wallet'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_shop"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": null,
+   "parameters": {},
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens shop",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Browse and buy items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='shop'>",
    "type": "SlashCommand"
   },
   {
@@ -11893,6 +11981,50 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_inventory"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": null,
+   "parameters": {},
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens inventory",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View and use your items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='inventory'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_remove"
    },
    "checks": [
@@ -11948,6 +12080,50 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove tokens from a player's wallet'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_shop"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": null,
+   "parameters": {},
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens shop",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Browse and buy items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='shop'>",
    "type": "SlashCommand"
   },
   {
@@ -13650,6 +13826,53 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Set a host for the match'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='host'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "match_stake"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='None'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "MatchCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='match'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "match stake",
+   "scope": "0",
+   "scopes": [
+    0
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Put tokens at stake before the match starts'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='stake'>",
    "type": "SlashCommand"
   },
   {
@@ -18885,6 +19108,40 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "token_item_control"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "TokenCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^tokenitems\\\\|(page|pick|buy|district|back)\\\\|\\\\d+\\\\|(shop|inventory)\\\\|[01]\\\\|[a-f0-9]{32}(\\\\|[a-z_]+)?$')]",
+    "nsfw": false,
+    "pattern": "^tokenitems\\|(page|pick|buy|district|back)\\|\\d+\\|(shop|inventory)\\|[01]\\|[a-f0-9]{32}(\\|[a-z_]+)?$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "closure": [
       "token_jump"
      ],
@@ -19668,6 +19925,21 @@
     "disable_default_listeners": false,
     "event": "startup",
     "extension": "ThreadCommands",
+    "is_default_listener": false,
+    "pass_event_object": false,
+    "type": "Listener",
+    "warned_no_event_arg": false
+   },
+   {
+    "_binding": "<TokenCommands object>",
+    "_params": [],
+    "callback": {
+     "name": "start_token_recovery"
+    },
+    "delay_until_ready": false,
+    "disable_default_listeners": false,
+    "event": "startup",
+    "extension": "TokenCommands",
     "is_default_listener": false,
     "pass_event_object": false,
     "type": "Listener",
@@ -22729,6 +23001,38 @@
         "min_length": null,
         "min_value": null,
         "name": "timestamp",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Put tokens at stake before the match starts",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "stake",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Tokens to stake, all-in, or 0 to withdraw",
+        "description_localizations": null,
+        "max_length": 19,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "amount",
         "name_localizations": null,
         "required": true,
         "type": 3
@@ -28615,6 +28919,21 @@
        1,
        2
       ],
+      "description": "View and use your items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "inventory",
+      "name_localizations": null,
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Remove tokens from a player's wallet",
       "description_localizations": null,
       "integration_types": [
@@ -28654,6 +28973,21 @@
         "type": 4
        }
       ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Browse and buy items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "shop",
+      "name_localizations": null,
       "type": 1
      }
     ]
@@ -33666,6 +34000,21 @@
        1,
        2
       ],
+      "description": "View and use your items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "inventory",
+      "name_localizations": null,
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Remove tokens from a player's wallet",
       "description_localizations": null,
       "integration_types": [
@@ -33705,6 +34054,21 @@
         "type": 4
        }
       ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Browse and buy items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "shop",
+      "name_localizations": null,
       "type": 1
      }
     ]
@@ -34068,6 +34432,17 @@
    "owner": "MatchCommands",
    "state": {
     "delta": "datetime.timedelta(seconds=15)"
+   },
+   "trigger": "IntervalTrigger"
+  },
+  {
+   "attr": "recover_token_work",
+   "callback": {
+    "name": "recover_token_work"
+   },
+   "owner": "TokenCommands",
+   "state": {
+    "delta": "datetime.timedelta(seconds=60)"
    },
    "trigger": "IntervalTrigger"
   },

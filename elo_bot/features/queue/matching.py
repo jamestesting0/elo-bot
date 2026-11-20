@@ -11,6 +11,7 @@ from elo_bot.db import Player, Queue, ServerState
 from elo_bot.features.matches.lifecycle import get_district_options, initiate_match
 from elo_bot.features.matches.occupancy import is_player_occupied
 from elo_bot.features.matches.queued_districts import start_district_selection
+from elo_bot.features.tokens.queue_items import is_boosted_attempt, reserve_queue_items
 from elo_bot.features.queue.policy import (
     QUEUE_MATCH_RANGES,
     QUEUE_OPERATION_LOCK,
@@ -38,16 +39,18 @@ from elo_bot.features.queue.state import (
 
 
 async def find_opponent(player: Player, last_opponent: Optional[str], candidates: list[Player],
-                        max_elo_diff: int, tier: int, queue: Queue | None = None) -> Optional[Player]:
+                        max_elo_diff: int, tier: int, queue: Queue | None = None, *,
+                        token_attempt: str | None = None) -> Optional[Player]:
+    attempts = queue.token_attempts if queue is not None else {}
+    player_boosted = is_boosted_attempt(token_attempt or attempts.get(player.user_id))
     for candidate in candidates:
         candidate_last_opponent_id = await get_last_opponent(candidate)
         if player.user_id == candidate.user_id:
             continue
 
-        if candidate_last_opponent_id and candidate_last_opponent_id == player.user_id and tier != 1:
-            continue
-
-        if last_opponent and last_opponent == candidate.user_id and tier != 1:
+        can_rematch = (tier == QUEUE_TIER_MIXED and not player_boosted
+                       and not is_boosted_attempt(attempts.get(candidate.user_id)))
+        if not can_rematch and (candidate_last_opponent_id == player.user_id or last_opponent == candidate.user_id):
             continue
 
         if abs(player.elo - candidate.elo) > max_elo_diff:
@@ -64,18 +67,21 @@ async def find_opponent(player: Player, last_opponent: Optional[str], candidates
 
 
 async def find_queue_opponent(player: Player, last_opponent: Optional[str], queue: Queue,
-                              max_elo_diff: int) -> Optional[Player]:
+                              max_elo_diff: int, *, token_attempt: str | None = None) -> Optional[Player]:
     candidates = sorted(getattr(queue, "players", []) or [], key=lambda x: abs(x.elo - player.elo))
     return await find_opponent(player, last_opponent, candidates, max_elo_diff,
-                               getattr(queue, "tier", QUEUE_TIER_NORMAL), queue)
+                               getattr(queue, "tier", QUEUE_TIER_NORMAL), queue, token_attempt=token_attempt)
 
 
 async def match_with_best_queue(bot: ipy.Client, player: Player, last_opponent: Optional[str],
-                                queue_ranges: list[tuple[Queue, int]]) -> bool:
+                                queue_ranges: list[tuple[Queue, int]], *, token_attempt: str | None = None) -> bool:
     matches: list[tuple[int, Queue, Player]] = []
 
     for queue, max_elo_diff in queue_ranges:
-        opponent = await find_queue_opponent(player, last_opponent, queue, max_elo_diff)
+        if token_attempt:
+            opponent = await find_queue_opponent(player, last_opponent, queue, max_elo_diff, token_attempt=token_attempt)
+        else:
+            opponent = await find_queue_opponent(player, last_opponent, queue, max_elo_diff)
         if opponent:
             matches.append((abs(opponent.elo - player.elo), queue, opponent))
 
@@ -89,11 +95,13 @@ async def match_with_best_queue(bot: ipy.Client, player: Player, last_opponent: 
         await queue.save_changes()
 
     selection = queue.district_selections.get(str(opponent.user_id))
+    attempts = (token_attempt, queue.token_attempts.get(opponent.user_id))
+    token_kwargs = {"token_attempts": attempts} if any(attempts) else {}
     if selection is None:
-        await initiate_match(bot, player, opponent, on_inserted=remove_matched_opponent)
+        await initiate_match(bot, player, opponent, on_inserted=remove_matched_opponent, **token_kwargs)
     else:
         await initiate_match(bot, player, opponent, on_inserted=remove_matched_opponent,
-                             queue_selections=(None, selection))
+                             queue_selections=(None, selection), **token_kwargs)
     return True
 
 
@@ -144,11 +152,13 @@ async def match_players(bot: ipy.Client, tier: int, max_elo_diff: int, *, queue:
 
         selections = (queue.district_selections.get(str(player1.user_id)),
                       queue.district_selections.get(str(player2.user_id)))
+        attempts = (queue.token_attempts.get(player1.user_id), queue.token_attempts.get(player2.user_id))
+        token_kwargs = {"token_attempts": attempts} if any(attempts) else {}
         if any(selection is not None for selection in selections):
             await initiate_match(bot, player1, player2, on_inserted=remove_matched_pair,
-                                 queue_selections=selections)
+                                 queue_selections=selections, **token_kwargs)
         else:
-            await initiate_match(bot, player1, player2, on_inserted=remove_matched_pair)
+            await initiate_match(bot, player1, player2, on_inserted=remove_matched_pair, **token_kwargs)
 
     await queue.save_changes()
 
@@ -194,16 +204,18 @@ async def queue_player(
             return QueueOutcome(QueueOutcomeStatus.OCCUPIED, player_occupied)
 
         last_opponent_id = await get_last_opponent(player)
+        token_attempt, boost = await reserve_queue_items(player)
+        token_kwargs = {"token_attempt": token_attempt} if token_attempt else {}
 
         tier0_queue = queues[QUEUE_TIER_AGED]
         tier1_queue = queues[QUEUE_TIER_MIXED]
         tier2_queue = queues[QUEUE_TIER_PRIORITY]
         tier3_queue = queues[QUEUE_TIER_NORMAL]
 
-        if await match_with_best_queue(bot, player, last_opponent_id, [(tier0_queue, 250)]):
+        if await match_with_best_queue(bot, player, last_opponent_id, [(tier0_queue, 250)], **token_kwargs):
             return QueueOutcome(QueueOutcomeStatus.MATCHED)
 
-        if await match_with_best_queue(bot, player, last_opponent_id, [(tier1_queue, 200)]):
+        if await match_with_best_queue(bot, player, last_opponent_id, [(tier1_queue, 200)], **token_kwargs):
             return QueueOutcome(QueueOutcomeStatus.MATCHED)
 
         stored_priority = bool(player.priority)
@@ -213,7 +225,9 @@ async def queue_player(
             closest_elo_diff = abs(closest_player.elo - player.elo) if closest_player else None
             requested_priority = closest_elo_diff is not None and closest_elo_diff > 100
 
-        use_priority_queue = stored_priority or requested_priority
+        initial_tier = QUEUE_TIER_PRIORITY if stored_priority or requested_priority else QUEUE_TIER_NORMAL
+        effective_tier = max(QUEUE_TIER_MIXED, initial_tier - boost)
+        use_priority_queue = effective_tier < QUEUE_TIER_NORMAL
 
         if use_priority_queue:
             if await match_with_best_queue(
@@ -221,17 +235,20 @@ async def queue_player(
                 player,
                 last_opponent_id,
                 [(tier2_queue, 150), (tier3_queue, 150)],
+                **token_kwargs,
             ):
                 if stored_priority:
                     player.priority = False
                     await player.save_changes()
 
                 return QueueOutcome(QueueOutcomeStatus.MATCHED)
-        elif await match_with_best_queue(bot, player, last_opponent_id, [(tier2_queue, 150)]):
+        elif await match_with_best_queue(bot, player, last_opponent_id, [(tier2_queue, 150)], **token_kwargs):
             return QueueOutcome(QueueOutcomeStatus.MATCHED)
 
         if int(bot.user.id) != BOT_ID:
             add_player_to_queue(tier1_queue, player, now)
+            if token_attempt:
+                tier1_queue.token_attempts[player.user_id] = token_attempt
             selection = None
             if district_picker:
                 selection = start_district_selection(
@@ -241,11 +258,14 @@ async def queue_player(
             await tier1_queue.save_changes()
             return QueueOutcome(QueueOutcomeStatus.BETA_QUEUED, selection=selection)
 
-        if not use_priority_queue and await match_with_best_queue(bot, player, last_opponent_id, [(tier3_queue, 200)]):
+        if not use_priority_queue and await match_with_best_queue(
+                bot, player, last_opponent_id, [(tier3_queue, 200)], **token_kwargs):
             return QueueOutcome(QueueOutcomeStatus.MATCHED)
 
-        target_queue = tier2_queue if use_priority_queue else tier3_queue
+        target_queue = queues[effective_tier]
         add_player_to_queue(target_queue, player, now)
+        if token_attempt:
+            target_queue.token_attempts[player.user_id] = token_attempt
         selection = None
         if district_picker:
             selection = start_district_selection(

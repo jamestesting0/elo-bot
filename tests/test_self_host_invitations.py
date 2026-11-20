@@ -7,7 +7,7 @@ import interactions as ipy
 from pymongo.errors import OperationFailure
 from pymongo.results import UpdateResult
 
-from elo_bot.config.ids import LVL2_ROLES
+from elo_bot.config.ids import BOT_ID, ELO_BLACKLIST_ROLE, LVL2_ROLES
 from elo_bot.features.hosting.self_hosted import invitations as self_hosting
 from elo_bot.db import Match, Player, RecordedMatch
 from elo_bot.db.final_models import FinalEditionStats, FinalPlayerProfile
@@ -66,6 +66,39 @@ class TestSelfHostInvitations(unittest.IsolatedAsyncioTestCase):
 
     async def invite(self):
         await self_hosting.invite_eligible_players(self.bot, ("123",))
+
+    async def test_pairing_readds_after_removal_without_another_invitation(self):
+        self.bot.user.id = BOT_ID
+        self.bot.http.add_thread_member = AsyncMock()
+        self.player.self_host_invitation_message_id = 900
+        match = Match.model_construct(id="pair", participants=[Participant(user_id="123")])
+        self_hosting.schedule_pairing_grants(self.bot, match)
+        await self_hosting.PAIRING_GRANTS["123"]
+        self.bot.http.add_thread_member.assert_awaited_once_with(self_hosting.AUTOMATIC_MATCH_THREAD, 123)
+        self.thread.send.assert_not_awaited()
+
+    async def test_pairing_requires_two_matches_and_respects_access_roles(self):
+        self.bot.http.add_thread_member = AsyncMock()
+        self.player.matches = self.player.matches[:1]
+        await self_hosting.grant_at_pairing(self.bot, "123")
+        self.player.matches.append(RecordedMatch.model_construct(id="2"))
+        for role in (ELO_BLACKLIST_ROLE, LVL2_ROLES[0]):
+            self.member.has_role.side_effect = lambda candidate: candidate == role
+            await self_hosting.grant_at_pairing(self.bot, "123")
+        self.bot.http.add_thread_member.assert_not_awaited()
+
+    async def test_pairing_deduplicates_inflight_grants_and_skips_beta(self):
+        match = Match.model_construct(id="pair", participants=[Participant(user_id="123")])
+        self_hosting.schedule_pairing_grants(self.bot, match)
+        self.assertNotIn("123", self_hosting.PAIRING_GRANTS)
+        self.bot.user.id = BOT_ID
+        self.bot.http.add_thread_member = AsyncMock()
+        self_hosting.schedule_pairing_grants(self.bot, match)
+        task = self_hosting.PAIRING_GRANTS["123"]
+        self_hosting.schedule_pairing_grants(self.bot, match)
+        self.assertIs(self_hosting.PAIRING_GRANTS["123"], task)
+        await task
+        self.bot.http.add_thread_member.assert_awaited_once()
 
     async def test_second_record_invites_once_and_persists_delivery(self):
         await self.invite()

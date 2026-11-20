@@ -2,12 +2,14 @@ import unittest
 import asyncio
 from asyncio import Event, gather, wait_for
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from typing import Final
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from beanie.odm.fields import ExpressionField
 from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import OperationFailure
+import interactions as ipy
 
 from elo_bot.extensions.challenge import ChallengeCommands, available_challenges
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
@@ -129,6 +131,29 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(match.participants[1].confirmed_at)
         self.assertIsNone(match.participants[1].confirmation_method)
 
+    async def test_failed_dm_fallback_returns_a_purchased_override(self) -> None:
+        self.opponent.send.side_effect = ipy.errors.Forbidden(SimpleNamespace(status=403, reason="DM closed"))
+        channel = MagicMock(send=AsyncMock(side_effect=ipy.errors.HTTPException(
+            SimpleNamespace(status=400, reason="Message rejected"),
+        )))
+        self.cog.bot.fetch_channel = AsyncMock(return_value=channel)
+        use = SimpleNamespace(id="override")
+
+        async def insert(match, item):
+            match.token_challenge_use = item.id
+            await match.insert()
+
+        with (
+            patch("elo_bot.extensions.challenge.owned_challenge_code", new=AsyncMock(return_value=use)),
+            patch("elo_bot.extensions.challenge.insert_challenge", new=insert),
+            patch("elo_bot.extensions.challenge.delete_unreserved_match", new=AsyncMock(return_value=True)) as refund,
+        ):
+            await self.cog.challenge_send.callback.func(self.cog, self.ctx, self.opponent, *DISTRICTS,
+                                                        override_code="private")
+        self.assertTrue(channel.send.await_args.args[0].startswith(self.opponent.mention))
+        self.assertEqual(refund.await_args.args[0].token, self.persisted[0].token)
+        self.assertIn("Challenge Override returned", self.ctx.send.await_args.args[0])
+
     async def test_created_challenge_retains_timing_through_acceptance(self) -> None:
         await self.send()
         match = self.persisted[0]
@@ -178,7 +203,12 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         fixture.match.clear()
         fixture.match.update(captured)
 
-        self.assertTrue(await fixture.cog._finalize_match_results_locked(match.token, RESULTS))
+        async def transaction_without_wallet(action):
+            return await action(None)
+
+        with (patch("elo_bot.features.results.operations.transaction", new=transaction_without_wallet),
+              patch("elo_bot.features.results.operations.apply_ranked_awards", new_callable=AsyncMock)):
+            self.assertTrue(await fixture.cog._finalize_match_results_locked(match.token, RESULTS))
         recorded = fixture.state.records["11"]
         self.assertTrue(recorded.is_challenge)
         self.assertEqual(recorded.matched_time, matched_time)

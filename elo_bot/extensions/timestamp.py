@@ -22,9 +22,9 @@ from elo_bot.features.timestamps.zones import find_zones, pick_zone
 type TimestampContext = ipy.SlashContext | ipy.ComponentContext | ipy.ModalContext
 _DRAFT_TTL: Final = timedelta(minutes=15)
 _AUTOCOMPLETE_LOOKUP_SECONDS: Final = 0.75
-_EXPIRED: Final = f"{ERROR_EMOJI} This timestamp selection expired. Run `/timestamp` again."
+_EXPIRED: Final = "This timestamp selection expired. Run `/timestamp` again."
 _FIRST_USE: Final = (
-    f"{ERROR_EMOJI} Select a country or time zone in `country` the first time you use `/timestamp`.\n\n"
+    "Select a country or time zone in `country` the first time you use `/timestamp`.\n\n"
     "I’ll remember your choice. To change it, select a different one the next time you run the command."
 )
 
@@ -50,7 +50,7 @@ class TimestampCommands(ipy.Extension):
         if country is None:
             zone = await saved_zone(owner)
             if zone is None:
-                await ctx.send(_FIRST_USE, ephemeral=True)
+                await ctx.send(f"{ERROR_EMOJI} {_FIRST_USE}", ephemeral=True)
                 return
         else:
             selection = pick_zone(country)
@@ -145,26 +145,26 @@ class TimestampCommands(ipy.Extension):
             return None
         draft = await get_draft(int(draft_id), int(owner), int(ctx.channel_id))
         if draft is None:
-            await ctx.send(_EXPIRED, ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} {_EXPIRED}", ephemeral=True)
             return None
         try:
             candidates = submitted_candidates(draft.expression, datetime.fromtimestamp(draft.anchor, UTC),
                                              ZoneInfo(draft.zone))
         except TimestampInputError:
-            await ctx.send(_EXPIRED, ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} {_EXPIRED}", ephemeral=True)
             return None
         if not index_text.isascii() or not index_text.isdecimal() or len(index_text) > 2:
-            await ctx.send(_EXPIRED, ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} {_EXPIRED}", ephemeral=True)
             return None
         index = int(index_text)
         if index >= len(candidates):
-            await ctx.send(_EXPIRED, ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} {_EXPIRED}", ephemeral=True)
             return None
         return draft, candidates[index]
 
     async def _claim(self, ctx: ipy.ComponentContext | ipy.ModalContext, draft: TimestampDraft) -> bool:
         if not await consume_draft(draft):
-            await ctx.send(_EXPIRED, ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} {_EXPIRED}", ephemeral=True)
             return False
         await ctx.defer(edit_origin=True)
         return True
@@ -192,7 +192,7 @@ class TimestampCommands(ipy.Extension):
             return
         draft, candidate = result
         if isinstance(candidate, datetime):
-            await ctx.send(_EXPIRED, ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} {_EXPIRED}", ephemeral=True)
             return
         request = TimestampRequest(f"{candidate.isoformat()} at {clock}",
                                    datetime.fromtimestamp(draft.anchor, UTC), ZoneInfo(draft.zone))

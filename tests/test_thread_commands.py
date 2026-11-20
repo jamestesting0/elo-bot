@@ -28,6 +28,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         first_participant = MagicMock(user_id="111", districts=["D1", "D2", "D3"], submit_bases=False)
         second_participant = MagicMock(user_id="222", districts=["D1", "D2", "D3"], submit_bases=False)
         match = MagicMock(
+            token_districts={}, token_protections={}, token_challenge_use=None,
             participants=[first_participant, second_participant],
             base_submission=False,
             thread=None,
@@ -80,6 +81,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         first_participant = MagicMock(user_id="111", districts=["D1", "D2", "D3"], submit_bases=False)
         second_participant = MagicMock(user_id="222", districts=["D1", "D2", "D3"], submit_bases=False)
         match = MagicMock(
+            token_districts={}, token_protections={}, token_challenge_use=None,
             participants=[first_participant, second_participant],
             base_submission=True,
             thread=None,
@@ -231,7 +233,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         res.edit_origin = AsyncMock()
         self.bot.wait_for_component = AsyncMock(return_value=MagicMock(ctx=res))
 
-        match = MagicMock(token="TOKEN", thread="987", result_operation=None, autowin_winner_id=None,
+        match = MagicMock(token_districts={}, token_protections={}, token_challenge_use=None, token="TOKEN", thread="987", result_operation=None, autowin_winner_id=None,
                           participants=[Participant(user_id="123"), Participant(user_id="456")])
         match.delete = AsyncMock()
         collection = match.get_pymongo_collection.return_value
@@ -259,7 +261,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
         thread.parent_channel.id = MATCH_CHANNEL
         event = MagicMock(thread=thread)
 
-        match = MagicMock()
+        match = MagicMock(token_districts={}, token_protections={}, token_challenge_use=None)
         match.thread = "987"
         match.is_war = False
         match.host_clans = ["#CLAN", None]
@@ -297,6 +299,7 @@ class TestThreadCommands(unittest.IsolatedAsyncioTestCase):
             self, mock_match, mock_clear_base_stores, mock_free_match_clans, _mock_remove_helper_task):
         event = MagicMock(thread="987")
         match = MagicMock(
+            token_districts={}, token_protections={}, token_challenge_use=None,
             thread="987",
             participants=[Participant(user_id="123"), Participant(user_id="456")],
         )

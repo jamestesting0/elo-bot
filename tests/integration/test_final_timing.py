@@ -95,17 +95,44 @@ class TestFinalTiming(FinalScenarioCase):
             await submit_result(await self.request())
         self.assertEqual(await FinalMatchResult.count(), 0)
 
-    async def test_acceptance_requires_matching_live_or_requested_war_schedule(self):
+    async def test_war_side_can_start_when_only_the_other_side_is_scheduled(self):
         market = await open_market(await final_for_view(), "QF1")
-        for player in (None, 0, 1):
-            with self.subTest(player=player), self.assertRaises(FinalError):
-                await accept_final_start(self.source, "host", player=player)
         source = await schedule_final_match(self.source, 1700000000, player=0)
-        for player in (None, 1):
-            with self.subTest(player=player), self.assertRaises(FinalError):
-                await accept_final_start(source, "host", player=player)
+        with self.assertRaisesRegex(FinalError, "/match war start"):
+            await accept_final_start(source, "host", player=None)
         self.assertEqual((await FinalBettingMarket.get(market.id)).state, "OPEN")
-        self.assertIsNone((await Match.get(source.id)).final_started_at)
+        await accept_final_start(source, "host", player=1)
+        saved = await Match.get(source.id)
+        self.assertEqual(saved.scheduled_times, [1700000000, None])
+        self.assertIsNone(saved.final_started_times[0])
+        self.assertIsNotNone(saved.final_started_times[1])
+        self.assertEqual((await FinalBettingMarket.get(market.id)).state, "CLOSED")
+
+    async def test_unscheduled_war_start_cannot_race_a_live_schedule(self):
+        source = self.source
+        expected = dict(MatchMessageState.capture(source, 0).binding_filter())
+        results = await self.race(
+            lambda: schedule_final_match(source, 1700003600),
+            lambda: accept_final_start(source, "host", player=0, expected_source=expected),
+        )
+        self.assertEqual(sum(isinstance(result, FinalError) for result in results), 1)
+        saved = await Match.get(source.id)
+        if saved.final_started_at is not None:
+            self.assertTrue(saved.is_war)
+            self.assertEqual(saved.scheduled_times, [None, None])
+        else:
+            self.assertFalse(saved.is_war)
+            self.assertEqual(saved.scheduled_times, [1700003600] * 2)
+
+    async def test_accepted_unscheduled_war_start_blocks_switch_to_live(self):
+        await accept_final_start(self.source, "host", player=0)
+        saved = await Match.get(self.source.id)
+        self.assertTrue(saved.is_war)
+        self.assertEqual(saved.times, [None, None])
+        with self.assertRaises(FinalError):
+            await schedule_final_match(saved, 1700003600)
+        with self.assertRaisesRegex(FinalError, "/match war start"):
+            await accept_final_start(saved, "host", player=None)
 
     async def test_each_war_side_keeps_its_accepted_start_without_reclosing_market(self):
         source = await self.scheduled_pairing(self.final, "QF1")
@@ -230,8 +257,12 @@ class TestFinalTiming(FinalScenarioCase):
                 await source.set({"thread": str(thread)})
                 bot = MagicMock(ext={}, fetch_user=AsyncMock(return_value=MagicMock(mention="<@1>")))
                 cog = MatchCommands(bot)
-                ctx = MagicMock(spec=ipy.SlashContext, send=AsyncMock(), defer=AsyncMock())
+                ctx_type = ipy.SlashContext if player is None else ipy.ContextMenuContext
+                ctx = MagicMock(spec=ctx_type, send=AsyncMock(), defer=AsyncMock())
                 ctx.channel.id = thread
+                if player is not None:
+                    ctx.target = MagicMock(spec=ipy.Message, content="<t:1700000000>",
+                                           author=MagicMock(id=int(source.participants[player].user_id)))
 
                 async def fail(*args, **kwargs):
                     expected = [1700000000] * 2 if player is None else [None, 1700000000]
@@ -239,13 +270,14 @@ class TestFinalTiming(FinalScenarioCase):
                     self.assertEqual((await final_for_view()).nodes[node_id].scheduled_times, expected)
                     raise ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
 
-                with patch_sites(('elo_bot.extensions.match.lifecycle.append_helper_task', 'elo_bot.extensions.match.hosting.append_helper_task'), new=AsyncMock()), \
+                with patch("elo_bot.extensions.match.hosting.time", return_value=1699999000), \
+                        patch_sites(('elo_bot.extensions.match.lifecycle.append_helper_task', 'elo_bot.extensions.match.hosting.append_helper_task'), new=AsyncMock()), \
                         patch_sites(('elo_bot.extensions.match.hosting.publish_match_message', 'elo_bot.extensions.match.settings.publish_match_message'), new=AsyncMock(side_effect=fail)):
                     with self.assertRaises(ipy.errors.Forbidden):
                         if player is None:
                             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")
                         else:
-                            await cog.match_war_schedule.callback.func(cog, ctx, player=player, timestamp="1700000000")
+                            await cog.match_war_schedule_message.callback.func(cog, ctx)
                 ctx.send.assert_not_awaited()
 
     async def test_foreign_source_identity_cannot_schedule_start_or_record_scores(self):
@@ -290,3 +322,26 @@ class TestFinalTiming(FinalScenarioCase):
         self.assertIsNotNone(saved.final_started_at)
         self.assertEqual(saved.scheduled_times, [1700000000, 1700000000])
         self.assertEqual(saved.final_started_times, [saved.final_started_at, saved.final_started_at])
+
+    async def test_unscheduled_live_start_commits_hosting_as_live(self):
+        source = self.source
+        await source.set({"thread": "777"})
+        await bind_thread(self.final, source, "777")
+        await Clan(tag="#TIMING", name="Timing", availability_str="Available").insert()
+        market = await open_market(await final_for_view(), "QF1")
+        ctx = MagicMock(spec=ipy.SlashContext, send=AsyncMock())
+        ctx.author.id = 9
+        ctx.channel.id = ctx.channel_id = 777
+        ctx.guild.fetch_member = AsyncMock(return_value=MagicMock(mention="<@1>"))
+        ctx.channel.send = AsyncMock(side_effect=ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden")))
+        with self.assertRaises(ipy.errors.Forbidden):
+            await start_live_match(MagicMock(), ctx, LiveStart(match=source, host=MagicMock(id=9),
+                clan=MagicMock(tag="#TIMING"), player1=MagicMock(), player2=MagicMock(),
+                player1_elo=2000, player2_elo=2000, reply=ManualLiveStartReply(slot_instruction="")))
+        saved = await Match.get(source.id)
+        self.assertFalse(saved.is_war)
+        self.assertEqual(saved.scheduled_times, [None, None])
+        self.assertEqual(saved.hosts[0], "9")
+        self.assertIsNotNone(saved.final_hosting_times[0])
+        self.assertEqual(saved.final_started_times, [saved.final_started_at, saved.final_started_at])
+        self.assertEqual((await FinalBettingMarket.get(market.id)).state, "CLOSED")

@@ -49,7 +49,7 @@ class TestMatchCommands(MatchCommandsCase):
         mock_server_state_current.return_value = MagicMock(queue_disabled=False)
 
         # Mock player
-        mock_player_doc = MagicMock(spec=Player)
+        mock_player_doc = MagicMock(spec=Player, token_items_active=False)
         mock_player_doc.user_id = "123"
         mock_player_doc.priority = False
         mock_player_doc.elo = 1000
@@ -59,7 +59,7 @@ class TestMatchCommands(MatchCommandsCase):
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
 
         # Mock queues (tier 1, 2, 3)
-        mock_queue_doc = MagicMock(spec=Queue)
+        mock_queue_doc = MagicMock(spec=Queue, token_attempts={})
         mock_queue_doc.tier = QUEUE_TIER_NORMAL
         mock_queue_doc.players = []
         mock_queue_doc.entered_at = {}
@@ -248,7 +248,7 @@ class TestMatchCommands(MatchCommandsCase):
 
         mock_server_state_current.return_value = MagicMock(queue_disabled=False)
 
-        mock_player_doc = MagicMock(spec=Player)
+        mock_player_doc = MagicMock(spec=Player, token_items_active=False)
         mock_player_doc.user_id = "123"
         mock_player_doc.priority = False
         mock_player_doc.elo = 1000
@@ -280,12 +280,12 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send = AsyncMock()
 
         # Mock player
-        mock_player_doc = MagicMock(spec=Player)
+        mock_player_doc = MagicMock(spec=Player, token_items_active=False)
         mock_player_doc.user_id = "123"
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
 
         # Mock queue with player
-        mock_queue_doc = MagicMock(spec=Queue)
+        mock_queue_doc = MagicMock(spec=Queue, token_attempts={})
         mock_queue_doc.players = [mock_player_doc]
         mock_queue_doc.district_selections = {}
         mock_queue_doc.save_changes = AsyncMock()
@@ -312,12 +312,12 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send = AsyncMock()
 
         # Mock player
-        mock_player_doc = MagicMock(spec=Player)
+        mock_player_doc = MagicMock(spec=Player, token_items_active=False)
         mock_player_doc.user_id = "123"
         mock_player.find_one = AsyncMock(return_value=mock_player_doc)
 
         # Mock empty queues
-        mock_queue_doc = MagicMock(spec=Queue)
+        mock_queue_doc = MagicMock(spec=Queue, token_attempts={})
         mock_queue_doc.players = []
         mock_queue_doc.district_selections = {}
         mock_queue.find_one = AsyncMock(return_value=mock_queue_doc)

@@ -95,6 +95,7 @@ class Player(Document):
     priority: bool = False
     challenge: bool = True
     auto_queue: str = "0"
+    token_items_active: bool = False
     capital_peak_enabled: bool = True
     blocked_users: List[str] = Field(default_factory=list)
     last_challenged: List[str] = Field(default_factory=list)
@@ -127,6 +128,7 @@ class Queue(Document):
     players: List[Link[Player]] = Field(default_factory=list)
     entered_at: Dict[str, float] = Field(default_factory=dict)
     district_selections: dict[str, QueueDistrictSelection] = Field(default_factory=dict)
+    token_attempts: dict[str, str] = Field(default_factory=dict)
 
     class Settings:
         name = "queue"

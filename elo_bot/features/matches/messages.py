@@ -10,6 +10,7 @@ from beanie import PydanticObjectId
 from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 
+from elo_bot.config.presentation import RED_COLOR
 from elo_bot.discord.embeds import embed_edit_payload
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.matches.message_lock import match_message_lock
@@ -40,9 +41,11 @@ async def mark_match_message_ended(message: ipy.Message) -> None:
     if not message.embeds:
         return
     if (message.embeds[0].title != "**Match Ended**"
+            or message.embeds[0].color != RED_COLOR
             or any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)):
         embeds = deepcopy(message.embeds)
         embeds[0].title = "**Match Ended**"
+        embeds[0].color = RED_COLOR
         await edit_channel_message(message, embeds=match_message_embeds(embeds))
 
 
@@ -107,7 +110,7 @@ async def _mark_incomplete(message: ipy.Message, embed: ipy.Embed, *, preserve_c
 
 
 async def _publish_match_message(
-        ctx: ipy.SlashContext | ipy.ComponentContext,
+        ctx: ipy.InteractionContext,
         match: Match,
         expected: MatchMessageState,
         *,
@@ -122,6 +125,8 @@ async def _publish_match_message(
     if embed.description in _PUBLICATION_PLACEHOLDERS:
         embed.description = ""
     public = public_channel is not None
+    if public and is_final_match(match):
+        embed.set_author(name=f"Elo Final · {match.final_node_id}")
     replace_controls = components is not None
     channel = public_channel if public else ctx.channel
     old_message_id = match.msg if public else expected.old_messages[expected.player]
@@ -219,7 +224,7 @@ async def _publish_match_message(
 
 
 async def publish_match_message(
-        ctx: ipy.SlashContext | ipy.ComponentContext,
+        ctx: ipy.InteractionContext,
         match: Match,
         expected: MatchMessageState,
         *,

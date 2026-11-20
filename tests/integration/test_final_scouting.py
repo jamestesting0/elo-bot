@@ -1,16 +1,23 @@
+import asyncio
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from elo_bot.config.emojis import ERROR_EMOJI
+import interactions as ipy
+
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CODES_REVERSED
-from elo_bot.db import BaseLink, Match
+from elo_bot.db import BaseLayout, BaseLink, Match
+from elo_bot.discord import runtime
 from elo_bot.extensions.match import MatchCommands
+from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.finals.lifecycle import confirm_bracket
 from elo_bot.features.finals.matches import bind_thread, prepare_match
 from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, prepare_open_scouting
+from elo_bot.features.matches.attack_bases import choose_bases
 from tests.integration._final_ui_fixture import FinalUICase
 
 SCOUT = "elo_bot.extensions.match.bases.store_scout_image"
+BACKGROUND_SCOUT = "elo_bot.features.finals.scout_images.store_scout_image"
 
 
 class TestFinalScouting(FinalUICase):
@@ -74,6 +81,63 @@ class TestFinalScouting(FinalUICase):
         with patch(SCOUT, new=AsyncMock(return_value=None)):
             await self.submit(self.player(0), self.source.final_districts[0])
         self.assertIsNone((await Match.get(self.source.id)).participants[0].bases[0])
+
+    async def test_opponent_start_locks_bases_even_without_a_schedule(self):
+        district = self.source.final_districts[0]
+
+        async def capture(*_args, **_kwargs):
+            await accept_final_start(self.source, "host", player=1)
+            return "https://cdn.example/scout.webp"
+
+        submitted = self.player(0)
+        locked = self.player(0)
+        with patch(SCOUT, new=AsyncMock(side_effect=capture)) as scout:
+            await self.submit(submitted, district)
+            await self.submit(locked, district)
+        saved = await Match.get(self.source.id)
+        self.assertEqual(saved.scheduled_times, [None, None])
+        self.assertIsNone(saved.participants[0].bases[0])
+        scout.assert_awaited_once()
+        submitted.send.assert_awaited_once_with(f"{ERROR_EMOJI} The match changed. Your base was not saved.",
+                                                ephemeral=True)
+        locked.send.assert_awaited_once_with(f"{ERROR_EMOJI} Your bases are locked because your opponent has started.",
+                                             ephemeral=True)
+
+    async def test_assigning_helper_bases_starts_private_capture_before_scouting_opens(self):
+        await self.schedule(60)
+        district = self.source.final_districts[0]
+        layout = await BaseLayout(district=district, link=self.link(district), image_url="layout",
+                                  quality="Excellent", expiration_date=time.time() + 3600).insert()
+        started = asyncio.Future()
+        release = asyncio.Event()
+
+        async def capture(_bot, link, _requested_by):
+            saved = await Match.get(self.source.id)
+            started.set_result((asyncio.current_task(), link, saved.participants[1].bases[0]))
+            async with asyncio.timeout(5):
+                await release.wait()
+            return "https://cdn.example/helper-scout.webp"
+
+        with patch.object(runtime, "bot", self.bot, create=True), \
+                patch(BACKGROUND_SCOUT, side_effect=capture):
+            async with asyncio.timeout(2):
+                try:
+                    await choose_bases(self.source.token, MagicMock(id=self.players[0]), MagicMock(id=self.players[1]))
+                    task, link, saved = await started
+                    self.assertEqual(link, layout.link)
+                    self.assertEqual(saved.link, layout.link)
+                finally:
+                    release.set()
+                await task
+
+        ctx = self.player(0)
+        await self.cog.match_base_scout.callback.func(self.cog, ctx)
+        self.assertNotIn("embed", ctx.send.await_args.kwargs)
+
+        await self.schedule(20)
+        ctx = self.player(0)
+        await self.cog.match_base_scout.callback.func(self.cog, ctx)
+        self.assertEqual(ctx.send.await_args.kwargs["embed"].image.url, "https://cdn.example/helper-scout.webp")
 
     async def test_player_scouts_one_opponent_district_at_a_time_after_opening(self):
         await self.source.set({
@@ -160,7 +224,7 @@ class TestFinalScouting(FinalUICase):
         self.assertEqual(revoked.edit_origin.await_args.kwargs["embeds"], [])
         self.assertEqual(revoked.edit_origin.await_args.kwargs["components"], [])
 
-    async def test_open_scouting_fills_missing_bases_and_captures_each_missing_scout_view_once(self):
+    async def test_scouting_retries_pending_capture_and_fills_missing_bases_at_opening(self):
         scouted = BaseLink(link="scouted", image="https://cdn.example/kept.webp", scout_view=True)
         await self.source.set({
             "participants.0.bases.0": scouted.model_dump(),
@@ -177,17 +241,80 @@ class TestFinalScouting(FinalUICase):
             return await Match.find_one(Match.token == token)
 
         self.bot.fetch_user = AsyncMock(side_effect=lambda user: MagicMock(id=int(user)))
-        capture = AsyncMock(side_effect=lambda _bot, link, _by: f"https://cdn.example/{link}.webp")
+        captures = asyncio.Queue()
+        attempted = []
+
+        async def capture(_bot, link, _by):
+            attempted.append(link)
+            captures.put_nowait(asyncio.current_task())
+            if len(attempted) == 1:
+                return None
+            if len(attempted) == 2:
+                raise ipy.errors.HTTPException(MagicMock(status=502, reason="Bad Gateway"))
+            return f"https://cdn.example/{link}.webp"
+
         with patch("elo_bot.features.finals.scouting.choose_bases", new=AsyncMock(side_effect=fill)) as choose, \
-                patch("elo_bot.features.finals.scouting.store_scout_image", new=capture):
+                patch(BACKGROUND_SCOUT, side_effect=capture):
             await self.schedule(60)
+            for failed_step in ("Helper capture", "Discord upload"):
+                with self.subTest(failed_step=failed_step):
+                    await prepare_open_scouting(self.bot)
+                    async with asyncio.timeout(2):
+                        await (await captures.get())
+                    pending = (await Match.get(self.source.id)).participants[0].bases[1]
+                    self.assertEqual((pending.image, pending.scout_view), ("layout", False))
+
             await prepare_open_scouting(self.bot)
+            async with asyncio.timeout(2):
+                await (await captures.get())
             choose.assert_not_awaited()
+            before_opening = (await Match.get(self.source.id)).participants[0].bases
+            self.assertEqual(before_opening[1].image, "https://cdn.example/plain.webp")
+            self.assertEqual(before_opening[2:], [None] * 5)
             await self.schedule(20)
             await prepare_open_scouting(self.bot)
+            async with asyncio.timeout(2):
+                await (await captures.get())
             await prepare_open_scouting(self.bot)
         bases = (await Match.get(self.source.id)).participants[0].bases
         self.assertTrue(all(base.scout_view for base in bases))
         self.assertEqual(bases[0], scouted)
-        self.assertEqual(sorted(call.args[1] for call in capture.await_args_list),
-                         sorted(["plain", *(f"helper-{index}" for index in range(2, 7))]))
+        self.assertCountEqual(attempted, ["plain"] * 3 + [f"helper-{index}" for index in range(2, 7)])
+
+    async def test_capture_does_not_publish_an_image_for_a_replaced_base(self):
+        old = BaseLink(link="old", image="old-layout")
+        replacement = BaseLink(link="replacement", image="new-layout")
+        field = "participants.1.bases.0"
+        await self.source.set({field: old.model_dump()})
+        await self.schedule(60)
+        started = asyncio.Future()
+
+        async def capture(_bot, _link, _by):
+            await self.source.set({field: replacement.model_dump()})
+            started.set_result(asyncio.current_task())
+            return "https://cdn.example/stale.webp"
+
+        with patch(BACKGROUND_SCOUT, side_effect=capture):
+            await prepare_open_scouting(self.bot)
+            async with asyncio.timeout(2):
+                await (await started)
+        self.assertEqual((await Match.get(self.source.id)).participants[1].bases[0], replacement)
+
+    async def test_removing_one_base_preserves_a_concurrently_saved_scout_view(self):
+        layout = BaseLink(link="keep", image="layout")
+        scout = BaseLink(link="keep", image="https://cdn.example/ready.webp", scout_view=True)
+        field = "participants.0.bases.0"
+        await self.source.set({field: layout.model_dump(),
+                               "participants.0.bases.1": BaseLink(link="remove", image="layout").model_dump()})
+        await self.schedule(60)
+
+        async def check_override(*_):
+            await self.source.set({field: scout.model_dump()})
+            return False
+
+        ctx = self.player(0)
+        with patch("elo_bot.extensions.match.bases.OverrideCode.is_valid", side_effect=check_override):
+            await self.cog.match_base_remove.callback.func(self.cog, ctx, player=0,
+                                                            district=self.source.final_districts[1])
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(SUCCESS_EMOJI)))
+        self.assertEqual((await Match.get(self.source.id)).participants[0].bases[:2], [scout, None])

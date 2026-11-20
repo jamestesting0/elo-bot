@@ -20,6 +20,7 @@ from elo_bot.features.base_store.storage import BaseStoreReleaseConflict, BaseSt
 from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.result_publication import publish_result
+from elo_bot.features.tokens.stakes import reconcile_stake
 
 
 async def select_financial_work(final_id: PydanticObjectId) -> tuple[EloFinal, list[str]]:
@@ -70,6 +71,8 @@ async def mark_deleted_attempt(final, node, source) -> None:
         if updated.matched_count and source:
             await Match.get_pymongo_collection().update_one({"_id": source.id},
                 {"$set": {"final_superseded": True}}, session=session)
+            if source.match_stake_enabled:
+                await reconcile_stake(str(source.id), session=session)
     await transaction(mark)
 
 

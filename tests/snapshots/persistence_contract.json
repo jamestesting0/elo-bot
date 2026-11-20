@@ -4738,6 +4738,21 @@
       "title": "Is War",
       "type": "boolean"
      },
+     "match_stake_closed": {
+      "default": false,
+      "title": "Match Stake Closed",
+      "type": "boolean"
+     },
+     "match_stake_enabled": {
+      "default": false,
+      "title": "Match Stake Enabled",
+      "type": "boolean"
+     },
+     "match_stake_revision": {
+      "default": 0,
+      "title": "Match Stake Revision",
+      "type": "integer"
+     },
      "matched_time": {
       "title": "Matched Time",
       "type": "number"
@@ -4967,6 +4982,37 @@
       "title": "Token",
       "type": "string"
      },
+     "token_challenge_use": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Challenge Use"
+     },
+     "token_districts": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Token Districts",
+      "type": "object"
+     },
+     "token_protections": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Token Protections",
+      "type": "object"
+     },
+     "token_rewards": {
+      "default": false,
+      "title": "Token Rewards",
+      "type": "boolean"
+     },
      "wizard_valley_available": {
       "default": false,
       "title": "Wizard Valley Available",
@@ -5056,6 +5102,143 @@
      "IndexModel({'expires_at': 1}, expireAfterSeconds=0, name='override_code_expiry')"
     ],
     "name": "override_codes"
+   }
+  },
+  "ParticipantStake": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "all_in_users": {
+      "items": {
+       "type": "string"
+      },
+      "title": "All In Users",
+      "type": "array"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "integer"
+     },
+     "author": {
+      "title": "Author",
+      "type": "string"
+     },
+     "contributions": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "title": "Contributions",
+      "type": "object"
+     },
+     "final_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Final Id"
+     },
+     "paid": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "title": "Paid",
+      "type": "object"
+     },
+     "publication_pending": {
+      "default": true,
+      "title": "Publication Pending",
+      "type": "boolean"
+     },
+     "revision": {
+      "default": 1,
+      "title": "Revision",
+      "type": "integer"
+     },
+     "settlement_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Settlement Key"
+     },
+     "state": {
+      "default": "offer",
+      "enum": [
+       "offer",
+       "locked",
+       "closed",
+       "settled"
+      ],
+      "title": "State",
+      "type": "string"
+     },
+     "users": {
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "string"
+       }
+      ],
+      "title": "Users",
+      "type": "array"
+     },
+     "wallets": {
+      "anyOf": [
+       {
+        "maxItems": 2,
+        "minItems": 2,
+        "prefixItems": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "string"
+         }
+        ],
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Wallets"
+     }
+    },
+    "required": [
+     "_id",
+     "users",
+     "author",
+     "amount"
+    ],
+    "title": "ParticipantStake",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'final_id': 1, 'state': 1}, name='participant_stake_final_state')",
+     "IndexModel({'wallets': 1, 'state': 1}, name='participant_stake_wallet_state')",
+     "IndexModel({'state': 1}, name='participant_stake_state')",
+     "IndexModel({'publication_pending': 1}, name='participant_stake_publication')"
+    ],
+    "name": "participant_stakes"
    }
   },
   "PendingBaseSubmission": {
@@ -5515,6 +5698,11 @@
       "title": "Tag",
       "type": "string"
      },
+     "token_items_active": {
+      "default": false,
+      "title": "Token Items Active",
+      "type": "boolean"
+     },
      "user_id": {
       "title": "User Id",
       "type": "string"
@@ -5653,6 +5841,13 @@
      "tier": {
       "title": "Tier",
       "type": "integer"
+     },
+     "token_attempts": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "title": "Token Attempts",
+      "type": "object"
      }
     },
     "required": [
@@ -6227,8 +6422,227 @@
     "use_state_management": true
    }
   },
+  "TokenAward": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "amount": {
+      "title": "Amount",
+      "type": "integer"
+     },
+     "kind": {
+      "enum": [
+       "activity_reward",
+       "prediction_reward"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
+     "paid": {
+      "default": 0,
+      "title": "Paid",
+      "type": "integer"
+     },
+     "pending": {
+      "default": true,
+      "title": "Pending",
+      "type": "boolean"
+     },
+     "revision": {
+      "title": "Revision",
+      "type": "string"
+     },
+     "source": {
+      "title": "Source",
+      "type": "string"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "string"
+     },
+     "wallet_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Wallet Id"
+     }
+    },
+    "required": [
+     "_id",
+     "source",
+     "user_id",
+     "kind",
+     "amount",
+     "revision"
+    ],
+    "title": "TokenAward",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'source': 1, 'kind': 1}, name='token_award_source')",
+     "IndexModel({'pending': 1, 'kind': 1}, name='token_award_pending')"
+    ],
+    "name": "token_awards"
+   }
+  },
+  "TokenItemUse": {
+   "schema": {
+    "$defs": {
+     "TokenItem": {
+      "enum": [
+       "queue_priority_pro",
+       "queue_priority_ultra",
+       "district_choice",
+       "challenge_override",
+       "rank_protection"
+      ],
+      "title": "TokenItem",
+      "type": "string"
+     }
+    },
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "active": {
+      "default": true,
+      "title": "Active",
+      "type": "boolean"
+     },
+     "district": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "District"
+     },
+     "expires_at": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Expires At"
+     },
+     "item": {
+      "$ref": "#/$defs/TokenItem"
+     },
+     "protection_elo": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Protection Elo"
+     },
+     "season": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Season"
+     },
+     "slot": {
+      "enum": [
+       "queue",
+       "district",
+       "challenge",
+       "protection"
+      ],
+      "title": "Slot",
+      "type": "string"
+     },
+     "state": {
+      "default": "armed",
+      "enum": [
+       "armed",
+       "reserved",
+       "used",
+       "returned"
+      ],
+      "title": "State",
+      "type": "string"
+     },
+     "target": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Target"
+     },
+     "wallet_id": {
+      "title": "Wallet Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "_id",
+     "wallet_id",
+     "item",
+     "slot"
+    ],
+    "title": "TokenItemUse",
+    "type": "object"
+   },
+   "settings": {
+    "indexes": [
+     "IndexModel({'wallet_id': 1, 'slot': 1}, unique=True, partialFilterExpression={'active': True}, name='token_active_item_slot')",
+     "IndexModel({'target': 1, 'state': 1}, name='token_item_target')",
+     "IndexModel({'wallet_id': 1, 'slot': 1, 'season': 1}, name='token_item_usage')",
+     "IndexModel({'slot': 1, 'state': 1, 'expires_at': 1}, name='token_item_expiry')"
+    ],
+    "name": "token_item_uses"
+   }
+  },
   "TokenLedgerEntry": {
    "schema": {
+    "$defs": {
+     "TokenItem": {
+      "enum": [
+       "queue_priority_pro",
+       "queue_priority_ultra",
+       "district_choice",
+       "challenge_override",
+       "rank_protection"
+      ],
+      "title": "TokenItem",
+      "type": "string"
+     }
+    },
     "properties": {
      "_id": {
       "title": "Id",
@@ -6287,6 +6701,17 @@
       "default": null,
       "title": "Identity To"
      },
+     "item": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/TokenItem"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
      "kind": {
       "enum": [
        "grant",
@@ -6298,7 +6723,14 @@
        "reversal",
        "identity",
        "adjust",
-       "switch"
+       "switch",
+       "purchase",
+       "match_hold",
+       "match_payout",
+       "match_refund",
+       "match_correction",
+       "activity_reward",
+       "prediction_reward"
       ],
       "title": "Kind",
       "type": "string"
@@ -6314,6 +6746,18 @@
       ],
       "default": null,
       "title": "Market Id"
+     },
+     "match_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Match Id"
      },
      "operation_key": {
       "title": "Operation Key",
@@ -6348,6 +6792,19 @@
   },
   "TokenWallet": {
    "schema": {
+    "$defs": {
+     "TokenItem": {
+      "enum": [
+       "queue_priority_pro",
+       "queue_priority_ultra",
+       "district_choice",
+       "challenge_override",
+       "rank_protection"
+      ],
+      "title": "TokenItem",
+      "type": "string"
+     }
+    },
     "properties": {
      "_id": {
       "title": "Id",
@@ -6369,6 +6826,16 @@
       "default": false,
       "title": "Initialized",
       "type": "boolean"
+     },
+     "inventory": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "propertyNames": {
+       "$ref": "#/$defs/TokenItem"
+      },
+      "title": "Inventory",
+      "type": "object"
      },
      "user_id": {
       "title": "User Id",

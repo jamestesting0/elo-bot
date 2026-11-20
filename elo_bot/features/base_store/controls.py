@@ -36,6 +36,7 @@ from elo_bot.core.match_results import is_match_finished
 from elo_bot.features.base_store.slots import get_participant_base_store
 from elo_bot.db import Match, Player
 from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.tokens.stakes import stake_window_closed
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.core.finals import FinalError
 import elo_bot.features.hosting.war.war_start as war_start
@@ -143,9 +144,13 @@ async def start_stored_bases(
                 await ctx.send(f"{ERROR_EMOJI} The stored-base clan is currently occupied.", ephemeral=True)
                 return
             try:
-                await accept_final_start(state.match, str(ctx.author.id), clan_tag=state.clan_tag, player=request.player,
-                    expected_source={**MatchMessageState.capture(state.match, request.player).binding_filter(),
-                                     **state.match.base_store_filter(request.player)} if is_final_match(state.match) else None)
+                expected = {**MatchMessageState.capture(state.match, request.player).binding_filter(),
+                            **state.match.base_store_filter(request.player)}
+                if is_final_match(state.match):
+                    await accept_final_start(state.match, str(ctx.author.id), clan_tag=state.clan_tag,
+                                             player=request.player, expected_source=expected)
+                else:
+                    await stake_window_closed(state.match, expected=expected)
             except FinalError as error:
                 await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
                 return

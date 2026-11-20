@@ -23,9 +23,16 @@ INTENTS = ipy.Intents.new(
 
 class DiscordApiRouteFilter(logging.Filter):
     _route_pattern = re.compile(r"^[A-Z]+::https://discord\.com/api/v\d+/.+: \d{3}$")
+    _webhook_token = re.compile(r"(/webhooks/\d+/)[^/?\s]+")
 
     def filter(self, record: logging.LogRecord) -> bool:
-        return not self._route_pattern.match(record.getMessage())
+        message = record.getMessage()
+        if self._route_pattern.match(message):
+            return False
+        redacted = self._webhook_token.sub(r"\1[redacted]", message)
+        if redacted != message:
+            record.msg, record.args = redacted, ()
+        return True
 
 
 async def dispatch_elo_interaction(event: ipy.events.RawGatewayEvent) -> None:

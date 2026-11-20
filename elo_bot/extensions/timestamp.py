@@ -1,4 +1,3 @@
-import logging
 import re
 from contextlib import suppress
 from dataclasses import dataclass
@@ -15,6 +14,7 @@ from elo_bot.core.timestamp_dates import TimestampInputError
 from elo_bot.core.timestamps import Candidate
 from elo_bot.db.timestamp_models import TimestampDraft
 from elo_bot.features.timestamps.drafts import consume_draft, get_draft, remember_zone, saved_zone
+from elo_bot.features.timestamps.publishing import TimestampPublicationError, publish_timestamp
 from elo_bot.features.timestamps.ui import candidate_prompt, submitted_candidates, timestamp_choices
 from elo_bot.features.timestamps.zones import find_zones, pick_zone
 
@@ -27,9 +27,6 @@ _FIRST_USE: Final = (
     "Select a country or time zone in `country` the first time you use `/timestamp`.\n\n"
     "I’ll remember your choice. To change it, select a different one the next time you run the command."
 )
-
-logger = logging.getLogger(__name__)
-
 
 @dataclass(frozen=True, slots=True)
 class TimestampRequest:
@@ -105,21 +102,10 @@ class TimestampCommands(ipy.Extension):
             await ctx.send(content, components=components, ephemeral=True)
 
     async def _post(self, ctx: TimestampContext, candidate: datetime) -> None:
-        channel = ctx.channel
         try:
-            if channel is None:
-                channel = await self.bot.fetch_channel(ctx.channel_id)
-            if isinstance(channel, ipy.MessageableMixin):
-                timestamp = ipy.Timestamp.fromdatetime(candidate).format(ipy.TimestampStyles.LongDateTime)
-                await channel.send(timestamp)
-        except (ipy.errors.Forbidden, ipy.errors.NotFound):
-            channel = None
-        except ipy.errors.HTTPException:
-            logger.exception("Could not confirm timestamp publication for interaction %s", ctx.id)
-            await self._reply(ctx, f"{ERROR_EMOJI} Check the channel before trying again. I couldn’t confirm the post.")
-            return
-        if not isinstance(channel, ipy.MessageableMixin):
-            await self._reply(ctx, f"{ERROR_EMOJI} I can’t post a timestamp in this channel.")
+            await publish_timestamp(ctx, candidate)
+        except TimestampPublicationError as error:
+            await self._reply(ctx, f"{ERROR_EMOJI} {error}")
             return
         if isinstance(ctx, ipy.SlashContext):
             with suppress(ipy.errors.NotFound):

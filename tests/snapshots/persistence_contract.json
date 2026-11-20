@@ -6405,6 +6405,35 @@
     "use_state_management": true
    }
   },
+  "TimestampPost": {
+   "schema": {
+    "properties": {
+     "_id": {
+      "title": "Id",
+      "type": "integer"
+     },
+     "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+     },
+     "user_id": {
+      "title": "User Id",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "_id",
+     "user_id",
+     "expires_at"
+    ],
+    "title": "TimestampPost",
+    "type": "object"
+   },
+   "settings": {
+    "name": "timestamp_posts"
+   }
+  },
   "TimestampPreference": {
    "schema": {
     "properties": {
@@ -7032,6 +7061,17 @@
       "expires_at": 1
      },
      "name": "timestamp_draft_expiry"
+    }
+   ]
+  ],
+  "TIMESTAMP_POST_INDEXES": [
+   [
+    {
+     "expireAfterSeconds": 0,
+     "key": {
+      "expires_at": 1
+     },
+     "name": "timestamp_post_expiry"
     }
    ]
   ]

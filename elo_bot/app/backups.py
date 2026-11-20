@@ -3,6 +3,7 @@ from pymongo import AsyncMongoClient
 
 from elo_bot.discord import runtime
 from elo_bot.config.settings import DATA_BASES
+from elo_bot.db.timestamp_models import TIMESTAMP_POST_COLLECTION
 
 
 async def backup_collection(src_db, dst_db, coll_name):
@@ -19,7 +20,7 @@ async def backup_collection(src_db, dst_db, coll_name):
 async def sync_database(src_db, dst_db):
     collections = [
         name for name in await src_db.list_collection_names()
-        if not name.startswith("system.")
+        if not name.startswith("system.") and name != TIMESTAMP_POST_COLLECTION
     ]
 
     for coll in collections:
@@ -28,25 +29,9 @@ async def sync_database(src_db, dst_db):
 
 @ipy.Task.create(ipy.IntervalTrigger(hours=2))
 async def backup_database1(client: AsyncMongoClient):
-    src_db = client[DATA_BASES[runtime.VERSION]]
-
-    collections = [
-        name for name in await src_db.list_collection_names()
-        if not name.startswith("system.")
-    ]
-
-    for coll in collections:
-        await backup_collection(src_db, client["elo_backup1"], coll)
+    await sync_database(client[DATA_BASES[runtime.VERSION]], client["elo_backup1"])
 
 
 @ipy.Task.create(ipy.IntervalTrigger(hours=24))
 async def backup_database2(client: AsyncMongoClient):
-    src_db = client[DATA_BASES[runtime.VERSION]]
-
-    collections = [
-        name for name in await src_db.list_collection_names()
-        if not name.startswith("system.")
-    ]
-
-    for coll in collections:
-        await backup_collection(src_db, client["elo_backup2"], coll)
+    await sync_database(client[DATA_BASES[runtime.VERSION]], client["elo_backup2"])

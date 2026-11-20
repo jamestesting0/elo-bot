@@ -5823,8 +5823,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens inventory",
@@ -5930,8 +5934,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens shop",
@@ -12005,8 +12013,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens inventory",
@@ -12112,8 +12124,12 @@
    "max_concurrency": "Missing",
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
-   "options": null,
-   "parameters": {},
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
    "post_run_callback": null,
    "pre_run_callback": null,
    "resolved": "tokens shop",
@@ -28926,6 +28942,23 @@
       ],
       "name": "inventory",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
       "type": 1
      },
      {
@@ -28988,6 +29021,23 @@
       ],
       "name": "shop",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
       "type": 1
      }
     ]
@@ -34007,6 +34057,23 @@
       ],
       "name": "inventory",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
       "type": 1
      },
      {
@@ -34069,6 +34136,23 @@
       ],
       "name": "shop",
       "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
       "type": 1
      }
     ]

@@ -275,7 +275,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   same user's earlier click already replaced, is acknowledged without a reply (`ignore_repeated_clicks`).
 - `/tokens add` and `/tokens remove` (level-1 roles) change a player's Available tokens and show as a Manager
   adjustment in `/tokens history`. Remove never takes more than the Available balance.
-- `/tokens shop` and `/tokens inventory` are private. A select lists the current page's items.
+- `/tokens shop` and `/tokens inventory` are public by default. Use `hidden:True` for a private view.
+  Challenge Override codes appear in private replies and hidden inventory views. A select lists the current page's items.
   Purchases use an owner-only confirmation. Item emojis use the shared config when registered.
 - `/match stake` replies privately. Show the offer and reply in the match announcement's **Notes** field, one line per player.
   Use `put 500 {TOKEN_EMOJI} at stake`, `matches the stake with 500 {TOKEN_EMOJI}`, or `went all in (500 {TOKEN_EMOJI})`.

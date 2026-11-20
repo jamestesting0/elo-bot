@@ -13,7 +13,7 @@ from elo_bot.extensions.match import MatchCommands
 from elo_bot.extensions.tokens import TokenCommands
 from elo_bot.features.tokens.stake_publication import recover_stakes
 from elo_bot.features.tokens.stakes import stake_window_closed
-from elo_bot.features.tokens.wallets import adjust_balance
+from elo_bot.features.tokens.wallets import adjust_balance, ensure_wallet
 from elo_bot.features.tokens.queue_items import insert_queued_match
 from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.finals.lifecycle import confirm_bracket, request_cancellation
@@ -30,7 +30,9 @@ class TestTokenDiscord(FinalScenarioCase):
                               get_interaction_message=AsyncMock(return_value={"id": "9001"}))
         self.discord = MagicMock(http=self.http, user=MagicMock(id=42))
         self.discord.app.id = 42
-        self.discord.cache.place_message_data.return_value = MagicMock(id=9001, flags=ipy.MessageFlags.EPHEMERAL)
+        message = MagicMock(id=9001, flags=ipy.MessageFlags.NONE)
+        self.discord.cache.place_message_data.return_value = message
+        self.discord.cache.get_message.return_value = message
         self.tokens = TokenCommands(ipy.Client())
         self.matches = MatchCommands(ipy.Client())
         self.matches.bot = self.discord
@@ -71,10 +73,10 @@ class TestTokenDiscord(FinalScenarioCase):
         await self.matches.match_stake.callback.func(self.matches, ctx, amount)
         return self.edit()
 
-    async def test_shop_uses_private_step_by_step_purchase_and_inventory(self):
+    async def test_public_shop_and_inventory_keep_item_controls_owner_only(self):
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_shop.callback.func(self.tokens, ctx)
-        self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
+        self.assertNotIn("data", self.http.post_initial_response.await_args.args[0])
         first = self.edit()
         self.assertEqual([option["label"] for option in first["components"][0]["components"][0]["options"]],
                          ["Queue Priority Pro", "Queue Priority Ultra", "District Choice"])
@@ -85,16 +87,19 @@ class TestTokenDiscord(FinalScenarioCase):
         confirm = self.edit()["components"][0]["components"][0]
         await self.click(confirm, user="2")
         self.assertIsNone(await TokenWallet.get("2"))
+        self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
         await self.click(confirm)
         await self.click(confirm)
         self.assertEqual((await TokenWallet.get("1")).balance, 1400)
         await self.click(self.edit()["components"][0]["components"][0], value="rank_protection")
         await self.click(self.edit()["components"][0]["components"][0])
         self.assertEqual((await TokenWallet.get("1")).balance, 1400)
-        failure = self.edit()
+        failure = self.http.post_followup.await_args.args[0]
+        self.assertEqual(failure["flags"], ipy.MessageFlags.EPHEMERAL)
         self.assertIn("enough available tokens", failure["content"])
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_inventory.callback.func(self.tokens, ctx)
+        self.assertNotIn("data", self.http.post_initial_response.await_args.args[0])
         await self.click(self.edit()["components"][0]["components"][2])
         inventory = self.edit()
         self.assertEqual(inventory["components"][0]["components"][0]["options"][0]["label"], "Rank Protection")
@@ -115,6 +120,30 @@ class TestTokenDiscord(FinalScenarioCase):
                                        "inventory": inventory, "equipped": equipped, "restored": restored, "wallet": {
                                            "balance": wallet.balance, "items": wallet.inventory,
                                        }}, default=str))
+
+    async def test_hidden_shop_and_inventory_keep_challenge_codes_private(self):
+        wallet = await ensure_wallet("1")
+        await wallet.set({TokenWallet.inventory: {"challenge_override": 1}})
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_shop.callback.func(self.tokens, ctx, hidden=True)
+        self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
+
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_inventory.callback.func(self.tokens, ctx)
+        await self.click(self.edit()["components"][0]["components"][2])
+        await self.click(self.edit()["components"][0]["components"][0], value="challenge_override")
+        receipt = self.http.post_followup.await_args.args[0]
+        code = receipt["content"].split("`")[1]
+        self.assertEqual(receipt["flags"], ipy.MessageFlags.EPHEMERAL)
+        self.assertIn("Challenge Override ready", self.edit()["content"])
+        self.assertNotIn(code, json.dumps(self.edit(), default=str))
+
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_inventory.callback.func(self.tokens, ctx, hidden=True)
+        self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
+        self.discord.cache.get_message.return_value.flags = ipy.MessageFlags.EPHEMERAL
+        await self.click(self.edit()["components"][0]["components"][2])
+        self.assertIn(code, json.dumps(self.edit(), default=str))
 
     async def test_stake_command_edits_only_its_notes(self):
         match = await Match(token="stake-discord", thread="100", thread_message_id=456, matched_time=1,

@@ -47,22 +47,24 @@ class TokenCommands(ipy.Extension):
             raise FinalError("Use token commands in the Final's server while eligible.")
         return await ensure_wallet(str(ctx.author.id))
 
-    async def _items(self, ctx, mode: str) -> None:
-        await ctx.defer(ephemeral=True)
+    async def _items(self, ctx: ipy.SlashContext, mode: str, *, hidden: bool) -> None:
+        await ctx.defer(ephemeral=hidden)
         try:
-            embed, controls = await item_panel(await self._wallet(ctx), mode, 0)
+            embed, controls = await item_panel(await self._wallet(ctx), mode, 0, hidden=hidden)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
-        await ctx.send(embed=embed, components=controls, ephemeral=True)
+        await ctx.send(embed=embed, components=controls, ephemeral=hidden)
 
     @tokens.subcommand(sub_cmd_name="shop", sub_cmd_description="Browse and buy items")
-    async def tokens_shop(self, ctx: ipy.SlashContext):
-        await self._items(ctx, "shop")
+    @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
+    async def tokens_shop(self, ctx: ipy.SlashContext, hidden: bool = False) -> None:
+        await self._items(ctx, "shop", hidden=hidden)
 
     @tokens.subcommand(sub_cmd_name="inventory", sub_cmd_description="View and use your items")
-    async def tokens_inventory(self, ctx: ipy.SlashContext):
-        await self._items(ctx, "inventory")
+    @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
+    async def tokens_inventory(self, ctx: ipy.SlashContext, hidden: bool = False) -> None:
+        await self._items(ctx, "inventory", hidden=hidden)
 
     @ipy.component_callback(ITEM_CONTROL)
     async def token_item_control(self, ctx: ipy.ComponentContext) -> None:
@@ -73,10 +75,13 @@ class TokenCommands(ipy.Extension):
         await ctx.defer(edit_origin=True)
         try:
             wallet = await self._wallet(ctx)
+            message = ctx.message
+            hidden = message is not None and bool(message.flags & ipy.MessageFlags.EPHEMERAL)
             page = int(raw_page)
             if not 0 <= page < PAGES:
                 raise FinalError("This page is unavailable.")
             content = ""
+            code_message = None
             district = None
             if action == "pick":
                 item = TokenItem(ctx.values[0])
@@ -113,13 +118,20 @@ class TokenCommands(ipy.Extension):
                         raise FinalError("Select an available district.")
                     item = TokenItem.DISTRICT
                 use = await items.activate(wallet, item, key, district=district)
-                content = (f"{SUCCESS_EMOJI} Use code `{use.target}` with `/challenge send`."
-                           if item is TokenItem.CHALLENGE and use.state == "armed"
-                           else f"{SUCCESS_EMOJI} {ITEMS[item].name} {'ready' if use.state == 'armed' else use.state}.")
-            embed, controls = await item_panel(await self._wallet(ctx), mode, page)
+                content = f"{SUCCESS_EMOJI} {ITEMS[item].name} {'ready' if use.state == 'armed' else use.state}."
+                if item is TokenItem.CHALLENGE and use.state == "armed":
+                    code_message = f"{SUCCESS_EMOJI} Use code `{use.target}` with `/challenge send`."
+                    if hidden:
+                        content, code_message = code_message, None
+            embed, controls = await item_panel(await self._wallet(ctx), mode, page, hidden=hidden)
             await ctx.edit_origin(content=content, embed=embed, components=controls)
+            if code_message is not None:
+                await ctx.send(code_message, ephemeral=True)
         except FinalError as error:
-            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            await ctx.client.http.post_followup(
+                {"content": f"{ERROR_EMOJI} {error}", "flags": int(ipy.MessageFlags.EPHEMERAL)},
+                ctx.client.app.id, ctx.token,
+            )
 
     @tokens.subcommand(sub_cmd_name="balance", sub_cmd_description="Show Available Tokens, stakes, and debt")
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)

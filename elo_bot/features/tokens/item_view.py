@@ -11,7 +11,8 @@ PAGE_SIZE = 3
 PAGES = -(-len(ITEMS) // PAGE_SIZE)
 
 
-async def item_panel(wallet: TokenWallet, mode: str, page: int) -> tuple[ipy.Embed, list[ipy.ActionRow]]:
+async def item_panel(wallet: TokenWallet, mode: str, page: int, *,
+                     hidden: bool = False) -> tuple[ipy.Embed, list[ipy.ActionRow]]:
     owner = wallet.user_id
     shop = mode == "shop"
     title = "Token Shop" if shop else "Token Inventory"
@@ -35,7 +36,7 @@ async def item_panel(wallet: TokenWallet, mode: str, page: int) -> tuple[ipy.Emb
         details = f"{listing.price:,} {TOKEN_EMOJI}" if shop else f"Owned: {quantity:,}"
         if item in active:
             details += f" · {'Ready' if active[item].state == 'armed' else 'Reserved'}"
-            if item is TokenItem.CHALLENGE and active[item].state == "armed" and active[item].target:
+            if hidden and item is TokenItem.CHALLENGE and active[item].state == "armed" and active[item].target:
                 details += f" · `{active[item].target}`"
         embed.add_field(name=name, value=f"{details}\n{listing.description}")
         if shop or quantity:

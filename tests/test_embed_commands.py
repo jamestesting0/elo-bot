@@ -17,7 +17,7 @@ from elo_bot.config.ids import GUILD_IDS
 from elo_bot.core.season_calendar import season_calendar
 from elo_bot.db import BaseStore, ServerState
 from elo_bot.extensions.embed import EmbedCommands
-from elo_bot.features.embeds.elo_kings import EloKing
+from elo_bot.features.embeds.elo_kings import PeakRating
 from elo_bot.features.embeds.readme import README_SECTIONS
 
 
@@ -50,23 +50,30 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         ctx.channel.send = AsyncMock()
         now = datetime(2026, 11, 19, tzinfo=UTC)
         schedule = season_calendar(now, datetime(2026, 10, 4, tzinfo=UTC), None)
-        rows = [EloKing("12", "First", 1702), EloKing("34", "Second", 1600)]
+        sen = "920112329344036924"
+        star = "284509170412027905"
+        players = MagicMock(user_id="user_id")
+        players.find.return_value.project.return_value.sort.return_value.limit.return_value.to_list = AsyncMock(
+            return_value=[PeakRating(user_id=sen, highest_elo=1702), PeakRating(user_id=star, highest_elo=1569)],
+        )
         with Image.new("RGB", (96, 64), "#08dd99") as portrait, BytesIO() as buffer:
             portrait.save(buffer, format="PNG")
             avatar = MagicMock(fetch=AsyncMock(return_value=buffer.getvalue()))
         async def fetch_user(user_id):
-            if user_id == "12":
+            if user_id == sen:
                 raise TimeoutError
-            self.assertEqual(user_id, "34")
+            self.assertEqual(user_id, star)
             return MagicMock(display_avatar=avatar)
 
         cog.bot.fetch_user = AsyncMock(side_effect=fetch_user)
         with (patch("elo_bot.features.embeds.static.ongoing_season_calendar", new=AsyncMock(return_value=schedule)),
-              patch("elo_bot.features.embeds.static.elo_king_rows", new=AsyncMock(return_value=rows))):
+              patch("elo_bot.features.embeds.elo_kings.Player", new=players)):
             await cog.embed.callback.func(cog, ctx, "Elo Information")
         posted = ctx.channel.send.await_args.kwargs
         file = posted["file"]
         self.assertEqual(posted["embed"].images[0].url, f"attachment://{file.file_name}")
+        self.assertIn("Sen | S14 King 1702", file.description)
+        self.assertIn("Star | S3 & S6 & S10 King 1569", file.description)
         with Image.open(file.file) as image, Image.open("assets/finals/elo_kings_leaderboard.png") as artwork:
             self.assertEqual(image.size, (1672, 941))
             first_slot = (475, 728, 507, 760)

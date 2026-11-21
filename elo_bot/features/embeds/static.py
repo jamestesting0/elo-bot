@@ -50,7 +50,7 @@ async def elo_information(bot: ipy.Client) -> tuple[ipy.Embed, list[ipy.ActionRo
     rows = await elo_king_rows(information)
     if rows:
         avatars = await elo_king_avatars(bot, rows)
-        portraits = [(row.name, row.highest_elo, avatars.get(row.user_id)) for row in rows]
+        portraits = [(row.label, row.highest_elo, avatars.get(row.user_id)) for row in rows]
         try:
             rendered = await anyio.to_thread.run_sync(render_elo_kings, portraits)
         except (OSError, FinalError):
@@ -58,7 +58,7 @@ async def elo_information(bot: ipy.Client) -> tuple[ipy.Embed, list[ipy.ActionRo
         else:
             file = ipy.File(BytesIO(rendered), file_name="elo-kings.png",
                             description="Elo Kings by highest Elo. " +
-                            ", ".join(f"{row.name} {row.highest_elo}" for row in rows))
+                            ", ".join(f"{row.label} {row.highest_elo}" for row in rows))
             embed.set_image(url="attachment://elo-kings.png")
 
     participate_button = ipy.Button(

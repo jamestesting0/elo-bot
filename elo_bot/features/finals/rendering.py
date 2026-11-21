@@ -240,7 +240,15 @@ def render_elo_kings(rows: Sequence[tuple[str, int, bytes | None]]) -> bytes:
                 paste_avatar(image, avatar, ELO_KINGS_AVATAR_BOXES[index])
             label, label_font = fitted_label(name, 507, 25)
             left, top, _, bottom = draw.textbbox((0, 0), label, font=label_font)
-            draw.text((519 - left, y - (top + bottom) / 2), label, font=label_font, fill="#3b2b25")
+            label_x, label_y = 519 - left, y - (top + bottom) / 2
+            player, separator, title = label.partition(" | ")
+            draw.text((label_x, label_y), player, font=label_font, fill="#3b2b25")
+            if separator:
+                bar_x = label_x + draw.textlength(f"{player} ", font=label_font)
+                bar_x += draw.textlength("|", font=label_font) / 2
+                draw.line((bar_x, y - 10, bar_x, y + 10), fill="#3b2b25", width=2)
+                title_x = label_x + draw.textlength(f"{player} | ", font=label_font)
+                draw.text((title_x, label_y), title, font=label_font, fill="#3b2b25")
 
             value, value_font = fitted_label(str(peak_elo), value_width, 27)
             left, top, right, bottom = draw.textbbox((0, 0), value, font=value_font)

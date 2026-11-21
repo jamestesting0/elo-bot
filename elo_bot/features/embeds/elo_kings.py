@@ -12,7 +12,10 @@ from elo_bot.db import Player
 from elo_bot.features.finals.rendering import ELO_KINGS_ROWS
 
 
-ELO_KING = re.compile(r"Elo King:\s*\*\*\[([^\]]+)\]\(<https://discord(?:app)?\.com/users/(\d+)>\)")
+ELO_KING = re.compile(
+    r"\b(S\d+(?:[ \t]*[,&][ \t]*S?\d+)*)[ \t]+Elo King:[ \t]*"
+    r"\*\*\[([^\]\n]+)\]\(<https://discord(?:app)?\.com/users/(\d+)>\)"
+)
 
 
 class PeakRating(BaseModel):
@@ -23,18 +26,18 @@ class PeakRating(BaseModel):
 @dataclass(frozen=True, slots=True)
 class EloKing:
     user_id: str
-    name: str
+    label: str
     highest_elo: int
 
 
 async def elo_king_rows(information: str) -> list[EloKing]:
-    names = {user_id: name for name, user_id in ELO_KING.findall(information)}
-    if not names:
+    labels = {user_id: f"{name} | {seasons} King" for seasons, name, user_id in ELO_KING.findall(information)}
+    if not labels:
         return []
-    players = await Player.find(In(Player.user_id, list(names))).project(PeakRating).sort(
+    players = await Player.find(In(Player.user_id, list(labels))).project(PeakRating).sort(
         "-highest_elo", "user_id",
     ).limit(ELO_KINGS_ROWS).to_list()
-    return [EloKing(player.user_id, names[player.user_id], player.highest_elo) for player in players]
+    return [EloKing(player.user_id, labels[player.user_id], player.highest_elo) for player in players]
 
 
 async def elo_king_avatars(bot: ipy.Client, rows: Sequence[EloKing]) -> dict[str, bytes]:

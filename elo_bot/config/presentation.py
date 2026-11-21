@@ -1,7 +1,7 @@
 import interactions as ipy
 
 # Colors
-COLOR = 0x5951FE
+COLOR = 0xD8A34D
 RED_COLOR = 0xBE0000
 GREEN_COLOR = 0x9EDE73
 

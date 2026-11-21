@@ -37,6 +37,22 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(payload["footer"]["icon_url"],
                                  f"https://raw.githubusercontent.com/jamestesting0/elo-bot/main/assets/images/{logo}")
 
+    async def test_embed_footer_uses_the_signed_in_bots_avatar(self):
+        cog = EmbedCommands(MagicMock())
+        for version, user_id, avatar in (("main", "1234", "a" * 32), ("beta", "5678", "b" * 32)):
+            bot = ipy.Client()
+            bot._user = ipy.ClientUser.from_dict({
+                "id": user_id, "username": version, "discriminator": "0", "avatar": avatar, "verified": True,
+            }, bot)
+            with (self.subTest(version=version), patch.object(runtime, "bot", bot, create=True),
+                  patch.object(runtime, "VERSION", version, create=True)):
+                ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
+                ctx.channel.send = AsyncMock()
+                await cog.embed.callback.func(cog, ctx, "Elo Final")
+                payload = ctx.channel.send.await_args.kwargs["embed"].to_dict()
+                self.assertEqual(payload["footer"]["icon_url"],
+                                 f"https://cdn.discordapp.com/avatars/{user_id}/{avatar}.png?size=64")
+
     async def test_elo_final_details_opens_private_guide_without_season_dates(self):
         cog = EmbedCommands(MagicMock())
         ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())

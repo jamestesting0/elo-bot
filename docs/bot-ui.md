@@ -54,8 +54,8 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   `**Season 14 Final · QF1 Betting**`, `**{user}'s Profile**`, `**{district} Base**`, `**{label} Stats**`.
 - **Color:** `COLOR` by default. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
-- **Footer:** `FOOTER_TEXT` with the running bot's logo from `footer_image()` (`set_footer(text=FOOTER_TEXT, icon_url=footer_image())`
-  or `footer=ipy.EmbedFooter(...)`).
+- **Footer:** Use `FOOTER_TEXT` with `footer_image()` for the signed-in bot's Discord avatar. Before login, the helper
+  uses the version's logo from `ASSETS_URL`.
 - **Field layout:** fields are full width. Leave `inline` at its default `False`; use `inline=True` only
   when side-by-side fields were specifically asked for.
 - **Field names:** bold, `name="**Available Tokens**"`. Section headings inside profiles and the match

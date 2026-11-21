@@ -6,6 +6,9 @@ from elo_bot.discord import runtime
 
 
 def footer_image() -> str:
+    user = getattr(getattr(runtime, "bot", None), "user", None)
+    if isinstance(user, ipy.ClientUser):
+        return user.display_avatar.as_url(size=64)
     return FOOTER_LOGOS[getattr(runtime, "VERSION", "main")]
 
 

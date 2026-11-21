@@ -76,11 +76,13 @@ class TestFinalScoreboard(unittest.TestCase):
             with self.subTest(winner=winner), Image.open(BytesIO(
                     render_scoreboard(self.final, self.snapshot, {}))) as image:
                 for side, user in enumerate(("1", "2")):
-                    color = (141, 144, 194) if user != winner else (255, 255, 255)
-                    other = (255, 255, 255) if color == (141, 144, 194) else (141, 144, 194)
+                    muted = (226, 207, 173)
+                    normal = (255, 240, 213)
                     plates = (NAME_PLATES[side], *SCORE_PLATES[side * 14:side * 14 + 14],
                               *TOTAL_PLATES[side * 2:side * 2 + 2])
-                    for plate in plates:
+                    for index, plate in enumerate(plates):
+                        active = (255, 240, 215) if index == 0 else normal
+                        color, other = (active, muted) if user == winner else (muted, active)
                         colors = set(image.crop(plate).getdata())
                         self.assertIn(color, colors)
                         self.assertNotIn(other, colors)

@@ -120,11 +120,11 @@ async def sticky(ctx: ipy.SlashContext, message: str) -> None:
     await ctx.send(f"{SUCCESS_EMOJI} Sticky message set.", ephemeral=True)
 
 
-async def post_embed_sticky(channel, embed_type: str) -> None:
+async def post_embed_sticky(channel, embed_type: str, bot: ipy.Client) -> None:
     channel_id = str(channel.id)
     async with sticky_channel_lock(channel_id):
-        embed, components = await static_embed(embed_type)
-        sent = await channel.send(embed=embed, components=components)
+        embed, components, file = await static_embed(embed_type, bot)
+        sent = await channel.send(embed=embed, components=components, file=file)
         _bot_sticky_posts.add((channel_id, str(sent.id)))
         try:
             document = StickyMessage(id=str(sent.id), channel_id=channel_id, message_id=str(sent.id),
@@ -163,7 +163,7 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
         webhook = thread_id = None
         for sticky in stickies:
             old_message_id = sticky.message_id
-            embed_post = await static_embed(sticky.embed_type) if sticky.embed_type else None
+            embed_post = await static_embed(sticky.embed_type, event.bot) if sticky.embed_type else None
             note_bot_sticky_delete(channel_id, old_message_id)
             try:
                 await channel.delete_message(old_message_id)
@@ -177,8 +177,9 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
 
             try:
                 if embed_post is not None:
-                    embed, components = embed_post
-                    sent, webhook_id = await channel.send(embed=embed, components=components), None
+                    embed, components, file = embed_post
+                    sent = await channel.send(embed=embed, components=components, file=file)
+                    webhook_id = None
                 else:
                     if webhook is None:
                         known = next((item.webhook_id for item in stickies if item.webhook_id), None)

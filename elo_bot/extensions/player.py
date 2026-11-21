@@ -1,7 +1,11 @@
 import asyncio
+from io import BytesIO
+import logging
 import re
 
+import anyio
 import coc
+from aiohttp import ClientError
 
 import interactions as ipy
 from elo_bot.config.ids import BOT_ID, LVL1_ROLES, MAIN_GUILD, PLAYER_ROLE
@@ -11,7 +15,7 @@ from elo_bot.config.emojis import (
 )
 from elo_bot.config.game import DISTRICT_ORDER, LEAGUES
 from elo_bot.discord.decorators import lock_files, create_async_task
-from elo_bot.db import Match, Player, RecordedMatch, Queue, Season
+from elo_bot.db import EloFinal, Match, Player, RecordedMatch, Queue, Season
 from elo_bot.features.seasons.selection import interpret_season_string
 from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
 from elo_bot.discord.mentions import mention_user
@@ -25,6 +29,8 @@ from elo_bot.features.players.match_choices import hydrate_match_id_choice_names
 from elo_bot.features.players.match_choices import publish_match_id_choices
 from elo_bot.features.players.match_choices import select_match_id_choices
 from elo_bot.features.finals.administration import guard_deregistration, deregister_player
+from elo_bot.features.finals.bracket import seeded_players
+from elo_bot.features.finals.rendering import render_head_to_head
 from elo_bot.core.finals import FinalError
 from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
 
@@ -251,12 +257,35 @@ class PlayerCommands(ipy.Extension):
                     value=recent_matches
                 )
             ],
-            thumbnail=ipy.EmbedAttachment(url=player1.avatar.url),
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
             color=COLOR
         )
 
-        await ctx.send(embed=embed, ephemeral=hidden)
+        final = await EloFinal.find_one({"active": True, "guild_id": ctx.guild_id, "state": {"$ne": "CANCELLING"}})
+        final_seeds = {user: seed for seed, user in enumerate(seeded_players(final), 1)} if final and final.nodes else {}
+        seeds = (final_seeds.get(player1_id), final_seeds.get(player2_id))
+        portraits: list[bytes | None] = []
+        for player in (player1, player2):
+            try:
+                with anyio.fail_after(5):
+                    portrait = await player.display_avatar.fetch(extension=".png", size=256)
+            except (ClientError, ipy.errors.HTTPException, OSError, TimeoutError):
+                portrait = None
+            portraits.append(portrait)
+        names = (player1.display_name, player2.display_name)
+        try:
+            rendered = await anyio.to_thread.run_sync(render_head_to_head, names, (portraits[0], portraits[1]), seeds)
+        except (OSError, FinalError):
+            logging.exception("Could not render the head-to-head graphic")
+            embed.set_thumbnail(url=player1.display_avatar.url)
+            await ctx.send(embed=embed, ephemeral=hidden)
+        else:
+            embed.set_image(url="attachment://head-to-head.png")
+            labels = [f"{name} (seed #{seed})" if seed is not None else name
+                      for name, seed in zip(names, seeds, strict=True)]
+            with ipy.File(BytesIO(rendered), file_name="head-to-head.png",
+                          description=" vs. ".join(labels)) as file:
+                await ctx.send(embed=embed, file=file, ephemeral=hidden)
 
     @base.subcommand(sub_cmd_name="deregister", sub_cmd_description="Deregister a player from the elo system")
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))

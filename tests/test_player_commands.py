@@ -1,14 +1,18 @@
 import unittest
+from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, AsyncMock, PropertyMock
 import sys
 import os
 import interactions as ipy
+from PIL import Image, ImageChops
 
 # Add project root to sys.path
 sys.path.append(os.getcwd())
 
+from elo_bot.db import EloFinal
 from elo_bot.extensions.player import PlayerCommands
+from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
 from elo_bot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
 from elo_bot.config.ids import PLAYER_ROLE
 from tests._patch_sites import patch_sites
@@ -212,22 +216,26 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
     async def test_player_h2h_success(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
+        ctx.guild_id = 1234
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
 
         player1 = MagicMock(spec=ipy.User)
         player1.id = 123
-        player1.avatar.url = "http://avatar1"
+        player1.display_name = "Player1"
+        player1.display_avatar.fetch = AsyncMock(return_value=b"")
         player1.__str__.return_value = "Player1"
 
         player2 = MagicMock(spec=ipy.User)
         player2.id = 456
+        player2.display_name = "Player2"
+        player2.display_avatar.fetch = AsyncMock(return_value=b"")
         player2.__str__.return_value = "Player2"
 
         # Mock players found
         mock_p1_doc = MagicMock()
         mock_p1_doc.matches = []
-        mock_player.find_one = AsyncMock(side_effect=[mock_p1_doc, MagicMock()]) # p1 found, p2 found
+        mock_player.find_one = AsyncMock(side_effect=[mock_p1_doc, MagicMock(), mock_p1_doc, MagicMock()])
 
         # Mock match against player2
         mock_match = MagicMock()
@@ -239,14 +247,33 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         mock_match.time = 1600000000
         mock_p1_doc.matches = [mock_match]
 
-        # Execute
-        await self.cog.player_h2h.callback(ctx, player1=player1, player2=player2, hidden=False)
+        final = EloFinal.model_construct(
+            season_number=15, entrant_ids=["456", "789", "123", "987", "654"],
+            seed_elo={"456": 1400, "789": 1300, "123": 1500, "987": 1200, "654": 1100},
+        )
+        final.nodes = build_bracket(final, automatic_pairs(final))
+        EloFinal.find_one.side_effect = [None, final]
+        sent = []
 
-        # Verify
-        ctx.send.assert_called()
-        embed = ctx.send.call_args[1]['embed']
+        async def capture(*, embed, file, ephemeral):
+            sent.append((embed, file.file_name, file.description, file.file.getvalue(), ephemeral))
+
+        ctx.send.side_effect = capture
+        for _ in range(2):
+            await self.cog.player_h2h.callback.func(self.cog, ctx, player1, player2, hidden=False)
+
+        (embed, filename, unseeded_alt, unseeded, _), (_, _, seeded_alt, seeded, _) = sent
         self.assertIn("Player1's Record Against Player2", embed.title)
         self.assertIn("1 - 0", embed.description)
+        self.assertEqual(embed.images[0].url, f"attachment://{filename}")
+        self.assertEqual(unseeded_alt, "Player1 vs. Player2")
+        self.assertEqual(seeded_alt, "Player1 (seed #1) vs. Player2 (seed #2)")
+        with Image.open(BytesIO(unseeded)) as plain, Image.open(BytesIO(seeded)) as ranked:
+            difference = ImageChops.difference(plain, ranked)
+            for badge in ((244, 769, 320, 796), (1352, 769, 1428, 796)):
+                self.assertIsNotNone(difference.crop(badge).getbbox())
+                difference.paste((0, 0, 0), badge)
+            self.assertIsNone(difference.getbbox())
 
     @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     @patch("elo_bot.extensions.player.construct_match_embed")

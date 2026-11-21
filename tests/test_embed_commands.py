@@ -3,10 +3,12 @@ import re
 import unittest
 from collections import defaultdict
 from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
+from PIL import Image
 
 import elo_bot.extensions.match.base_store as match_base_store_module
 import elo_bot.extensions.match.dashboards as match_dashboards_module
@@ -15,6 +17,7 @@ from elo_bot.config.ids import GUILD_IDS
 from elo_bot.core.season_calendar import season_calendar
 from elo_bot.db import BaseStore, ServerState
 from elo_bot.extensions.embed import EmbedCommands
+from elo_bot.features.embeds.elo_kings import EloKing
 from elo_bot.features.embeds.readme import README_SECTIONS
 
 
@@ -47,9 +50,29 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         ctx.channel.send = AsyncMock()
         now = datetime(2026, 11, 19, tzinfo=UTC)
         schedule = season_calendar(now, datetime(2026, 10, 4, tzinfo=UTC), None)
-        with patch("elo_bot.features.embeds.static.ongoing_season_calendar", new=AsyncMock(return_value=schedule)):
+        rows = [EloKing("12", "First", 1702), EloKing("34", "Second", 1600)]
+        with Image.new("RGB", (96, 64), "#08dd99") as portrait, BytesIO() as buffer:
+            portrait.save(buffer, format="PNG")
+            avatar = MagicMock(fetch=AsyncMock(return_value=buffer.getvalue()))
+        async def fetch_user(user_id):
+            if user_id == "12":
+                raise TimeoutError
+            self.assertEqual(user_id, "34")
+            return MagicMock(display_avatar=avatar)
+
+        cog.bot.fetch_user = AsyncMock(side_effect=fetch_user)
+        with (patch("elo_bot.features.embeds.static.ongoing_season_calendar", new=AsyncMock(return_value=schedule)),
+              patch("elo_bot.features.embeds.static.elo_king_rows", new=AsyncMock(return_value=rows))):
             await cog.embed.callback.func(cog, ctx, "Elo Information")
         posted = ctx.channel.send.await_args.kwargs
+        file = posted["file"]
+        self.assertEqual(posted["embed"].images[0].url, f"attachment://{file.file_name}")
+        with Image.open(file.file) as image, Image.open("assets/finals/elo_kings_leaderboard.png") as artwork:
+            self.assertEqual(image.size, (1672, 941))
+            first_slot = (475, 728, 507, 760)
+            self.assertEqual(image.crop(first_slot).tobytes(), artwork.convert("RGB").crop(first_slot).tobytes())
+            self.assertEqual(image.getpixel((491, 788)), (8, 221, 153))
+            self.assertEqual(image.getpixel((475, 772)), artwork.convert("RGB").getpixel((475, 772)))
         description = posted["embed"].description
         expected = [int(moment.timestamp()) for moment in (
             schedule.final_selection, schedule.queue_closes, schedule.season_ends)]

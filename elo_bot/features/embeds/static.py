@@ -1,25 +1,32 @@
 from datetime import UTC, datetime
+from io import BytesIO
+import logging
 
+import anyio
 import interactions as ipy
 
 from elo_bot.config.emojis import application_emoji, render_emoji_markup
 from elo_bot.config.presentation import BANNER_IMAGE, COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.core.finals import FinalError
+from elo_bot.features.embeds.elo_kings import elo_king_avatars, elo_king_rows
+from elo_bot.features.finals.rendering import render_elo_kings
 from elo_bot.features.seasons.ongoing import ongoing_season_calendar
 
 STATIC_EMBED_TYPES = ("Elo Information", "Elo Final")
 
 
-async def static_embed(embed_type: str) -> tuple[ipy.Embed, list[ipy.ActionRow]]:
+async def static_embed(embed_type: str, bot: ipy.Client) -> tuple[ipy.Embed, list[ipy.ActionRow], ipy.File | None]:
     """Build preset /embed posts for initial publication and sticky reposts."""
     match embed_type:
         case "Elo Information":
-            return await elo_information()
+            return await elo_information(bot)
         case "Elo Final":
-            return elo_final()
+            embed, controls = elo_final()
+            return embed, controls, None
     raise ValueError(f"Unknown static embed: {embed_type}")
 
 
-async def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
+async def elo_information(bot: ipy.Client) -> tuple[ipy.Embed, list[ipy.ActionRow], ipy.File | None]:
     calendar = await ongoing_season_calendar(datetime.now(UTC))
     dates = "\n".join(
         f"**{label}** · <t:{int(moment.timestamp())}:D> · <t:{int(moment.timestamp())}:R>"
@@ -30,7 +37,8 @@ async def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
         )
     )
     with open("assets/embeds/information.md", encoding="utf-8") as source:
-        description = render_emoji_markup(source.read().format(season_dates=dates))
+        information = source.read()
+    description = render_emoji_markup(information.format(season_dates=dates))
     embed = ipy.Embed(
         title="**Clan Capital Elo System**",
         description=description,
@@ -38,6 +46,20 @@ async def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
         images=[ipy.EmbedAttachment(url=BANNER_IMAGE)],
         color=COLOR,
     )
+    file = None
+    rows = await elo_king_rows(information)
+    if rows:
+        avatars = await elo_king_avatars(bot, rows)
+        portraits = [(row.name, row.highest_elo, avatars.get(row.user_id)) for row in rows]
+        try:
+            rendered = await anyio.to_thread.run_sync(render_elo_kings, portraits)
+        except (OSError, FinalError):
+            logging.exception("Could not render the Elo Kings leaderboard")
+        else:
+            file = ipy.File(BytesIO(rendered), file_name="elo-kings.png",
+                            description="Elo Kings by highest Elo. " +
+                            ", ".join(f"{row.name} {row.highest_elo}" for row in rows))
+            embed.set_image(url="attachment://elo-kings.png")
 
     participate_button = ipy.Button(
         style=ipy.ButtonStyle.GRAY,
@@ -84,7 +106,7 @@ async def elo_information() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
         ipy.ActionRow(participate_button, support_button),
         ipy.ActionRow(rewards_button, build_button),
         ipy.ActionRow(readme_button, video_button),
-    ]
+    ], file
 
 
 def elo_final() -> tuple[ipy.Embed, list[ipy.ActionRow]]:

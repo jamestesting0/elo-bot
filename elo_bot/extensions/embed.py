@@ -87,10 +87,10 @@ class EmbedCommands(ipy.Extension):
 
         if embed_type in STATIC_EMBED_TYPES:
             if sticky:
-                await post_embed_sticky(ctx.channel, embed_type)
+                await post_embed_sticky(ctx.channel, embed_type, self.bot)
             else:
-                embed, components = await static_embed(embed_type)
-                await ctx.channel.send(embed=embed, components=components)
+                embed, components, file = await static_embed(embed_type, self.bot)
+                await ctx.channel.send(embed=embed, components=components, file=file)
 
         elif sticky:
             await ctx.send(f"{ERROR_EMOJI} Only Elo Information and Elo Final can be sticky.", ephemeral=True)

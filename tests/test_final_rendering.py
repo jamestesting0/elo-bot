@@ -141,10 +141,10 @@ class TestFinalRendering(unittest.TestCase):
             loser_colors = set(image.crop(NAME_PLATES[6]).getdata())
             winner_colors = set(image.crop(NAME_PLATES[7]).getdata())
             champion_colors = set(image.crop(NAME_PLATES[-1]).getdata())
-        self.assertIn((141, 144, 194), bye_colors)
-        self.assertIn((141, 144, 194), loser_colors)
-        self.assertIn((255, 255, 255), winner_colors)
-        self.assertIn((255, 215, 94), champion_colors)
+        self.assertIn((224, 194, 157), bye_colors)
+        self.assertIn((224, 194, 157), loser_colors)
+        self.assertIn((255, 246, 229), winner_colors)
+        self.assertIn((255, 230, 160), champion_colors)
 
     def test_changed_pairings_render_short_advancement_labels(self):
         final = self.edition(8)

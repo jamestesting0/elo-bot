@@ -1,5 +1,6 @@
 from io import BytesIO
 from pathlib import Path
+from collections.abc import Sequence
 
 from PIL import Image, ImageDraw, ImageFont, ImageChops, ImageOps
 
@@ -10,6 +11,9 @@ from elo_bot.db.final_models import FinalResultSnapshot
 
 TEMPLATE = Path("assets/finals/elo_final_bracket.png")
 SCOREBOARD_TEMPLATE = Path("assets/finals/elo_final_scoreboard.png")
+HEAD_TO_HEAD_TEMPLATE = Path("assets/finals/elo_head_to_head.png")
+ELO_KINGS_TEMPLATE = Path("assets/finals/elo_kings_leaderboard.png")
+CAPITAL_TROPHY = Path("assets/finals/capital_trophy.png")
 FONT = Path("assets/finals/supercell_magic_webfont.ttf")
 FALLBACK_FONTS = (Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
                   Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
@@ -26,6 +30,11 @@ SCOREBOARD_AVATARS = ((286, 150, 416, 280), (1255, 150, 1385, 280))
 SCOREBOARD_ROWS = (342, 409, 476, 543, 610, 677, 744)
 SCOREBOARD_COLUMNS = (((448, 532), (552, 704)), ((1076, 1160), (1180, 1332)))
 SCOREBOARD_TOTALS = (((425, 509), (533, 685)), ((1102, 1186), (1204, 1352)))
+HEAD_TO_HEAD_NAMES = ((248, 805, 686, 871), (986, 805, 1424, 871))
+HEAD_TO_HEAD_AVATARS = ((82, 768, 223, 909), (1450, 768, 1591, 909))
+HEAD_TO_HEAD_SEED_BASELINES = ((282, 793), (1390, 793))
+ELO_KINGS_ROWS = 4
+ELO_KINGS_AVATAR_BOXES = ((475, 728, 507, 760), (475, 772, 507, 804), (475, 817, 507, 849), (475, 862, 507, 894))
 
 
 def bracket_labels(final: EloFinal, picks: dict[str, str] | None = None) -> list[str]:
@@ -47,7 +56,7 @@ def bracket_labels(final: EloFinal, picks: dict[str, str] | None = None) -> list
 
 def fitted_label(text: str, width: int = 168, size: int = 24) -> tuple[str, ImageFont.FreeTypeFont]:
     text = " ".join(text.split())
-    candidates = (FONT,) if text.isascii() else FALLBACK_FONTS
+    candidates = (FONT,) if text.isascii() else (FONT, *FALLBACK_FONTS)
     font_path = None
     for path in candidates:
         if not path.is_file():
@@ -72,32 +81,31 @@ def fitted_label(text: str, width: int = 168, size: int = 24) -> tuple[str, Imag
     return text + "…", font
 
 
-BADGE_SIZE = 30
 # Pillow draws shapes without anti-aliasing, so badges are drawn this many times larger and scaled down.
 BADGE_SUPERSAMPLE = 8
-BADGE_STROKES = {
-    "correct": [((-7, 0), (-2, 5), (8, -6))],
-    "incorrect": [((-6, -6), (6, 6)), ((-6, 6), (6, -6))],
-    "excluded": [((-7, 0), (7, 0))],
+PREDICTION_MARKS = {
+    "correct": ((8, 17), (11, 14), (16, 19), (25, 10), (28, 13), (16, 25)),
+    "incorrect": ((13, 9), (18, 14), (23, 9), (26, 12), (21, 17), (26, 22),
+                  (23, 25), (18, 20), (13, 25), (10, 22), (15, 17), (10, 12)),
+    "excluded": ((10, 15), (26, 15), (26, 19), (10, 19)),
 }
-BADGE_COLORS = {"correct": "#147a38", "incorrect": "#a32727", "excluded": "#4b5260"}
+PREDICTION_ENAMEL = {"correct": "#245a46", "incorrect": "#843828", "excluded": "#4b5260"}
 
 
 def status_badge(status: str) -> Image.Image:
     scale = BADGE_SUPERSAMPLE
-    size = BADGE_SIZE * scale
-    center = size / 2
+    badge_size = 36
+    size = badge_size * scale
     with Image.new("RGBA", (size, size)) as large:
         draw = ImageDraw.Draw(large)
-        draw.ellipse((scale, scale, size - scale, size - scale), fill=BADGE_COLORS[status], outline="white",
-                     width=2 * scale)
-        stroke = 3 * scale
-        for points in BADGE_STROKES[status]:
-            scaled = [(center + dx * scale, center + dy * scale) for dx, dy in points]
-            draw.line(scaled, fill="white", width=stroke, joint="curve")
-            for px, py in (scaled[0], scaled[-1]):
-                draw.ellipse((px - stroke / 2, py - stroke / 2, px + stroke / 2, py + stroke / 2), fill="white")
-        return large.resize((BADGE_SIZE, BADGE_SIZE), Image.Resampling.LANCZOS)
+        shield = ((7, 2), (29, 2), (34, 7), (34, 19), (30, 26), (18, 35), (6, 26), (2, 19), (2, 7))
+        bevel = ((7, 3.5), (29, 3.5), (32.5, 7), (32.5, 19), (29, 25), (18, 33), (7, 25), (3.5, 19), (3.5, 7))
+        face = ((8, 6.5), (28, 6.5), (30, 8.5), (30, 18), (27, 24), (18, 31), (9, 24), (6, 18), (6, 8.5))
+        highlight = ((7, 3.5), (29, 3.5), (32.5, 7), (30, 8.5), (28, 6.5), (8, 6.5), (6, 8.5), (3.5, 7))
+        for points, color in ((shield, "#4b342c"), (bevel, "#bd8f50"), (highlight, "#ffe6a0"),
+                              (face, PREDICTION_ENAMEL[status]), (PREDICTION_MARKS[status], "#fff3d3")):
+            draw.polygon([(x * scale, y * scale) for x, y in points], fill=color)
+        return large.resize((badge_size, badge_size), Image.Resampling.LANCZOS)
 
 
 def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
@@ -120,14 +128,14 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
         text, font = fitted_label(label, width=188 if center == CHAMPION_CENTER else 168)
         left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
         position = (center[0] - (left + right) / 2, center[1] - (top + bottom) / 2)
-        color = "white"
+        color = "#fff6e5"
         if picks is None:
             node = final.nodes[node_id]
             if label == "BYE" or user is not None and node.winner is not None and user != node.winner:
-                color = "#8d90c2"
+                color = "#e0c29d"
             if center == CHAMPION_CENTER and final.champion is not None:
-                color = "#ffd75e"
-        draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#1b1940")
+                color = "#ffe6a0"
+        draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#413024")
     if picks is not None and statuses:
         for node_id, center in zip(NODE_IDS, (*SEMIFINAL_CENTERS, *FINAL_CENTERS, CHAMPION_CENTER), strict=True):
             status = statuses.get(node_id)
@@ -152,20 +160,11 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
         draw = ImageDraw.Draw(image)
         labels = []
         for side, user in enumerate(snapshot.contestants):
-            color = "#8d90c2" if user != snapshot.winner else "white"
-            labels.append((final.player_nicknames.get(user, user), SCOREBOARD_NAMES[side], color, 26))
+            color = "#e2cfad" if user != snapshot.winner else "#fff0d5"
+            name_color = "#e2cfad" if user != snapshot.winner else "#fff0d7"
+            labels.append((final.player_nicknames.get(user, user), SCOREBOARD_NAMES[side], name_color, 26))
             if user in avatars:
-                try:
-                    with Image.open(BytesIO(avatars[user])) as source:
-                        avatar = ImageOps.fit(source.convert("RGBA"), (130, 130), method=Image.Resampling.LANCZOS)
-                except (OSError, Image.DecompressionBombError):
-                    avatar = None
-                if avatar is not None:
-                    with avatar, Image.new("L", (520, 520)) as large_mask:
-                        ImageDraw.Draw(large_mask).ellipse((0, 0, 519, 519), fill=255)
-                        with large_mask.resize((130, 130), Image.Resampling.LANCZOS) as mask:
-                            with ImageChops.multiply(mask, avatar.getchannel("A")) as alpha:
-                                image.paste(avatar, SCOREBOARD_AVATARS[side][:2], alpha)
+                paste_avatar(image, avatars[user], SCOREBOARD_AVATARS[side])
             stars, destruction = [], []
             for index, (_district, y) in enumerate(zip(FINAL_DISTRICTS, SCOREBOARD_ROWS, strict=True)):
                 score = snapshot.scores[user][index]
@@ -181,9 +180,72 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
             text, font = fitted_label(label, box[2] - box[0], size)
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
             position = ((box[0] + box[2] - left - right) / 2, (box[1] + box[3] - top - bottom) / 2)
-            draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#1b1940")
+            draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#3b2c2b")
         with image, BytesIO() as output:
             image.save(output, format="PNG")
             return output.getvalue()
     except OSError as error:
         raise FinalError("The scoreboard image is unavailable. The text result is still available.") from error
+
+
+def paste_avatar(image: Image.Image, data: bytes, box: tuple[int, int, int, int]) -> None:
+    left, top, right, bottom = box
+    size = (right - left, bottom - top)
+    large_size = (4 * size[0], 4 * size[1])
+    try:
+        with Image.open(BytesIO(data)) as source:
+            avatar = ImageOps.fit(source.convert("RGBA"), size, method=Image.Resampling.LANCZOS)
+    except (OSError, Image.DecompressionBombError):
+        return
+    with avatar, Image.new("L", large_size) as large_mask:
+        ImageDraw.Draw(large_mask).ellipse((0, 0, large_size[0] - 1, large_size[1] - 1), fill=255)
+        with large_mask.resize(size, Image.Resampling.LANCZOS) as mask:
+            with ImageChops.multiply(mask, avatar.getchannel("A")) as alpha:
+                image.paste(avatar, (left, top), alpha)
+
+
+def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, bytes | None],
+                        seeds: tuple[int | None, int | None] = (None, None)) -> bytes:
+    with Image.open(HEAD_TO_HEAD_TEMPLATE) as artwork, artwork.convert("RGB") as image, BytesIO() as output:
+        draw = ImageDraw.Draw(image)
+        for name, avatar, name_box, avatar_box in zip(names, avatars, HEAD_TO_HEAD_NAMES, HEAD_TO_HEAD_AVATARS,
+                                                       strict=True):
+            if avatar is not None:
+                paste_avatar(image, avatar, avatar_box)
+            left, top, right, bottom = name_box
+            text, font = fitted_label(name, right - left, 42)
+            bounds = draw.textbbox((0, 0), text, font=font)
+            draw.text(((left + right - bounds[0] - bounds[2]) / 2, (top + bottom - bounds[1] - bounds[3]) / 2),
+                      text, font=font, fill="#3b2c2b")
+        for seed, baseline in zip(seeds, HEAD_TO_HEAD_SEED_BASELINES, strict=True):
+            if seed is not None:
+                text, font = fitted_label(f"#{seed}", 76, 22)
+                draw.text(baseline, text, font=font, fill="#ffedc1", anchor="ms")
+        image.save(output, format="PNG")
+        return output.getvalue()
+
+
+def render_elo_kings(rows: Sequence[tuple[str, int, bytes | None]]) -> bytes:
+    with (Image.open(ELO_KINGS_TEMPLATE) as artwork, artwork.convert("RGB") as image,
+          Image.open(CAPITAL_TROPHY) as icon, ImageOps.contain(icon, (26, 26)) as trophy, BytesIO() as output):
+        draw = ImageDraw.Draw(image)
+        gap = 8
+        value_width = 100
+        score_left = 1143 - (value_width + gap + trophy.width) // 2
+        value_center = score_left + value_width / 2
+        trophy_x = score_left + value_width + gap
+        for index, (name, peak_elo, avatar) in enumerate(rows[:ELO_KINGS_ROWS]):
+            y = 742 + 45 * index
+            if avatar is not None:
+                paste_avatar(image, avatar, ELO_KINGS_AVATAR_BOXES[index])
+            label, label_font = fitted_label(name, 507, 25)
+            left, top, _, bottom = draw.textbbox((0, 0), label, font=label_font)
+            draw.text((519 - left, y - (top + bottom) / 2), label, font=label_font, fill="#3b2b25")
+
+            value, value_font = fitted_label(str(peak_elo), value_width, 27)
+            left, top, right, bottom = draw.textbbox((0, 0), value, font=value_font)
+            draw.text((value_center - (left + right) / 2, y - (top + bottom) / 2), value,
+                      font=value_font, fill="#fff3d3")
+            image.paste(trophy, (trophy_x, y - trophy.height // 2), trophy)
+        image.save(output, format="PNG")
+        return output.getvalue()

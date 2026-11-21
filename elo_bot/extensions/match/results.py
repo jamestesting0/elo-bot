@@ -31,10 +31,10 @@ from elo_bot.config.ids import (
 )
 from elo_bot.config.presentation import (
     COLOR,
-    FOOTER_IMAGE,
     FOOTER_TEXT,
     RED_COLOR,
 )
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import HelperHistory, Match, Participant, Player, RecordedMatch
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
@@ -406,7 +406,7 @@ class MatchResultCommands:
                 f"{mention_user(members[0], player1_id)} ({player1_elo_change_str}) vs. "
                 f"{mention_user(members[1], player2_id)} ({player2_elo_change_str})\n\n{match_info}"
             ),
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR,
         )
 
@@ -779,7 +779,7 @@ class MatchResultCommands:
             description=f"{mention_user(members[0], player1_id)} ({player1_elo_change_str}) vs. "
                         f"{mention_user(members[1], player2_id)} ({player2_elo_change_str})\n\n"
                         f"{match_info}",
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=RED_COLOR,
         )
 
@@ -989,7 +989,7 @@ class MatchResultCommands:
                                 f"{winning_elo}\n\n"
                                 f"*Note: auto-wins do not affect your winrate.*",
                     fields=[ipy.EmbedField(name="**Reason**", value=decision_reason)],
-                    footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+                    footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                     color=COLOR
                 )
                 try:
@@ -1003,7 +1003,7 @@ class MatchResultCommands:
                                 f"{losing_elo}\n\n"
                                 f"*Note: penalties do not affect your winrate.*",
                     fields=[ipy.EmbedField(name="**Reason**", value=decision_reason)],
-                    footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+                    footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                     color=COLOR
                 )
                 try:
@@ -1017,7 +1017,7 @@ class MatchResultCommands:
                                 f"and {mention_user(losing_user)} is penalized after "
                                 f"careful considerations.{reservation_notice}",
                     fields=[ipy.EmbedField(name="**Reason**", value=decision_reason)],
-                    footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+                    footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                     color=COLOR
                 )
                 delete_button = ipy.Button(

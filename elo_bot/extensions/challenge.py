@@ -4,7 +4,8 @@ from interactions import utils
 
 import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, ORDINAL_REPRESENTATIONS
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, ORDINAL_REPRESENTATIONS
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.ids import COMMAND_CHANNEL, ELO_BLACKLIST_ROLE, GUILD_IDS, INFO_CHANNEL, LVL3_ROLES
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elo_bot.discord.decorators import reset_cooldown_on_error
@@ -308,7 +309,7 @@ class ChallengeCommands(ipy.Extension):
                     value="Enabled" if base_submission else "Disabled"
                 )
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 
@@ -439,7 +440,7 @@ class ChallengeCommands(ipy.Extension):
                         f"You cannot use {self.bot.mention_command('match queue')} while this challenge is pending.\n"
                         f"Cancel at any time, or it expires in 24 hours.",
             fields=[ipy.EmbedField(name="**Opponent**", value=mention_user(opponent))],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 

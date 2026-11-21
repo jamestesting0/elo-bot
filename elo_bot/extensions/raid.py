@@ -2,7 +2,8 @@ import coc
 
 import interactions as ipy
 from elo_bot.config.emojis import CLAN_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE
+from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES, RAID_CHANNEL
 from elo_bot.core.raid_weekend import is_raid_weekend
 from elo_bot.discord.mentions import mention_user
@@ -109,7 +110,7 @@ class RaidCommands(ipy.Extension):
         if extra_info:
             embed.add_field(name="**Extra Information**", value=f"{extra_info}")
         embed.set_author(name=ctx.author.username, icon_url=ctx.author.avatar.url)
-        embed.set_footer(text="Report any scammers via support tickets.", icon_url=FOOTER_IMAGE)
+        embed.set_footer(text="Report any scammers via support tickets.", icon_url=footer_image())
         if clan.badge:
             embed.set_thumbnail(url=clan.badge.url)
 

@@ -15,9 +15,9 @@ from elo_bot.config.ids import (
 )
 from elo_bot.config.presentation import (
     COLOR,
-    FOOTER_IMAGE,
     FOOTER_TEXT,
 )
+from elo_bot.discord.embeds import footer_image
 from elo_bot.db import Player, Queue, ServerState
 from elo_bot.db.player_models import QueueDistrictSelection
 from elo_bot.extensions.match.groups import base
@@ -163,7 +163,7 @@ class QueueCommands:
             if any(selection.districts):
                 description += " Your district preset is loaded, feel free to update them if needed."
             embed = ipy.Embed(title="**Match-making Queue**", description=description, color=COLOR,
-                              footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE))
+                              footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
             await ctx.send(content, embed=embed, components=queue_district_components(user_id, selection, options),
                            ephemeral=True)
 

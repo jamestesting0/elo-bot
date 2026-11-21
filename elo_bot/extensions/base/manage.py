@@ -25,11 +25,11 @@ from elo_bot.config.ids import (
 )
 from elo_bot.config.presentation import (
     COLOR,
-    FOOTER_IMAGE,
     FOOTER_TEXT,
     LINE_SEPERATOR_GIF,
     RED_COLOR,
 )
+from elo_bot.discord.embeds import footer_image
 from elo_bot.db import BaseLayout
 from elo_bot.discord.checks import has_any, has_any_id
 from elo_bot.discord.members import member_guild
@@ -552,7 +552,7 @@ class BaseManagementCommands:
                         value=base.link
                     )
                 ],
-                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                 color=COLOR
             )
             embed.set_image(base.image_url)

@@ -1,6 +1,7 @@
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT, FOOTER_IMAGE
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.features.finals.predictions import pick_options
 from elo_bot.core.finals import NODE_IDS
 from elo_bot.discord.mentions import mention_user
@@ -51,7 +52,7 @@ def prediction_view(final: EloFinal, prediction: FinalPrediction, names: dict[st
                                                                custom_id=prefix + f"pick|{node_id}")))
         description += "\n\n" + "\n".join(lines)
     embed.description = description
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     if submitted:
         rows.append(ipy.ActionRow(ipy.Button(label="Edit Picks", style=ipy.ButtonStyle.SECONDARY,
                                              custom_id=prefix + "edit|-")))

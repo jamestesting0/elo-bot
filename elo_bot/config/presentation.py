@@ -7,7 +7,7 @@ GREEN_COLOR = 0x9EDE73
 
 # Images, served from assets/images/ on the main branch
 ASSETS_URL = "https://raw.githubusercontent.com/jamestesting0/elo-bot/main/assets/images"
-FOOTER_IMAGE = f"{ASSETS_URL}/footer.png"
+FOOTER_LOGOS = {"main": f"{ASSETS_URL}/elo-bot.png", "beta": f"{ASSETS_URL}/elo-beta.png"}
 UNAVAILABLE_IMAGE = f"{ASSETS_URL}/unavailable.png"
 GOLDPASS_IMAGE = f"{ASSETS_URL}/goldpass.png"
 REWARDS_IMAGE = f"{ASSETS_URL}/rewards.png"

@@ -29,9 +29,9 @@ from elo_bot.config.ids import (
 )
 from elo_bot.config.presentation import (
     COLOR,
-    FOOTER_IMAGE,
     FOOTER_TEXT,
 )
+from elo_bot.discord.embeds import footer_image
 from elo_bot.db import Match, Participant, Player
 from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import mention_user
@@ -622,7 +622,7 @@ class MatchLifecycleCommands:
         embed = ipy.Embed(
             title="**Upcoming Elo Matches**",
             description=description if description else "No upcoming matches.",
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 

@@ -12,7 +12,8 @@ from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import CROSS_EMOJI, DISTRICT_EMOJI, IMPORTANT_EMOJI, TICK_EMOJI
 from elo_bot.config.game import BASE_SUBMISSION_THRESHOLD
 from elo_bot.config.ids import COMMAND_CHANNEL, MATCH_CHANNEL, STAFF_ROLE
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, ORDINAL_REPRESENTATIONS
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, ORDINAL_REPRESENTATIONS
+from elo_bot.discord.embeds import footer_image
 from elo_bot.db import BaseLink, Match, Participant, Player, EloFinal
 from elo_bot.db.player_models import QueueDistrictSelection
 from elo_bot.discord.mentions import mention_user
@@ -163,7 +164,7 @@ async def initiate_match(
 
     embed = ipy.Embed(
         title="**Match Found**",
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=COLOR,
     )
 
@@ -453,7 +454,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
                     inline=False,
                 ),
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR,
         )
 

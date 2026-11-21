@@ -15,10 +15,10 @@ from elo_bot.config.ids import (
 )
 from elo_bot.config.presentation import (
     COLOR,
-    FOOTER_IMAGE,
     FOOTER_TEXT,
     GREEN_COLOR,
 )
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import is_final_match
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.db import Match
@@ -127,7 +127,7 @@ class MatchSettingsCommands:
                     value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"
                 ),
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR,
         )
 
@@ -180,7 +180,7 @@ class MatchSettingsCommands:
                         value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"
                     ),
                 ],
-                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                 color=GREEN_COLOR,
             )
 
@@ -273,7 +273,7 @@ class MatchSettingsCommands:
                     value=f"[{coc_clan.name} ({coc_clan.tag})]({coc_clan.share_link})"
                 ),
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR,
         )
 

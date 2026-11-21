@@ -11,7 +11,8 @@ from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord import runtime
 from elo_bot.app.events import on_raid_weekend_end
 from elo_bot.config.emojis import ERROR_EMOJI, STAFF_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE
+from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.settings import COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWORD
 
 
@@ -59,7 +60,7 @@ async def report_error(ctx: ipy.SlashContext | ipy.ModalContext | ipy.ComponentC
                 inline=False
             )
         ],
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
         color=COLOR
     )
 
@@ -99,7 +100,7 @@ async def on_error(event: ipy.events.Error):
         embed = ipy.Embed(
             title=f"**{str(error)[:252]}**",
             description=f"```\n{full_error[-(4096 - 8):]}\n```",
-            footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
             color=COLOR
         )
 
@@ -150,7 +151,7 @@ async def on_autocomplete_error(event: ipy.events.AutocompleteError):
     embed = ipy.Embed(
         title=f"**{str(error)[:252]}**",
         description=f"```\n{full_error[-(4096 - 8):]}\n```",
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
         color=COLOR
     )
 
@@ -301,7 +302,7 @@ async def bug_respond_modal(ctx: ipy.ModalContext, **response):
         fields=[
             ctx.message.embeds[0].fields[0]
         ],
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
         color=COLOR,
     )
 

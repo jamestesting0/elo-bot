@@ -3,7 +3,8 @@
 
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import STAR_EMOJI, WIN_EMOJI, LOSS_EMOJI
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.features.tokens.stats import betting_lines, betting_stats
@@ -67,7 +68,7 @@ async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
     avatar = getattr(user, "avatar", None)
     if avatar:
         embed.set_thumbnail(url=avatar.url)
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     latest = {}
     for edition in await EloFinal.find({"schema_version": 2}).sort([("season_number", -1), ("_id", -1)]).to_list():
         latest.setdefault(edition.season_number, edition)

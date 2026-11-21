@@ -5,7 +5,8 @@ import interactions as ipy
 from beanie.odm.operators.find.comparison import NotIn
 
 from elo_bot.config.emojis import IMPORTANT_EMOJI, ERROR_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, UNAVAILABLE_IMAGE
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, UNAVAILABLE_IMAGE
+from elo_bot.discord.embeds import footer_image
 from elo_bot.db import BaseLayout, BaseLink, Match, Player
 from elo_bot.discord import runtime
 from elo_bot.core.finals import is_final_match, FinalError
@@ -63,7 +64,7 @@ async def choose_bases(token: str, player: ipy.User, opponent: ipy.User,
         index += 1
         embed = ipy.Embed(
             title=f"**{match.final_districts[index]}**",
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 

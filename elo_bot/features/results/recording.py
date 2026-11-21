@@ -5,7 +5,8 @@ import interactions as ipy
 from beanie.odm.operators.find.comparison import In
 
 from elo_bot.config.emojis import CLASHING_SWORD_EMOJI, LOSS_EMOJI, STAR_EMOJI, WIN_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.elo import calculate_elo
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import BaseLayout, Match, MatchDistrictStats, MatchPlayerStats, Player, RecordedMatch
@@ -208,7 +209,7 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
     # notify player1
     player1_embed = ipy.Embed(
         title=f"**Match Against {player2_user.display_name}**",
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=COLOR
     )
     player1_embed.description = \
@@ -223,7 +224,7 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
     # notify player2
     player2_embed = ipy.Embed(
         title=f"**Match Against {player1_user.display_name}**",
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=COLOR
     )
     player2_embed.description = \

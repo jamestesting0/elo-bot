@@ -7,7 +7,8 @@ from pymongo.errors import PyMongoError
 
 from elo_bot.config.emojis import CROSS_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.token_models import FinalBettingMarket
@@ -68,7 +69,7 @@ class Confirmations:
                               description=description, color=COLOR)
             embed.add_field(name="**Reason**", value=reason)
             button = ipy.Button(label="Cancel Final", style=ipy.ButtonStyle.DANGER, emoji=CROSS_EMOJI, custom_id=prefix)
-        embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+        embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
         controls = [button, ipy.Button(label="Back", style=ipy.ButtonStyle.SECONDARY,
             custom_id=f"finalmanage|back|{edition.id}|{owner}|{edition.result_revision}")]
         if edit:

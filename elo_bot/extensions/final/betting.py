@@ -5,7 +5,8 @@ from interactions import OptionType, SlashContext, slash_option
 
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenWallet
@@ -107,7 +108,7 @@ class Betting:
         embed.add_field(name="**Available Tokens**", value=f"{available:,} {TOKEN_EMOJI}")
         if debt:
             embed.add_field(name="**Debt**", value=f"{debt:,} {TOKEN_EMOJI} · Reduce or cancel your bet to repay.")
-        embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+        embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
         buttons = [ipy.Button(style=ipy.ButtonStyle.PRIMARY, label=edition.player_nicknames[user][:80],
             custom_id=f"betchoose|{market.id}|{ctx.author.id}|{user}|{version}",
             disabled=debt > 0 and (old is None or not old.active or old.contestant != user)) for user in market.contestants]

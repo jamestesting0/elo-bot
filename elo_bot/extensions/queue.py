@@ -1,7 +1,8 @@
 import asyncio
 
 import interactions as ipy
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES
 from elo_bot.config.emojis import SUCCESS_EMOJI
 from elo_bot.discord.mentions import mention_user
@@ -27,7 +28,7 @@ class QueueCommands(ipy.Extension):
 
         embed = ipy.Embed(
             title="**Queue**",
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 

@@ -1,7 +1,8 @@
 import interactions as ipy
 
 from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import NODE_IDS, FinalError
 from elo_bot.db import EloFinal
 from elo_bot.discord.mentions import mention_user
@@ -39,7 +40,7 @@ def editor_view(final: EloFinal, names: dict[str, str]) -> tuple[ipy.Embed, list
                                                   value=f"{node}:{side}", description=description))
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · Bracket**", color=COLOR,
                       description="Seeded by Elo. Swap any two slots, then confirm.\n\n" + "\n".join(lines))
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     controls = [
         ipy.ActionRow(ipy.StringSelectMenu(*options, min_values=2, max_values=2,
                                           placeholder="🔁 Choose two slots to swap", custom_id=prefix + "swap")),

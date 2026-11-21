@@ -3,7 +3,8 @@ from dataclasses import dataclass
 import anyio
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult, FinalPrediction
@@ -77,7 +78,7 @@ async def prediction_board(final: EloFinal, guild: ipy.Guild, owner: str,
                                               description=f"🏆 {pick}"[:100] if pick else None))
     if lines:
         embed.description += "\n\n" + "\n".join(lines)
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     rows = []
     if options:
         rows.append(ipy.ActionRow(ipy.StringSelectMenu(*options, custom_id=f"finalpredpick|{final.season_number}",
@@ -115,7 +116,7 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
                       description="\n\n".join(parts) or None)
     if eligible:
         embed.add_field(name="**Predictions**", value=f"`{points}/{eligible}`")
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     try:
         image = await anyio.to_thread.run_sync(render_bracket, final, prediction.submitted, statuses)
     except FinalError as error:

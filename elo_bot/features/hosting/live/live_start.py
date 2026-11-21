@@ -21,7 +21,8 @@ from elo_bot.features.base_store.publication import BaseStoreMessageConflict, ma
 from elo_bot.features.base_store.live import live_pair_ready, live_stores
 from elo_bot.features.base_store.start import StoredStartState
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, RED_COLOR
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, GREEN_COLOR, RED_COLOR
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.ids import MATCH_CHANNEL
 from elo_bot.config.emojis import SUCCESS_EMOJI
 from elo_bot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
@@ -257,7 +258,7 @@ async def complete_live_start(
                 value=f"[{start.clan.name} ({start.clan.tag})]({start.clan.share_link})",
             ),
         ],
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=COLOR,
     )
     spectate_controls = [ipy.ActionRow(ipy.Button(
@@ -284,7 +285,7 @@ async def complete_live_start(
                 value=f"[{start.clan.name} ({start.clan.tag})]({start.clan.share_link})",
             ),
         ],
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=GREEN_COLOR,
     )
     if match_doc.msg:

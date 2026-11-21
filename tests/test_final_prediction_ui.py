@@ -2,7 +2,7 @@ import unittest
 
 import interactions as ipy
 
-from elo_bot.config.presentation import FOOTER_IMAGE
+from elo_bot.discord.embeds import footer_image
 from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
 from elo_bot.features.finals.prediction_ui import prediction_view
 from elo_bot.core.finals import NODE_IDS
@@ -72,7 +72,7 @@ class TestFinalPredictionNavigation(unittest.TestCase):
             prediction.stage = stage
             embed, rows = prediction_view(final, prediction)
             self.assertLessEqual(len(rows), 5)
-            self.assertEqual(embed.footer.icon_url, FOOTER_IMAGE)
+            self.assertEqual(embed.footer.icon_url, footer_image())
             menus = [row.components[0] for row in rows if isinstance(row.components[0], ipy.StringSelectMenu)]
             self.assertEqual(len(menus), 0 if stage == 3 else len((NODE_IDS[:4], NODE_IDS[4:6], NODE_IDS[6:])[stage]))
             for menu in menus:
@@ -82,4 +82,4 @@ class TestFinalPredictionNavigation(unittest.TestCase):
             self.assertEqual(embed.image.url if stage == 3 else embed.image, "attachment://prediction.png" if stage == 3 else None)
         embed, rows = prediction_view(final, prediction, submitted=True)
         self.assertEqual(rows[-1].components[0].label, "Edit Picks")
-        self.assertEqual(embed.footer.icon_url, FOOTER_IMAGE)
+        self.assertEqual(embed.footer.icon_url, footer_image())

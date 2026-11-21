@@ -10,7 +10,8 @@ from pymongo.errors import PyMongoError
 
 import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GOLDPASS_IMAGE
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, GOLDPASS_IMAGE
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import ERROR_EMOJI, GIVEAWAY_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES
 from elo_bot.db import Giveaway, Player, Season
@@ -230,7 +231,7 @@ class GiveawayCommands(ipy.Extension):
                           f"2. Have {min_elo}+ Elo"
                 )
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 

@@ -9,7 +9,8 @@ from pymongo.errors import PyMongoError
 
 import interactions as ipy
 from elo_bot.config.emojis import CLAN_EMOJI, ERROR_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI, TOWNHALL_EMOJIS
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, LB_ENTRIES_PER_PAGE
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, LB_ENTRIES_PER_PAGE
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES, LVL2_ROLES, STAFF_ROLE
 from elo_bot.config.game import HOST_CLAN_CHOICES
 from elo_bot.db import Helper
@@ -129,7 +130,7 @@ class HelperCommands(ipy.Extension):
         embed = ipy.Embed(
             title=f"**Helper {lb_type} Leaderboard**",
             description=description,
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 
@@ -375,7 +376,7 @@ class HelperCommands(ipy.Extension):
                 ipy.EmbedField(name="**Helper Points**", value=str(points)),
                 ipy.EmbedField(name="**Matches Hosted**", value=str(matches_hosted))
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 
@@ -506,7 +507,7 @@ class HelperCommands(ipy.Extension):
         embed = ipy.Embed(
             title=f"**{clan.name} ({clan.tag})**",
             thumbnail=ipy.EmbedAttachment(url=clan.badge.url),
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
         embed.add_field(name="**Helpers**", value=helpers_str if helpers_str else "No helpers there...")
@@ -666,7 +667,7 @@ class HelperCommands(ipy.Extension):
         embed = ipy.Embed(
             title=f"**{helper}'s Linked Accounts**",
             description=description,
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 

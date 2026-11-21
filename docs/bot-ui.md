@@ -9,7 +9,7 @@ matches, leaderboards for ranked rows, base and history views for pagination) an
 
 | Location | Contents |
 |---|---|
-| [elo_bot/config/presentation.py](../elo_bot/config/presentation.py) | `COLOR`, `RED_COLOR`, `GREEN_COLOR`, `FOOTER_TEXT`, `FOOTER_IMAGE`, image URLs under `ASSETS_URL`, in-game link prefixes, `ORDINAL_REPRESENTATIONS`, `LB_ENTRIES_PER_PAGE`, leaderboard type options |
+| [elo_bot/config/presentation.py](../elo_bot/config/presentation.py) | `COLOR`, `RED_COLOR`, `GREEN_COLOR`, `FOOTER_TEXT`, logo and other image URLs under `ASSETS_URL`, in-game link prefixes, `ORDINAL_REPRESENTATIONS`, `LB_ENTRIES_PER_PAGE`, leaderboard type options |
 | [elo_bot/config/emojis.py](../elo_bot/config/emojis.py) | Every custom emoji and the rank, quality, town hall and league emoji tables |
 | [elo_bot/discord/pagination.py](../elo_bot/discord/pagination.py) | `build_page_button`, `build_page_jump_modal`, `parse_page_number` |
 | [elo_bot/discord/mentions.py](../elo_bot/discord/mentions.py) | `mention_user` |
@@ -54,7 +54,7 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   `**Season 14 Final · QF1 Betting**`, `**{user}'s Profile**`, `**{district} Base**`, `**{label} Stats**`.
 - **Color:** `COLOR` by default. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
-- **Footer:** `FOOTER_TEXT` with `FOOTER_IMAGE` on every embed (`set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)`
+- **Footer:** `FOOTER_TEXT` with the running bot's logo from `footer_image()` (`set_footer(text=FOOTER_TEXT, icon_url=footer_image())`
   or `footer=ipy.EmbedFooter(...)`).
 - **Field layout:** fields are full width. Leave `inline` at its default `False`; use `inline=True` only
   when side-by-side fields were specifically asked for.
@@ -83,7 +83,7 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
 ```python
 embed = ipy.Embed(title="**Tokens**", color=COLOR)
 embed.add_field(name="**Available Tokens**", value=f"{available:,} {TOKEN_EMOJI}")
-embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
 ```
 
 ## Text formatting

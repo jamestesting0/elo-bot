@@ -8,9 +8,9 @@ from elo_bot.features.base_store.models import BaseStoreRuntime
 from elo_bot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 from elo_bot.features.base_store.publication import mark_store_unavailable
 from elo_bot.features.base_store.live import live_pair_ready, live_store_components, live_stores
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
 from elo_bot.config.emojis import ERROR_EMOJI
-from elo_bot.discord.embeds import embed_edit_payload
+from elo_bot.discord.embeds import embed_edit_payload, footer_image
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.members import member_guild
@@ -81,7 +81,7 @@ async def publish_live_storage(
                     ipy.EmbedField(name="**Host Clan**", value=f"[{clan.name} ({clan.tag})]({clan.share_link})"),
                     ipy.EmbedField(name="**Slots**", value="\n".join(statuses)),
                 ],
-                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE), color=COLOR,
+                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()), color=COLOR,
             )
             components = live_store_components(fresh, reservation_id, allow_start=ready)
         await edit_channel_message(

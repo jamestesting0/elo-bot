@@ -3,7 +3,8 @@ import re
 
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS, LVL1_ROLES
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.discord.pagination import build_page_button, build_page_jump_modal, parse_page_number, InvalidPageError
@@ -88,7 +89,7 @@ class TokenCommands(ipy.Extension):
                 if mode == "shop":
                     listing = ITEMS[item]
                     embed = ipy.Embed(title=f"**{listing.name}**", description=f"{listing.price:,} {TOKEN_EMOJI}",
-                                      color=COLOR, footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE))
+                                      color=COLOR, footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
                     await ctx.edit_origin(content="", embed=embed, components=[
                         ipy.Button(style=ipy.ButtonStyle.SUCCESS, label="Buy",
                                    custom_id=f"tokenitems|buy|{owner}|{mode}|{page}|{key}|{item}"),
@@ -154,7 +155,7 @@ class TokenCommands(ipy.Extension):
                 total = sum(stake.committed_amount(user) for stake in stakes
                             for user, wallet_id in zip(stake.users, stake.wallets or ()) if wallet_id == wallet.id)
                 embed.add_field(name="**Match Stakes**", value=f"{total:,} {TOKEN_EMOJI}")
-            embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+            embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
             await ctx.send(embed=embed, ephemeral=hidden)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
@@ -172,7 +173,7 @@ class TokenCommands(ipy.Extension):
             + (f" · {scopes[entry.market_id]}" if entry.market_id in scopes else "")
             + f" · {ipy.Timestamp.fromtimestamp(entry.created_at).format(ipy.TimestampStyles.RelativeTime)}"
             for entry in selected) or "No token activity.")
-        embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+        embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
         owner = str(ctx.author.id)
         controls = [ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️", custom_id=f"tokenpage|{owner}|{page - 1}", disabled=page == 1),
             build_page_button(page, pages, f"tokenjump|{owner}|{pages}"),

@@ -7,7 +7,8 @@ from typing import assert_never
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, LB_ENTRIES_PER_PAGE
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, LB_ENTRIES_PER_PAGE
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.game import DISTRICT_CHOICES
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES
 from elo_bot.config.emojis import RANK_EMOJIS, SUCCESS_EMOJI
@@ -392,7 +393,7 @@ class SeasonCommands(ipy.Extension):
             description=f"Start: {start_date}\n"
                         f"End: {end_date}\n\n"
                         f"{leaderboard_str}",
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 

@@ -4,7 +4,8 @@ import re
 from interactions.models.discord.message import process_message_payload
 from tests._season_stats_fixture import row, timestamp
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import DISTRICT_EMOJI
 from elo_bot.features.seasons.presentation import stats_controls, stats_embed
 from elo_bot.features.seasons.stats import SeasonWindow, StatsAccumulator
@@ -23,7 +24,7 @@ class TestSeasonStatsRendering(unittest.TestCase):
         # Then: one coherent standard embed contains accurate counts and boundary controls.
         embed = payload["embeds"][0]
         self.assertEqual((embed["title"], embed["color"], embed["footer"]),
-                         ("**Current Season Stats**", COLOR, {"text": FOOTER_TEXT, "icon_url": FOOTER_IMAGE}))
+                         ("**Current Season Stats**", COLOR, {"text": FOOTER_TEXT, "icon_url": footer_image()}))
         self.assertIn("End: Ongoing", embed["description"])
         self.assertIn(f"{DISTRICT_EMOJI} Capital Peak `2`", embed["fields"][-1]["value"])
         self.assertIn("Goblin Mines `0`", embed["fields"][-1]["value"])

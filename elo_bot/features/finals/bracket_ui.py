@@ -1,6 +1,7 @@
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import ROUND_NODES
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import EloFinal
@@ -33,7 +34,7 @@ def bracket_embed(final: EloFinal, names: dict[str, str] | None = None, submitte
         if final.predictions_ever_opened:
             embed.add_field(name="**Predictions**",
                             value=f"{prediction_label(final.prediction_state)} · {submitted:,} submitted", inline=False)
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed
 
 

@@ -9,7 +9,8 @@ from aiohttp import ClientError
 
 import interactions as ipy
 from elo_bot.config.ids import BOT_ID, LVL1_ROLES, MAIN_GUILD, PLAYER_ROLE
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import (
     DISTRICT_EMOJI, ERROR_EMOJI, LEAGUE_EMOJIS, LOSS_EMOJI, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI,
 )
@@ -43,7 +44,7 @@ async def construct_match_embed(bot: ipy.Client, guild: ipy.Guild, match_id: str
             description=f"ID: `{match_id}`",
             color=COLOR
         )
-        embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+        embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
         return embed
 
     player_result = match.players[player_id]
@@ -81,7 +82,7 @@ async def construct_match_embed(bot: ipy.Client, guild: ipy.Guild, match_id: str
                     f"{ipy.Timestamp.fromtimestamp(match.time).format(ipy.TimestampStyles.RelativeTime)}\n"
                     f"{elo_change}\n\n"
                     f"{match_info}",
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=COLOR
     )
 
@@ -257,7 +258,7 @@ class PlayerCommands(ipy.Extension):
                     value=recent_matches
                 )
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 
@@ -572,7 +573,7 @@ class PlayerCommands(ipy.Extension):
                 )
             ],
             thumbnail=ipy.EmbedAttachment(url=user.avatar.url),
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 
@@ -866,7 +867,7 @@ class PlayerCommands(ipy.Extension):
         embed = ipy.Embed(
             title=f"**{user}'s Hitrates**",
             description=hitrates_str,
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
         embed.add_field(name="**Scope**", value=scope)

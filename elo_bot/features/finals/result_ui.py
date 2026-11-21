@@ -1,7 +1,8 @@
 import interactions as ipy
 from typing import Final, assert_never
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import CROSS_EMOJI, STAR_EMOJI, TICK_EMOJI, WIN_EMOJI
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, LVL1_ROLES, LVL2_ROLES
 from elo_bot.core.finals import FinalError
@@ -101,7 +102,7 @@ def score_embed(final: EloFinal, node_id: str, snapshot: FinalResultSnapshot,
             assert_never(unreachable)
     if final.repair_pending:
         embed.add_field(name="**Recovery**", value="Bracket and payout updates are pending.")
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed
 
 

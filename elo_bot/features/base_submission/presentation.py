@@ -9,7 +9,8 @@ from elo_bot.features.base_submission.models import (
     ReviewStatus,
     SubmissionDraft,
 )
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, GREEN_COLOR, RED_COLOR
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, GREEN_COLOR, RED_COLOR
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 from elo_bot.db import PendingBaseSubmission
 from elo_bot.discord.mentions import mention_user
@@ -59,7 +60,7 @@ def build_review_embed(draft: SubmissionDraft) -> ipy.Embed:
         title="Base Submission Review",
         description=draft.link,
         fields=fields,
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=COLOR,
     )
     embed.set_image(draft.image_url)
@@ -100,7 +101,7 @@ def build_resolution_embed(submission: PendingBaseSubmission, decision: Resoluti
         title=title,
         description=submission.link,
         fields=fields,
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=color,
     )
     embed.set_image(submission.image_url)
@@ -143,7 +144,7 @@ def mark_review_embed(
         title="Base Submission Review",
         description=submission.link,
         fields=fields,
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=color,
     )
     embed.set_image(submission.image_url)

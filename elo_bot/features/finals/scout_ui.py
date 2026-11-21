@@ -3,7 +3,8 @@ import time
 import interactions as ipy
 
 from elo_bot.config.emojis import LOADING_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.db import Match
 from elo_bot.features.finals.scouting import scout_opens_at
@@ -20,7 +21,7 @@ def scout_opening_text(opens: int | None, *, paused: bool) -> str:
 def scout_panel(match: Match, owner: str, attacker: int, district: int, *, manager: bool
                 ) -> tuple[ipy.Embed, list[ipy.ActionRow]]:
     embed = ipy.Embed(title=f"**{FINAL_DISTRICTS[district]}**", color=COLOR,
-                      footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE))
+                      footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
     opens = scout_opens_at(match, attacker)
     if opens is None or time.time() < opens:
         embed.description = scout_opening_text(opens, paused=attacker in match.final_scouting_paused_sides)

@@ -6,7 +6,8 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.ids import FINAL_CHANNEL
 from elo_bot.config.emojis import TOKEN_EMOJI, CROSS_EMOJI, TICK_EMOJI, WIN_EMOJI
 from elo_bot.core.finals import FinalError
@@ -35,7 +36,7 @@ def market_embed(final: EloFinal, market: FinalBettingMarket, names: dict[str, s
                     + (". Winning bets split the whole pool." if market.state == "OPEN" else "")
                     + "\n\n" + "\n".join(lines))
     embed.add_field(name="**Total Pool**", value=f"{total:,} {TOKEN_EMOJI}")
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed
 
 
@@ -103,7 +104,7 @@ async def bet_review(market: FinalBettingMarket, user: str, contestant: str, amo
         embed.add_field(name="**Estimated Profit**", value=f"{profit:,} {TOKEN_EMOJI}")
     if debt:
         embed.add_field(name="**Debt**", value=f"{debt:,} {TOKEN_EMOJI}")
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     controls = [ipy.Button(style=ipy.ButtonStyle.SUCCESS if amount else ipy.ButtonStyle.DANGER,
                           label="Confirm Bet" if amount else "Cancel Bet",
                           emoji=TICK_EMOJI if amount else CROSS_EMOJI,

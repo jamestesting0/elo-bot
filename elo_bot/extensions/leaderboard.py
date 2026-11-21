@@ -7,7 +7,8 @@ from datetime import datetime
 
 import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT, LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT, LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import ERROR_EMOJI, RANK_EMOJIS, RANK_REVERSED_EMOJIS, SUCCESS_EMOJI
 from elo_bot.config.ids import GUILD_IDS
 from elo_bot.db import RecordedMatch, Player, Season
@@ -649,7 +650,7 @@ class LeaderboardCommands(ipy.Extension):
 
         embed = ipy.Embed(
             title=f"**{lb_type} Leaderboard**",
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
         embed.add_field(name="**Scope**", value=scope)

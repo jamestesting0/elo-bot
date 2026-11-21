@@ -4,7 +4,8 @@ import interactions as ipy
 
 from elo_bot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CHOICES
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.db import BaseLayout
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.pagination import build_page_button
@@ -140,7 +141,7 @@ def construct_base_embed(
                 value=f"{BASE_QUALITY_EMOJIS[quality]} {quality}"
             )
         ],
-        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=COLOR
     )
 

@@ -16,6 +16,7 @@ import elo_bot.features.matches.resources as resources_module
 from elo_bot.config.ids import GUILD_IDS
 from elo_bot.core.season_calendar import season_calendar
 from elo_bot.db import BaseStore, ServerState
+from elo_bot.discord import runtime
 from elo_bot.extensions.embed import EmbedCommands
 from elo_bot.features.embeds.elo_kings import PeakRating
 from elo_bot.features.embeds.readme import README_SECTIONS
@@ -24,6 +25,17 @@ from elo_bot.features.embeds.readme import README_SECTIONS
 class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         resources_module.RESOURCE_CLAN_LOCKS.clear()
+
+    async def test_embed_footer_uses_the_running_bot_logo(self):
+        cog = EmbedCommands(MagicMock())
+        for version, logo in (("main", "elo-bot.png"), ("beta", "elo-beta.png")):
+            with self.subTest(version=version), patch.object(runtime, "VERSION", version, create=True):
+                ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
+                ctx.channel.send = AsyncMock()
+                await cog.embed.callback.func(cog, ctx, "Elo Final")
+                payload = ctx.channel.send.await_args.kwargs["embed"].to_dict()
+                self.assertEqual(payload["footer"]["icon_url"],
+                                 f"https://raw.githubusercontent.com/jamestesting0/elo-bot/main/assets/images/{logo}")
 
     async def test_elo_final_details_opens_private_guide_without_season_dates(self):
         cog = EmbedCommands(MagicMock())

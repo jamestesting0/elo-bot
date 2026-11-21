@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import interactions as ipy
 
 from elo_bot.config.emojis import IMPORTANT_EMOJI, TOKEN_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FINAL_SEATS, NODE_IDS, ROUND_NODES
 from elo_bot.db import EloFinal
 from elo_bot.db.final_invitation_models import FinalInvitation
@@ -182,5 +183,5 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
             while lines and len(value) + len(lines[0]) + 1 <= 1024:
                 value += "\n" + lines.pop(0)
             embed.add_field(name=f"**{title}**", value=value, inline=False)
-    embed.set_footer(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE)
+    embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed

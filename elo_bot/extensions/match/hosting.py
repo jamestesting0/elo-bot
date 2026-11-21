@@ -39,10 +39,10 @@ from elo_bot.config.ids import (
 )
 from elo_bot.config.presentation import (
     COLOR,
-    FOOTER_IMAGE,
     FOOTER_TEXT,
     GREEN_COLOR,
 )
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.parsing import future_schedule_timestamp
 from elo_bot.core.raid_weekend import is_raid_weekend
 from elo_bot.db import Match, Player
@@ -592,7 +592,7 @@ class MatchHostingCommands:
                 ipy.EmbedField(name="**Host Clan**",
                                value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned")
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR
         )
 
@@ -1287,7 +1287,7 @@ class MatchHostingCommands:
                     value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"
                 ),
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=COLOR,
         )
 
@@ -1313,7 +1313,7 @@ class MatchHostingCommands:
                 ipy.EmbedField(name="**Host Clan**",
                                value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"),
             ],
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=FOOTER_IMAGE),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=GREEN_COLOR,
         )
         if match.msg:

@@ -7,7 +7,8 @@ from elo_bot.extensions.final import FinalCommands
 from elo_bot.extensions.leaderboard import LeaderboardCommands, construct_leaderboard_string, _MATCH_LEADERBOARD_TYPES
 from elo_bot.extensions.tokens import TokenCommands
 from elo_bot.config.ids import MAIN_GUILD, LVL1_ROLES, LVL2_ROLES
-from elo_bot.config.presentation import FOOTER_IMAGE, LB_ENTRIES_PER_PAGE
+from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
@@ -76,7 +77,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         payload = client.http.edit_interaction_message.await_args.args[0]
         self.assertFalse(payload.get("flags", 0) & ipy.MessageFlags.IS_COMPONENTS_V2)
         self.assertFalse(payload.get("content"))
-        self.assertEqual(payload["embeds"][0]["footer"]["icon_url"], FOOTER_IMAGE)
+        self.assertEqual(payload["embeds"][0]["footer"]["icon_url"], footer_image())
         self.assertEqual(payload["components"][0]["components"][0]["type"], 3)
         client.http.post_followup.assert_not_awaited()
         prediction = await FinalPrediction.find_one({"user_id": "9"})
@@ -86,7 +87,7 @@ class TestFinalCallbacks(FinalScenarioCase):
         self.assertEqual(transport.http.post_initial_response.await_args.args[0]["type"], 6)
         edited = transport.http.edit_interaction_message.await_args.kwargs["payload"]
         self.assertFalse(edited.get("flags", 0) & ipy.MessageFlags.IS_COMPONENTS_V2)
-        self.assertEqual(edited["embeds"][0]["footer"]["icon_url"], FOOTER_IMAGE)
+        self.assertEqual(edited["embeds"][0]["footer"]["icon_url"], footer_image())
         self.assertEqual((await FinalPrediction.get(prediction.id)).draft["QF1"], "1")
 
     async def test_betting_review_confirm_stale_and_owner_controls_match_persisted_state(self):

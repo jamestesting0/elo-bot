@@ -3,7 +3,8 @@ from datetime import UTC, datetime, time
 
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_IMAGE, FOOTER_TEXT
+from elo_bot.config.presentation import COLOR, FOOTER_TEXT
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import DISTRICT_EMOJI
 from elo_bot.discord.pagination import build_page_button
 from elo_bot.features.seasons.stats import (
@@ -40,7 +41,7 @@ def stats_embed(window: SeasonWindow, stats: SeasonStats) -> ipy.Embed:
         description=period,
         color=COLOR,
         footer=ipy.EmbedFooter(text=FOOTER_TEXT,
-        icon_url=FOOTER_IMAGE)
+        icon_url=footer_image())
     )
     activity = (
         f"Total Matches: `{stats.matches:,}`\n"

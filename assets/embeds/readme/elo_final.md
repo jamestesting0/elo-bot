@@ -4,7 +4,6 @@
 - Allow about 4 days for quarterfinals and 3 for semifinals. The final is before next season.
 
 **Match Thread**
-- Submit links with `/match base submit` and review them with `/match base view`.
 - Scout by district with `/match base scout` from 30 minutes before your start.
 - Play 7 districts. Staff arrange a district replay for ties.
 

@@ -12,7 +12,7 @@ from elo_bot.integrations.helper_api import HelperTrackingFailure
 from elo_bot.extensions.self_service import SelfCommands
 from elo_bot.config.game import BASE_STORE_SLOTS
 from elo_bot.config.ids import BOT_ID
-from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import embed_color
 from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, TICK_EMOJI
 from tests._patch_sites import patch_sites
 
@@ -309,7 +309,7 @@ class TestSelfCommands(unittest.IsolatedAsyncioTestCase):
         sent = ctx.channel.send.await_args.kwargs
         self.assertEqual(sent["content"], opponent.mention)
         self.assertEqual(sent["embed"].title, "Live Match Request")
-        self.assertEqual(sent["embed"].color, COLOR)
+        self.assertEqual(sent["embed"].color, embed_color())
         self.assertNotIn("components", sent)
         public.edit.assert_awaited_once()
         buttons = public.edit.await_args.kwargs["components"].components

@@ -73,7 +73,7 @@ class TestHelpCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(context.send.await_args.kwargs["ephemeral"])
         embed = context.send.await_args.kwargs["embed"]
         self.assertEqual(embed.title, "Match")
-        self.assertEqual(embed.color, help_module.COLOR)
+        self.assertEqual(embed.color, help_module.embed_color())
         self.assertEqual(
             [option.value for option in menu_from(context).options if option.default], ["Match"],
         )

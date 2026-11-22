@@ -9,7 +9,7 @@ matches, leaderboards for ranked rows, base and history views for pagination) an
 
 | Location | Contents |
 |---|---|
-| [elo_bot/config/presentation.py](../elo_bot/config/presentation.py) | `COLOR`, `RED_COLOR`, `GREEN_COLOR`, `FOOTER_TEXT`, logo and other image URLs under `ASSETS_URL`, in-game link prefixes, `ORDINAL_REPRESENTATIONS`, `LB_ENTRIES_PER_PAGE`, leaderboard type options |
+| [elo_bot/config/presentation.py](../elo_bot/config/presentation.py) | `EMBED_COLORS`, `RED_COLOR`, `GREEN_COLOR`, `FOOTER_TEXT`, logo and other image URLs under `ASSETS_URL`, in-game link prefixes, `ORDINAL_REPRESENTATIONS`, `LB_ENTRIES_PER_PAGE`, leaderboard type options |
 | [elo_bot/config/emojis.py](../elo_bot/config/emojis.py) | Every custom emoji and the rank, quality, town hall and league emoji tables |
 | [elo_bot/discord/pagination.py](../elo_bot/discord/pagination.py) | `build_page_button`, `build_page_jump_modal`, `parse_page_number` |
 | [elo_bot/discord/mentions.py](../elo_bot/discord/mentions.py) | `mention_user` |
@@ -52,7 +52,7 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
 
 - **Title:** bold, `title="**Tokens**"`. Name the subject and add scope after ` · `:
   `**Season 14 Final · QF1 Betting**`, `**{user}'s Profile**`, `**{district} Base**`, `**{label} Stats**`.
-- **Color:** `COLOR` by default. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
+- **Color:** `embed_color()` selects the default accent for the running bot. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
 - **Footer:** Use `FOOTER_TEXT` with `footer_image()` for the signed-in bot's Discord avatar. Before login, the helper
   uses the version's logo from `ASSETS_URL`.
@@ -81,7 +81,7 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   `embed_edit_payload(embed)` when a description must be cleared, because `Embed.to_dict` drops empty fields.
 
 ```python
-embed = ipy.Embed(title="**Tokens**", color=COLOR)
+embed = ipy.Embed(title="**Tokens**", color=embed_color())
 embed.add_field(name="**Available Tokens**", value=f"{available:,} {TOKEN_EMOJI}")
 embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
 ```

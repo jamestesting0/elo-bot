@@ -6,8 +6,8 @@ from typing import assert_never
 
 from elo_bot.db import AuditLogEntry
 import interactions as ipy
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES
 from elo_bot.config.audit import MONITORED_COMMANDS, MONITORED_COMPONENTS, SPECIAL_MONITORED_COMMANDS
@@ -37,7 +37,7 @@ def _auditlog_embed(entries: list[AuditLogEntry], names: dict[str, str]) -> ipy.
         title="**Auditlog**",
         description=description,
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
 
 

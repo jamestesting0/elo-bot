@@ -9,8 +9,8 @@ from aiohttp import ClientError
 
 import interactions as ipy
 from elo_bot.config.ids import BOT_ID, LVL1_ROLES, MAIN_GUILD, PLAYER_ROLE
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.emojis import (
     DISTRICT_EMOJI, ERROR_EMOJI, LEAGUE_EMOJIS, LOSS_EMOJI, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI,
 )
@@ -42,7 +42,7 @@ async def construct_match_embed(bot: ipy.Client, guild: ipy.Guild, match_id: str
         embed = ipy.Embed(
             title="**Match not Found**",
             description=f"ID: `{match_id}`",
-            color=COLOR
+            color=embed_color()
         )
         embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
         return embed
@@ -83,7 +83,7 @@ async def construct_match_embed(bot: ipy.Client, guild: ipy.Guild, match_id: str
                     f"{elo_change}\n\n"
                     f"{match_info}",
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR
+        color=embed_color()
     )
 
     return embed
@@ -259,7 +259,7 @@ class PlayerCommands(ipy.Extension):
                 )
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR
+            color=embed_color()
         )
 
         final = await EloFinal.find_one({"active": True, "guild_id": ctx.guild_id, "state": {"$ne": "CANCELLING"}})
@@ -574,7 +574,7 @@ class PlayerCommands(ipy.Extension):
             ],
             thumbnail=ipy.EmbedAttachment(url=user.avatar.url),
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR
+            color=embed_color()
         )
 
         await ctx.send(embed=embed, components=stats_select, ephemeral=hidden)
@@ -868,7 +868,7 @@ class PlayerCommands(ipy.Extension):
             title=f"**{user}'s Hitrates**",
             description=hitrates_str,
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR
+            color=embed_color()
         )
         embed.add_field(name="**Scope**", value=scope)
 

@@ -38,11 +38,10 @@ from elo_bot.config.ids import (
     STAFF_ROLE,
 )
 from elo_bot.config.presentation import (
-    COLOR,
     FOOTER_TEXT,
     GREEN_COLOR,
 )
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.parsing import future_schedule_timestamp
 from elo_bot.core.raid_weekend import is_raid_weekend
 from elo_bot.db import Match, Player
@@ -593,7 +592,7 @@ class MatchHostingCommands:
                                value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned")
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR
+            color=embed_color()
         )
 
         host_clan_select = ipy.StringSelectMenu(
@@ -1288,7 +1287,7 @@ class MatchHostingCommands:
                 ),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR,
+            color=embed_color(),
         )
 
         await append_helper_task(match.thread, match.participants[0].user_id, ts)

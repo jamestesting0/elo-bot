@@ -3,8 +3,8 @@ from uuid import uuid4
 import interactions as ipy
 
 from elo_bot.config.emojis import TOKEN_EMOJI, TOKEN_ITEM_EMOJIS
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.token_items import ITEMS, TokenItem
 from elo_bot.db.token_models import TokenItemUse, TokenWallet
 
@@ -17,7 +17,7 @@ async def item_panel(wallet: TokenWallet, mode: str, page: int, *,
     owner = wallet.user_id
     shop = mode == "shop"
     title = "Token Shop" if shop else "Token Inventory"
-    embed = ipy.Embed(title=f"**{title}**", color=COLOR)
+    embed = ipy.Embed(title=f"**{title}**", color=embed_color())
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     selected = list(ITEMS)[page * PAGE_SIZE:(page + 1) * PAGE_SIZE]
     active = {} if shop else {

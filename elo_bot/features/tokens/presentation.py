@@ -6,8 +6,8 @@ import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
 
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.ids import FINAL_CHANNEL
 from elo_bot.config.emojis import TOKEN_EMOJI, CROSS_EMOJI, TICK_EMOJI, WIN_EMOJI
 from elo_bot.core.finals import FinalError
@@ -31,7 +31,7 @@ def market_embed(final: EloFinal, market: FinalBettingMarket, names: dict[str, s
         lines.append(f"{names.get(user, mention_user(None, user))}{won} — {pool:,} {TOKEN_EMOJI} · {multiplier}")
     # The pool rows name both players and mark the winner, so the status line names nobody.
     status = "Paid" if market.state == "PAID" else market_label(market, names)
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Betting**", color=COLOR,
+    embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Betting**", color=embed_color(),
         description=status
                     + (". Winning bets split the whole pool." if market.state == "OPEN" else "")
                     + "\n\n" + "\n".join(lines))
@@ -97,7 +97,7 @@ async def bet_review(market: FinalBettingMarket, user: str, contestant: str, amo
     previous = old.amount if old and old.active else 0
     _, profit = projected_return(market, old, contestant, amount)
     member = await guild.fetch_member(contestant) if amount else None
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Bet Review**", color=COLOR,
+    embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Bet Review**", color=embed_color(),
         description=f"{mention_user(member, contestant)} · {amount:,} {TOKEN_EMOJI}" if amount else
                     f"Cancel bet · Refund: {previous:,} {TOKEN_EMOJI}")
     if amount:

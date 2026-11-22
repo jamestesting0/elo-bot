@@ -1,8 +1,12 @@
 import interactions as ipy
 from pydantic import JsonValue
 
-from elo_bot.config.presentation import FOOTER_LOGOS
+from elo_bot.config.presentation import EMBED_COLORS, FOOTER_LOGOS
 from elo_bot.discord import runtime
+
+
+def embed_color() -> int:
+    return EMBED_COLORS[getattr(runtime, "VERSION", "main")]
 
 
 def footer_image() -> str:

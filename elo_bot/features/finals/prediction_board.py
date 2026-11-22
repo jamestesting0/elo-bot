@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import anyio
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult, FinalPrediction
@@ -59,7 +59,7 @@ async def prediction_board(final: EloFinal, guild: ipy.Guild, owner: str,
     page = min(max(page, 0), pages - 1)
     shown = predictions[page * PAGE_SIZE:(page + 1) * PAGE_SIZE]
     members = await fetch_members(guild, [prediction.user_id for prediction in shown])
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Predictions**", color=COLOR,
+    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Predictions**", color=embed_color(),
                       description=f"{prediction_label(final.prediction_state)} · {len(predictions):,} submitted")
     lines, options = [], []
     for rank, prediction in enumerate(shown, page * PAGE_SIZE + 1):
@@ -112,7 +112,7 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
     parts = [names[prediction.user_id]] if show_owner else []
     if result_text:
         parts.append(f"**Results**\n{result_text}")
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=COLOR,
+    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=embed_color(),
                       description="\n\n".join(parts) or None)
     if eligible:
         embed.add_field(name="**Predictions**", value=f"`{points}/{eligible}`")

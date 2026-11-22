@@ -1,7 +1,7 @@
 import interactions as ipy
 
 # Colors
-COLOR = 0xD8A34D
+EMBED_COLORS = {"main": 0xD8A34D, "beta": 0x6EB793}
 RED_COLOR = 0xBE0000
 GREEN_COLOR = 0x9EDE73
 

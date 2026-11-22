@@ -7,11 +7,10 @@ import elo_bot.extensions.base.groups as groups
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CHOICES
 from elo_bot.config.presentation import (
-    COLOR,
     FOOTER_TEXT,
     LB_ENTRIES_PER_PAGE,
 )
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import BaseLayout
 from elo_bot.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
 from elo_bot.extensions.base.groups import BASE_QUALITY_CHOICES
@@ -101,7 +100,7 @@ class BaseLeaderboardCommands:
             title=f"**Best Performing {district} Bases ({quality})**",
             description=leaderboard if leaderboard else "Not enough data.",
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR
+            color=embed_color()
         )
 
         await ctx.send(embed=embed, components=components, ephemeral=hidden)

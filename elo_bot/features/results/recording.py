@@ -5,8 +5,8 @@ import interactions as ipy
 from beanie.odm.operators.find.comparison import In
 
 from elo_bot.config.emojis import CLASHING_SWORD_EMOJI, LOSS_EMOJI, STAR_EMOJI, WIN_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.elo import calculate_elo
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import BaseLayout, Match, MatchDistrictStats, MatchPlayerStats, Player, RecordedMatch
@@ -210,7 +210,7 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
     player1_embed = ipy.Embed(
         title=f"**Match Against {player2_user.display_name}**",
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR
+        color=embed_color()
     )
     player1_embed.description = \
         f"**Your Score:** {player1_total_stars}{STAR_EMOJI} {player1_total_destruction}%\n" \
@@ -225,7 +225,7 @@ async def record_match(guild: ipy.Guild, bot: ipy.Client, player1_id: str, playe
     player2_embed = ipy.Embed(
         title=f"**Match Against {player1_user.display_name}**",
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR
+        color=embed_color()
     )
     player2_embed.description = \
         f"**Your Score:** {player2_total_stars}{STAR_EMOJI} {player2_total_destruction}%\n" \
@@ -352,7 +352,7 @@ async def _mark_result_publication_incomplete(message: ipy.Message) -> None:
     pending_embed = ipy.Embed(
         title="**Result Publication Incomplete**",
         description="Results are recorded. This message is pending durable tracking and publication.",
-        color=COLOR,
+        color=embed_color(),
     )
     try:
         await edit_channel_message(message, embed=pending_embed, components=[])

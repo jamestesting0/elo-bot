@@ -26,14 +26,15 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         resources_module.RESOURCE_CLAN_LOCKS.clear()
 
-    async def test_embed_footer_uses_the_running_bot_logo(self):
+    async def test_embed_branding_uses_the_running_bot_version(self):
         cog = EmbedCommands(MagicMock())
-        for version, logo in (("main", "elo-bot.png"), ("beta", "elo-beta.png")):
+        for version, logo, color in (("main", "elo-bot.png", 0xD8A34D), ("beta", "elo-beta.png", 0x6EB793)):
             with self.subTest(version=version), patch.object(runtime, "VERSION", version, create=True):
                 ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
                 ctx.channel.send = AsyncMock()
                 await cog.embed.callback.func(cog, ctx, "Elo Final")
                 payload = ctx.channel.send.await_args.kwargs["embed"].to_dict()
+                self.assertEqual(payload["color"], color)
                 self.assertEqual(payload["footer"]["icon_url"],
                                  f"https://raw.githubusercontent.com/jamestesting0/elo-bot/main/assets/images/{logo}")
 

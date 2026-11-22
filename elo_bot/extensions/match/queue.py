@@ -14,10 +14,9 @@ from elo_bot.config.ids import (
     INFO_CHANNEL,
 )
 from elo_bot.config.presentation import (
-    COLOR,
     FOOTER_TEXT,
 )
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import Player, Queue, ServerState
 from elo_bot.db.player_models import QueueDistrictSelection
 from elo_bot.extensions.match.groups import base
@@ -162,7 +161,7 @@ class QueueCommands:
                           "time to cancel once matched."
             if any(selection.districts):
                 description += " Your district preset is loaded, feel free to update them if needed."
-            embed = ipy.Embed(title="**Match-making Queue**", description=description, color=COLOR,
+            embed = ipy.Embed(title="**Match-making Queue**", description=description, color=embed_color(),
                               footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
             await ctx.send(content, embed=embed, components=queue_district_components(user_id, selection, options),
                            ephemeral=True)

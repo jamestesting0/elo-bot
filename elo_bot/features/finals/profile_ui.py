@@ -3,8 +3,8 @@
 
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.emojis import STAR_EMOJI, WIN_EMOJI, LOSS_EMOJI
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.features.tokens.stats import betting_lines, betting_stats
@@ -28,7 +28,7 @@ async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
             FinalEditionStats(season_number=final.season_number)
     claims = wallet.identity_claims if wallet else [user_id]
     prediction = await FinalPrediction.find_one({"final_id": str(final.id), "user_id": user_id})
-    embed = ipy.Embed(title=f"**{user}'s Final Profile**", color=COLOR,
+    embed = ipy.Embed(title=f"**{user}'s Final Profile**", color=embed_color(),
         description=(f"[{player.tag}](https://link.clashofclans.com/en?action=OpenPlayerProfile&tag=%23{player.tag.lstrip('#')})\n" if player else "")
         + f"Season {final.season_number} Final\n"
         + (stats.placement or ("Entrant" if set(claims) & set(final.entrant_ids) else "No participation in this Final")))

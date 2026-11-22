@@ -1,7 +1,7 @@
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.features.finals.predictions import pick_options
 from elo_bot.core.finals import NODE_IDS
 from elo_bot.discord.mentions import mention_user
@@ -25,7 +25,7 @@ def prediction_view(final: EloFinal, prediction: FinalPrediction, names: dict[st
             description += " · Editing your submitted picks"
     if outcome:
         description += f"\n{outcome}"
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=COLOR)
+    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=embed_color())
     rows = []
     nodes = (NODE_IDS[:4], NODE_IDS[4:6], NODE_IDS[6:], NODE_IDS)[stage]
     if stage == 3 or submitted:

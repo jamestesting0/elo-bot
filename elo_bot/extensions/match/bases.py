@@ -28,12 +28,11 @@ from elo_bot.config.ids import (
     LVL3_ROLES,
 )
 from elo_bot.config.presentation import (
-    COLOR,
     FOOTER_TEXT,
     ORDINAL_REPRESENTATIONS,
     UNAVAILABLE_IMAGE,
 )
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import BaseLayout, BaseLink, Match, OverrideCode, Participant
 from elo_bot.discord.mentions import mention_user
 from elo_bot.extensions.match.groups import base_group
@@ -963,7 +962,7 @@ class MatchBaseCommands:
             embed = ipy.Embed(
                 title=f"**{district}**",
                 footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-                color=COLOR
+                color=embed_color()
             )
 
             if not base:

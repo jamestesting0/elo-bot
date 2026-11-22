@@ -4,8 +4,8 @@ import interactions as ipy
 from interactions import OptionType, SlashContext, slash_option
 
 from elo_bot.config.emojis import ERROR_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.db.token_models import TokenWallet
@@ -38,7 +38,7 @@ class History:
             if edition.nodes[result.node_id].result_id != result.id:
                 embed.add_field(name="**History**", value="Replaced by a correction.")
         else:
-            embed = ipy.Embed(title=f"**Season {edition.season_number} Final · History**", description="No results.", color=COLOR)
+            embed = ipy.Embed(title=f"**Season {edition.season_number} Final · History**", description="No results.", color=embed_color())
             embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
         owner = str(ctx.author.id)
         controls = [ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️", disabled=page == 1,

@@ -10,7 +10,7 @@ import interactions as ipy
 
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.base_store.live import live_pair_ready
-from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import embed_color
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.features.matches.timing import hosting_started
@@ -124,7 +124,7 @@ class LiveRequestCoordinator:
                     "Accept to start this live match with Helper hosting. "
                     "This request expires in 5 minutes."
                 ),
-                color=COLOR,
+                color=embed_color(),
             ),
         )
         identity = LiveRequestIdentity(

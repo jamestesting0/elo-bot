@@ -6,8 +6,7 @@ from typing import Literal, assert_never
 import interactions as ipy
 
 from elo_bot.features.base_store.live import format_live_slot_line, live_store_components, live_stores
-from elo_bot.config.presentation import COLOR
-from elo_bot.discord.embeds import embed_edit_payload
+from elo_bot.discord.embeds import embed_color, embed_edit_payload
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.db import Match
 from elo_bot.discord.mentions import mention_user
@@ -51,7 +50,7 @@ async def retire_stored_base_message(
         if channel is None:
             return
         message = await bot.cache.fetch_message(channel.id, request.message_id, force=True)
-        embeds = deepcopy(message.embeds) or [ipy.Embed(color=COLOR)]
+        embeds = deepcopy(message.embeds) or [ipy.Embed(color=embed_color())]
         embeds[0].title = title
         embeds[0].description = None
         components = []

@@ -3,8 +3,8 @@ import re
 
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS, LVL1_ROLES
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.discord.pagination import build_page_button, build_page_jump_modal, parse_page_number, InvalidPageError
@@ -89,7 +89,7 @@ class TokenCommands(ipy.Extension):
                 if mode == "shop":
                     listing = ITEMS[item]
                     embed = ipy.Embed(title=f"**{listing.name}**", description=f"{listing.price:,} {TOKEN_EMOJI}",
-                                      color=COLOR, footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
+                                      color=embed_color(), footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
                     await ctx.edit_origin(content="", embed=embed, components=[
                         ipy.Button(style=ipy.ButtonStyle.SUCCESS, label="Buy",
                                    custom_id=f"tokenitems|buy|{owner}|{mode}|{page}|{key}|{item}"),
@@ -141,7 +141,7 @@ class TokenCommands(ipy.Extension):
         try:
             wallet = await self._wallet(ctx)
             available, _, debt = await wallet_summary(wallet)
-            embed = ipy.Embed(title="**Tokens**", color=COLOR, description=f"**Available:** {available:,} {TOKEN_EMOJI}"
+            embed = ipy.Embed(title="**Tokens**", color=embed_color(), description=f"**Available:** {available:,} {TOKEN_EMOJI}"
                               + (f"\n**Debt:** {debt:,} {TOKEN_EMOJI}" if debt else ""))
             embed.add_field(name="__**Bets**__", value=betting_lines((await betting_stats()).get(wallet.id)))
             lines = await open_bet_lines(wallet, await member_guild(ctx))
@@ -168,7 +168,7 @@ class TokenCommands(ipy.Extension):
         page = parse_page_number(str(page), pages)
         selected = entries[(page - 1) * 10:page * 10]
         scopes = await market_scopes({entry.market_id for entry in selected if entry.market_id})
-        embed = ipy.Embed(title="**Token History**", color=COLOR, description="\n".join(
+        embed = ipy.Embed(title="**Token History**", color=embed_color(), description="\n".join(
             f"`{ledger_label(entry)}` {entry.amount:+,} {TOKEN_EMOJI}"
             + (f" · {scopes[entry.market_id]}" if entry.market_id in scopes else "")
             + f" · {ipy.Timestamp.fromtimestamp(entry.created_at).format(ipy.TimestampStyles.RelativeTime)}"

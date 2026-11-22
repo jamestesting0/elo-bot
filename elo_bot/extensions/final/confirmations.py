@@ -7,8 +7,8 @@ from pymongo.errors import PyMongoError
 
 from elo_bot.config.emojis import CROSS_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.token_models import FinalBettingMarket
@@ -56,7 +56,7 @@ class Confirmations:
             if "end" not in dict(available_actions(await self._dashboard_state(edition))):
                 raise FinalError("Resolve every pairing and finish pending updates before ending the Final.")
             names = await member_names(await member_guild(ctx), [edition.champion])
-            embed = ipy.Embed(title=f"**End the Season {edition.season_number} Final?**", color=COLOR,
+            embed = ipy.Embed(title=f"**End the Season {edition.season_number} Final?**", color=embed_color(),
                 description=f"Champion: {names[edition.champion]}. Results can't be changed afterwards.")
             button = ipy.Button(label="End Final", style=ipy.ButtonStyle.SUCCESS, emoji=TICK_EMOJI, custom_id=prefix)
         else:
@@ -66,7 +66,7 @@ class Confirmations:
                 description += (f"\n{len(threads)} match {'thread is' if len(threads) == 1 else 'threads are'} still open. "
                                 "Stored bases stay reserved until the threads are deleted.")
             embed = ipy.Embed(title=f"**Cancel the Season {edition.season_number} Final?**",
-                              description=description, color=COLOR)
+                              description=description, color=embed_color())
             embed.add_field(name="**Reason**", value=reason)
             button = ipy.Button(label="Cancel Final", style=ipy.ButtonStyle.DANGER, emoji=CROSS_EMOJI, custom_id=prefix)
         embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())

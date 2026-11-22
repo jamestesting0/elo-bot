@@ -2,8 +2,7 @@ import coc
 
 import interactions as ipy
 from elo_bot.config.emojis import CLAN_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.presentation import COLOR
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES, RAID_CHANNEL
 from elo_bot.core.raid_weekend import is_raid_weekend
 from elo_bot.discord.mentions import mention_user
@@ -100,7 +99,7 @@ class RaidCommands(ipy.Extension):
         if join_method == "Discord":
             join_method = f"DM {mention_user(ctx.author)}"
 
-        embed = ipy.Embed(title=f"**{clan.name} ({clan.tag})**", color=COLOR)
+        embed = ipy.Embed(title=f"**{clan.name} ({clan.tag})**", color=embed_color())
         embed.add_field(name="**CH Level**", value=str(clan.capital_districts[0].hall_level), inline=True)
         embed.add_field(name="**Capital Trophies**", value=str(clan.capital_points), inline=True)
         embed.add_field(name="**Available Slots**", value=available_slots, inline=True)

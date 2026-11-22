@@ -30,11 +30,10 @@ from elo_bot.config.ids import (
     STAFF_ROLE,
 )
 from elo_bot.config.presentation import (
-    COLOR,
     FOOTER_TEXT,
     RED_COLOR,
 )
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import HelperHistory, Match, Participant, Player, RecordedMatch
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
@@ -407,7 +406,7 @@ class MatchResultCommands:
                 f"{mention_user(members[1], player2_id)} ({player2_elo_change_str})\n\n{match_info}"
             ),
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR,
+            color=embed_color(),
         )
 
         try:
@@ -811,7 +810,7 @@ class MatchResultCommands:
             channel = match_thread if target == "summary" else await self.bot.fetch_channel(MATCH_CHANNEL)
             message_id = operation.summary_message_id if target == "summary" else operation.public_message_id
             embed = copy.deepcopy(finished_embed)
-            embed.color = COLOR if target == "summary" else RED_COLOR
+            embed.color = embed_color() if target == "summary" else RED_COLOR
             message = None
             if target == "public" and not message_id and not match.is_war and match.msg:
                 try:
@@ -990,7 +989,7 @@ class MatchResultCommands:
                                 f"*Note: auto-wins do not affect your winrate.*",
                     fields=[ipy.EmbedField(name="**Reason**", value=decision_reason)],
                     footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-                    color=COLOR
+                    color=embed_color()
                 )
                 try:
                     await winning_user.send(embed=winning_embed)
@@ -1004,7 +1003,7 @@ class MatchResultCommands:
                                 f"*Note: penalties do not affect your winrate.*",
                     fields=[ipy.EmbedField(name="**Reason**", value=decision_reason)],
                     footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-                    color=COLOR
+                    color=embed_color()
                 )
                 try:
                     await losing_user.send(embed=losing_embed)
@@ -1018,7 +1017,7 @@ class MatchResultCommands:
                                 f"careful considerations.{reservation_notice}",
                     fields=[ipy.EmbedField(name="**Reason**", value=decision_reason)],
                     footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-                    color=COLOR
+                    color=embed_color()
                 )
                 delete_button = ipy.Button(
                     style=ipy.ButtonStyle.DANGER,

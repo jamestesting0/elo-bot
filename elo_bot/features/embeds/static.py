@@ -6,8 +6,8 @@ import anyio
 import interactions as ipy
 
 from elo_bot.config.emojis import application_emoji, render_emoji_markup
-from elo_bot.config.presentation import BANNER_IMAGE, COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import BANNER_IMAGE, FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.features.embeds.elo_kings import elo_king_avatars, elo_king_rows
 from elo_bot.features.finals.rendering import render_elo_kings
@@ -45,7 +45,7 @@ async def elo_information(bot: ipy.Client) -> tuple[ipy.Embed, list[ipy.ActionRo
         description=description,
         footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
         images=[ipy.EmbedAttachment(url=BANNER_IMAGE)],
-        color=COLOR,
+        color=embed_color(),
     )
     file = None
     rows = await elo_king_rows(information)
@@ -116,7 +116,7 @@ def elo_final() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
         description="At the end of every season, the top Elo players meet in a knockout bracket for the "
                     "Elo Kings title. Predict the bracket and bet tokens on each match.",
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
     details_button = ipy.Button(style=ipy.ButtonStyle.GRAY, label="Details", emoji="📅",
                                 custom_id="elo_final_details")

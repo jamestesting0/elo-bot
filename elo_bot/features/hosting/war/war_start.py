@@ -14,8 +14,8 @@ from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
 from elo_bot.features.matches.message_lock import coordinated_match_message, match_message_lock
 from elo_bot.features.base_store.start import FreshWarStartState, StoredStartState, held_store
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import HOST_CLAN_OPTIONS
 from elo_bot.db import Match, Player
@@ -156,7 +156,7 @@ async def complete_war_start(
             ),
         ],
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
 
     token = match_doc.token

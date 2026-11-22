@@ -21,8 +21,8 @@ from elo_bot.features.base_store.publication import BaseStoreMessageConflict, ma
 from elo_bot.features.base_store.live import live_pair_ready, live_stores
 from elo_bot.features.base_store.start import StoredStartState
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT, GREEN_COLOR, RED_COLOR
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT, GREEN_COLOR, RED_COLOR
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.ids import MATCH_CHANNEL
 from elo_bot.config.emojis import SUCCESS_EMOJI
 from elo_bot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
@@ -259,7 +259,7 @@ async def complete_live_start(
             ),
         ],
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
     spectate_controls = [ipy.ActionRow(ipy.Button(
         style=ipy.ButtonStyle.SECONDARY, label="Spectate", emoji="👀",

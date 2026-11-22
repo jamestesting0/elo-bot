@@ -5,7 +5,7 @@ import interactions as ipy
 
 from elo_bot.extensions.base import BaseCommands
 from elo_bot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
-from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import embed_color
 from tests._patch_sites import patch_sites
 
 
@@ -77,7 +77,7 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(renewal_embed["title"], "Barbarian Camp Base Renewed")
         self.assertEqual(renewal_embed["description"], new_link)
         self.assertEqual(renewal_embed["image"]["url"], "https://example.com/base.png")
-        self.assertEqual(renewal_embed["color"], COLOR)
+        self.assertEqual(renewal_embed["color"], embed_color())
 
 
 if __name__ == "__main__":

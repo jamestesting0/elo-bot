@@ -9,8 +9,8 @@ from pymongo.errors import DuplicateKeyError
 
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FINAL_SEATS, FinalError
 from elo_bot.db import EloFinal, Player
 from elo_bot.db.final_invitation_models import FinalInvitation, InvitationState
@@ -89,7 +89,7 @@ def invitation_embed(invitation: FinalInvitation) -> ipy.Embed:
     description = (f"You're invited to the Season {season} Elo Final.\n"
                    f"Expires <t:{invitation.expires_at}:R>" if invitation.state == "pending"
                    else CLOSED_TEXT[invitation.state])
-    embed = ipy.Embed(title=f"**Season {season} Final · Invitation**", description=description, color=COLOR)
+    embed = ipy.Embed(title=f"**Season {season} Final · Invitation**", description=description, color=embed_color())
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed
 

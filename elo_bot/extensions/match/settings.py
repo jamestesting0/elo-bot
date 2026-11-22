@@ -14,11 +14,10 @@ from elo_bot.config.ids import (
     STAFF_ROLE,
 )
 from elo_bot.config.presentation import (
-    COLOR,
     FOOTER_TEXT,
     GREEN_COLOR,
 )
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import is_final_match
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.db import Match
@@ -128,7 +127,7 @@ class MatchSettingsCommands:
                 ),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR,
+            color=embed_color(),
         )
 
         old_msg = None
@@ -274,7 +273,7 @@ class MatchSettingsCommands:
                 ),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=COLOR,
+            color=embed_color(),
         )
 
         old_msg = None

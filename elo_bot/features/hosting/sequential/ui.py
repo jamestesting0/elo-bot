@@ -3,8 +3,8 @@ import time
 import interactions as ipy
 
 from elo_bot.config.emojis import CROSS_EMOJI, IMPORTANT_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import Match
@@ -95,7 +95,7 @@ def progress_embed(run: HelperSequentialRun, match: Match | None) -> ipy.Embed:
         title=title,
         description=f"{run_status_line(run)}\n\n{district_lines(run, match)}",
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
 
 
@@ -197,7 +197,7 @@ def status_embed(
         ipy.EmbedField(name="**Recent Events**", value=events[:1024] or "None"),
     ]
     return ipy.Embed(title="**Helper Run Status**", fields=fields,
-                     footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()), color=COLOR)
+                     footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()), color=embed_color())
 
 
 def list_line(run: HelperSequentialRun, now: float) -> str:
@@ -214,7 +214,7 @@ def list_embed(runs: list[HelperSequentialRun]) -> ipy.Embed:
     now = time.time()
     description = "\n".join(list_line(run, now) for run in runs) or "No matching Helper runs."
     return ipy.Embed(title="**Helper Runs**", description=description,
-                     footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()), color=COLOR)
+                     footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()), color=embed_color())
 
 
 def list_components(page: int, total_pages: int, state: str, clan: str | None) -> ipy.ActionRow:

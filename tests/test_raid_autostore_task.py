@@ -8,7 +8,7 @@ from pymongo.errors import PyMongoError
 from elo_bot.features.base_store import raid_task
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.config.game import BASE_STORE_SLOTS, HOST_CLAN_CHOICES
-from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import embed_color
 from elo_bot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
 from tests._raid_autostore_fixture import make_match
 
@@ -101,7 +101,7 @@ class TestRaidAutostoreTask(unittest.IsolatedAsyncioTestCase):
             "Skipped <#100> side 1: already stored.\n"
             "Skipped <#100> side 2: opponent bases incomplete.\n"
         ))
-        self.assertEqual(self.log.send.await_args.kwargs["embed"].color, COLOR)
+        self.assertEqual(self.log.send.await_args.kwargs["embed"].color, embed_color())
 
     async def test_log_failure_is_logged_without_affecting_storage(self) -> None:
         self.matches = [make_match()]

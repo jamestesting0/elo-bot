@@ -1,8 +1,8 @@
 **How a Match Works**
 Both players attack the same 3 districts, with 2 attacks per district. Total stars decide the winner, then total destruction. Equal scores are a draw.
 
-**War Style**
-War is the default style. Players attack separately, and your opponent's score stays hidden until you finish.
+**War Style (Default)**
+Players attack separately, and your opponent's score stays hidden until you finish.
 - Ping the 1v1 helpers in your match thread when ready, then stay around for 20 minutes. To schedule ahead, post a Discord timestamp.
 - Friendly challenges expire after 30 minutes, so start every district within that time.
 - Finish your attacks within 48 hours of your opponent attacking.

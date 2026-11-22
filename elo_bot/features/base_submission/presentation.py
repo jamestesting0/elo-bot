@@ -9,8 +9,8 @@ from elo_bot.features.base_submission.models import (
     ReviewStatus,
     SubmissionDraft,
 )
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT, GREEN_COLOR, RED_COLOR
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT, GREEN_COLOR, RED_COLOR
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 from elo_bot.db import PendingBaseSubmission
 from elo_bot.discord.mentions import mention_user
@@ -61,7 +61,7 @@ def build_review_embed(draft: SubmissionDraft) -> ipy.Embed:
         description=draft.link,
         fields=fields,
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
     embed.set_image(draft.image_url)
     return embed

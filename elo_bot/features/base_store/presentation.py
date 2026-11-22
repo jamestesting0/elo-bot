@@ -1,7 +1,7 @@
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.features.base_store.slots import format_base_store_slot_status
 from elo_bot.features.base_store.models import BaseStorePresentationRequest
@@ -35,7 +35,7 @@ def build_store_embed(request: BaseStorePresentationRequest, names: dict[str, st
             ipy.EmbedField(name="**Slot**", value=store.slot if store else "Unknown"),
         ],
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
     if request.failure_reason:
         embed.title = "**Base Storage Incomplete**"

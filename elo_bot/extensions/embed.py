@@ -9,10 +9,10 @@ from pymongo.errors import PyMongoError
 import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, application_emoji
-from elo_bot.config.presentation import COLOR, REWARDS_IMAGE
+from elo_bot.config.presentation import REWARDS_IMAGE
 from elo_bot.config.ids import CHAT_CHANNEL, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE
 from elo_bot.config.game import HOST_CLAN_OPTIONS
-from elo_bot.discord.embeds import embed_edit_payload, footer_image
+from elo_bot.discord.embeds import embed_color, embed_edit_payload, footer_image
 from elo_bot.db import Clan, Match, Player, ServerState
 from elo_bot.features.base_store.slots import collect_base_store_slot_owners, format_clan_availability_status
 from elo_bot.discord.mentions import mention_user
@@ -100,7 +100,7 @@ class EmbedCommands(ipy.Extension):
             embed = ipy.Embed(
                 title="**Hosting Queue**",
                 footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
-                color=COLOR,
+                color=embed_color(),
             )
 
             if not await self._publish_dashboard(ctx, embed, state_field="hosting_queue_embed"):
@@ -113,7 +113,7 @@ class EmbedCommands(ipy.Extension):
                             "to the corresponding clan and store the results. **0.5 point** will be "
                             "rewarded.",
                 footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
-                color=COLOR,
+                color=embed_color(),
             )
 
             clans = await Clan.find_all().to_list()
@@ -188,7 +188,7 @@ class EmbedCommands(ipy.Extension):
             title="**Base Building Contest**",
             description=description,
             footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
-            color=COLOR,
+            color=embed_color(),
         )
 
         await ctx.send(embed=embed, ephemeral=True)
@@ -201,7 +201,7 @@ class EmbedCommands(ipy.Extension):
             title="**Elo Rewards**",
             description=description,
             footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
-            color=COLOR,
+            color=embed_color(),
         )
         embed.add_image(REWARDS_IMAGE)
 
@@ -298,7 +298,7 @@ class EmbedCommands(ipy.Extension):
             title="**Private Support Ticket**",
             description="Please clearly write your issues in the chat while waiting for a staff member to arrive.",
             footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
-            color=COLOR,
+            color=embed_color(),
         )
 
         await support_thread.send(f"{ctx.author.mention}\n{mention}", embed=embed)

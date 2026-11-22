@@ -5,8 +5,8 @@ import interactions as ipy
 
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import CLASHING_SWORD_EMOJI, STAR_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import Match
 
 
@@ -72,7 +72,7 @@ async def send_stored_result_dm(request: StoredResultDmRequest) -> None:
         description=f"Result for <#{match.thread}> is stored, you may queue again!",
         fields=[ipy.EmbedField(name="**Result**", value=result)],
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
     play_again_button = ipy.Button(
         style=ipy.ButtonStyle.GRAY,

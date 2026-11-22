@@ -4,8 +4,8 @@ from typing import Final
 import interactions as ipy
 
 from elo_bot.config.emojis import render_emoji_markup
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 
 README_SECTIONS: Final = {
     "getting_started": "Getting Started",
@@ -24,7 +24,7 @@ def readme_page(section: str, user_id: int) -> tuple[ipy.Embed, list[ipy.ActionR
         title=f"**README · {title}**",
         description=description,
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-        color=COLOR,
+        color=embed_color(),
     )
     menu = ipy.StringSelectMenu(
         *(ipy.StringSelectOption(label=label, value=value, default=value == section)

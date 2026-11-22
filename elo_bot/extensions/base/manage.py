@@ -24,12 +24,11 @@ from elo_bot.config.ids import (
     WHITELISTED_STAFFS,
 )
 from elo_bot.config.presentation import (
-    COLOR,
     FOOTER_TEXT,
     LINE_SEPERATOR_GIF,
     RED_COLOR,
 )
-from elo_bot.discord.embeds import footer_image
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import BaseLayout
 from elo_bot.discord.checks import has_any, has_any_id
 from elo_bot.discord.members import member_guild
@@ -57,7 +56,7 @@ class BaseManagementCommands:
         embed = ipy.Embed(
             title=f"{base.district} Base Renewed",
             description=base.link,
-            color=COLOR,
+            color=embed_color(),
         )
         embed.set_image(base.image_url)
         channel = await self.bot.fetch_channel(BASE_RENEWAL_LOGS_CHANNEL)
@@ -553,7 +552,7 @@ class BaseManagementCommands:
                     )
                 ],
                 footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-                color=COLOR
+                color=embed_color()
             )
             embed.set_image(base.image_url)
 

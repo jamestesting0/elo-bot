@@ -10,7 +10,7 @@ from elo_bot.features.base_store.models import BaseStoreRuntime, SelfBaseStoreRe
 from elo_bot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
 from elo_bot.features.base_store.raid_policy import raid_storage_skip_reason
 from elo_bot.features.base_store.self_service import store_self_bases
-from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import embed_color
 from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.config.game import HOST_CLAN_CHOICES
 from elo_bot.config.ids import RAID_AUTOSTORE_LOGS_CHANNEL
@@ -101,6 +101,6 @@ async def _send_run_log(bot: ipy.Client, lines: list[str]) -> None:
     try:
         channel = await bot.fetch_channel(RAID_AUTOSTORE_LOGS_CHANNEL)
         for chunk in chunks:
-            await channel.send(embed=ipy.Embed(title="**Raid Weekend Auto Store**", description=chunk, color=COLOR))
+            await channel.send(embed=ipy.Embed(title="**Raid Weekend Auto Store**", description=chunk, color=embed_color()))
     except ipy.errors.HTTPException:
         logging.exception("Unable to send raid auto-store log")

@@ -3,7 +3,7 @@ from typing import Final, assert_never
 
 import interactions as ipy
 
-from elo_bot.config.presentation import COLOR
+from elo_bot.discord.embeds import embed_color
 
 
 FALLBACK_DESCRIPTION: Final = "No description available."
@@ -45,7 +45,7 @@ class HelpCommands(ipy.Extension):
     @staticmethod
     def _page(category: str, commands: dict[str, str]) -> ipy.Embed:
         description = "\n".join(f"`{path}` — {command_description}" for path, command_description in commands.items())
-        return ipy.Embed(title=category, description=description, color=COLOR)
+        return ipy.Embed(title=category, description=description, color=embed_color())
 
     @staticmethod
     def _menu(categories: dict[str, dict[str, str]], selected: str) -> ipy.StringSelectMenu:

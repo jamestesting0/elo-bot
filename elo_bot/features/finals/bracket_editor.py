@@ -1,8 +1,8 @@
 import interactions as ipy
 
 from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import NODE_IDS, FinalError
 from elo_bot.db import EloFinal
 from elo_bot.discord.mentions import mention_user
@@ -38,7 +38,7 @@ def editor_view(final: EloFinal, names: dict[str, str]) -> tuple[ipy.Embed, list
                            else f"Seed {seeds[user]} · Elo unavailable") if user else "Bye"
             options.append(ipy.StringSelectOption(label=f"{node} · {nickname}"[:100],
                                                   value=f"{node}:{side}", description=description))
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Bracket**", color=COLOR,
+    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Bracket**", color=embed_color(),
                       description="Seeded by Elo. Swap any two slots, then confirm.\n\n" + "\n".join(lines))
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     controls = [

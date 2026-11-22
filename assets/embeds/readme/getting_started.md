@@ -6,9 +6,10 @@
 - Draws move up to 10 Elo either way.
 
 **Start Playing**
-1. Click **Participate** on the Elo information post and enter your in-game account tag.
+1. Click **Participate** button or `/player register`.
 2. Run `/match queue` in <#1220331873079922810>. The bot looks for an opponent near your Elo, widening the range as you wait.
-3. When matched, choose your preferred districts in the bot's DM and press **Confirm**. Once both players confirm, the bot opens a thread in <#1222942524839165982> and randomly picks each district from both players' choices.
+3. When matched, follow the bot's instructions, and a thread in 
+ and press **Confirm**. Once both players confirm, the bot opens a thread in <#1222942524839165982> will be created for the match.
 
 *If only one player confirms, the bot confirms for the other after 12 hours. If neither confirms, it cancels the match.*
 
@@ -16,6 +17,7 @@
 After you've completed two matches, the bot adds you to the automatic match thread when it finds your next queued match. Use `/self host war` or `/self host live` in the match thread.
 
 **Tokens**
+- Check `/tokens balance` or `/tokens history` for details.
 - Ranked matches award 200 <:token:1555865080711876660> for a win and 100 <:token:1555865080711876660> for a loss or draw.
 - Buy items with `/tokens shop` and use them with `/tokens inventory`.
 

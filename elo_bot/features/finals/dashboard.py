@@ -4,8 +4,8 @@ from dataclasses import dataclass
 import interactions as ipy
 
 from elo_bot.config.emojis import IMPORTANT_EMOJI, TOKEN_EMOJI
-from elo_bot.config.presentation import COLOR, FOOTER_TEXT
-from elo_bot.discord.embeds import footer_image
+from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FINAL_SEATS, NODE_IDS, ROUND_NODES
 from elo_bot.db import EloFinal
 from elo_bot.db.final_invitation_models import FinalInvitation
@@ -145,7 +145,7 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
     elif phase in ROUND_NODES:
         playable = [final.nodes[key] for key in ROUND_NODES[phase] if not final.nodes[key].bye]
         description += f" · {sum(bool(node.winner) for node in playable)} of {len(playable)} decided"
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final**", description=description, color=COLOR)
+    embed = ipy.Embed(title=f"**Season {final.season_number} Final**", description=description, color=embed_color())
     fields = []
     if final.nodes:
         lines = [match_line(final.nodes[key], names)

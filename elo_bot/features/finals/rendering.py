@@ -19,17 +19,20 @@ FALLBACK_FONTS = (Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
                   Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
                   Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
 TEMPLATE_SIZE = (1672, 941)
+SCOREBOARD_TEMPLATE_SIZE = (1672, 1033)
 ENTRANT_CENTERS = ((404, 519), (404, 568), (404, 618), (404, 667),
                    (404, 718), (404, 769), (404, 817), (404, 866))
 SEMIFINAL_CENTERS = ((691, 554), (691, 651), (691, 743), (691, 838))
 FINAL_CENTERS = ((974, 612), (974, 784))
 CHAMPION_CENTER = (1258, 664)
-# Safe interiors measured on the 1672 x 941 scoreboard artwork.
-SCOREBOARD_NAMES = ((434, 214, 640, 258), (1032, 214, 1238, 258))
-SCOREBOARD_AVATARS = ((286, 150, 416, 280), (1255, 150, 1385, 280))
-SCOREBOARD_ROWS = (342, 409, 476, 543, 610, 677, 744)
-SCOREBOARD_COLUMNS = (((448, 532), (552, 704)), ((1076, 1160), (1180, 1332)))
-SCOREBOARD_TOTALS = (((425, 509), (533, 685)), ((1102, 1186), (1204, 1352)))
+SCOREBOARD_NAMES = ((453, 336, 739, 390), (933, 336, 1219, 390))
+SCOREBOARD_AVATARS = ((359, 325, 431, 397), (1241, 325, 1313, 397))
+SCOREBOARD_ROWS = (472, 535, 596, 659, 721, 783, 846)
+SCOREBOARD_STAR_RIGHTS = (441, 1005)
+SCOREBOARD_DESTRUCTION_CENTERS = (655.5, 1219.5)
+SCOREBOARD_TOTAL_CENTER = 920
+SCOREBOARD_TOTAL_STAR_RIGHTS = (451.5, 1015.5)
+SCOREBOARD_TOTAL_DESTRUCTION_CENTERS = (655.5, 1219.5)
 HEAD_TO_HEAD_NAMES = ((248, 805, 686, 871), (986, 805, 1424, 871))
 HEAD_TO_HEAD_AVATARS = ((82, 768, 223, 909), (1450, 768, 1591, 909))
 HEAD_TO_HEAD_SEED_BASELINES = ((282, 793), (1390, 793))
@@ -155,14 +158,15 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
     try:
         with Image.open(SCOREBOARD_TEMPLATE) as source:
             image = source.convert("RGB")
-        if image.size != TEMPLATE_SIZE:
+        if image.size != SCOREBOARD_TEMPLATE_SIZE:
             raise FinalError("The scoreboard template dimensions changed. The text result is still available.")
         draw = ImageDraw.Draw(image)
-        labels = []
+        centered_labels = []
+        star_labels = []
         for side, user in enumerate(snapshot.contestants):
             color = "#e2cfad" if user != snapshot.winner else "#fff0d5"
             name_color = "#e2cfad" if user != snapshot.winner else "#fff0d7"
-            labels.append((final.player_nicknames.get(user, user), SCOREBOARD_NAMES[side], name_color, 26))
+            centered_labels.append((final.player_nicknames.get(user, user), SCOREBOARD_NAMES[side], name_color, 25))
             if user in avatars:
                 paste_avatar(image, avatars[user], SCOREBOARD_AVATARS[side])
             stars, destruction = [], []
@@ -170,17 +174,24 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
                 score = snapshot.scores[user][index]
                 stars.append(get_stars(score))
                 destruction.append(get_destruction(score))
-                for value, (left, right) in zip((str(stars[-1]), f"{destruction[-1]}%"),
-                                               SCOREBOARD_COLUMNS[side], strict=True):
-                    labels.append((value, (left, y - 22, right, y + 22), color, 34))
-            for value, (left, right) in zip((str(sum(stars)), f"{sum(destruction)}%"),
-                                           SCOREBOARD_TOTALS[side], strict=True):
-                labels.append((value, (left, 802, right, 856), color, 36))
-        for label, box, color, size in labels:
+                star_labels.append((str(stars[-1]), SCOREBOARD_STAR_RIGHTS[side], y, color, 27))
+                center = SCOREBOARD_DESTRUCTION_CENTERS[side]
+                centered_labels.append((f"{destruction[-1]}%", (center - 80, y - 22, center + 80, y + 22),
+                                        color, 27))
+            star_labels.append((str(sum(stars)), SCOREBOARD_TOTAL_STAR_RIGHTS[side], SCOREBOARD_TOTAL_CENTER,
+                                color, 31))
+            center = SCOREBOARD_TOTAL_DESTRUCTION_CENTERS[side]
+            centered_labels.append((f"{sum(destruction)}%", (center - 90, SCOREBOARD_TOTAL_CENTER - 28,
+                                        center + 90, SCOREBOARD_TOTAL_CENTER + 28), color, 31))
+        for label, box, color, size in centered_labels:
             text, font = fitted_label(label, box[2] - box[0], size)
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
             position = ((box[0] + box[2] - left - right) / 2, (box[1] + box[3] - top - bottom) / 2)
             draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#3b2c2b")
+        for label, right, center, color, size in star_labels:
+            text, font = fitted_label(label, 80, size)
+            draw.text((right, center), text, font=font, fill=color, stroke_width=1, stroke_fill="#3b2c2b",
+                      anchor="rm")
         with image, BytesIO() as output:
             image.save(output, format="PNG")
             return output.getvalue()

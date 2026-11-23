@@ -1,7 +1,6 @@
 import asyncio
 import re
 import sys
-import traceback
 from datetime import datetime
 
 import coc
@@ -9,6 +8,7 @@ import interactions as ipy
 
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord import runtime
+from elo_bot.app.error_reports import copy_error_to_channel, log_error_traceback, report_unexpected_error
 from elo_bot.app.events import on_raid_weekend_end
 from elo_bot.config.emojis import ERROR_EMOJI, STAFF_EMOJI, SUCCESS_EMOJI
 from elo_bot.discord.embeds import embed_color, footer_image
@@ -16,9 +16,7 @@ from elo_bot.config.settings import COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWOR
 
 
 async def report_error(ctx: ipy.SlashContext | ipy.ModalContext | ipy.ComponentContext, error):
-    full_error = traceback.format_exception(type(error), error, error.__traceback__)
-    full_error = "".join(str(i) for i in full_error)
-    print(full_error, file=sys.stderr)
+    full_error = log_error_traceback(error)
 
     report_button = ipy.Button(
         style=ipy.ButtonStyle.DANGER,
@@ -80,6 +78,7 @@ async def report_error(ctx: ipy.SlashContext | ipy.ModalContext | ipy.ComponentC
     )
 
     await runtime.bot.owner.send(embed=embed, components=button)
+    await copy_error_to_channel(embed)
 
     await res.send(f"{SUCCESS_EMOJI} Thanks for reporting the bug! A message has been sent "
                    f"to the bot developer, there will be a fix **ASAP**!",
@@ -92,18 +91,7 @@ async def on_error(event: ipy.events.Error):
     if "Unknown interaction" in str(error):
         print(str(error), file=sys.stderr)
     else:
-        full_error = traceback.format_exception(type(error), error, error.__traceback__)
-        full_error = "".join(str(i) for i in full_error)
-        print(full_error, file=sys.stderr)
-
-        embed = ipy.Embed(
-            title=f"**{str(error)[:252]}**",
-            description=f"```\n{full_error[-(4096 - 8):]}\n```",
-            footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
-            color=embed_color()
-        )
-
-        await runtime.bot.owner.send(embed=embed, silent=True)
+        await report_unexpected_error(error)
 
 
 @ipy.listen(ipy.events.AutocompleteError, disable_default_listeners=True)
@@ -140,21 +128,8 @@ async def on_autocomplete_error(event: ipy.events.AutocompleteError):
             raise
         print(str(response_error), file=sys.stderr)
 
-    if not notify_owner:
-        return
-
-    full_error = traceback.format_exception(type(error), error, error.__traceback__)
-    full_error = "".join(str(i) for i in full_error)
-    print(full_error, file=sys.stderr)
-
-    embed = ipy.Embed(
-        title=f"**{str(error)[:252]}**",
-        description=f"```\n{full_error[-(4096 - 8):]}\n```",
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
-        color=embed_color()
-    )
-
-    await runtime.bot.owner.send(embed=embed, silent=True)
+    if notify_owner:
+        await report_unexpected_error(error)
 
 
 @ipy.listen(ipy.events.CommandError, disable_default_listeners=True)

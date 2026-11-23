@@ -1,6 +1,7 @@
 import asyncio
 
 import interactions as ipy
+from interactions.client.const import EMBED_FIELD_VALUE_LENGTH
 
 from elo_bot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CHOICES
@@ -9,6 +10,9 @@ from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import BaseLayout
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.pagination import build_page_button
+
+
+_DEFENSE_LOG_MAX_ENTRIES = 10
 
 
 def _fingerprint_status_emoji(status: str) -> ipy.PartialEmoji:
@@ -109,18 +113,28 @@ async def construct_base_leaderboard_string(bot: ipy.Client, bases_sorted: list[
     return leaderboard
 
 
-async def base_embed_names(guild: ipy.Guild, base: BaseLayout, embed_type: str) -> dict[str, str]:
-    user_ids = {record[0] for record in base.records[-10:]} if embed_type == "Defense Log" else set()
-    if base.builder_id:
-        user_ids.add(base.builder_id)
+async def _base_names(guild: ipy.Guild, builder_id: str | None, user_ids: set[str]) -> dict[str, str]:
+    if builder_id:
+        user_ids = user_ids | {builder_id}
     members = await asyncio.gather(*(guild.fetch_member(user_id) for user_id in user_ids))
-    return {user_id: mention_user(member, user_id, mention_type="Builder" if user_id == base.builder_id else "Player")
+    return {user_id: mention_user(member, user_id, mention_type="Builder" if user_id == builder_id else "Player")
             for user_id, member in zip(user_ids, members)}
 
 
-def construct_base_embed(
-        base: BaseLayout, embed_type: str = "Performance", *, names: dict[str, str],
-) -> ipy.Embed:
+async def base_embed_names(guild: ipy.Guild, base: BaseLayout, embed_type: str) -> dict[str, str]:
+    user_ids = {record[0] for record in base.records[-_DEFENSE_LOG_MAX_ENTRIES:]} if embed_type == "Defense Log" else set()
+    return await _base_names(guild, base.builder_id, user_ids)
+
+
+def _defense_log_line(record: list | tuple, names: dict[str, str]) -> str:
+    line = f"{names[record[0]]} → {record[1]}⭐ {record[2]}%"
+    if len(record) == 4:
+        ts = ipy.Timestamp.fromtimestamp(record[3]).format(ipy.TimestampStyles.RelativeTime)
+        line += f" {ts}"
+    return line
+
+
+def _base_details_embed(base: BaseLayout, names: dict[str, str]) -> ipy.Embed:
     builder = base.builder_id
     quality = base.quality
 
@@ -146,6 +160,13 @@ def construct_base_embed(
     )
 
     embed.set_image(base.image_url)
+    return embed
+
+
+def construct_base_embed(
+        base: BaseLayout, embed_type: str = "Performance", *, names: dict[str, str],
+) -> ipy.Embed:
+    embed = _base_details_embed(base, names)
 
     if embed_type == "Performance":
         total_destruction = 0
@@ -176,22 +197,16 @@ def construct_base_embed(
 
     if embed_type == "Defense Log":
         log = ""
-        count = 0
-        for record in reversed(base.records):
-            if count >= 10:
+        for record in reversed(base.records[-_DEFENSE_LOG_MAX_ENTRIES:]):
+            line = _defense_log_line(record, names)
+            updated_log = f"{log}\n{line}" if log else line
+            if len(updated_log) > EMBED_FIELD_VALUE_LENGTH:
                 break
-
-            log += f"{names[record[0]]} → {record[1]}⭐ {record[2]}%"
-            # check for optional timestamp in record tuple
-            if len(record) == 4:
-                ts = ipy.Timestamp.fromtimestamp(record[3]).format(ipy.TimestampStyles.RelativeTime)
-                log += f" {ts}"
-            log += "\n"
-            count += 1
+            log = updated_log
 
         embed.add_field(
             name="**Defense Log**",
-            value=log if log else "No defenses so far"
+            value=log or "No defenses so far"
         )
 
     return embed

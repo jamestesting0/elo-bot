@@ -16282,6 +16282,40 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "base_defense_page"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "BaseCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^base_defense\\\\|[^|]+\\\\|[0-9]+\\\\|(newer|older)$')]",
+    "nsfw": false,
+    "pattern": "^base_defense\\|[^|]+\\|[0-9]+\\|(newer|older)$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "name": "base_lb_left_button"
     },
     "checks": [],

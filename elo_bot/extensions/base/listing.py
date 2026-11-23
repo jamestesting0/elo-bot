@@ -10,10 +10,12 @@ from elo_bot.config.ids import (
     LVL3_ROLES,
     WHITELISTED_STAFFS,
 )
+from elo_bot.db import BaseLayout
 from elo_bot.discord.checks import has_any, has_any_id
 from elo_bot.discord.members import member_guild
 from elo_bot.discord.pagination import InvalidPageError, build_page_jump_modal, parse_page_number
 from elo_bot.extensions.base.groups import BASE_QUALITY_CHOICES
+from elo_bot.features.bases.layouts.list_view import BaseListPayload, BaseListState, base_defense_card, base_list_card
 from elo_bot.features.bases.layouts.queries import _one_listed_base, _public_list_query
 from elo_bot.features.bases.layouts.ui import (
     _build_base_list_components,
@@ -23,8 +25,37 @@ from elo_bot.features.bases.layouts.ui import (
 )
 
 
+def _owns_base_list(ctx: ipy.ComponentContext | ipy.ModalContext) -> bool:
+    interaction = ctx.message.interaction or getattr(ctx.message, "interaction_metadata", None)
+    return bool(ctx.author and interaction and int(ctx.author.id) == int(interaction.user))
+
+
 class BaseListCommands:
     base = groups.base
+
+    async def _base_list_payload(
+            self, ctx: ipy.SlashContext | ipy.ComponentContext | ipy.ModalContext,
+            base: BaseLayout, state: BaseListState, *, defense_page: int = 0,
+    ) -> BaseListPayload:
+        rows = _build_base_list_components(
+            state.district, state.index, state.embed_type, state.quality, state.builder_id, state.total,
+        )
+        message = ctx.message if isinstance(ctx, (ipy.ComponentContext, ipy.ModalContext)) else None
+        has_card = message and any(isinstance(item, ipy.ContainerComponent) for item in message.components or [])
+        guild = await member_guild(ctx)
+        if state.embed_type == "Defense Log":
+            card = await base_defense_card(guild, base, defense_page)
+        else:
+            names = await base_embed_names(guild, base, state.embed_type)
+            embed = construct_base_embed(base, state.embed_type, names=names)
+            if not has_card:
+                return {"embed": embed, "components": [*rows]}
+            card = base_list_card(embed, base.image_url)
+
+        payload: BaseListPayload = {"components": [card, *rows], "allowed_mentions": ipy.AllowedMentions.none()}
+        if message and message.embeds:
+            payload["embeds"] = []
+        return payload
 
     @base.subcommand(sub_cmd_name="list", sub_cmd_description="List bases of a certain district")
     @ipy.check(has_any(ipy.has_any_role(*LVL3_ROLES), has_any_id(*WHITELISTED_STAFFS)))
@@ -82,20 +113,12 @@ class BaseListCommands:
             await ctx.send(msg, ephemeral=hidden)
             return
 
-        guild = await member_guild(ctx)
-        names = await base_embed_names(guild, base_doc, embed_type)
-        embed = construct_base_embed(base_doc, embed_type, names=names)
-        await ctx.send(
-            embed=embed,
-            ephemeral=hidden,
-            components=_build_base_list_components(
-                district, 0, embed_type, base_quality, button_builder_state, total,
-            ),
-        )
+        state = BaseListState(district, 0, embed_type, base_quality, button_builder_state, total)
+        await ctx.send(ephemeral=hidden, **await self._base_list_payload(ctx, base_doc, state))
 
     @ipy.component_callback(re.compile(r"^base_right\|.*\|\d+\|.*\|.*$"))
     async def base_right_button(self, ctx: ipy.ComponentContext):
-        if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
+        if not _owns_base_list(ctx):
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
@@ -109,18 +132,12 @@ class BaseListCommands:
             await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
             return
 
-        guild = await member_guild(ctx)
-        embed = construct_base_embed(base, embed_type, names=await base_embed_names(guild, base, embed_type))
-        await ctx.edit_origin(
-            embed=embed,
-            components=_build_base_list_components(
-                district, index, embed_type, base_quality, builder_id, total,
-            ),
-        )
+        state = BaseListState(district, index, embed_type, base_quality, builder_id, total)
+        await ctx.edit_origin(**await self._base_list_payload(ctx, base, state))
 
     @ipy.component_callback(re.compile(r"^base_left\|.*\|\d+\|.*$"))
     async def base_left_button(self, ctx: ipy.ComponentContext):
-        if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
+        if not _owns_base_list(ctx):
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
@@ -134,18 +151,34 @@ class BaseListCommands:
             await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
             return
 
-        guild = await member_guild(ctx)
-        embed = construct_base_embed(base, embed_type, names=await base_embed_names(guild, base, embed_type))
-        await ctx.edit_origin(
-            embed=embed,
-            components=_build_base_list_components(
-                district, index, embed_type, base_quality, builder_id, total,
-            ),
-        )
+        state = BaseListState(district, index, embed_type, base_quality, builder_id, total)
+        await ctx.edit_origin(**await self._base_list_payload(ctx, base, state))
+
+    @ipy.component_callback(re.compile(r"^base_defense\|[^|]+\|[0-9]+\|(newer|older)$"))
+    async def base_defense_page(self, ctx: ipy.ComponentContext):
+        if not _owns_base_list(ctx):
+            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
+            return
+
+        _, base_id, page, _ = ctx.custom_id.split("|")
+        district, index, embed_type, base_quality, builder_id = _parse_base_list_state(ctx.message.components)
+        if embed_type != "Defense Log":
+            await ctx.send(f"{ERROR_EMOJI} Open the Defense Log to browse defenses.", ephemeral=True)
+            return
+
+        query = _public_list_query(self.bot, district, base_quality, builder_id)
+        base, total = await _one_listed_base(query, index)
+        if base is None or str(base.id) != base_id:
+            await ctx.send(f"{ERROR_EMOJI} This base is no longer on this page.", ephemeral=True)
+            return
+
+        await ctx.defer(edit_origin=True)
+        state = BaseListState(district, index, embed_type, base_quality, builder_id, total)
+        await ctx.edit_origin(**await self._base_list_payload(ctx, base, state, defense_page=int(page)))
 
     @ipy.component_callback(re.compile(r"^base_page\|.*\|.*\|.*\|.*$"))
     async def base_page_button(self, ctx: ipy.ComponentContext):
-        if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
+        if not _owns_base_list(ctx):
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
@@ -160,7 +193,7 @@ class BaseListCommands:
             await ctx.send(f"{ERROR_EMOJI} The paginated message is no longer available.", ephemeral=True)
             return
 
-        if ctx.author and int(ctx.author.id) != int(message.interaction.user):
+        if not _owns_base_list(ctx):
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
@@ -185,19 +218,12 @@ class BaseListCommands:
             await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
             return
 
-        guild = await member_guild(ctx)
-        embed = construct_base_embed(base, embed_type, names=await base_embed_names(guild, base, embed_type))
-        await ctx.edit(
-            "@original",
-            embed=embed,
-            components=_build_base_list_components(
-                district, index, embed_type, base_quality, builder_id, total,
-            ),
-        )
+        state = BaseListState(district, index, embed_type, base_quality, builder_id, total)
+        await ctx.edit("@original", **await self._base_list_payload(ctx, base, state))
 
     @ipy.component_callback("base_list_district_select")
     async def base_list_district_select(self, ctx: ipy.ComponentContext):
-        if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
+        if not _owns_base_list(ctx):
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
@@ -216,19 +242,13 @@ class BaseListCommands:
             await ctx.send(msg, ephemeral=True)
             return
 
-        guild = await member_guild(ctx)
-        embed = construct_base_embed(base, embed_type, names=await base_embed_names(guild, base, embed_type))
-        await ctx.edit_origin(
-            embed=embed,
-            components=_build_base_list_components(
-                district, 0, embed_type, base_quality, builder_id, total,
-            ),
-        )
+        state = BaseListState(district, 0, embed_type, base_quality, builder_id, total)
+        await ctx.edit_origin(**await self._base_list_payload(ctx, base, state))
         await ctx.send(f"{SUCCESS_EMOJI} The district type is changed to `{district}`.", ephemeral=True)
 
     @ipy.component_callback("base_list_embed_type_select")
     async def base_list_embed_type_select(self, ctx: ipy.ComponentContext):
-        if ctx.author and int(ctx.author.id) != int(ctx.message.interaction.user):
+        if not _owns_base_list(ctx):
             await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
                            ephemeral=True)
             return
@@ -241,12 +261,6 @@ class BaseListCommands:
             await ctx.send(f"{ERROR_EMOJI} This page no longer exists.", ephemeral=True)
             return
 
-        guild = await member_guild(ctx)
-        embed = construct_base_embed(base, embed_type, names=await base_embed_names(guild, base, embed_type))
-        await ctx.edit_origin(
-            embed=embed,
-            components=_build_base_list_components(
-                district, index, embed_type, base_quality, builder_id, total,
-            ),
-        )
+        state = BaseListState(district, index, embed_type, base_quality, builder_id, total)
+        await ctx.edit_origin(**await self._base_list_payload(ctx, base, state))
         await ctx.send(f"{SUCCESS_EMOJI} The embed type is changed to `{embed_type}`.", ephemeral=True)

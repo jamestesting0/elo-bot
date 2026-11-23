@@ -118,6 +118,9 @@ def _snapshot_message(message):
     rows = _component_rows(message.components)
     serialized_rows = []
     for row in rows:
+        if isinstance(row, ipy.ContainerComponent):
+            serialized_rows.append(row.to_dict())
+            continue
         items = []
         for component in row.components:
             item = {
@@ -142,8 +145,9 @@ def _snapshot_message(message):
 
 def _discord_json_payload(kwargs):
     payload = json.loads(json.dumps(process_message_payload(
-        embeds=kwargs.get("embeds") or kwargs.get("embed"),
+        embeds=kwargs.get("embeds", kwargs.get("embed")),
         components=kwargs.get("components"),
+        allowed_mentions=kwargs.get("allowed_mentions"),
     )))
     for row in payload.get("components") or []:
         for component in row.get("components") or []:
@@ -199,7 +203,7 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
         elif embeds is not None:
             self.message.embeds = list(embeds)
         if "components" in kwargs:
-            self.message.components = kwargs["components"]
+            self.message.components = [ipy.BaseComponent.from_dict_factory(item) for item in payload["components"]]
         snapshot = _snapshot_message(self.message)
         snapshot["option_labels"] = _option_labels(payload)
         self.publications.append(snapshot)
@@ -257,10 +261,15 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
         return ctx
 
     def _row(self, index):
-        rows = _component_rows(self.message.components)
+        rows = [row for row in _component_rows(self.message.components) if isinstance(row, ipy.ActionRow)]
         self.assertIsInstance(self.message.components, list)
         self.assertEqual(len(rows), 3)
         return rows[index]
+
+    def _card(self):
+        card = self.message.components[0]
+        self.assertIsInstance(card, ipy.ContainerComponent)
+        return card
 
     def _assert_selects(self, *, district, embed_type, quality, builder_id, page, total, field):
         district_select = self._row(0).components[0]
@@ -297,10 +306,17 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(page_button.label, f"{page}/{total}")
         self.assertEqual(left.disabled, page == 1)
         self.assertEqual(right.disabled, page == total)
-        self.assertEqual(self.message.embeds[0].fields[-1].name, field)
+        if self.message.embeds:
+            self.assertEqual(self.message.embeds[0].fields[-1].name, field)
+        else:
+            self.assertIn(field, [
+                item.content.splitlines()[0] for item in self._card().components
+                if isinstance(item, ipy.TextDisplayComponent)
+            ])
         published_ids = {
             item["custom_id"]
             for row in self.publications[-1]["rows"]
+            if isinstance(row, list)
             for item in row
         }
         self.assertTrue(published_ids.isdisjoint(LEADERBOARD_SELECT_IDS))
@@ -356,6 +372,9 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
         embed_ctx.defer.assert_not_awaited()
         embed_ctx.edit.assert_not_awaited()
         embed_ctx.edit_origin.assert_awaited()
+        converted = _discord_json_payload(embed_ctx.edit_origin.await_args.kwargs)
+        self.assertEqual(converted["embeds"], [])
+        self.assertTrue(converted["flags"] & ipy.MessageFlags.IS_COMPONENTS_V2)
         self._assert_selects(
             district="Barbarian Camp", embed_type="Defense Log", quality="Excellent",
             builder_id="111", page=2, total=2, field="**Defense Log**",
@@ -373,7 +392,7 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
             district="Any", embed_type="Defense Log", quality="Excellent",
             builder_id="111", page=1, total=3, field="**Defense Log**",
         )
-        self.assertEqual(self.message.embeds[0].title, "**Barbarian Camp Base**")
+        self.assertEqual(self._card().components[0].content.splitlines()[0], "**Barbarian Camp Base**")
 
         page_id = self._row(2).components[1].custom_id
         modal_ctx = self._modal_ctx(page_id.replace("base_page|", "base_page_modal|", 1))
@@ -382,7 +401,7 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
             district="Any", embed_type="Defense Log", quality="Excellent",
             builder_id="111", page=3, total=3, field="**Defense Log**",
         )
-        self.assertEqual(self.message.embeds[0].title, "**Wizard Valley Base**")
+        self.assertEqual(self._card().components[0].content.splitlines()[0], "**Wizard Valley Base**")
 
         before_reject = _snapshot_message(self.message)
         stranger_ctx = self._component_ctx(
@@ -411,6 +430,86 @@ class TestBaseListSelectFlow(unittest.IsolatedAsyncioTestCase):
         for response_ctx in (district_ctx, embed_ctx, any_ctx, stranger_ctx, empty_ctx):
             response_ctx.send.assert_awaited_once()
             self.assertTrue(response_ctx.send.await_args.kwargs["ephemeral"])
+
+        performance = self._component_ctx(custom_id="base_list_embed_type_select", values=["Performance"])
+        await self.cog.base_list_embed_type_select.callback.func(self.cog, performance)
+        self._assert_selects(
+            district="Any", embed_type="Performance", quality="Excellent",
+            builder_id="111", page=3, total=3, field="**Performance**",
+        )
+        self.assertFalse(self.message.embeds)
+        self.assertFalse(any(isinstance(item, ipy.ActionRow) for item in self._card().components))
+
+    @patch_sites(('elo_bot.features.bases.layouts.queries.BaseLayout',))
+    async def test_defense_pager_stays_on_the_same_base_and_keeps_all_entries(self, mock_base_layout):
+        first, second = self.bases[:2]
+        attacker_ids = [str(10**18 + i) for i in range(10)]
+        attacker_names = {user_id: f"Attacker {i}".ljust(32, "x") for i, user_id in enumerate(attacker_ids)}
+        second.records = [(user_id, 2, 89.0, 1700000000 + i) for i, user_id in enumerate(attacker_ids[:-1])]
+        second.records.append((attacker_ids[-1], 2, 89.0))
+        listed_bases = [first, second]
+        _install_store(mock_base_layout, listed_bases)
+        slash_ctx = self._slash_ctx()
+        await self.cog.base_list.callback.func(self.cog, slash_ctx, embed_type="Defense Log")
+        self.assertTrue(slash_ctx.send.await_args.kwargs["ephemeral"])
+        self.assertFalse(any(isinstance(item, ipy.ActionRow) for item in self._card().components))
+        ctx = self._component_ctx(custom_id=self._row(2).components[2].custom_id)
+        self.message.interaction = None
+        self.message.interaction_metadata = SimpleNamespace(user=OWNER_ID)
+        ctx.guild.fetch_member = AsyncMock(side_effect=lambda user_id: SimpleNamespace(
+            id=user_id, display_name=attacker_names.get(user_id, "Builder"),
+        ))
+
+        await self.cog.base_right_button.callback.func(self.cog, ctx)
+
+        self._assert_selects(
+            district="Any", embed_type="Defense Log", quality="Any",
+            builder_id="Any", page=2, total=2, field="**Defense Log**",
+        )
+        expected = [
+            f"**[{attacker_names[attacker_ids[i]]}](<https://discordapp.com/users/{attacker_ids[i]}?tab=wishlist>)**"
+            " → 2⭐ 89.0%" + (f" <t:{1700000000 + i}:R>" if i != 9 else "")
+            for i in range(9, -1, -1)
+        ]
+        card = self._card()
+        header = card.components[0].content
+        log, defense_pager = card.components[3:5]
+        self.assertEqual(log.content.splitlines(), ["**Defense Log**", *expected[:7]])
+        newer, page, older = defense_pager.components
+        self.assertEqual(page.label, "1/2")
+        self.assertTrue(newer.disabled)
+        self.assertFalse(older.disabled)
+
+        stranger = self._component_ctx(custom_id=older.custom_id, author_id=OTHER_USER_ID)
+        await self.cog.base_defense_page.callback.func(self.cog, stranger)
+        self.assertTrue(stranger.send.await_args.kwargs["ephemeral"])
+        stranger.edit_origin.assert_not_awaited()
+
+        older_ctx = self._component_ctx(custom_id=older.custom_id)
+        older_ctx.guild.fetch_member = ctx.guild.fetch_member
+        await self.cog.base_defense_page.callback.func(self.cog, older_ctx)
+
+        card = self._card()
+        self.assertEqual(card.components[0].content, header)
+        self.assertEqual(self._row(2).components[1].label, "2/2")
+        log, defense_pager = card.components[3:5]
+        self.assertEqual(log.content.splitlines(), ["**Defense Log**", *expected[7:]])
+        newer, page, older = defense_pager.components
+        self.assertEqual(page.label, "2/2")
+        self.assertFalse(newer.disabled)
+        self.assertTrue(older.disabled)
+
+        newer_ctx = self._component_ctx(custom_id=newer.custom_id)
+        newer_ctx.guild.fetch_member = ctx.guild.fetch_member
+        await self.cog.base_defense_page.callback.func(self.cog, newer_ctx)
+        self.assertEqual(self._card().components[3].content.splitlines(), ["**Defense Log**", *expected[:7]])
+
+        listed_bases[1] = self.bases[2]
+        stale = self._component_ctx(custom_id=older_ctx.custom_id)
+        await self.cog.base_defense_page.callback.func(self.cog, stale)
+        self.assertTrue(stale.send.await_args.kwargs["ephemeral"])
+        stale.edit_origin.assert_not_awaited()
+        self.assertEqual(self._card().components[0].content, header)
 
 
 if __name__ == "__main__":

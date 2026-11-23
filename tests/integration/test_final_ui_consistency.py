@@ -390,7 +390,7 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.bot.fetch_user = AsyncMock(return_value=ctx.author)
         await self.match_cog.match_base_view.callback.func(self.match_cog, ctx)
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
-        self.assertEqual(ctx.send.await_args.kwargs["embeds"][6].description, replacement)
+        self.assertEqual(ctx.send.await_args.kwargs["embeds"][6].description, f"[Base Link]({replacement})")
 
     async def test_base_command_rejects_foreign_finished_and_concurrent_changes(self):
         source, ctx, message = await self.base_setup()

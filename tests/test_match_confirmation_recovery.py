@@ -135,9 +135,9 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
         self.persisted.final_node_id = "QF1"
         self.persisted.thread = "123"
         self.persisted._save_state()
-        self.bot.fetch_user.side_effect = lambda user_id: SimpleNamespace(
-            id=user_id, mention=f"<@{user_id}>", display_name=f"Player {user_id}",
-            display_avatar=SimpleNamespace(fetch=AsyncMock(return_value=b"")),
+        self.bot.fetch_user.side_effect = lambda user_id: ipy.User(
+            client=self.bot, id=user_id, username=f"Player {user_id}",
+            avatar=MagicMock(spec=ipy.Asset, fetch=AsyncMock(return_value=b"")),
         )
         with patch.object(EloFinal, "get", new=AsyncMock(return_value=edition)):
             await lifecycle_module.confirm_match(self.bot, "TOKEN")

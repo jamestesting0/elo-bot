@@ -69,6 +69,8 @@ response; keep exception types and messages; pass locals explicitly.
 Token item activations persist one record per copy. `activation_order` follows the wallet's version counter;
 one item per category can be ready or reserved, while later copies remain queued. Finishing or disabling a
 copy promotes the oldest waiting copy in the same transaction. Rank Protection still permits one use per season.
+Bulk activation commits the inventory deduction and all unit records together. Each record stores its batch size
+to reject retries with a changed amount; older activation records default to a batch size of one.
 At startup, `register_final_indexes` creates the `token_item_head` constraint before dropping the old
 `token_active_item_slot` index. Existing activations keep their state and default to order zero. Older releases
 cannot read queued activations; return waiting copies to inventory before downgrading.

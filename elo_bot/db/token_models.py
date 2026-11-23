@@ -64,6 +64,7 @@ class TokenItemUse(Document):
     target: str | None = None
     state: Literal["queued", "armed", "reserved", "used", "returned"] = "armed"
     activation_order: int = 0
+    batch_size: int = 1
     district: str | None = None
     expires_at: int | None = None
     season: int | None = None

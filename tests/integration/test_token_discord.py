@@ -18,7 +18,7 @@ from elo_bot.extensions.tokens import TokenCommands
 from elo_bot.features.tokens.stake_publication import recover_stakes
 from elo_bot.features.tokens.stakes import stake_window_closed
 from elo_bot.features.tokens.wallets import adjust_balance, ensure_wallet
-from elo_bot.features.tokens.exp import redeem_exp
+from elo_bot.features.tokens.exp import recover_exp, redeem_exp
 from elo_bot.features.tokens.items import purchase
 from elo_bot.features.tokens.items import activate, finish_use
 from elo_bot.features.tokens.item_management import ItemAdjustment, adjust_items, deactivate_item
@@ -106,6 +106,102 @@ class TestTokenDiscord(FinalScenarioCase):
         history = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_history.callback.func(self.tokens, history)
         self.assertIn("Queue Priority Pro × 3", self.edit()["embeds"][0]["description"])
+
+    async def test_bulk_use_activates_owned_items_once_and_supports_default_amount_and_hidden(self):
+        await adjust_items(ItemAdjustment("1", TokenItem.PRIORITY_PRO, 5, "9", "give-for-use"))
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_use.callback.func(self.tokens, ctx, "queue_priority_pro", 3)
+        self.assertNotIn("data", self.http.post_initial_response.await_args.args[0])
+        self.assertIn("Activated `3` × Queue Priority Pro", self.edit()["content"])
+        retry = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        retry.id = ctx.id
+        await self.tokens.tokens_use.callback.func(self.tokens, retry, "queue_priority_pro", 3)
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "1"}).count(), 3)
+        hidden = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_use.callback.func(self.tokens, hidden, "queue_priority_pro", hidden=True)
+        self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
+        wallet = await TokenWallet.get("1")
+        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (5000, 1))
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "1"}).count(), 4)
+        insufficient = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_use.callback.func(self.tokens, insufficient, "queue_priority_pro", 2)
+        self.assertIn("enough of this item", self.edit()["content"])
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 1)
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "1"}).count(), 4)
+
+    async def test_bulk_district_use_requires_a_choice_and_keeps_it_on_every_queued_copy(self):
+        await adjust_items(ItemAdjustment("1", TokenItem.DISTRICT, 2, "9", "give-district"))
+        missing = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_use.callback.func(self.tokens, missing, "district_choice", 2)
+        self.assertIn("Choose a district", self.edit()["content"])
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "1"}).count(), 0)
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_use.callback.func(self.tokens, ctx, "district_choice", 2, district="Barbarian Camp")
+        uses = await TokenItemUse.find({"wallet_id": "1"}).sort("activation_order").to_list()
+        self.assertEqual([(use.district, use.state) for use in uses],
+                         [("Barbarian Camp", "armed"), ("Barbarian Camp", "queued")])
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.DISTRICT], 0)
+
+    async def test_bulk_challenge_use_shares_only_the_ready_code_privately(self):
+        for user, hidden in (("1", False), ("2", True)):
+            with self.subTest(hidden=hidden):
+                await adjust_items(ItemAdjustment(user, TokenItem.CHALLENGE, 3, "9", f"give-codes:{user}"))
+                ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"}, user)
+                self.http.post_followup.reset_mock()
+                await self.tokens.tokens_use.callback.func(self.tokens, ctx, "challenge_override", 3, hidden=hidden)
+                uses = await TokenItemUse.find({"wallet_id": user}).sort("activation_order").to_list()
+                code = uses[0].target
+                self.assertIsNotNone(code)
+                self.assertTrue(all(use.target is None for use in uses[1:]))
+                if hidden:
+                    self.assertIn(code, self.edit()["content"])
+                    self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"],
+                                     ipy.MessageFlags.EPHEMERAL)
+                    self.http.post_followup.assert_not_awaited()
+                else:
+                    self.assertNotIn(code, json.dumps(self.edit()))
+                    followup = self.http.post_followup.await_args.args[0]
+                    self.assertIn(code, followup["content"])
+                    self.assertEqual(followup["flags"], ipy.MessageFlags.EPHEMERAL)
+
+    async def test_bulk_use_delivery_failure_preserves_the_batch_and_retry_does_not_activate_more(self):
+        await adjust_items(ItemAdjustment("1", TokenItem.PROTECTION, 3, "9", "give-protection"))
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        with patch.object(self.http, "edit_interaction_message", side_effect=RuntimeError("Discord unavailable")):
+            with self.assertRaisesRegex(RuntimeError, "Discord unavailable"):
+                await self.tokens.tokens_use.callback.func(self.tokens, ctx, "rank_protection", 3)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PROTECTION], 0)
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "1"}).count(), 3)
+        retry = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        retry.id = ctx.id
+        await self.tokens.tokens_use.callback.func(self.tokens, retry, "rank_protection", 3)
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "1"}).count(), 3)
+        self.assertIn("Activated `3` × Rank Protection", self.edit()["content"])
+
+    async def test_bulk_exp_use_queues_every_copy_and_stops_after_an_unconfirmed_grant(self):
+        grants = []
+
+        async def grant(user, reserve):
+            await reserve()
+            grants.append(user)
+            if user == "2":
+                raise ExpGrantError(uncertain=True)
+            return str(len(grants))
+
+        with patch("elo_bot.features.tokens.exp.grant_exp", new=grant):
+            for user in ("1", "2"):
+                await adjust_items(ItemAdjustment(user, TokenItem.EXP, 3, "9", f"give-exp:{user}"))
+                ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"}, user)
+                await self.tokens.tokens_use.callback.func(self.tokens, ctx, "exp_potion", 3)
+                self.assertIn("Queued `3` × EXP Potion", self.edit()["content"])
+                self.assertNotIn("Granted", self.edit()["content"])
+                for _ in range(3):
+                    await recover_exp()
+                self.assertEqual((await TokenWallet.get(user)).inventory[TokenItem.EXP], 0)
+        self.assertEqual(grants, ["1", "1", "1", "2"])
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "1", "state": "used"}).count(), 3)
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "2", "state": "reserved"}).count(), 1)
+        self.assertEqual(await TokenItemUse.find({"wallet_id": "2", "state": "queued"}).count(), 2)
 
     async def test_unaffordable_bulk_buy_reports_failure_and_never_buys_a_partial_quantity(self):
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})

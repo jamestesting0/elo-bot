@@ -6562,6 +6562,11 @@
       "title": "Active",
       "type": "boolean"
      },
+     "batch_size": {
+      "default": 1,
+      "title": "Batch Size",
+      "type": "integer"
+     },
      "district": {
       "anyOf": [
        {

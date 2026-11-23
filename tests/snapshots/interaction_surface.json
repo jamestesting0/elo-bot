@@ -6188,6 +6188,60 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_use"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "district": "SlashCommandParameter(name='district', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens use-item",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Activate one or more owned items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='use-item'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "ban"
    },
    "checks": [
@@ -12600,6 +12654,60 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Browse and buy items'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='shop'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_use"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "district": "SlashCommandParameter(name='district', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens use-item",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Activate one or more owned items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='use-item'>",
    "type": "SlashCommand"
   },
   {
@@ -29878,6 +29986,160 @@
        }
       ],
       "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Activate one or more owned items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "use-item",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items to activate",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 100,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
+        "type": 4
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Barbarian Camp",
+          "name_localizations": null,
+          "value": "Barbarian Camp"
+         },
+         {
+          "name": "Skeleton Park",
+          "name_localizations": null,
+          "value": "Skeleton Park"
+         },
+         {
+          "name": "Wizard Valley",
+          "name_localizations": null,
+          "value": "Wizard Valley"
+         },
+         {
+          "name": "Balloon Lagoon",
+          "name_localizations": null,
+          "value": "Balloon Lagoon"
+         },
+         {
+          "name": "Builder's Workshop",
+          "name_localizations": null,
+          "value": "Builder's Workshop"
+         },
+         {
+          "name": "Golem Quarry",
+          "name_localizations": null,
+          "value": "Golem Quarry"
+         },
+         {
+          "name": "Dragon Cliffs",
+          "name_localizations": null,
+          "value": "Dragon Cliffs"
+         },
+         {
+          "name": "Goblin Mines",
+          "name_localizations": null,
+          "value": "Goblin Mines"
+         },
+         {
+          "name": "Capital Peak",
+          "name_localizations": null,
+          "value": "Capital Peak"
+         }
+        ],
+        "description": "District for District Choice",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "district",
+        "name_localizations": null,
+        "required": false,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
      }
     ]
    },
@@ -35287,6 +35549,160 @@
       "name": "shop",
       "name_localizations": null,
       "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Activate one or more owned items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "use-item",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items to activate",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 100,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
+        "type": 4
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Barbarian Camp",
+          "name_localizations": null,
+          "value": "Barbarian Camp"
+         },
+         {
+          "name": "Skeleton Park",
+          "name_localizations": null,
+          "value": "Skeleton Park"
+         },
+         {
+          "name": "Wizard Valley",
+          "name_localizations": null,
+          "value": "Wizard Valley"
+         },
+         {
+          "name": "Balloon Lagoon",
+          "name_localizations": null,
+          "value": "Balloon Lagoon"
+         },
+         {
+          "name": "Builder's Workshop",
+          "name_localizations": null,
+          "value": "Builder's Workshop"
+         },
+         {
+          "name": "Golem Quarry",
+          "name_localizations": null,
+          "value": "Golem Quarry"
+         },
+         {
+          "name": "Dragon Cliffs",
+          "name_localizations": null,
+          "value": "Dragon Cliffs"
+         },
+         {
+          "name": "Goblin Mines",
+          "name_localizations": null,
+          "value": "Goblin Mines"
+         },
+         {
+          "name": "Capital Peak",
+          "name_localizations": null,
+          "value": "Capital Peak"
+         }
+        ],
+        "description": "District for District Choice",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "district",
+        "name_localizations": null,
+        "required": false,
+        "type": 3
+       },
        {
         "autocomplete": false,
         "channel_types": null,

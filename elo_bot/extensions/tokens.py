@@ -83,6 +83,34 @@ class TokenCommands(ipy.Extension):
         await ctx.send(f"{SUCCESS_EMOJI} Purchased `{amount:,}` × {listing.name} "
                        f"for {listing.price * amount:,} {TOKEN_EMOJI}.", ephemeral=hidden)
 
+    @tokens.subcommand(sub_cmd_name="use-item", sub_cmd_description="Activate one or more owned items")
+    @ipy.slash_option(name="item", description="The item", opt_type=ipy.OptionType.STRING, required=True,
+                      choices=[ipy.SlashCommandChoice(name=listing.name, value=item.value) for item, listing in ITEMS.items()])
+    @ipy.slash_option(name="amount", description="Number of items to activate", opt_type=ipy.OptionType.INTEGER,
+                      min_value=1, max_value=100)
+    @ipy.slash_option(name="district", description="District for District Choice", opt_type=ipy.OptionType.STRING,
+                      choices=[ipy.SlashCommandChoice(name=name, value=name) for name in DISTRICT_INDEX])
+    @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
+    async def tokens_use(self, ctx: ipy.SlashContext, item: str, amount: int = 1, district: str | None = None,
+                         hidden: bool = False) -> None:
+        await ctx.defer(ephemeral=hidden)
+        try:
+            selected = TokenItem(item)
+            uses = await items.activate_many(await self._wallet(ctx), selected, f"command-use:{ctx.id}",
+                                             amount=amount, district=district)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            return
+        verb = "Queued" if selected is TokenItem.EXP else "Activated"
+        content = f"{SUCCESS_EMOJI} {verb} `{amount:,}` × {ITEMS[selected].name}. Items will be used in order."
+        code = next((use.target for use in uses if selected is TokenItem.CHALLENGE and use.state == "armed"), None)
+        code_message = f"Use code `{code}` with `/challenge send`." if code else None
+        if code_message and hidden:
+            content += f"\n{code_message}"
+        await ctx.send(content, ephemeral=hidden)
+        if code_message and not hidden:
+            await ctx.send(f"{SUCCESS_EMOJI} {code_message}", ephemeral=True)
+
     @tokens.subcommand(sub_cmd_name="inventory", sub_cmd_description="View and use your items")
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
     async def tokens_inventory(self, ctx: ipy.SlashContext, hidden: bool = False) -> None:

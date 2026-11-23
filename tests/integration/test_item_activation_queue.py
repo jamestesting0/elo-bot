@@ -15,7 +15,7 @@ from elo_bot.features.tokens.challenge_items import accept_challenge, insert_cha
 from elo_bot.features.tokens.exp import fulfill_exp, recover_exp, redeem_exp
 from elo_bot.features.tokens.item_management import ItemAdjustment, adjust_items, deactivate_item
 from elo_bot.features.tokens.item_view import active_item_panel
-from elo_bot.features.tokens.items import activate, finish_use, release_expired_codes
+from elo_bot.features.tokens.items import activate, activate_many, finish_use, release_expired_codes
 from elo_bot.features.tokens.queue_items import finish_district_items, insert_queued_match, release_queue_items, reserve_queue_items
 from elo_bot.features.tokens.ranked import protect_result
 from tests.integration._final_fixture import FinalScenarioCase
@@ -67,6 +67,73 @@ class TestItemActivationQueue(FinalScenarioCase):
         self.assertEqual(replay.id, rows[1].id)
         self.assertEqual(await TokenItemUse.find({"active": True}).count(), 2)
 
+    async def test_bulk_activation_replays_one_atomic_batch_and_preserves_sequential_use(self):
+        wallet = await self.give(TokenItem.PRIORITY_PRO, 6)
+        await self.give(TokenItem.PRIORITY_ULTRA, 1)
+        earlier = await activate(wallet, TokenItem.PRIORITY_ULTRA, "earlier")
+        first, replay = await asyncio.gather(*(activate_many(wallet, TokenItem.PRIORITY_PRO, "batch", amount=3)
+                                              for _ in range(2)))
+        self.assertEqual([use.id for use in first], [use.id for use in replay])
+        self.assertEqual([use.state for use in first], ["queued"] * 3)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 3)
+        with self.assertRaises(FinalError):
+            await activate_many(wallet, TokenItem.PRIORITY_PRO, "batch", amount=2)
+        with self.assertRaises(FinalError):
+            await activate_many(wallet, TokenItem.PRIORITY_ULTRA, "batch", amount=3)
+        await transaction(lambda session: finish_use(earlier, session, consume=True))
+        for expected in first:
+            attempt, boost = await reserve_queue_items(await Player.get("1"))
+            self.assertEqual(boost, 1)
+            current = await TokenItemUse.find_one({"target": attempt, "slot": "queue"})
+            self.assertEqual(current.id, expected.id)
+            await transaction(lambda session: finish_use(current, session, consume=True))
+        replay = await activate_many(wallet, TokenItem.PRIORITY_PRO, "batch", amount=3)
+        self.assertEqual([use.state for use in replay], ["used"] * 3)
+        wallet = await TokenWallet.get("1")
+        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (5000, 3))
+
+    async def test_bulk_activation_rejects_invalid_requests_without_taking_any_owned_copies(self):
+        wallet = await self.give(TokenItem.DISTRICT, 2)
+        cases = ((TokenItem.DISTRICT, 3, "Barbarian Camp"), (TokenItem.DISTRICT, 1, None),
+                 (TokenItem.PRIORITY_PRO, 1, "Barbarian Camp"), (TokenItem.DISTRICT, 0, "Barbarian Camp"),
+                 (TokenItem.DISTRICT, 101, "Barbarian Camp"))
+        for item, amount, district in cases:
+            with self.subTest(item=item, amount=amount, district=district):
+                with self.assertRaises(FinalError):
+                    await activate_many(wallet, item, "invalid", amount=amount, district=district)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.DISTRICT], 2)
+        self.assertEqual(await TokenItemUse.find_all().count(), 0)
+        self.assertFalse((await Player.get("1")).token_items_active)
+
+    async def test_partial_bulk_activation_insert_rolls_back_every_copy_and_can_be_retried(self):
+        wallet = await self.give(TokenItem.PRIORITY_PRO, 3)
+        uses = TokenItemUse.get_pymongo_collection()
+        insert = uses.insert_many
+
+        async def partial(rows, *, session):
+            await insert(rows[:1], session=session)
+            raise OperationFailure("batch insert interrupted")
+
+        with patch.object(uses, "insert_many", new=partial):
+            with self.assertRaises(OperationFailure):
+                await activate_many(wallet, TokenItem.PRIORITY_PRO, "partial", amount=3)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 3)
+        self.assertEqual(await TokenItemUse.find_all().count(), 0)
+        self.assertFalse((await Player.get("1")).token_items_active)
+        complete = await activate_many(wallet, TokenItem.PRIORITY_PRO, "partial", amount=3)
+        self.assertEqual([use.state for use in complete], ["armed", "queued", "queued"])
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 0)
+
+    async def test_competing_bulk_activations_cannot_partially_fill_or_overdraw_inventory(self):
+        wallet = await self.give(TokenItem.PRIORITY_PRO, 5)
+        outcomes = await asyncio.gather(
+            activate_many(wallet, TokenItem.PRIORITY_PRO, "first-batch", amount=3),
+            activate_many(wallet, TokenItem.PRIORITY_PRO, "second-batch", amount=3), return_exceptions=True)
+        self.assertEqual(sum(isinstance(outcome, FinalError) for outcome in outcomes), 1)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 2)
+        self.assertEqual(await TokenItemUse.find_all().count(), 3)
+        self.assertEqual(await TokenItemUse.find({"state": "armed"}).count(), 1)
+
     async def test_cancelled_queue_attempt_returns_only_reserved_copies_and_promotes_the_next_ones(self):
         wallet = await self.give(TokenItem.PRIORITY_PRO, 2)
         await self.give(TokenItem.DISTRICT, 2)
@@ -92,6 +159,8 @@ class TestItemActivationQueue(FinalScenarioCase):
         wallet = await self.give(TokenItem.PRIORITY_PRO, 2)
         first = await activate(wallet, TokenItem.PRIORITY_PRO, "legacy")
         uses = TokenItemUse.get_pymongo_collection()
+        await uses.update_one({"_id": first.id}, {"$unset": {"batch_size": ""}})
+        self.assertEqual((await activate(wallet, TokenItem.PRIORITY_PRO, "legacy")).id, first.id)
         await uses.drop_index("token_item_head")
         await uses.create_indexes([IndexModel([("wallet_id", 1), ("slot", 1)], unique=True,
                                               partialFilterExpression={"active": True}, name="token_active_item_slot")])

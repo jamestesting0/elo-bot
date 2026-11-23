@@ -5,6 +5,7 @@ from pymongo.errors import DuplicateKeyError
 from pymongo import ReturnDocument
 
 from elo_bot.core.finals import FinalError
+from elo_bot.config.game import DISTRICT_INDEX
 from elo_bot.core.token_items import ITEMS, MAX_TOKENS, TokenItem
 from elo_bot.db import Player, Season
 from elo_bot.db.system_models import OVERRIDE_CODE_LIFETIME
@@ -75,15 +76,36 @@ async def promote_next(wallet_id: str, slot: str, session) -> TokenItemUse | Non
 
 
 async def activate(wallet: TokenWallet, item: TokenItem, action_id: str, *, district: str | None = None) -> TokenItemUse:
+    return (await activate_many(wallet, item, action_id, district=district))[0]
+
+
+async def activate_many(wallet: TokenWallet, item: TokenItem, action_id: str, *, amount: int = 1,
+                        district: str | None = None) -> list[TokenItemUse]:
+    if not 1 <= amount <= 100:
+        raise FinalError("Choose between 1 and 100 items.")
+    if item is TokenItem.DISTRICT:
+        if district not in DISTRICT_INDEX:
+            raise FinalError("Choose a district when using District Choice.")
+    elif district is not None:
+        raise FinalError("A district can only be selected for District Choice.")
     slot = ITEM_SLOTS[item]
     use_id = f"{wallet.id}:{action_id}"
+    use_ids = [use_id, *(f"{use_id}:{index}" for index in range(1, amount))]
     now = int(datetime.now(UTC).timestamp())
+
+    async def replay(uses, existing, session=None):
+        if existing.get("batch_size", 1) != amount:
+            raise FinalError("This activation amount changed. Run the command again.")
+        rows = await uses.find({"_id": {"$in": use_ids}}, session=session).sort("activation_order").to_list()
+        if len(rows) != amount:
+            raise FinalError("This activation is incomplete. Contact a manager.")
+        return [same_activation(TokenItemUse.model_validate(row), item, district) for row in rows]
 
     async def arm(session):
         uses = TokenItemUse.get_pymongo_collection()
         existing = await uses.find_one({"_id": use_id}, session=session)
         if existing:
-            return same_activation(TokenItemUse.model_validate(existing), item, district)
+            return await replay(uses, existing, session)
         previous = await uses.find_one({"wallet_id": wallet.id, "slot": slot, "state": "armed"}, session=session)
         if previous:
             if previous.get("expires_at") is not None and previous["expires_at"] <= now and previous["state"] == "armed":
@@ -92,25 +114,27 @@ async def activate(wallet: TokenWallet, item: TokenItem, action_id: str, *, dist
         if item is TokenItem.PROTECTION:
             season = await current_season(session)
         updated = await TokenWallet.get_pymongo_collection().find_one_and_update(
-            {"_id": wallet.id, "user_id": wallet.user_id, f"inventory.{item}": {"$gt": 0}},
-            {"$inc": {f"inventory.{item}": -1, "version": 1}}, session=session, return_document=ReturnDocument.AFTER)
+            {"_id": wallet.id, "user_id": wallet.user_id, f"inventory.{item}": {"$gte": amount}},
+            {"$inc": {f"inventory.{item}": -amount, "version": amount}}, session=session, return_document=ReturnDocument.AFTER)
         if updated is None:
-            raise FinalError("You don’t have this item.")
-        use = TokenItemUse(id=use_id, wallet_id=wallet.id, item=item, slot=slot, district=district,
-                           season=season, state="queued", activation_order=updated["version"])
-        await uses.insert_one(use.model_dump(by_alias=True), session=session)
+            raise FinalError("You don’t have enough of this item in inventory.")
+        activations = [TokenItemUse(id=identifier, wallet_id=wallet.id, item=item, slot=slot, district=district,
+                                    season=season, state="queued", batch_size=amount,
+                                    activation_order=updated["version"] - amount + index + 1)
+                       for index, identifier in enumerate(use_ids)]
+        await uses.insert_many([use.model_dump(by_alias=True) for use in activations], session=session)
         await promote_next(wallet.id, slot, session)
-        use = TokenItemUse.model_validate(await uses.find_one({"_id": use_id}, session=session))
         await Player.get_pymongo_collection().update_one(
             {"user_id": wallet.user_id}, {"$set": {"token_items_active": True}}, session=session)
-        return use
+        return await replay(uses, {"batch_size": amount}, session)
 
     try:
         return await transaction(arm)
     except DuplicateKeyError as error:
-        existing = await TokenItemUse.get(use_id)
+        uses = TokenItemUse.get_pymongo_collection()
+        existing = await uses.find_one({"_id": use_id})
         if existing is not None:
-            return same_activation(existing, item, district)
+            return await replay(uses, existing)
         raise FinalError("Your activated items changed. Refresh your inventory and try again.") from error
 
 

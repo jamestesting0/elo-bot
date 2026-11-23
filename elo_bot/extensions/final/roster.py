@@ -1,5 +1,7 @@
 import logging
 import re
+from contextlib import nullcontext
+from copy import copy
 
 import interactions as ipy
 from beanie import PydanticObjectId
@@ -22,6 +24,7 @@ from elo_bot.features.finals.invitations import (
     require_registration, retire_outdated_invitations, withdraw_invitation,
 )
 from elo_bot.features.finals.labels import thread_label
+from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_FILENAME, FINAL_MATCHUP_URL, final_matchup_attachment
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.posts import staff_notice
 from elo_bot.features.finals.replacement import replace_entrant, replaceable_entrants
@@ -177,12 +180,23 @@ class Roster:
     async def _move_thread(self, replaced, leaving: str, joining: str, names: dict[str, str]) -> None:
         thread = await self.bot.fetch_channel(int(replaced.thread_id))
         node = replaced.final.nodes[replaced.node_id]
-        players = [await self.bot.fetch_user(int(user)) for user in node.contestants]
+        first, second = node.contestants
+        players = (await self.bot.fetch_user(int(first)), await self.bot.fetch_user(int(second)))
         schedule_channel_name_edit(thread, thread.name.partition(" ")[0], thread_label(node.id, players))
         source = await Match.get(node.match_id)
         if source and source.thread_message_id:
             opening = await thread.fetch_message(source.thread_message_id)
-            await edit_channel_message(opening, content=opening.content.replace(f"<@{leaving}>", f"<@{joining}>"))
+            embed = copy(opening.embeds[0])
+            attachments = [item for item in opening.attachments if item.filename != FINAL_MATCHUP_FILENAME]
+            if len(attachments) != len(opening.attachments):
+                embed.images = []
+            attachment = await final_matchup_attachment(replaced.final, players)
+            if attachment is not None:
+                embed.set_image(FINAL_MATCHUP_URL)
+            with attachment or nullcontext():
+                await edit_channel_message(opening, content=opening.content.replace(f"<@{leaving}>", f"<@{joining}>"),
+                                           embeds=[embed, *opening.embeds[1:]], attachments=attachments,
+                                           file=attachment)
         await thread.add_member(int(joining))
         await thread.remove_member(int(leaving))
         await thread.send(f"{IMPORTANT_EMOJI} <@{joining}> replaced {names[leaving]}.",

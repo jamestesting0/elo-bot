@@ -11,7 +11,6 @@ from elo_bot.db.final_models import FinalResultSnapshot
 
 TEMPLATE = Path("assets/finals/elo_final_bracket.png")
 SCOREBOARD_TEMPLATE = Path("assets/finals/elo_final_scoreboard.png")
-HEAD_TO_HEAD_TEMPLATE = Path("assets/finals/elo_head_to_head.png")
 ELO_KINGS_TEMPLATE = Path("assets/finals/elo_kings_leaderboard.png")
 CAPITAL_TROPHY = Path("assets/finals/capital_trophy.png")
 FONT = Path("assets/finals/supercell_magic_webfont.ttf")
@@ -33,9 +32,6 @@ SCOREBOARD_DESTRUCTION_CENTERS = (655.5, 1219.5)
 SCOREBOARD_TOTAL_CENTER = 922
 SCOREBOARD_TOTAL_STAR_RIGHTS = (451.5, 1015.5)
 SCOREBOARD_TOTAL_DESTRUCTION_CENTERS = (655.5, 1219.5)
-HEAD_TO_HEAD_NAMES = ((248, 805, 686, 871), (986, 805, 1424, 871))
-HEAD_TO_HEAD_AVATARS = ((82, 768, 223, 909), (1450, 768, 1591, 909))
-HEAD_TO_HEAD_SEED_BASELINES = ((282, 793), (1390, 793))
 ELO_KINGS_AVATAR_BOXES = ((475, 728, 507, 760), (475, 772, 507, 804), (475, 817, 507, 849), (475, 862, 507, 894))
 ELO_KINGS_ROWS = len(ELO_KINGS_AVATAR_BOXES)
 
@@ -214,27 +210,6 @@ def paste_avatar(image: Image.Image, data: bytes, box: tuple[int, int, int, int]
         with large_mask.resize(size, Image.Resampling.LANCZOS) as mask:
             with ImageChops.multiply(mask, avatar.getchannel("A")) as alpha:
                 image.paste(avatar, (left, top), alpha)
-
-
-def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, bytes | None],
-                        seeds: tuple[int | None, int | None] = (None, None)) -> bytes:
-    with Image.open(HEAD_TO_HEAD_TEMPLATE) as artwork, artwork.convert("RGB") as image, BytesIO() as output:
-        draw = ImageDraw.Draw(image)
-        for name, avatar, name_box, avatar_box in zip(names, avatars, HEAD_TO_HEAD_NAMES, HEAD_TO_HEAD_AVATARS,
-                                                       strict=True):
-            if avatar is not None:
-                paste_avatar(image, avatar, avatar_box)
-            left, top, right, bottom = name_box
-            text, font = fitted_label(name, right - left, 42)
-            bounds = draw.textbbox((0, 0), text, font=font)
-            draw.text(((left + right - bounds[0] - bounds[2]) / 2, (top + bottom - bounds[1] - bounds[3]) / 2),
-                      text, font=font, fill="#3b2c2b")
-        for seed, baseline in zip(seeds, HEAD_TO_HEAD_SEED_BASELINES, strict=True):
-            if seed is not None:
-                text, font = fitted_label(f"#{seed}", 76, 22)
-                draw.text(baseline, text, font=font, fill="#ffedc1", anchor="ms")
-        image.save(output, format="PNG")
-        return output.getvalue()
 
 
 def render_elo_kings(rows: Sequence[tuple[str, int, bytes | None]]) -> bytes:

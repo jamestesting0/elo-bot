@@ -5,14 +5,13 @@ from unittest.mock import MagicMock, patch, AsyncMock, PropertyMock
 import sys
 import os
 import interactions as ipy
+from beanie.odm.fields import ExpressionField
 from PIL import Image, ImageChops
 
 # Add project root to sys.path
 sys.path.append(os.getcwd())
 
-from elo_bot.db import EloFinal
 from elo_bot.extensions.player import PlayerCommands
-from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
 from elo_bot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
 from elo_bot.config.ids import PLAYER_ROLE
 from tests._patch_sites import patch_sites
@@ -213,7 +212,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("<t:1761900000:R>", recent)
 
     @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
-    async def test_player_h2h_success(self, mock_player):
+    async def test_player_h2h_displays_ranks_and_a_two_digit_record(self, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.guild_id = 1234
@@ -233,46 +232,59 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         player2.__str__.return_value = "Player2"
 
         # Mock players found
-        mock_p1_doc = MagicMock()
-        mock_p1_doc.matches = []
-        mock_player.find_one = AsyncMock(side_effect=[mock_p1_doc, MagicMock(), mock_p1_doc, MagicMock()])
+        mock_p1_doc = SimpleNamespace(elo=1300, matches=[])
+        mock_player.find_one = AsyncMock(side_effect=[mock_p1_doc, SimpleNamespace(elo=1600)])
+        mock_player.elo = ExpressionField("elo")
+        mock_player.find.side_effect = lambda query: SimpleNamespace(
+            count=AsyncMock(return_value={1300: 101, 1600: 6}[query.query["elo"]["$gt"]]),
+        )
 
         # Mock match against player2
-        mock_match = MagicMock()
-        mock_match.players = {
-            "123": MagicMock(opponent="456", won=True, stars=3, destruction=100, districts={"D1": MagicMock(), "D2": MagicMock(), "D3": MagicMock()}, elo_change=10),
-            "456": MagicMock(opponent="123", won=False, stars=1, destruction=50, districts={"D1": MagicMock(), "D2": MagicMock(), "D3": MagicMock()}, elo_change=-10)
-        }
-        mock_match.id = "1"
-        mock_match.time = 1600000000
-        mock_p1_doc.matches = [mock_match]
+        districts = dict.fromkeys(("D1", "D2", "D3"))
+        mock_p1_doc.matches = [
+            SimpleNamespace(id=str(index), time=1600000000, players={
+                "123": SimpleNamespace(opponent="456", won=winner == "123", stars=3,
+                                       destruction=100, districts=districts, elo_change=10),
+                "456": SimpleNamespace(opponent="123", won=winner == "456", stars=3,
+                                       destruction=100, districts=districts, elo_change=-10),
+            })
+            for index, winner in enumerate(["123"] * 12 + ["456"] * 10 + [None], 1)
+        ]
 
-        final = EloFinal.model_construct(
-            season_number=15, entrant_ids=["456", "789", "123", "987", "654"],
-            seed_elo={"456": 1400, "789": 1300, "123": 1500, "987": 1200, "654": 1100},
-        )
-        final.nodes = build_bracket(final, automatic_pairs(final))
-        EloFinal.find_one.side_effect = [None, final]
         sent = []
 
         async def capture(*, embed, file, ephemeral):
             sent.append((embed, file.file_name, file.description, file.file.getvalue(), ephemeral))
 
         ctx.send.side_effect = capture
-        for _ in range(2):
-            await self.cog.player_h2h.callback.func(self.cog, ctx, player1, player2, hidden=False)
+        await self.cog.player_h2h.callback.func(self.cog, ctx, player1, player2, hidden=False)
 
-        (embed, filename, unseeded_alt, unseeded, _), (_, _, seeded_alt, seeded, _) = sent
+        [(embed, filename, alt_text, rendered, ephemeral)] = sent
         self.assertIn("Player1's Record Against Player2", embed.title)
-        self.assertIn("1 - 0", embed.description)
+        self.assertIn("12 - 10", embed.description)
         self.assertEqual(embed.images[0].url, f"attachment://{filename}")
-        self.assertEqual(unseeded_alt, "Player1 vs. Player2")
-        self.assertEqual(seeded_alt, "Player1 (seed #1) vs. Player2 (seed #2)")
-        with Image.open(BytesIO(unseeded)) as plain, Image.open(BytesIO(seeded)) as ranked:
+        self.assertFalse(ephemeral)
+        self.assertEqual(alt_text, "Player1 (Yellow rank #102) 12–10 Player2 (Yellow rank #7)")
+        with (Image.open("assets/finals/elo_head_to_head_record.png") as plain,
+              Image.open(BytesIO(rendered)) as ranked):
             difference = ImageChops.difference(plain, ranked)
-            for badge in ((244, 769, 320, 796), (1352, 769, 1428, 796)):
-                self.assertIsNotNone(difference.crop(badge).getbbox())
-                difference.paste((0, 0, 0), badge)
+            fields = (
+                ((244, 769, 320, 796), 782), ((1352, 769, 1428, 796), 782),
+                ((248, 805, 686, 871), 840), ((986, 805, 1424, 871), 840),
+            )
+            for field, center_y in fields:
+                with self.subTest(field=field):
+                    ink = difference.crop(field).getbbox()
+                    self.assertIsNotNone(ink)
+                    self.assertLessEqual(abs(field[1] + (ink[1] + ink[3]) / 2 - center_y), 1)
+                difference.paste((0, 0, 0), field)
+            for score_x in (782.5, 889.5):
+                field = (int(score_x) - 34, 815, int(score_x) + 35, 865)
+                ink = difference.crop(field).getbbox()
+                self.assertIsNotNone(ink)
+                self.assertLessEqual(abs(field[0] + (ink[0] + ink[2]) / 2 - score_x), 1)
+                self.assertLessEqual(abs(field[1] + (ink[1] + ink[3]) / 2 - 840), 1)
+                difference.paste((0, 0, 0), field)
             self.assertIsNone(difference.getbbox())
 
     @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))

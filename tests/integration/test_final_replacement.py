@@ -1,4 +1,7 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import interactions as ipy
 
 from elo_bot.config.ids import STAFF_CHANNEL
 from elo_bot.core.finals import FinalError
@@ -98,7 +101,11 @@ class TestFinalReplacement(FinalScenarioCase):
 
     async def test_replacing_after_round_start_updates_the_thread_and_tells_staff(self):
         final, node_id, _ = await self.started_pairing()
-        opening = MagicMock(content="<@1>\n<@8>\n<@&5>", edit=AsyncMock())
+        opening_embed = ipy.Embed().set_image("https://cdn.discordapp.com/attachments/777/1/final-matchup.png")
+        old_art = SimpleNamespace(filename="final-matchup.png")
+        other_file = SimpleNamespace(filename="rules.txt")
+        opening = MagicMock(content="<@1>\n<@8>\n<@&5>", edit=AsyncMock(),
+                            embeds=[opening_embed], attachments=[old_art, other_file])
         opening._channel_id = 777
         thread = MagicMock(send=AsyncMock(), add_member=AsyncMock(), remove_member=AsyncMock(),
                            fetch_message=AsyncMock(return_value=opening))
@@ -110,6 +117,7 @@ class TestFinalReplacement(FinalScenarioCase):
         def username(user):
             view = MagicMock(id=user)
             view.__str__.return_value = f"user{user}"
+            view.display_avatar.fetch = AsyncMock(return_value=b"")
             return view
 
         bot.fetch_user = AsyncMock(side_effect=username)
@@ -122,6 +130,11 @@ class TestFinalReplacement(FinalScenarioCase):
             await cog._replace(await EloFinal.get(final.id), guild, "8", "9")
         self.assertEqual(rename.call_args.args[1:], ("🟡", f"{node_id} · user1 vs. user9"))
         self.assertEqual(opening.edit.await_args.kwargs["content"], "<@1>\n<@9>\n<@&5>")
+        self.assertEqual(opening.edit.await_args.kwargs["attachments"], [other_file])
+        self.assertEqual(opening.edit.await_args.kwargs["embeds"][0].images[0].url,
+                         "attachment://final-matchup.png")
+        self.assertNotIn("Player 8", opening.edit.await_args.kwargs["file"].description)
+        self.assertIn("Player 9", opening.edit.await_args.kwargs["file"].description)
         thread.add_member.assert_awaited_once_with(9)
         thread.remove_member.assert_awaited_once_with(8)
         self.assertEqual(thread.send.await_args.kwargs["allowed_mentions"].users, [9])

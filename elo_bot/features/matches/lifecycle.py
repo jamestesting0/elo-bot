@@ -3,6 +3,7 @@ import copy
 import random
 import secrets
 from collections.abc import Awaitable, Callable
+from contextlib import nullcontext
 from datetime import datetime
 
 import interactions as ipy
@@ -29,6 +30,7 @@ from elo_bot.features.matches.thread_messages import (
 from elo_bot.features.queue.policy import QUEUE_OPERATION_LOCK
 from elo_bot.features.queue.state import remove_matched_queue_attempts
 from elo_bot.features.finals.labels import thread_label
+from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_URL, final_matchup_attachment
 from elo_bot.features.tokens.queue_items import finish_district_items, insert_queued_match
 
 
@@ -343,6 +345,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         p1, p2 = match.participants
         player1 = await bot.fetch_user(int(p1.user_id))
         player2 = await bot.fetch_user(int(p2.user_id))
+        final = None
         final_title = None
         if is_final_match(match):
             final = await EloFinal.get(PydanticObjectId(match.final_id))
@@ -481,12 +484,17 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         controls = [submit_button]
 
         # Send a match thread message
-        msg = await thread.send(
-            f"{player1.mention}\n{player2.mention}",
-            embed=embed,
-            components=[ipy.ActionRow(*controls)],
-            nonce=f"match|{token}", enforce_nonce=True,
-        )
+        attachment = await final_matchup_attachment(final, (player1, player2)) if final else None
+        if attachment is not None:
+            embed.set_image(FINAL_MATCHUP_URL)
+        with attachment or nullcontext():
+            msg = await thread.send(
+                f"{player1.mention}\n{player2.mention}",
+                embed=embed,
+                components=[ipy.ActionRow(*controls)],
+                file=attachment,
+                nonce=f"match|{token}", enforce_nonce=True,
+            )
         if not await attach_thread_message(match, int(msg.id)):
             raise ThreadMessageBindingError(token)
         await edit_channel_message(msg, content=f"{msg.content}\n<@&{STAFF_ROLE}>")  # avoids ping

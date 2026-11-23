@@ -10,7 +10,7 @@ from beanie.odm.settings.document import DocumentSettings
 from pymongo.errors import PyMongoError
 
 from elo_bot.config.ids import MATCH_CHANNEL, STAFF_ROLE
-from elo_bot.db import BaseLink, BaseStore, Match, Participant
+from elo_bot.db import BaseLink, BaseStore, EloFinal, Match, Participant
 from tests._patch_sites import patch_sites
 import elo_bot.features.matches.lifecycle as lifecycle_module
 import elo_bot.extensions.match as match_module
@@ -125,6 +125,29 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
 
                 description = self.messages[0].embeds[0].description
                 self.assertEqual("</match base submit:1288780187042971700>" in description, enabled)
+
+    async def test_final_thread_opens_with_one_versus_attachment_using_bracket_seeds(self) -> None:
+        edition = EloFinal.model_construct(id=PydanticObjectId(), season_number=15,
+            entrant_ids=["222", "111"], seed_elo={"111": 1600, "222": 1400},
+            player_nicknames={"111": "Sen", "222": "Kaito"})
+        self.persisted.format = "elo_final_seven"
+        self.persisted.final_id = str(edition.id)
+        self.persisted.final_node_id = "QF1"
+        self.persisted.thread = "123"
+        self.persisted._save_state()
+        self.bot.fetch_user.side_effect = lambda user_id: SimpleNamespace(
+            id=user_id, mention=f"<@{user_id}>", display_name=f"Player {user_id}",
+            display_avatar=SimpleNamespace(fetch=AsyncMock(return_value=b"")),
+        )
+        with patch.object(EloFinal, "get", new=AsyncMock(return_value=edition)):
+            await lifecycle_module.confirm_match(self.bot, "TOKEN")
+            await lifecycle_module.confirm_match(self.bot, "TOKEN")
+
+        self.thread.send.assert_awaited_once()
+        payload = self.thread.send.await_args.kwargs
+        self.assertEqual(payload["embed"].images[0].url, "attachment://final-matchup.png")
+        self.assertEqual(payload["file"].description, "Sen (seed #1) vs. Kaito (seed #2)")
+        self.assertEqual(self.persisted.thread_message_id, 456)
 
     async def test_confirmation_resumes_existing_thread_after_failed_send(self) -> None:
         # Given: Discord fails the announcement after the thread identity is saved.

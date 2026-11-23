@@ -13,6 +13,7 @@ from elo_bot.features.base_store.slots import (
     collect_base_store_slot_owners,
     format_clan_availability_status,
 )
+from elo_bot.features.embeds.clan_availability import clan_availability_entry, set_clan_availability_entries
 from elo_bot.features.matches.resources import free_clan
 
 
@@ -34,55 +35,45 @@ class MatchDashboardTasks:
             message = await channel.fetch_message(embed_ref.message)
             if not message:
                 return
-            loading = message.embeds[0].description in ("Loading…", "Loading...")
+            current_embed = message.embeds[0]
+            loading = current_embed.description in ("Loading…", "Loading...")
             if ((loading and not message.components) or
-                    any(marker in (message.embeds[0].title or "") for marker in ("`(Confirming)`", "`(Unavailable)`"))):
+                    any(marker in (current_embed.title or "") for marker in ("`(Confirming)`", "`(Unavailable)`"))):
                 return
 
             await sync_base_store_slots(bot=self.bot)
             matches = await Match.find().to_list()
             slot_owners = collect_base_store_slot_owners(matches)
             clans = await Clan.find_all().to_list()
-            clan_availability = {c.tag: c.availability_str for c in clans}
-            clan_map = {}
-            for c in clans:
-                clan_map[c.tag] = format_clan_availability_status(c, slot_owners)
+            statuses = {clan.tag: format_clan_availability_status(clan, slot_owners) for clan in clans}
 
-            user_ids = list(dict.fromkeys(re.findall(r"<@!?(\d+)>", "\n".join(clan_map.values()))))
+            user_ids = list(dict.fromkeys(re.findall(r"<@!?(\d+)>", "\n".join(statuses.values()))))
             members = await asyncio.gather(*(channel.guild.fetch_member(user_id) for user_id in user_ids))
-            names = {user_id: mention_user(member, user_id) for user_id, member in zip(user_ids, members)}
+            names = {
+                user_id: mention_user(member, user_id, include_wishlist_tab=False)
+                for user_id, member in zip(user_ids, members)
+            }
 
-            embed = copy.deepcopy(message.embeds[0])
-            edited = loading
-            if loading:
-                embed.description = ""
-
-            for field in embed.fields:
-                # extract clan tag from field name like "**Clan Name (#TAG)**"
-                clan_tag = field.name.split("(")[1].replace(")**", "").strip()
-                if clan_tag not in clan_map:
-                    continue
-
-                thread_id_match = re.search(r"<#(\d+)>", clan_availability[clan_tag])
+            entries = []
+            for clan in clans:
+                clan_tag = clan.tag
+                status = statuses[clan_tag]
+                thread_id_match = re.search(r"<#(\d+)>", clan.availability_str)
                 if thread_id_match:
                     thread_id = thread_id_match.group(1)
                     thread = await self.bot.fetch_channel(thread_id)
                     if not thread:
                         await free_clan(clan_tag, expected_thread=thread_id)
                         clan = await Clan.find_one(Clan.tag == clan_tag)
-                        clan_availability[clan_tag] = clan.availability_str
-                        clan_map[clan_tag] = format_clan_availability_status(clan, slot_owners)
+                        status = format_clan_availability_status(clan, slot_owners)
 
-                value = re.sub(r"<@!?(\d+)>", lambda mention: names.get(mention.group(1), mention.group(0)),
-                               clan_map[clan_tag])
-                if field.value == value:
-                    continue
+                value = re.sub(r"<@!?(\d+)>", lambda mention: names.get(mention.group(1), mention.group(0)), status)
+                entries.append(clan_availability_entry(clan, value))
 
-                field.value = value
-
-                edited = True
-
-            if edited:
+            embed = copy.copy(current_embed)
+            set_clan_availability_entries(embed, entries)
+            if (embed.description != (current_embed.description or "") or
+                    [field.to_dict() for field in embed.fields] != [field.to_dict() for field in current_embed.fields]):
                 await edit_channel_message(message, embed=embed_edit_payload(embed))
 
     @ipy.Task.create(ipy.IntervalTrigger(seconds=15))

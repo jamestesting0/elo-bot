@@ -13,6 +13,7 @@ from PIL import Image
 import elo_bot.extensions.match.base_store as match_base_store_module
 import elo_bot.extensions.match.dashboards as match_dashboards_module
 import elo_bot.features.matches.resources as resources_module
+from elo_bot.config.game import HOST_CLAN_CHOICES
 from elo_bot.config.ids import GUILD_IDS
 from elo_bot.core.season_calendar import season_calendar
 from elo_bot.db import BaseStore, ServerState
@@ -181,16 +182,16 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
 
         clan = MagicMock(
             tag="#CLAN",
-            name="Test Clan",
             availability_str="Available",
             available_slots=["Slot 2"],
         )
+        clan.name = "Test [Clan]"
         free_clan = MagicMock(
             tag="#FREE",
-            name="Free Clan",
             availability_str="Available",
             available_slots=["Slot 1", "Slot 2"],
         )
+        free_clan.name = "Free Clan"
         match = MagicMock(thread="987")
         match.participants = [
             MagicMock(
@@ -218,12 +219,55 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         mock_update_fields.assert_awaited_once_with(
             clan_availability_embed={"channel": 123, "message": 456}
         )
-        embed = ctx.channel.send.call_args.kwargs["embed"]
+        message = ctx.channel.send.return_value
+        payload = message.edit.await_args.kwargs["embed"]
+        self.assertFalse(payload.get("fields"))
         self.assertEqual(
-            embed.fields[0].value,
-            "Available\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123?tab=wishlist>)**",
+            payload["description"],
+            "**[Test \\[Clan\\]](https://link.clashofclans.com/en?action=OpenClanProfile&tag=%23CLAN)**\n"
+            "Available\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123>)**\n\n"
+            "**[Free Clan](https://link.clashofclans.com/en?action=OpenClanProfile&tag=%23FREE)**\nAvailable",
         )
-        self.assertEqual(embed.fields[1].value, "Available")
+
+    async def test_clan_availability_publishes_all_occupied_clans_and_slots(self):
+        cog = EmbedCommands(MagicMock())
+        message = MagicMock(id=456, edit=AsyncMock())
+        ctx = MagicMock(spec=ipy.SlashContext, defer=AsyncMock(), send=AsyncMock())
+        ctx.channel.id = 123
+        ctx.channel.send = AsyncMock(return_value=message)
+        ctx.guild.fetch_member = AsyncMock(side_effect=lambda user_id: MagicMock(
+            id=user_id, display_name=f"Player {user_id}".ljust(32, "x"),
+        ))
+        clans, matches = [], []
+        for index, choice in enumerate(HOST_CLAN_CHOICES):
+            tag, thread = str(choice.value), str(10**18 + index)
+            first, second = str(11 * 10**17 + index), str(12 * 10**17 + index)
+            clan = MagicMock(tag=tag, availability_str=f"<#{thread}> <@{first}> vs <@{second}> <t:1795440000:R>")
+            clan.name = str(choice.name)
+            clans.append(clan)
+            matches.append(MagicMock(thread=thread, participants=[
+                MagicMock(user_id=user_id, base_store=BaseStore(clan_tag=tag, slot=slot, stored_at=1795440000))
+                for slot, user_id in (("Slot 1", first), ("Slot 2", second))
+            ]))
+
+        with (
+            patch("elo_bot.extensions.embed.Clan") as clan_model,
+            patch("elo_bot.extensions.embed.Match") as match_model,
+            patch.object(ServerState, "update_fields", new=AsyncMock()),
+        ):
+            clan_model.find_all.return_value.to_list = AsyncMock(return_value=clans)
+            match_model.find.return_value.to_list = AsyncMock(return_value=matches)
+            await cog.embed.callback.func(cog, ctx, embed_type="Clan Availability")
+
+        payload = message.edit.await_args.kwargs["embed"]
+        blocks = [payload["description"], *(field["value"] for field in payload["fields"])]
+        entries = [entry.splitlines() for block in blocks for entry in block.split("\n\n")]
+        self.assertEqual(len(entries), len(clans))
+        for (title, status, slot_one, slot_two), clan, match in zip(entries, clans, matches, strict=True):
+            self.assertIn(f"%23{clan.tag[1:]}", title)
+            self.assertIn(f"<#{match.thread}>", status)
+            self.assertTrue(slot_one.startswith(f"Slot 1: <#{match.thread}>"))
+            self.assertTrue(slot_two.startswith(f"Slot 2: <#{match.thread}>"))
 
     async def test_manual_free_rejects_locked_clan_with_unlocked_alternatives(self) -> None:
         # Given a manager targeting locked clan A while clan B is still available.

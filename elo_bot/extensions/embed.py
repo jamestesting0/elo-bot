@@ -18,6 +18,7 @@ from elo_bot.features.base_store.slots import collect_base_store_slot_owners, fo
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.members import member_guild
 from elo_bot.features.matches import resources
+from elo_bot.features.embeds.clan_availability import clan_availability_entry, set_clan_availability_entries
 from elo_bot.features.embeds.static import STATIC_EMBED_TYPES, static_embed
 from elo_bot.features.embeds.readme import README_SECTIONS, readme_page
 from elo_bot.features.sticky.commands import post_embed_sticky
@@ -34,6 +35,7 @@ class EmbedCommands(ipy.Extension):
     ) -> bool:
         pending = deepcopy(embed)
         pending.description = "Loading…"
+        pending.fields = []
         message = None
         registered = False
         try:
@@ -109,9 +111,6 @@ class EmbedCommands(ipy.Extension):
         elif embed_type == "Clan Availability":
             embed = ipy.Embed(
                 title="**Clan Availability**",
-                description="Matches started 30 minutes ago are likely to be finished. Please go "
-                            "to the corresponding clan and store the results. **0.5 point** will be "
-                            "rewarded.",
                 footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
                 color=embed_color(),
             )
@@ -123,12 +122,15 @@ class EmbedCommands(ipy.Extension):
             user_ids = list(dict.fromkeys(re.findall(r"<@!?(\d+)>", "\n".join(statuses.values()))))
             guild = await member_guild(ctx)
             members = await asyncio.gather(*(guild.fetch_member(user_id) for user_id in user_ids))
-            names = {user_id: mention_user(member, user_id) for user_id, member in zip(user_ids, members)}
-            for c in clans:
-                embed.add_field(
-                    name=f"**{str(c.name)} ({str(c.tag)})**",
-                    value=re.sub(r"<@!?(\d+)>", lambda mention: names[mention.group(1)], statuses[c.tag]),
-                )
+            names = {
+                user_id: mention_user(member, user_id, include_wishlist_tab=False)
+                for user_id, member in zip(user_ids, members)
+            }
+            entries = []
+            for clan in clans:
+                status = re.sub(r"<@!?(\d+)>", lambda mention: names[mention.group(1)], statuses[clan.tag])
+                entries.append(clan_availability_entry(clan, status))
+            set_clan_availability_entries(embed, entries)
 
             free_clan_select = ipy.StringSelectMenu(
                 *HOST_CLAN_OPTIONS,

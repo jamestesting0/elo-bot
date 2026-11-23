@@ -17,9 +17,11 @@ async def member_names(guild: Guild, user_ids: Iterable[str]) -> dict[str, str]:
 
 
 def mention_user(user: User | Member | None, user_id: int | str = 0,
-                 mention_type: Literal["Player", "Builder", "Unknown Builder", "Helper"] = "Player"):
+                 mention_type: Literal["Player", "Builder", "Unknown Builder", "Helper"] = "Player",
+                 *, include_wishlist_tab: bool = True) -> str:
+    query = "?tab=wishlist" if include_wishlist_tab else ""
     if user:
-        return f"**[{user.display_name}](<https://discordapp.com/users/{user.id}?tab=wishlist>)**"
+        return f"**[{user.display_name}](<https://discordapp.com/users/{user.id}{query}>)**"
 
     if mention_type == "Player":
         name_filler = "❌Invalid Player"
@@ -28,4 +30,4 @@ def mention_user(user: User | Member | None, user_id: int | str = 0,
     else:
         name_filler = "❌Invalid Helper"
 
-    return f"**[{name_filler}](<https://discordapp.com/users/{user_id}?tab=wishlist>)**"
+    return f"**[{name_filler}](<https://discordapp.com/users/{user_id}{query}>)**"

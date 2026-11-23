@@ -93,8 +93,12 @@ class TestMatchCommands(MatchCommandsCase):
             clan_availability_embed=MagicMock(channel=123, message=456)
         )
 
-        field = ipy.EmbedField(name="**Test Clan (#CLAN)**", value="old")
-        embed = ipy.Embed(title="**Clan Availability**", fields=[field])
+        field = ipy.EmbedField(name="**Test Clan (Reserve) (#CLAN)**", value="Available")
+        embed = ipy.Embed(
+            title="**Clan Availability**",
+            description="Matches started 30 minutes ago are likely to be finished.",
+            fields=[field],
+        )
         message = MagicMock(embeds=[embed])
         message.edit = AsyncMock()
         channel = MagicMock()
@@ -104,6 +108,7 @@ class TestMatchCommands(MatchCommandsCase):
 
         clan = MagicMock()
         clan.tag = "#CLAN"
+        clan.name = "Test Clan (Reserve)"
         clan.availability_str = "Available"
         clan.available_slots = ["Slot 2"]
         mock_clan.find_all.return_value.to_list = AsyncMock(return_value=[clan])
@@ -122,9 +127,22 @@ class TestMatchCommands(MatchCommandsCase):
         await self.cog.update_clan_availability_embed.callback.func(self.cog)
 
         mock_sync_slots.assert_awaited_once_with(bot=self.bot)
-        self.assertEqual(
-            message.edit.await_args.kwargs["embed"]["fields"][0]["value"],
-            "Available\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123?tab=wishlist>)**",
-        )
         message.edit.assert_awaited_once()
+        payload = message.edit.await_args.kwargs["embed"]
+        heading = "**[Test Clan (Reserve)](https://link.clashofclans.com/en?action=OpenClanProfile&tag=%23CLAN)**"
+        self.assertFalse(payload.get("fields"))
+        self.assertEqual(
+            payload["description"],
+            f"{heading}\nAvailable\nSlot 1: <#987> **[Player](<https://discordapp.com/users/123>)**",
+        )
+
+        message.embeds = [ipy.Embed.from_dict(payload)]
+        message.edit.reset_mock()
+        await self.cog.update_clan_availability_embed.callback.func(self.cog)
+        message.edit.assert_not_awaited()
+
+        stored_match.participants = []
+        await self.cog.update_clan_availability_embed.callback.func(self.cog)
+        message.edit.assert_awaited_once()
+        self.assertEqual(message.edit.await_args.kwargs["embed"]["description"], f"{heading}\nAvailable")
         mock_is_raid_weekend.assert_not_called()

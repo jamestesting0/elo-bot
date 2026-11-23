@@ -20,6 +20,7 @@ LEGACY_UNAVAILABLE_IMAGE = "https://cdn.discordapp.com/attachments/8810734248841
 FOOTER_TEXT = "Clan capital Elo system"
 BASE_LINK_PREFIX = "https://link.clashofclans.com/en?action=OpenLayout&id=TH"
 PLAYER_LINK_PREFIX = "https://link.clashofclans.com/en?action=OpenPlayerProfile&tag=%23"
+CLAN_LINK_PREFIX = "https://link.clashofclans.com/en?action=OpenClanProfile&tag=%23"
 ORDINAL_REPRESENTATIONS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th"]
 
 # Leaderboards

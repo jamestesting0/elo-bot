@@ -8,20 +8,20 @@ from unittest.mock import patch
 from PIL import Image, ImageChops
 
 from elo_bot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket
-from elo_bot.features.finals.rendering import bracket_labels, fitted_label, render_bracket
+from elo_bot.features.finals.rendering import bracket_labels, fitted_label, render_bracket, render_elo_kings
 from elo_bot.features.finals.prediction_display import prediction_statuses
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalPrediction
 
 
-# Blue interiors measured from the supplied image, independently of renderer centers.
 NAME_PLATES = (
     (312, 502, 495, 536), (312, 551, 495, 585), (312, 600, 495, 635), (312, 650, 495, 684),
     (312, 700, 495, 735), (312, 752, 495, 786), (312, 800, 495, 834), (312, 849, 495, 883),
     (601, 535, 781, 572), (601, 632, 780, 669), (601, 725, 781, 761), (601, 820, 780, 856),
     (885, 594, 1063, 630), (885, 766, 1063, 802), (1157, 636, 1360, 691),
 )
+PLATE_MIDLINES = (520, 569, 619, 668, 719, 770, 818, 867, 555, 652, 744, 839, 613, 785, 666)
 
 
 class TestFinalRendering(unittest.TestCase):
@@ -53,15 +53,36 @@ class TestFinalRendering(unittest.TestCase):
                 self.assertEqual(rendered.size, (1672, 941))
                 difference = ImageChops.difference(template.convert("RGB"), rendered).convert("L")
                 remaining = difference.copy()
-                for plate in NAME_PLATES:
+                for plate, center_y in zip(NAME_PLATES, PLATE_MIDLINES, strict=True):
                     with self.subTest(plate=plate):
                         bounds = difference.crop(plate).getbbox()
                         self.assertIsNotNone(bounds, "Every name plate must contain rendered text")
                         left, top, right, bottom = bounds
                         self.assertLessEqual(abs((left + right) / 2 - (plate[2] - plate[0]) / 2), 1.5)
-                        self.assertLessEqual(abs((top + bottom) / 2 - (plate[3] - plate[1]) / 2), 1.5)
+                        self.assertLessEqual(abs(plate[1] + (top + bottom) / 2 - center_y), 1)
                         remaining.paste(0, plate)
                 self.assertIsNone(remaining.getbbox(), "Text must not overlap frames, connectors or artwork")
+
+    def test_leaderboard_capitals_and_scores_center_in_their_respective_fields(self):
+        rows = (("Hera | S11 King", 1824, None), ("Héloïse | S12 King", 1751, None),
+                ("Hugo | S13 King", 1678, None), ("Hank | S14 King", 1605, None))
+        with Image.open("assets/finals/elo_kings_leaderboard.png") as template, \
+                Image.open(BytesIO(render_elo_kings(rows))) as rendered:
+            difference = ImageChops.difference(template.convert("RGB"), rendered).convert("L")
+            for name_y, score_y in ((744, 743), (788, 788), (833, 833), (878, 878)):
+                for left, right, center_y in ((519, 541, name_y), (1086, 1182, score_y), (1182, 1215, score_y)):
+                    with self.subTest(center_y=center_y, column=left):
+                        bounds = difference.crop((left, center_y - 20, right, center_y + 20)).getbbox()
+                        self.assertIsNotNone(bounds)
+                        self.assertLessEqual(abs((bounds[1] + bounds[3]) / 2 - 20), 1)
+
+    def test_leaderboard_accent_does_not_move_the_king_title(self):
+        plain = render_elo_kings([("Etoile | S11 King", 1824, None)])
+        accented = render_elo_kings([("Étoile | S11 King", 1824, None)])
+        with Image.open(BytesIO(plain)) as first, Image.open(BytesIO(accented)) as second:
+            difference = ImageChops.difference(first, second)
+            self.assertIsNotNone(difference.crop((519, 723, 630, 765)).getbbox())
+            self.assertIsNone(difference.crop((650, 723, 810, 765)).getbbox())
 
     def test_completed_bracket_labels_follow_each_round_in_plate_order(self):
         final = self.edition(8)

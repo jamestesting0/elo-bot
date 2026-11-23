@@ -20,24 +20,24 @@ FALLBACK_FONTS = (Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
                   Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
 TEMPLATE_SIZE = (1672, 941)
 SCOREBOARD_TEMPLATE_SIZE = (1672, 1033)
-ENTRANT_CENTERS = ((404, 519), (404, 568), (404, 618), (404, 667),
-                   (404, 718), (404, 769), (404, 817), (404, 866))
-SEMIFINAL_CENTERS = ((691, 554), (691, 651), (691, 743), (691, 838))
-FINAL_CENTERS = ((974, 612), (974, 784))
-CHAMPION_CENTER = (1258, 664)
-SCOREBOARD_NAMES = ((453, 336, 739, 390), (933, 336, 1219, 390))
+ENTRANT_CENTERS = ((404, 520), (404, 569), (404, 619), (404, 668),
+                   (404, 719), (404, 770), (404, 818), (404, 867))
+SEMIFINAL_CENTERS = ((691, 555), (691, 652), (691, 744), (691, 839))
+FINAL_CENTERS = ((974, 613), (974, 785))
+CHAMPION_CENTER = (1258, 666)
+SCOREBOARD_NAMES = ((453, 336, 739, 386), (933, 336, 1219, 386))
 SCOREBOARD_AVATARS = ((359, 325, 431, 397), (1241, 325, 1313, 397))
-SCOREBOARD_ROWS = (472, 535, 596, 659, 721, 783, 846)
+SCOREBOARD_ROWS = (473, 535, 597, 659, 721, 783, 845)
 SCOREBOARD_STAR_RIGHTS = (441, 1005)
 SCOREBOARD_DESTRUCTION_CENTERS = (655.5, 1219.5)
-SCOREBOARD_TOTAL_CENTER = 920
+SCOREBOARD_TOTAL_CENTER = 922
 SCOREBOARD_TOTAL_STAR_RIGHTS = (451.5, 1015.5)
 SCOREBOARD_TOTAL_DESTRUCTION_CENTERS = (655.5, 1219.5)
 HEAD_TO_HEAD_NAMES = ((248, 805, 686, 871), (986, 805, 1424, 871))
 HEAD_TO_HEAD_AVATARS = ((82, 768, 223, 909), (1450, 768, 1591, 909))
 HEAD_TO_HEAD_SEED_BASELINES = ((282, 793), (1390, 793))
-ELO_KINGS_ROWS = 4
 ELO_KINGS_AVATAR_BOXES = ((475, 728, 507, 760), (475, 772, 507, 804), (475, 817, 507, 849), (475, 862, 507, 894))
+ELO_KINGS_ROWS = len(ELO_KINGS_AVATAR_BOXES)
 
 
 def bracket_labels(final: EloFinal, picks: dict[str, str] | None = None) -> list[str]:
@@ -190,8 +190,9 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
             draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#3b2c2b")
         for label, right, center, color, size in star_labels:
             text, font = fitted_label(label, 80, size)
-            draw.text((right, center), text, font=font, fill=color, stroke_width=1, stroke_fill="#3b2c2b",
-                      anchor="rm")
+            _, top, _, bottom = font.getbbox(text, stroke_width=1, anchor="rs")
+            draw.text((right, center - (top + bottom) / 2), text, font=font, fill=color, stroke_width=1,
+                      stroke_fill="#3b2c2b", anchor="rs")
         with image, BytesIO() as output:
             image.save(output, format="PNG")
             return output.getvalue()
@@ -245,13 +246,14 @@ def render_elo_kings(rows: Sequence[tuple[str, int, bytes | None]]) -> bytes:
         score_left = 1143 - (value_width + gap + trophy.width) // 2
         value_center = score_left + value_width / 2
         trophy_x = score_left + value_width + gap
-        for index, (name, peak_elo, avatar) in enumerate(rows[:ELO_KINGS_ROWS]):
-            y = 742 + 45 * index
+        for index, ((name, peak_elo, avatar), avatar_box) in enumerate(zip(rows, ELO_KINGS_AVATAR_BOXES, strict=False)):
+            y = (avatar_box[1] + avatar_box[3]) // 2
             if avatar is not None:
-                paste_avatar(image, avatar, ELO_KINGS_AVATAR_BOXES[index])
+                paste_avatar(image, avatar, avatar_box)
             label, label_font = fitted_label(name, 507, 25)
-            left, top, _, bottom = draw.textbbox((0, 0), label, font=label_font)
-            label_x, label_y = 519 - left, y - (top + bottom) / 2
+            left, _, _, _ = label_font.getbbox(label)
+            _, cap_top, _, cap_bottom = label_font.getbbox("H")
+            label_x, label_y = 519 - left, y - (cap_top + cap_bottom) / 2
             player, separator, title = label.partition(" | ")
             draw.text((label_x, label_y), player, font=label_font, fill="#3b2b25")
             if separator:
@@ -263,8 +265,9 @@ def render_elo_kings(rows: Sequence[tuple[str, int, bytes | None]]) -> bytes:
 
             value, value_font = fitted_label(str(peak_elo), value_width, 27)
             left, top, right, bottom = draw.textbbox((0, 0), value, font=value_font)
-            draw.text((value_center - (left + right) / 2, y - (top + bottom) / 2), value,
+            score_y = 743 + 45 * index
+            draw.text((value_center - (left + right) / 2, score_y - (top + bottom) / 2), value,
                       font=value_font, fill="#fff3d3")
-            image.paste(trophy, (trophy_x, y - trophy.height // 2), trophy)
+            image.paste(trophy, (trophy_x, score_y - trophy.height // 2), trophy)
         image.save(output, format="PNG")
         return output.getvalue()

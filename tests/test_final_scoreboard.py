@@ -12,15 +12,15 @@ from elo_bot.db.final_models import FinalResultSnapshot
 from elo_bot.features.finals.rendering import render_scoreboard
 
 
-NAME_PLATES = ((453, 336, 739, 390), (933, 336, 1219, 390))
-ROW_Y = (472, 535, 596, 659, 721, 783, 846)
+NAME_PLATES = ((453, 336, 739, 386), (933, 336, 1219, 386))
+ROW_Y = (473, 535, 597, 659, 721, 783, 845)
 STAR_RIGHTS = (441, 1005)
 TOTAL_STAR_RIGHTS = (451.5, 1015.5)
 STAR_PLATES = tuple((right - 80, y - 22, right + 3, y + 22) for right in STAR_RIGHTS for y in ROW_Y)
 DESTRUCTION_PLATES = tuple((center - 80, y - 22, center + 81, y + 22)
                            for center in (655, 1219) for y in ROW_Y)
-TOTAL_STAR_PLATES = ((371, 892, 455, 948), (935, 892, 1020, 948))
-TOTAL_DESTRUCTION_PLATES = ((565, 892, 746, 948), (1129, 892, 1310, 948))
+TOTAL_STAR_PLATES = ((371, 897, 455, 947), (935, 897, 1020, 947))
+TOTAL_DESTRUCTION_PLATES = ((565, 897, 746, 947), (1129, 897, 1310, 947))
 AVATAR_BOXES = ((359, 325, 431, 397), (1241, 325, 1313, 397))
 
 

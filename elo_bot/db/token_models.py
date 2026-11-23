@@ -35,12 +35,13 @@ class TokenLedgerEntry(Document):
     escrow_amount: int = 0
     kind: Literal["grant", "stake", "edit", "cancel", "payout", "refund", "reversal", "identity", "adjust", "switch",
                   "purchase", "match_hold", "match_payout", "match_refund", "match_correction",
-                  "activity_reward", "prediction_reward"]
+                  "activity_reward", "prediction_reward", "item_adjust"]
     identity_from: str | None = None
     identity_to: str | None = None
     market_id: str | None = None
     match_id: str | None = None
     item: TokenItem | None = None
+    item_quantity: int = 0
     generation: int | None = None
     created_at: int
 
@@ -58,10 +59,11 @@ class TokenItemUse(Document):
     id: str
     wallet_id: str
     item: TokenItem
-    slot: Literal["queue", "district", "challenge", "protection"]
+    slot: Literal["queue", "district", "challenge", "protection", "exp"]
     active: bool = True
     target: str | None = None
-    state: Literal["armed", "reserved", "used", "returned"] = "armed"
+    state: Literal["queued", "armed", "reserved", "used", "returned"] = "armed"
+    activation_order: int = 0
     district: str | None = None
     expires_at: int | None = None
     season: int | None = None
@@ -70,8 +72,11 @@ class TokenItemUse(Document):
     class Settings:
         name = "token_item_uses"
         indexes = [
-            IndexModel([("wallet_id", 1), ("slot", 1)], unique=True, partialFilterExpression={"active": True},
-                       name="token_active_item_slot"),
+            IndexModel([("wallet_id", 1), ("slot", 1)], unique=True,
+                       partialFilterExpression={"active": True, "state": {"$in": ["armed", "reserved"]}},
+                       name="token_item_head"),
+            IndexModel([("wallet_id", 1), ("slot", 1), ("state", 1), ("activation_order", 1), ("_id", 1)],
+                       name="token_item_activation_order"),
             IndexModel([("target", 1), ("state", 1)], name="token_item_target"),
             IndexModel([("wallet_id", 1), ("slot", 1), ("season", 1)], name="token_item_usage"),
             IndexModel([("slot", 1), ("state", 1), ("expires_at", 1)], name="token_item_expiry"),

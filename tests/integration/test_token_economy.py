@@ -5,7 +5,7 @@ from beanie import PydanticObjectId
 from pymongo.errors import OperationFailure
 
 from elo_bot.core.finals import FinalError
-from elo_bot.core.token_items import TokenItem
+from elo_bot.core.token_items import MAX_TOKENS, TokenItem
 from elo_bot.db import Match, MatchPlayerStats, Participant, RecordedMatch
 from elo_bot.db.final_models import FinalPrediction
 from elo_bot.db.token_models import ParticipantStake, TokenLedgerEntry, TokenWallet
@@ -35,24 +35,33 @@ from tests.integration._final_fixture import FinalScenarioCase
 
 
 class TestTokenEconomy(FinalScenarioCase):
-    async def test_purchase_and_replay_share_one_debit_and_unit(self):
-        wallet = await ensure_wallet("1")
-        await asyncio.gather(*(purchase(wallet, TokenItem.PRIORITY_PRO, "one") for _ in range(2)))
-        current = await TokenWallet.get(wallet.id)
-        self.assertEqual(current.balance, 4200)
-        self.assertEqual(current.inventory, {TokenItem.PRIORITY_PRO: 1})
-        self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 1)
+    async def test_purchase_and_replay_share_one_debit_and_the_requested_units(self):
+        for user, amount, balance in (("1", 1, 4200), ("2", 3, 2600)):
+            with self.subTest(amount=amount):
+                wallet = await ensure_wallet(user)
+                await asyncio.gather(*(purchase(wallet, TokenItem.PRIORITY_PRO, "one", amount=amount) for _ in range(2)))
+                with self.assertRaises(FinalError):
+                    await purchase(wallet, TokenItem.PRIORITY_PRO, "one", amount=amount + 1)
+                current = await TokenWallet.get(wallet.id)
+                self.assertEqual(current.balance, balance)
+                self.assertEqual(current.inventory, {TokenItem.PRIORITY_PRO: amount})
+                receipts = await TokenLedgerEntry.find({"kind": "purchase", "wallet_id": wallet.id}).to_list()
+                self.assertEqual(len(receipts), 1)
+                self.assertEqual(receipts[0].item_quantity, amount)
 
     async def test_concurrent_purchases_cannot_spend_the_same_balance(self):
-        wallet = await ensure_wallet("1")
-        outcomes = await asyncio.gather(
-            purchase(wallet, TokenItem.PROTECTION, "one"),
-            purchase(wallet, TokenItem.PROTECTION, "two"), return_exceptions=True,
-        )
-        self.assertEqual(sum(isinstance(result, FinalError) for result in outcomes), 1)
-        current = await TokenWallet.get(wallet.id)
-        self.assertEqual(current.balance, 1400)
-        self.assertEqual(current.inventory, {TokenItem.PROTECTION: 1})
+        for user, item, amount, balance in (("1", TokenItem.PROTECTION, 1, 1400),
+                                            ("2", TokenItem.PRIORITY_PRO, 4, 1800)):
+            with self.subTest(amount=amount):
+                wallet = await ensure_wallet(user)
+                outcomes = await asyncio.gather(
+                    purchase(wallet, item, "one", amount=amount),
+                    purchase(wallet, item, "two", amount=amount), return_exceptions=True,
+                )
+                self.assertEqual(sum(isinstance(result, FinalError) for result in outcomes), 1)
+                current = await TokenWallet.get(wallet.id)
+                self.assertEqual(current.balance, balance)
+                self.assertEqual(current.inventory, {item: amount})
 
     async def test_purchase_receipt_rolls_back_when_inventory_write_cannot_complete(self):
         wallet = await ensure_wallet("1")
@@ -61,11 +70,33 @@ class TestTokenEconomy(FinalScenarioCase):
             raise OperationFailure("inventory unavailable")
         with patch("elo_bot.features.tokens.items.write_receipt", new=fail_after_debit):
             with self.assertRaises(OperationFailure):
-                await purchase(wallet, TokenItem.PRIORITY_PRO, "retry")
+                await purchase(wallet, TokenItem.PRIORITY_PRO, "retry", amount=3)
         self.assertEqual((await TokenWallet.get(wallet.id)).balance, 5000)
         self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 0)
-        await purchase(wallet, TokenItem.PRIORITY_PRO, "retry")
-        self.assertEqual((await TokenWallet.get(wallet.id)).inventory, {TokenItem.PRIORITY_PRO: 1})
+        await purchase(wallet, TokenItem.PRIORITY_PRO, "retry", amount=3)
+        self.assertEqual((await TokenWallet.get(wallet.id)).inventory, {TokenItem.PRIORITY_PRO: 3})
+        self.assertEqual((await TokenWallet.get(wallet.id)).balance, 2600)
+
+    async def test_invalid_purchase_quantities_do_not_charge_or_add_items(self):
+        wallet = await ensure_wallet("1")
+        for amount in (0, -1, 1_000_001):
+            with self.subTest(amount=amount):
+                with self.assertRaises(FinalError):
+                    await purchase(wallet, TokenItem.PRIORITY_PRO, f"invalid:{amount}", amount=amount)
+        current = await TokenWallet.get(wallet.id)
+        self.assertEqual((current.balance, current.inventory), (5000, {}))
+        self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 0)
+
+    async def test_bulk_purchase_inventory_overflow_rolls_back_the_entire_charge(self):
+        wallet = await ensure_wallet("1")
+        await TokenWallet.get_pymongo_collection().update_one(
+            {"_id": wallet.id}, {"$set": {f"inventory.{TokenItem.PRIORITY_PRO}": MAX_TOKENS - 1}})
+        with self.assertRaisesRegex(FinalError, "inventory limit"):
+            await purchase(wallet, TokenItem.PRIORITY_PRO, "overflow", amount=2)
+        current = await TokenWallet.get(wallet.id)
+        self.assertEqual(current.balance, 5000)
+        self.assertEqual(current.inventory[TokenItem.PRIORITY_PRO], MAX_TOKENS - 1)
+        self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 0)
 
     async def test_boost_consumes_on_pairing_and_district_refunds_on_cancellation(self):
         wallet = await ensure_wallet("1")

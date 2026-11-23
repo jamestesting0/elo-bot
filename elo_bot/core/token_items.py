@@ -8,6 +8,7 @@ class TokenItem(StrEnum):
     DISTRICT = "district_choice"
     CHALLENGE = "challenge_override"
     PROTECTION = "rank_protection"
+    EXP = "exp_potion"
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +24,7 @@ ITEMS = {
     TokenItem.DISTRICT: ItemListing("District Choice", 1800, "Reserve one eligible district for a queued match."),
     TokenItem.CHALLENGE: ItemListing("Challenge Override", 2400, "Get a private code for one challenge."),
     TokenItem.PROTECTION: ItemListing("Rank Protection", 3600, "Protect your league boundary on one loss per season."),
+    TokenItem.EXP: ItemListing("EXP Potion", 10000, "Grants 3,000 server EXP when used."),
 }
 
 MAX_TOKENS = 2**63 - 1

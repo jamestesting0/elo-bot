@@ -3,7 +3,7 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db import Match, Player, RecordedMatch
 from elo_bot.db.token_models import TokenAward, TokenItemUse, TokenWallet
 from elo_bot.db.result_models import ResultRecordSnapshot
-from elo_bot.features.tokens.items import current_season, finish_use
+from elo_bot.features.tokens.items import current_season, finish_use, promote_next
 from elo_bot.features.tokens.receipts import receipt, write_receipt
 from elo_bot.features.tokens.wallets import initialize_wallet
 
@@ -14,6 +14,7 @@ async def reserve_protections(match: Match, session) -> None:
     uses = TokenItemUse.get_pymongo_collection()
     season = await current_season(session)
     for wallet in wallets:
+        await promote_next(wallet["_id"], "protection", session)
         use = await uses.find_one({"wallet_id": wallet["_id"], "slot": "protection", "state": "armed"},
                                   session=session)
         if use is None:

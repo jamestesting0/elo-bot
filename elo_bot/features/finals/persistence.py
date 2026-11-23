@@ -27,6 +27,9 @@ async def register_final_indexes() -> None:
         await finals.drop_index("final_season_unique")
     for model in (EloFinal, *FINAL_DOCUMENT_MODELS):
         await model.get_pymongo_collection().create_indexes(model.Settings.indexes)
+    uses = TokenItemUse.get_pymongo_collection()
+    if "token_active_item_slot" in await uses.index_information():
+        await uses.drop_index("token_active_item_slot")
     await Match.get_pymongo_collection().create_indexes([
         IndexModel([("final_id", 1), ("final_node_id", 1), ("final_contestant_revision", 1), ("final_attempt", 1)],
                    unique=True, partialFilterExpression={"format": "elo_final_seven"}, name="final_match_attempt"),

@@ -6540,7 +6540,8 @@
        "queue_priority_ultra",
        "district_choice",
        "challenge_override",
-       "rank_protection"
+       "rank_protection",
+       "exp_potion"
       ],
       "title": "TokenItem",
       "type": "string"
@@ -6550,6 +6551,11 @@
      "_id": {
       "title": "Id",
       "type": "string"
+     },
+     "activation_order": {
+      "default": 0,
+      "title": "Activation Order",
+      "type": "integer"
      },
      "active": {
       "default": true,
@@ -6612,7 +6618,8 @@
        "queue",
        "district",
        "challenge",
-       "protection"
+       "protection",
+       "exp"
       ],
       "title": "Slot",
       "type": "string"
@@ -6620,6 +6627,7 @@
      "state": {
       "default": "armed",
       "enum": [
+       "queued",
        "armed",
        "reserved",
        "used",
@@ -6656,7 +6664,8 @@
    },
    "settings": {
     "indexes": [
-     "IndexModel({'wallet_id': 1, 'slot': 1}, unique=True, partialFilterExpression={'active': True}, name='token_active_item_slot')",
+     "IndexModel({'wallet_id': 1, 'slot': 1}, unique=True, partialFilterExpression={'active': True, 'state': {'$in': ['armed', 'reserved']}}, name='token_item_head')",
+     "IndexModel({'wallet_id': 1, 'slot': 1, 'state': 1, 'activation_order': 1, '_id': 1}, name='token_item_activation_order')",
      "IndexModel({'target': 1, 'state': 1}, name='token_item_target')",
      "IndexModel({'wallet_id': 1, 'slot': 1, 'season': 1}, name='token_item_usage')",
      "IndexModel({'slot': 1, 'state': 1, 'expires_at': 1}, name='token_item_expiry')"
@@ -6673,7 +6682,8 @@
        "queue_priority_ultra",
        "district_choice",
        "challenge_override",
-       "rank_protection"
+       "rank_protection",
+       "exp_potion"
       ],
       "title": "TokenItem",
       "type": "string"
@@ -6748,6 +6758,11 @@
       ],
       "default": null
      },
+     "item_quantity": {
+      "default": 0,
+      "title": "Item Quantity",
+      "type": "integer"
+     },
      "kind": {
       "enum": [
        "grant",
@@ -6766,7 +6781,8 @@
        "match_refund",
        "match_correction",
        "activity_reward",
-       "prediction_reward"
+       "prediction_reward",
+       "item_adjust"
       ],
       "title": "Kind",
       "type": "string"
@@ -6835,7 +6851,8 @@
        "queue_priority_ultra",
        "district_choice",
        "challenge_override",
-       "rank_protection"
+       "rank_protection",
+       "exp_potion"
       ],
       "title": "TokenItem",
       "type": "string"

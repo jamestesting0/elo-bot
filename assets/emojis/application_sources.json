@@ -38,6 +38,9 @@
   "error": {
     "legacy_id": "827078558140334100"
   },
+  "exp_potion": {
+    "file": "items/exp_potion.png"
+  },
   "giveaway": {
     "animated": true,
     "legacy_id": "822063886067826761"

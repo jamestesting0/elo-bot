@@ -6,13 +6,15 @@ import interactions as ipy
 from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS, LVL1_ROLES
-from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
+from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.discord.pagination import build_page_button, build_page_jump_modal, parse_page_number, InvalidPageError
 from elo_bot.core.finals import FinalError
 from elo_bot.core.token_items import ITEMS, TokenItem
 from elo_bot.config.game import DISTRICT_INDEX
 from elo_bot.features.tokens import items
-from elo_bot.features.tokens.item_view import PAGES, item_panel
+from elo_bot.features.tokens.exp import recover_exp, redeem_exp
+from elo_bot.features.tokens.item_view import PAGES, active_item_panel, item_panel
+from elo_bot.features.tokens.item_management import ItemAdjustment, adjust_items, deactivate_item
 from elo_bot.features.tokens.awards import recover_awards
 from elo_bot.features.tokens.stake_publication import recover_stakes
 from elo_bot.features.tokens.queue_items import release_orphan_queue_items
@@ -38,6 +40,7 @@ class TokenCommands(ipy.Extension):
         await recover_stakes(self.bot)
         await items.release_expired_codes()
         await release_orphan_queue_items()
+        await recover_exp()
 
     @ipy.listen(ipy.events.Startup)
     async def start_token_recovery(self):
@@ -62,10 +65,64 @@ class TokenCommands(ipy.Extension):
     async def tokens_shop(self, ctx: ipy.SlashContext, hidden: bool = False) -> None:
         await self._items(ctx, "shop", hidden=hidden)
 
+    @tokens.subcommand(sub_cmd_name="buy", sub_cmd_description="Buy one or more copies of an item")
+    @ipy.slash_option(name="item", description="The item", opt_type=ipy.OptionType.STRING, required=True,
+                      choices=[ipy.SlashCommandChoice(name=listing.name, value=item.value) for item, listing in ITEMS.items()])
+    @ipy.slash_option(name="amount", description="Number of items to buy", opt_type=ipy.OptionType.INTEGER,
+                      min_value=1, max_value=1_000_000)
+    @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
+    async def tokens_buy(self, ctx: ipy.SlashContext, item: str, amount: int = 1, hidden: bool = False) -> None:
+        await ctx.defer(ephemeral=hidden)
+        try:
+            selected = TokenItem(item)
+            await items.purchase(await self._wallet(ctx), selected, f"command:{ctx.id}", amount=amount)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            return
+        listing = ITEMS[selected]
+        await ctx.send(f"{SUCCESS_EMOJI} Purchased `{amount:,}` × {listing.name} "
+                       f"for {listing.price * amount:,} {TOKEN_EMOJI}.", ephemeral=hidden)
+
     @tokens.subcommand(sub_cmd_name="inventory", sub_cmd_description="View and use your items")
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
     async def tokens_inventory(self, ctx: ipy.SlashContext, hidden: bool = False) -> None:
         await self._items(ctx, "inventory", hidden=hidden)
+
+    @tokens.subcommand(sub_cmd_name="items", sub_cmd_description="View and disable your activated items")
+    @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
+    async def tokens_items(self, ctx: ipy.SlashContext, hidden: bool = False) -> None:
+        await ctx.defer(ephemeral=hidden)
+        try:
+            embed, controls = await active_item_panel(await self._wallet(ctx), hidden=hidden)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            return
+        await ctx.send(embed=embed, components=controls, ephemeral=hidden)
+
+    @ipy.component_callback(re.compile(r"^tokenactive\|(disable|refresh|page)\|\d+(\|\d+)?$"))
+    async def token_active_control(self, ctx: ipy.ComponentContext) -> None:
+        _, action, owner, *raw_page = ctx.custom_id.split("|")
+        page = int(raw_page[0]) if raw_page else 0
+        if owner != str(ctx.author.id):
+            await ctx.send(f"{ERROR_EMOJI} This view belongs to another player.", ephemeral=True)
+            return
+        await ctx.defer(edit_origin=True)
+        try:
+            wallet = await self._wallet(ctx)
+            content = ""
+            if action == "disable":
+                try:
+                    item = await deactivate_item(wallet, ctx.values[0])
+                    content = f"{SUCCESS_EMOJI} Disabled {ITEMS[item].name}. Returned to inventory."
+                except FinalError as error:
+                    content = f"{ERROR_EMOJI} {error}"
+            hidden = ctx.message is not None and bool(ctx.message.flags & ipy.MessageFlags.EPHEMERAL)
+            embed, controls = await active_item_panel(wallet, hidden=hidden, page=page)
+            await ctx.edit_origin(content=content, embed=embed, components=controls)
+        except FinalError as error:
+            await ctx.client.http.post_followup(
+                {"content": f"{ERROR_EMOJI} {error}", "flags": int(ipy.MessageFlags.EPHEMERAL)},
+                ctx.client.app.id, ctx.token)
 
     @ipy.component_callback(ITEM_CONTROL)
     async def token_item_control(self, ctx: ipy.ComponentContext) -> None:
@@ -118,14 +175,28 @@ class TokenCommands(ipy.Extension):
                     if district not in DISTRICT_INDEX:
                         raise FinalError("Select an available district.")
                     item = TokenItem.DISTRICT
-                use = await items.activate(wallet, item, key, district=district)
-                content = f"{SUCCESS_EMOJI} {ITEMS[item].name} {'ready' if use.state == 'armed' else use.state}."
+                if item is TokenItem.EXP:
+                    await ctx.edit_origin(content=f"{LOADING_EMOJI} Granting 3,000 server EXP...", components=[])
+                    try:
+                        use = await redeem_exp(wallet, key)
+                    except FinalError as error:
+                        embed, controls = await item_panel(await self._wallet(ctx), mode, page, hidden=hidden)
+                        await ctx.edit(ctx.message, content=f"{ERROR_EMOJI} {error}", embed=embed, components=controls)
+                        return
+                    content = (f"{SUCCESS_EMOJI} EXP Potion queued." if use.state == "queued"
+                               else f"{SUCCESS_EMOJI} Granted 3,000 server EXP.")
+                else:
+                    use = await items.activate(wallet, item, key, district=district)
+                    content = f"{SUCCESS_EMOJI} {ITEMS[item].name} {'ready' if use.state == 'armed' else use.state}."
                 if item is TokenItem.CHALLENGE and use.state == "armed":
                     code_message = f"{SUCCESS_EMOJI} Use code `{use.target}` with `/challenge send`."
                     if hidden:
                         content, code_message = code_message, None
             embed, controls = await item_panel(await self._wallet(ctx), mode, page, hidden=hidden)
-            await ctx.edit_origin(content=content, embed=embed, components=controls)
+            if ctx.responded:
+                await ctx.edit(ctx.message, content=content, embed=embed, components=controls)
+            else:
+                await ctx.edit_origin(content=content, embed=embed, components=controls)
             if code_message is not None:
                 await ctx.send(code_message, ephemeral=True)
         except FinalError as error:
@@ -169,7 +240,7 @@ class TokenCommands(ipy.Extension):
         selected = entries[(page - 1) * 10:page * 10]
         scopes = await market_scopes({entry.market_id for entry in selected if entry.market_id})
         embed = ipy.Embed(title="**Token History**", color=embed_color(), description="\n".join(
-            f"`{ledger_label(entry)}` {entry.amount:+,} {TOKEN_EMOJI}"
+            f"`{ledger_label(entry)}`" + ("" if entry.kind == "item_adjust" else f" {entry.amount:+,} {TOKEN_EMOJI}")
             + (f" · {scopes[entry.market_id]}" if entry.market_id in scopes else "")
             + f" · {ipy.Timestamp.fromtimestamp(entry.created_at).format(ipy.TimestampStyles.RelativeTime)}"
             for entry in selected) or "No token activity.")
@@ -214,6 +285,44 @@ class TokenCommands(ipy.Extension):
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     async def tokens_remove(self, ctx: ipy.SlashContext, player: ipy.User, amount: int):
         await self._adjust(ctx, player, -amount, "Removed")
+
+    async def _adjust_item(self, ctx: ipy.SlashContext, change: ItemAdjustment) -> None:
+        await ctx.defer(ephemeral=True)
+        try:
+            if ctx.guild_id not in GUILD_IDS:
+                raise FinalError("Use token commands in the Final's server.")
+            if not any(ctx.author.has_role(role) for role in LVL1_ROLES):
+                raise FinalError("You do not have permission to run this command!")
+            wallet = await adjust_items(change)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+            return
+        verb, direction = ("Gave", "to") if change.quantity > 0 else ("Removed", "from")
+        await ctx.send(f"{SUCCESS_EMOJI} {verb} {abs(change.quantity):,} × {ITEMS[change.item].name} "
+                       f"{direction} <@{change.user_id}>. In inventory: {wallet.inventory.get(change.item, 0):,}.",
+                       ephemeral=True)
+
+    @tokens.subcommand(sub_cmd_name="give-item", sub_cmd_description="Give inventory items to a player")
+    @ipy.slash_option(name="player", description="The player", opt_type=ipy.OptionType.USER, required=True)
+    @ipy.slash_option(name="item", description="The item", opt_type=ipy.OptionType.STRING, required=True,
+                      choices=[ipy.SlashCommandChoice(name=listing.name, value=item.value) for item, listing in ITEMS.items()])
+    @ipy.slash_option(name="amount", description="Number of items", opt_type=ipy.OptionType.INTEGER,
+                      min_value=1, max_value=1_000_000)
+    @ipy.check(ipy.has_any_role(*LVL1_ROLES))
+    async def tokens_give_item(self, ctx: ipy.SlashContext, player: ipy.User, item: str, amount: int = 1) -> None:
+        await self._adjust_item(ctx, ItemAdjustment(str(player.id), TokenItem(item), amount,
+                                                   str(ctx.author.id), f"item-adjust:{ctx.id}"))
+
+    @tokens.subcommand(sub_cmd_name="remove-item", sub_cmd_description="Remove inventory items from a player")
+    @ipy.slash_option(name="player", description="The player", opt_type=ipy.OptionType.USER, required=True)
+    @ipy.slash_option(name="item", description="The item", opt_type=ipy.OptionType.STRING, required=True,
+                      choices=[ipy.SlashCommandChoice(name=listing.name, value=item.value) for item, listing in ITEMS.items()])
+    @ipy.slash_option(name="amount", description="Number of items", opt_type=ipy.OptionType.INTEGER,
+                      min_value=1, max_value=1_000_000)
+    @ipy.check(ipy.has_any_role(*LVL1_ROLES))
+    async def tokens_remove_item(self, ctx: ipy.SlashContext, player: ipy.User, item: str, amount: int = 1) -> None:
+        await self._adjust_item(ctx, ItemAdjustment(str(player.id), TokenItem(item), -amount,
+                                                   str(ctx.author.id), f"item-adjust:{ctx.id}"))
 
     @tokens.subcommand(sub_cmd_name="history", sub_cmd_description="Show grants, bets, payouts, and corrections")
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)

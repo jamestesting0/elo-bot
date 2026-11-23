@@ -5751,6 +5751,123 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_buy"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens buy",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Buy one or more copies of an item'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='buy'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_give_item"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens give-item",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Give inventory items to a player'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='give-item'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_history"
    },
    "checks": [],
@@ -5847,6 +5964,54 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_items"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens items",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View and disable your activated items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='items'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_remove"
    },
    "checks": [
@@ -5902,6 +6067,71 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove tokens from a player's wallet'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_remove_item"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens remove-item",
+   "scope": "1033924790513311756",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove inventory items from a player'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove-item'>",
    "type": "SlashCommand"
   },
   {
@@ -11941,6 +12171,123 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_buy"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens buy",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Buy one or more copies of an item'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='buy'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_give_item"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens give-item",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Give inventory items to a player'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='give-item'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_history"
    },
    "checks": [],
@@ -12037,6 +12384,54 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "name": "tokens_items"
+   },
+   "checks": [],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens items",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View and disable your activated items'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='items'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
     "name": "tokens_remove"
    },
    "checks": [
@@ -12092,6 +12487,71 @@
    ],
    "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove tokens from a player's wallet'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove'>",
+   "type": "SlashCommand"
+  },
+  {
+   "_application_id": null,
+   "_uses_arg": false,
+   "auto_defer": "Missing",
+   "autocomplete_callbacks": {},
+   "callback": {
+    "name": "tokens_remove_item"
+   },
+   "checks": [
+    {
+     "closure": [
+      [
+       1033926947312517252,
+       1033933093633007707,
+       1079148582579470397,
+       1339318723957489727
+      ]
+     ],
+     "factory": "has_any_role.<locals>.check",
+     "name": "check"
+    }
+   ],
+   "cmd_id": {},
+   "contexts": [
+    "ContextType.GUILD",
+    "ContextType.BOT_DM",
+    "ContextType.PRIVATE_CHANNEL"
+   ],
+   "cooldown": "Missing",
+   "default_member_permissions": null,
+   "description": "<LocalisedDesc: default_locale=english_us, value='Your token wallet'>",
+   "dm_permission": true,
+   "enabled": true,
+   "error_callback": null,
+   "extension": "TokenCommands",
+   "group_description": "<LocalisedDesc: default_locale=english_us, value='No Description Set'>",
+   "group_name": "<LocalisedName: default_locale=english_us, value='None'>",
+   "integration_types": [
+    "IntegrationType.GUILD_INSTALL"
+   ],
+   "max_concurrency": "Missing",
+   "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
+   "nsfw": false,
+   "options": [
+    "SlashCommandOption()",
+    "SlashCommandOption()",
+    "SlashCommandOption()"
+   ],
+   "parameters": {
+    "amount": "SlashCommandParameter(name='amount', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=1, converter=None, _option_name=None)",
+    "item": "SlashCommandParameter(name='item', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "player": "SlashCommandParameter(name='player', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+   },
+   "post_run_callback": null,
+   "pre_run_callback": null,
+   "resolved": "tokens remove-item",
+   "scope": "888075522536505394",
+   "scopes": [
+    888075522536505394,
+    1033924790513311756
+   ],
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Remove inventory items from a player'>",
+   "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='remove-item'>",
    "type": "SlashCommand"
   },
   {
@@ -19147,6 +19607,40 @@
     "name": "ComponentCallback::[re.compile('^timestamp_choose\\\\|[0-9]{1,20}\\\\|[0-9]{1,20}$')]",
     "nsfw": false,
     "pattern": "^timestamp_choose\\|[0-9]{1,20}\\|[0-9]{1,20}$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "name": "token_active_control"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "TokenCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^tokenactive\\\\|(disable|refresh|page)\\\\|\\\\d+(\\\\|\\\\d+)?$')]",
+    "nsfw": false,
+    "pattern": "^tokenactive\\|(disable|refresh|page)\\|\\d+(\\|\\d+)?$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -28937,6 +29431,192 @@
        1,
        2
       ],
+      "description": "Buy one or more copies of an item",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "buy",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items to buy",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
+        "type": 4
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Give inventory items to a player",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "give-item",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
+        "type": 4
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Show grants, bets, payouts, and corrections",
       "description_localizations": null,
       "integration_types": [
@@ -29001,6 +29681,38 @@
        1,
        2
       ],
+      "description": "View and disable your activated items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "items",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Remove tokens from a player's wallet",
       "description_localizations": null,
       "integration_types": [
@@ -29037,6 +29749,99 @@
         "name": "amount",
         "name_localizations": null,
         "required": true,
+        "type": 4
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Remove inventory items from a player",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "remove-item",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
         "type": 4
        }
       ],
@@ -34052,6 +34857,192 @@
        1,
        2
       ],
+      "description": "Buy one or more copies of an item",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "buy",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items to buy",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
+        "type": 4
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Give inventory items to a player",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "give-item",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
+        "type": 4
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Show grants, bets, payouts, and corrections",
       "description_localizations": null,
       "integration_types": [
@@ -34116,6 +35107,38 @@
        1,
        2
       ],
+      "description": "View and disable your activated items",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "items",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Make the bot response hidden or not",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "hidden",
+        "name_localizations": null,
+        "required": false,
+        "type": 5
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
       "description": "Remove tokens from a player's wallet",
       "description_localizations": null,
       "integration_types": [
@@ -34152,6 +35175,99 @@
         "name": "amount",
         "name_localizations": null,
         "required": true,
+        "type": 4
+       }
+      ],
+      "type": 1
+     },
+     {
+      "contexts": [
+       0,
+       1,
+       2
+      ],
+      "description": "Remove inventory items from a player",
+      "description_localizations": null,
+      "integration_types": [
+       0
+      ],
+      "name": "remove-item",
+      "name_localizations": null,
+      "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "The player",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "player",
+        "name_localizations": null,
+        "required": true,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [
+         {
+          "name": "Queue Priority Pro",
+          "name_localizations": null,
+          "value": "queue_priority_pro"
+         },
+         {
+          "name": "Queue Priority Ultra",
+          "name_localizations": null,
+          "value": "queue_priority_ultra"
+         },
+         {
+          "name": "District Choice",
+          "name_localizations": null,
+          "value": "district_choice"
+         },
+         {
+          "name": "Challenge Override",
+          "name_localizations": null,
+          "value": "challenge_override"
+         },
+         {
+          "name": "Rank Protection",
+          "name_localizations": null,
+          "value": "rank_protection"
+         },
+         {
+          "name": "EXP Potion",
+          "name_localizations": null,
+          "value": "exp_potion"
+         }
+        ],
+        "description": "The item",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "item",
+        "name_localizations": null,
+        "required": true,
+        "type": 3
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Number of items",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": 1000000,
+        "min_length": null,
+        "min_value": 1,
+        "name": "amount",
+        "name_localizations": null,
+        "required": false,
         "type": 4
        }
       ],

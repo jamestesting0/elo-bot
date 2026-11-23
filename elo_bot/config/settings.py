@@ -1,5 +1,7 @@
 import os
 
+BOT_STAFF_TOKEN = os.getenv("BOT_STAFF_TOKEN")
+
 TOKENS = {
     "main": os.getenv("BOT_MAIN_TOKEN"),
     "beta": os.getenv("BOT_BETA_TOKEN")

@@ -2,6 +2,9 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 interactions.py==5.15.0
+discord.py-self==2.1.0
+# Keep the staff client's transport compatible with the pinned certificate bundle.
+curl-cffi==0.14.0
 coc.py==3.7.2
 validators==0.20.0
 aiofiles==23.2.1

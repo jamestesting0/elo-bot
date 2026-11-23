@@ -32,8 +32,11 @@ def ledger_label(entry: TokenLedgerEntry) -> str:
             return ""
         case "adjust":
             return "Manager adjustment"
+        case "item_adjust":
+            return f"{ITEMS[entry.item].name} {entry.item_quantity:+,}" if entry.item else "Item adjustment"
         case "purchase":
-            return ITEMS[entry.item].name if entry.item is not None else "Item purchase"
+            label = ITEMS[entry.item].name if entry.item is not None else "Item purchase"
+            return f"{label} × {entry.item_quantity:,}" if entry.item_quantity > 1 else label
         case "match_hold":
             return "Match stake"
         case "match_payout":

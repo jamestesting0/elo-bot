@@ -15,6 +15,10 @@ The project combines asynchronous Discord workflows with MongoDB persistence and
   <img src=".github/images/season-stats.png" alt="Season 14 activity and district statistics" height="460">
 </p>
 
+<p align="center">
+  <img src=".github/images/head-to-head.png" alt="Head-to-head player record with a 5–4 score, district stats and recent matches" width="520">
+</p>
+
 Watch Elo matches on our collaboration YouTube channel, [SenFGr](https://www.youtube.com/@SenFGr), and in the [Clan Capital Elo playlist](https://www.youtube.com/playlist?list=PLCBSjHpUFbfGiwqK-xf1R5FdGqrFBf3rk).
 
 ## Features

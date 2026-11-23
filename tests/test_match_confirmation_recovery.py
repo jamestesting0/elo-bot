@@ -126,7 +126,7 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
                 description = self.messages[0].embeds[0].description
                 self.assertEqual("</match base submit:1288780187042971700>" in description, enabled)
 
-    async def test_final_thread_opens_with_one_versus_attachment_using_bracket_seeds(self) -> None:
+    async def test_final_thread_opens_without_a_matchup_poster(self) -> None:
         edition = EloFinal.model_construct(id=PydanticObjectId(), season_number=15,
             entrant_ids=["222", "111"], seed_elo={"111": 1600, "222": 1400},
             player_nicknames={"111": "Sen", "222": "Kaito"})
@@ -145,8 +145,8 @@ class TestMatchConfirmationRecovery(unittest.IsolatedAsyncioTestCase):
 
         self.thread.send.assert_awaited_once()
         payload = self.thread.send.await_args.kwargs
-        self.assertEqual(payload["embed"].images[0].url, "attachment://final-matchup.png")
-        self.assertEqual(payload["file"].description, "Sen (seed #1) vs. Kaito (seed #2)")
+        self.assertEqual(payload["embed"].images, [])
+        self.assertIsNone(payload.get("file"))
         self.assertEqual(self.persisted.thread_message_id, 456)
 
     async def test_confirmation_resumes_existing_thread_after_failed_send(self) -> None:

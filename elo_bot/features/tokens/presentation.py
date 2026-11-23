@@ -1,4 +1,5 @@
 from hashlib import sha256
+from contextlib import nullcontext
 import json
 
 import anyio
@@ -13,10 +14,12 @@ from elo_bot.config.emojis import TOKEN_EMOJI, CROSS_EMOJI, TICK_EMOJI, WIN_EMOJ
 from elo_bot.core.finals import FinalError
 from elo_bot.features.tokens.bets import projected_return
 from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
-from elo_bot.discord.mentions import mention_user, member_names
+from elo_bot.discord.mentions import mention_user, fetch_members
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket
 from elo_bot.features.finals.labels import market_label
+from elo_bot.features.finals.bracket import seeded_players
+from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_URL, final_matchup_attachment
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostReference, publish_post
 
 
@@ -46,37 +49,49 @@ def market_controls(market: FinalBettingMarket):
                        disabled=market.state != "OPEN")]
 
 
-def market_signature(market: FinalBettingMarket) -> str:
+def market_signature(market: FinalBettingMarket, final: EloFinal) -> str:
     state = {key: getattr(market, key) for key in (
         "state", "version", "pools", "escrow", "settled_result_version", "void_reason", "desired_winner",
     )}
-    return sha256(json.dumps({"presentation": 3, **state}, sort_keys=True).encode()).hexdigest()
+    state.update({"contestants": market.contestants, "seeding": seeded_players(final),
+                  "names": {user: final.player_nicknames.get(user, user) for user in market.contestants}})
+    return sha256(json.dumps({"presentation": 4, **state}, sort_keys=True).encode()).hexdigest()
 
 
 async def publish_market(bot, final: EloFinal, market: FinalBettingMarket):
     async with PUBLICATION_LOCKS.setdefault(f"market:{market.id}", anyio.Lock()):
-        return await _publish_market(bot, final, await FinalBettingMarket.get(market.id))
+        return await _publish_market(bot, await EloFinal.get(final.id), await FinalBettingMarket.get(market.id))
 
 
 async def _publish_market(bot, final: EloFinal, market: FinalBettingMarket):
-    signature = market_signature(market)
+    signature = market_signature(market, final)
     channel_id = market.announcement_channel_id or (
         final.channel_id if market.announcement_id or market.announcement_attempted else FINAL_CHANNEL)
     collection = FinalBettingMarket.get_pymongo_collection()
     try:
         channel = await bot.fetch_channel(channel_id)
-        names = await member_names(channel.guild, market.contestants)
+        members = await fetch_members(channel.guild, market.contestants)
+        names = {user: mention_user(member, user) for user, member in members.items()}
         nonce = sha256(f"final-market:{market.id}".encode()).hexdigest()[:24]
         reference = PostReference(nonce, bot.user.id, market.announcement_id, market.announcement_attempted)
         await collection.update_one({"_id": market.id},
             {"$set": {"announcement_attempted": True, "announcement_channel_id": channel_id}})
-        message = await publish_post(channel, reference, PostContent(market_embed(final, market, names),
-                                                                    market_controls(market)))
+        left, right = market.contestants
+        attachment = await final_matchup_attachment(final, (left, right), members)
+        embed = market_embed(final, market, names)
+        if attachment is not None:
+            embed.set_image(FINAL_MATCHUP_URL)
+        else:
+            embed.add_field(name="**Image**", value="Matchup image unavailable. Its update is pending.")
+        with attachment or nullcontext():
+            message = await publish_post(channel, reference, PostContent(embed, market_controls(market), attachment))
         await collection.update_one({"_id": market.id},
             {"$set": {"announcement_id": str(message.id), "announcement_signature": signature,
                       "publication_error": None}})
-        if market_signature(await FinalBettingMarket.get(market.id)) != signature:
+        if market_signature(await FinalBettingMarket.get(market.id), await EloFinal.get(final.id)) != signature:
             raise FinalError("Betting changed. Its announcement update is pending; use `/final recover`.")
+        if attachment is None:
+            raise FinalError("The matchup image is unavailable.")
         return message
     except (ipy.errors.HTTPException, FinalError) as error:
         await collection.update_one({"_id": market.id},

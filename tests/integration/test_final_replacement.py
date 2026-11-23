@@ -131,10 +131,8 @@ class TestFinalReplacement(FinalScenarioCase):
         self.assertEqual(rename.call_args.args[1:], ("🟡", f"{node_id} · user1 vs. user9"))
         self.assertEqual(opening.edit.await_args.kwargs["content"], "<@1>\n<@9>\n<@&5>")
         self.assertEqual(opening.edit.await_args.kwargs["attachments"], [other_file])
-        self.assertEqual(opening.edit.await_args.kwargs["embeds"][0].images[0].url,
-                         "attachment://final-matchup.png")
-        self.assertNotIn("Player 8", opening.edit.await_args.kwargs["file"].description)
-        self.assertIn("Player 9", opening.edit.await_args.kwargs["file"].description)
+        self.assertEqual(opening.edit.await_args.kwargs["embeds"][0].images, [])
+        self.assertIsNone(opening.edit.await_args.kwargs.get("file"))
         thread.add_member.assert_awaited_once_with(9)
         thread.remove_member.assert_awaited_once_with(8)
         self.assertEqual(thread.send.await_args.kwargs["allowed_mentions"].users, [9])

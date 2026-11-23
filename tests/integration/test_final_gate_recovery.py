@@ -74,7 +74,7 @@ class TestFinalGateRecovery(FinalUICase):
         current = await FinalBettingMarket.get(market.id)
         self.assertEqual(current.state, "OPEN")
         self.assertIsNone(current.publication_error)
-        self.assertEqual(current.announcement_signature, market_signature(current))
+        self.assertEqual(current.announcement_signature, market_signature(current, await final_for_view()))
         control = self.posts[current.announcement_id].payload["components"][0]
         self.assertEqual(control.custom_id, f"betopen|{market.id}")
         self.assertFalse(control.disabled)

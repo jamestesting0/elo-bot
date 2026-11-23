@@ -89,7 +89,7 @@ async def recover_final(final: EloFinal, *, bot=None,
             pending.append(f"{market_id.split(':')[1]} payout correction is pending: {error}")
     if bot is not None:
         for market in await FinalBettingMarket.find({"final_id": str(final.id)}).to_list():
-            if market.announcement_signature != market_signature(market) or market.publication_error:
+            if market.announcement_signature != market_signature(market, final) or market.publication_error:
                 try:
                     await publish_market(bot, final, market)
                 except FinalError as error:

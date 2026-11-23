@@ -47,10 +47,11 @@ class TestFinalDashboard(unittest.TestCase):
             final.nodes[key].thread_id = str(100 + int(key[-1]))
         self.assertEqual(next_round(DashboardState(final)), "Quarterfinals")
         markets = [FinalBettingMarket.model_construct(id=f"market-{key}", node_id=key,
-            contestant_revision=final.nodes[key].contestant_revision, announcement_id=str(index))
+            contestant_revision=final.nodes[key].contestant_revision, announcement_id=str(index),
+            contestants=list(final.nodes[key].contestants))
             for index, key in enumerate(("QF1", "QF2", "QF3", "QF4"))]
         for market in markets:
-            market.announcement_signature = market_signature(market)
+            market.announcement_signature = market_signature(market, final)
         state = DashboardState(final, markets)
         self.assertIsNone(next_round(state))
         for key in ("QF1", "QF2", "QF3", "QF4"):

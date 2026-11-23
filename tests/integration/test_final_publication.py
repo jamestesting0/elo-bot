@@ -1,6 +1,8 @@
 from unittest.mock import AsyncMock, MagicMock, patch
+from io import BytesIO
 
 import interactions as ipy
+from PIL import Image
 
 from tests.integration._final_fixture import FinalScenarioCase
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
@@ -11,6 +13,7 @@ from elo_bot.db import EloFinal
 from elo_bot.features.tokens.bets import close_market, open_market
 from elo_bot.features.tokens.presentation import publish_market, market_signature
 from elo_bot.features.finals.recovery import recover_final
+from elo_bot.features.finals.replacement import replace_entrant
 from elo_bot.features.finals.result_publication import publish_result
 from elo_bot.features.finals.predictions import PredictionAction, begin_prediction, change_prediction_state, apply_prediction_action
 from elo_bot.db.final_models import FinalPrediction
@@ -144,15 +147,82 @@ class TestFinalPublication(FinalScenarioCase):
     async def test_closed_market_recovery_disables_the_published_betting_control(self):
         market = await open_market(self.final, "QF1")
         await publish_market(self.bot, self.final, market)
-        self.assertFalse(self.channel.send.await_args.kwargs["components"][0].disabled)
+        payload = self.channel.send.await_args.kwargs
+        self.assertFalse(payload["components"][0].disabled)
+        self.assertEqual(payload["embed"].images[0].url, "attachment://final-matchup.png")
+        self.assertEqual(payload["file"].description, "Player 1 (seed #1) vs. Player 8 (seed #8)")
         await close_market(market.id)
         await recover_final(self.final, bot=self.bot)
         self.assertTrue(self.message.edit.await_args.kwargs["components"][0].disabled)
+        self.assertEqual(self.message.edit.await_args.kwargs["embed"].images[0].url,
+                         "attachment://final-matchup.png")
+        self.assertEqual(self.message.edit.await_args.kwargs["file"].description,
+                         "Player 1 (seed #1) vs. Player 8 (seed #8)")
         self.assertNotIn("CLOSED", self.message.edit.await_args.kwargs["embed"].description)
         current = await FinalBettingMarket.get(market.id)
-        self.assertEqual(current.announcement_signature, market_signature(current))
+        self.assertEqual(current.announcement_signature, market_signature(current, await final_for_view()))
         self.assertEqual(self.channel.send.await_count, 2)
         self.assertNotEqual((await final_for_view()).bracket_message_id, current.announcement_id)
+
+    async def test_market_poster_uses_current_nicknames_and_seeds_and_refreshes_the_same_post(self):
+        images = []
+
+        async def send(**payload):
+            with Image.open(BytesIO(payload["file"].file.getvalue())) as image:
+                images.append(image.size)
+            return await self.send(**payload)
+
+        self.channel.send.side_effect = send
+        market = await open_market(self.final, "QF1")
+        await publish_market(self.bot, self.final, market)
+        self.assertEqual(images, [(1672, 941)])
+        self.channel.send.side_effect = self.send
+        stored = await FinalBettingMarket.get(market.id)
+        await self.final.set({"player_nicknames.1": "Sen", "seed_elo.8": 2000})
+        self.assertEqual(await recover_final(await final_for_view(), bot=self.bot), [])
+        updated = await FinalBettingMarket.get(market.id)
+        payload = self.messages[stored.announcement_id].edit.await_args.kwargs
+        self.assertEqual(payload["file"].description, "Sen (seed #2) vs. Player 8 (seed #1)")
+        self.assertEqual(updated.announcement_id, stored.announcement_id)
+        self.assertEqual(payload["attachments"], [])
+        self.assertIsNone(updated.publication_error)
+
+    async def test_failed_market_poster_keeps_betting_usable_and_retries_the_same_post(self):
+        market = await open_market(self.final, "QF1")
+        with patch("elo_bot.features.tokens.presentation.final_matchup_attachment", new=AsyncMock(return_value=None)):
+            with self.assertRaises(FinalError):
+                await publish_market(self.bot, self.final, market)
+        stored = await FinalBettingMarket.get(market.id)
+        self.assertEqual(stored.state, "OPEN")
+        self.assertIsNotNone(stored.publication_error)
+        payload = self.channel.send.await_args.kwargs
+        self.assertEqual(payload["embed"].images, [])
+        self.assertFalse(payload["components"][0].disabled)
+        self.assertIsNone(payload["file"])
+        await publish_market(self.bot, self.final, stored)
+        updated = await FinalBettingMarket.get(market.id)
+        self.assertEqual(updated.announcement_id, stored.announcement_id)
+        self.assertIsNone(updated.publication_error)
+        self.assertEqual(self.message.edit.await_args.kwargs["embed"].images[0].url,
+                         "attachment://final-matchup.png")
+        self.channel.send.assert_awaited_once()
+
+    async def test_replaced_market_refunds_and_updates_its_poster_without_inventing_a_departed_seed(self):
+        market = await open_market(self.final, "QF1")
+        await publish_market(self.bot, self.final, market)
+        stored = await FinalBettingMarket.get(market.id)
+        replaced = await replace_entrant(await final_for_view(), "8", "9", "Replacement")
+        self.assertEqual(await recover_final(replaced.final, bot=self.bot), [])
+        refunded = await FinalBettingMarket.get(market.id)
+        self.assertEqual(refunded.state, "REFUNDED")
+        self.assertIsNone(refunded.publication_error)
+        self.assertEqual(refunded.announcement_id, stored.announcement_id)
+        self.assertEqual(self.messages[stored.announcement_id].edit.await_args.kwargs["file"].description,
+                         "Player 1 (seed #1) vs. 8")
+        current = await open_market(replaced.final, "QF1")
+        await publish_market(self.bot, replaced.final, current)
+        self.assertEqual(self.channel.send.await_args.kwargs["file"].description,
+                         "Player 1 (seed #1) vs. Replacement (seed #8)")
 
     async def test_market_changed_during_send_remains_pending_then_recovers_latest_state(self):
         market = await open_market(self.final, "QF1")

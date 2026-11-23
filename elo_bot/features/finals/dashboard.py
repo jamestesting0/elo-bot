@@ -53,7 +53,7 @@ def next_round(state: DashboardState) -> str | None:
                 if node.first_actual_started_at is None:
                     return name
             elif (not market.announcement_id or market.publication_error
-                  or market.announcement_signature != market_signature(market)):
+                  or market.announcement_signature != market_signature(market, final)):
                 return name
         return None
     return None

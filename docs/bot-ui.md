@@ -304,6 +304,9 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Betting stays in one private message through the chooser, amount modal, review, cancellation and
   receipt. Modal submission defers with `edit_origin=True`. Back edits the chooser. A closed market
   retires the panel's controls.
+- Each public Final betting post includes the H2H VS poster with player nicknames, avatars and tournament
+  seeds. Pool and status updates replace the attachment on that same post. Match-thread opening embeds
+  and live-start announcements do not include the poster.
 - Result previews last 15 minutes and survive a restart. Persistent Confirm and Cancel callbacks
   recheck the owner, role, Final and match before saving. Saved replies identify who advances; the next
   round is called ready only by the result that completes the current round. Tied scores are refused; staff

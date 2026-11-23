@@ -1,6 +1,5 @@
 import logging
 import re
-from contextlib import nullcontext
 from copy import copy
 
 import interactions as ipy
@@ -24,7 +23,7 @@ from elo_bot.features.finals.invitations import (
     require_registration, retire_outdated_invitations, withdraw_invitation,
 )
 from elo_bot.features.finals.labels import thread_label
-from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_FILENAME, FINAL_MATCHUP_URL, final_matchup_attachment
+from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_FILENAME
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.posts import staff_notice
 from elo_bot.features.finals.replacement import replace_entrant, replaceable_entrants
@@ -190,13 +189,8 @@ class Roster:
             attachments = [item for item in opening.attachments if item.filename != FINAL_MATCHUP_FILENAME]
             if len(attachments) != len(opening.attachments):
                 embed.images = []
-            attachment = await final_matchup_attachment(replaced.final, players)
-            if attachment is not None:
-                embed.set_image(FINAL_MATCHUP_URL)
-            with attachment or nullcontext():
-                await edit_channel_message(opening, content=opening.content.replace(f"<@{leaving}>", f"<@{joining}>"),
-                                           embeds=[embed, *opening.embeds[1:]], attachments=attachments,
-                                           file=attachment)
+            await edit_channel_message(opening, content=opening.content.replace(f"<@{leaving}>", f"<@{joining}>"),
+                                       embeds=[embed, *opening.embeds[1:]], attachments=attachments)
         await thread.add_member(int(joining))
         await thread.remove_member(int(leaving))
         await thread.send(f"{IMPORTANT_EMOJI} <@{joining}> replaced {names[leaving]}.",

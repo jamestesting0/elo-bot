@@ -36,7 +36,7 @@ def _center_text(draw: ImageDraw.ImageDraw, label: tuple[str, ImageFont.FreeType
 
 
 def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, bytes | None],
-                        ranks: tuple[int, int], record: tuple[int, int] | None = None) -> bytes:
+                        ranks: tuple[int | None, int | None], record: tuple[int, int] | None = None) -> bytes:
     with (Image.open(VERSUS_TEMPLATE if record is None else RECORD_TEMPLATE) as artwork,
           artwork.convert("RGB") as image, BytesIO() as output):
         draw = ImageDraw.Draw(image)
@@ -46,7 +46,8 @@ def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, byt
             if avatar is not None:
                 paste_avatar(image, avatar, avatar_box)
             _center_text(draw, fitted_label(name, 438, 42), name_center, "#3b2c2b")
-            _center_text(draw, fitted_label(f"#{rank}", 76, 22), rank_center, "#ffedc1")
+            if rank is not None:
+                _center_text(draw, fitted_label(f"#{rank}", 76, 22), rank_center, "#ffedc1")
         if record is not None:
             scores = [fitted_label(str(wins), 67, 47) for wins in record]
             score_font = min((font for _, font in scores), key=lambda font: font.size)
@@ -56,7 +57,7 @@ def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, byt
         return output.getvalue()
 
 
-async def matchup_avatar(player: ipy.User) -> bytes | None:
+async def matchup_avatar(player: ipy.User | ipy.Member) -> bytes | None:
     try:
         with anyio.fail_after(5):
             return await player.display_avatar.fetch(extension=".png", size=256)
@@ -64,17 +65,21 @@ async def matchup_avatar(player: ipy.User) -> bytes | None:
         return None
 
 
-async def final_matchup_attachment(final: EloFinal, players: tuple[ipy.User, ipy.User]) -> ipy.File | None:
-    first, second = players
-    names = (final.player_nicknames.get(str(first.id), first.display_name),
-             final.player_nicknames.get(str(second.id), second.display_name))
+async def final_matchup_attachment(final: EloFinal, contestants: tuple[str, str],
+                                   members: dict[str, ipy.Member | None]) -> ipy.File | None:
+    left, right = contestants
+    first, second = members[left], members[right]
+    names = (final.player_nicknames.get(left, first.display_name if first else left),
+             final.player_nicknames.get(right, second.display_name if second else right))
     seeds = {user: seed for seed, user in enumerate(seeded_players(final), 1)}
-    ranks = (seeds[str(first.id)], seeds[str(second.id)])
-    avatars = (await matchup_avatar(first), await matchup_avatar(second))
+    ranks = (seeds.get(left), seeds.get(right))
+    avatars = (await matchup_avatar(first) if first else None, await matchup_avatar(second) if second else None)
     try:
         png = await anyio.to_thread.run_sync(render_head_to_head, names, avatars, ranks)
     except (OSError, FinalError):
         logging.exception("Could not render the Final matchup graphic")
         return None
+    labels = [f"{name} (seed #{rank})" if rank is not None else name
+              for name, rank in zip(names, ranks, strict=True)]
     return ipy.File(BytesIO(png), file_name=FINAL_MATCHUP_FILENAME,
-                    description=f"{names[0]} (seed #{ranks[0]}) vs. {names[1]} (seed #{ranks[1]})")
+                    description=f"{labels[0]} vs. {labels[1]}")

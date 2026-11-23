@@ -57,7 +57,7 @@ class Rounds:
                 if node.first_actual_started_at is None:
                     market = await open_market(edition, node_id)
                 if market is not None and (not market.announcement_id or market.publication_error
-                        or market.announcement_signature != market_signature(market)):
+                        or market.announcement_signature != market_signature(market, edition)):
                     await publish_market(self.bot, edition, market)
                 betting = market is not None and market.state == "OPEN"
             except (FinalError, ipy.errors.HTTPException, PyMongoError) as error:

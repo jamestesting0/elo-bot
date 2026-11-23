@@ -57,7 +57,8 @@ class TestFinalThreadControls(FinalScenarioCase):
         self.assertEqual(name, f"🟡 {source.final_node_id} · user{first} vs. user{second}")
         embed = thread.send.await_args.kwargs["embed"]
         self.assertEqual(embed.title, f"**Season 7 Final · {source.final_node_id}**")
-        self.assertEqual(embed.images[0].url, "attachment://final-matchup.png")
+        self.assertEqual(embed.images, [])
+        self.assertIsNone(thread.send.await_args.kwargs.get("file"))
         self.assertNotIn(" vs. ", embed.description)
         self.assertEqual(len(embed.fields[0].value.splitlines()), 7)
         self.assertNotIn("**Notes**", [field.name for field in embed.fields])

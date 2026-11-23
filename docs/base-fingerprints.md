@@ -4,7 +4,7 @@
 non-Private bases. Submission reviews offer **🔍 Find Similar** with top 10 fuzzy matches
 at 80%, one image per page. Results are ephemeral, expire after 15 minutes, and recheck
 access, privacy, source revision and compatible format when navigating. Search does not accept or
-reject a submission. Results retain the raw base link and the Score, Quality and Builder fields.
+reject a submission. Results show a concise `[Base Link](url)` hyperlink and the Score, Quality and Builder fields.
 
 Each result has a separate row with **↔️ Compare** and **🏷️ Show Labels**.
 Compare sends an ephemeral side-by-side image attachment, without an embed or base link:

@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
+from beanie.odm.fields import ExpressionField
 
 from elo_bot.extensions.base import BaseCommands
 from elo_bot.config.ids import BASE_RENEWAL_LOGS_CHANNEL
@@ -53,11 +54,12 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
         new_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3ABBBBB"
         base = MagicMock(district="Barbarian Camp", link=old_link, image_url="https://example.com/base.png")
         base.save_changes = AsyncMock()
+        mock_base_layout.link = ExpressionField("link")
         mock_base_layout.find_one = AsyncMock(return_value=base)
         ctx = MagicMock(spec=ipy.ModalContext)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
-        ctx.message.embeds = [ipy.Embed(fields=[ipy.EmbedField(name="Base Link", value=old_link)])]
+        ctx.message.embeds = [ipy.Embed(fields=[ipy.EmbedField(name="Base Link", value=f"[Base Link]({old_link})")])]
         ctx.message.components = []
         ctx.message.edit = AsyncMock()
 
@@ -69,15 +71,32 @@ class TestBaseRenewalCommands(unittest.IsolatedAsyncioTestCase):
 
         # Then
         self.assertEqual(base.link, new_link)
+        mock_base_layout.find_one.assert_awaited_once_with({"link": old_link})
         self.assertEqual(base.expiration_date, 2_000_000_000 + 15 * 86400)
         base.save_changes.assert_awaited_once_with()
         self.bot.fetch_channel.assert_awaited_once_with(BASE_RENEWAL_LOGS_CHANNEL)
         self.renewal_logs_channel.send.assert_awaited_once()
         renewal_embed = self.renewal_logs_channel.send.await_args.kwargs["embed"].to_dict()
         self.assertEqual(renewal_embed["title"], "Barbarian Camp Base Renewed")
-        self.assertEqual(renewal_embed["description"], new_link)
+        self.assertEqual(renewal_embed["description"], f"[Base Link]({new_link})")
         self.assertEqual(renewal_embed["image"]["url"], "https://example.com/base.png")
         self.assertEqual(renewal_embed["color"], embed_color())
+        self.assertEqual(ctx.message.embeds[0].fields[-1].value, f"[Base Link]({new_link})")
+
+    async def test_renew_button_resolves_raw_and_hyperlinked_warning(self) -> None:
+        old_link = "https://link.clashofclans.com/en?action=OpenLayout&id=TH13%3ACC%3A1%3AAAAAA"
+        for displayed_link in (old_link, f"[Base Link]({old_link})"):
+            with self.subTest(displayed_link=displayed_link):
+                ctx = MagicMock(spec=ipy.ComponentContext)
+                ctx.message.embeds = [ipy.Embed(fields=[ipy.EmbedField(name="Base Link", value=displayed_link)])]
+                ctx.send_modal = AsyncMock()
+                with patch("elo_bot.extensions.base.manage.BaseLayout") as model:
+                    model.link = ExpressionField("link")
+                    model.find_one = AsyncMock(return_value=MagicMock())
+                    callback = BaseCommands.base_renew_button.callback
+                    await getattr(callback, "func", callback)(self.cog, ctx)
+                model.find_one.assert_awaited_once_with({"link": old_link})
+                ctx.send_modal.assert_awaited_once()
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 import elo_bot.extensions.base.groups as groups
+from elo_bot.core.links import extract_base_link
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import (
@@ -241,7 +242,8 @@ class BaseSearchCommands:
                     pending_publication = (
                         button_ids == {ACCEPT_BUTTON_ID, REJECT_BUTTON_ID, FIND_SIMILAR_BUTTON_ID}
                         and all(button.disabled for button in buttons)
-                        and any(embed.title == "Base Submission Review" and embed.description == current.link
+                        and any(embed.title == "Base Submission Review"
+                                and extract_base_link(embed.description or "") == current.link
                                 and any(field.name == "Review Status" and field.value == ReviewStatus.PENDING.value
                                         for field in embed.fields) for embed in message.embeds)
                     )

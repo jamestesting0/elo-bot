@@ -38,6 +38,8 @@ Reuse the existing text for recurring situations instead of writing a variant:
 - Queue copy says **match-making** ("the match-making queue"); keep it within that feature.
 - Write **cancelled** and **cancelling**, the spelling stored statuses and Helper jobs use too.
 - Name Discord objects the way users see them: match thread, match, round, district, base, clan.
+- Display a base URL as `[Base Link](url)`, keeping the destination intact. District lists can use the
+  district name as the link label. Avoid printing the full URL in message content, descriptions or fields.
 
 ## Examples from Final
 

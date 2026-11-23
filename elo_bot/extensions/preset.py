@@ -7,6 +7,7 @@ import validators
 from elo_bot.features.bases.screenshots import capture_base_screenshot
 import interactions as ipy
 from elo_bot.config.presentation import FOOTER_TEXT, UNAVAILABLE_IMAGE
+from elo_bot.core.links import format_base_link
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.game import DISTRICT_CHOICES, DISTRICT_CODES_REVERSED
 from elo_bot.config.emojis import DISTRICT_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI
@@ -60,7 +61,7 @@ class PresetCommands(ipy.Extension):
 
             embed = ipy.Embed(
                 title=f"**{district}**",
-                description=f"{base_link.link}\n"
+                description=f"{format_base_link(base_link.link)}\n"
                             f"*Expires {expiration_ts}*",
                 footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                 color=embed_color()

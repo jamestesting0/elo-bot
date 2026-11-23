@@ -11,6 +11,7 @@ from interactions import utils
 
 import elo_bot.extensions.base.groups as groups
 import elo_bot.features.hosting.war.helper_preserve as helper_preserve
+from elo_bot.core.links import extract_base_link, format_base_link
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CODES_REVERSED
@@ -55,7 +56,7 @@ class BaseManagementCommands:
     async def send_base_renewal_log(self, base: BaseLayout) -> None:
         embed = ipy.Embed(
             title=f"{base.district} Base Renewed",
-            description=base.link,
+            description=format_base_link(base.link),
             color=embed_color(),
         )
         embed.set_image(base.image_url)
@@ -65,7 +66,7 @@ class BaseManagementCommands:
     async def send_base_renewal_failure_log(self, base: BaseLayout, notification: str) -> None:
         embed = ipy.Embed(
             title=f"{base.district} Base Renewal Failed",
-            description=f"{base.link}\n\n{notification}",
+            description=f"{format_base_link(base.link)}\n\n{notification}",
             color=RED_COLOR,
         )
         embed.set_image(base.image_url)
@@ -548,7 +549,7 @@ class BaseManagementCommands:
                 fields=[
                     ipy.EmbedField(
                         name="**Old Base Link**",
-                        value=base.link
+                        value=format_base_link(base.link)
                     )
                 ],
                 footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
@@ -566,7 +567,7 @@ class BaseManagementCommands:
     @ipy.component_callback("renew_base_button")
     @ipy.check(has_any(ipy.has_any_role(*LVL1_ROLES), has_any_id(*WHITELISTED_STAFFS)))
     async def base_renew_button(self, ctx: ipy.ComponentContext):
-        old_link = ctx.message.embeds[0].fields[0].value
+        old_link = extract_base_link(ctx.message.embeds[0].fields[0].value)
         existing_base = await BaseLayout.find_one(BaseLayout.link == old_link)
         if not existing_base:
             await ctx.edit_origin(components=utils.misc_utils.disable_components(*ctx.message.components))
@@ -591,7 +592,7 @@ class BaseManagementCommands:
     async def base_renew_modal(self, ctx: ipy.ModalContext, **response):
         await ctx.defer(ephemeral=True)
 
-        old_link = ctx.message.embeds[0].fields[0].value
+        old_link = extract_base_link(ctx.message.embeds[0].fields[0].value)
         new_link = response["renewed_link"]
 
         if (not new_link.startswith("https://link.clashofclans.com") or
@@ -629,7 +630,7 @@ class BaseManagementCommands:
         await base.save_changes()
         await self.send_base_renewal_log(base)
 
-        ctx.message.embeds[0].add_field(name="New Base Link", value=new_link)
+        ctx.message.embeds[0].add_field(name="New Base Link", value=format_base_link(new_link))
         await edit_channel_message(ctx.message, embeds=ctx.message.embeds,
                                components=utils.misc_utils.disable_components(*ctx.message.components))
 

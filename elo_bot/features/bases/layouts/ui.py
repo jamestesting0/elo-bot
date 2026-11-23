@@ -6,6 +6,7 @@ from interactions.client.const import EMBED_FIELD_VALUE_LENGTH
 from elo_bot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CHOICES
 from elo_bot.config.presentation import FOOTER_TEXT
+from elo_bot.core.links import format_base_link
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import BaseLayout
 from elo_bot.discord.mentions import mention_user
@@ -143,7 +144,7 @@ def _base_details_embed(base: BaseLayout, names: dict[str, str]) -> ipy.Embed:
 
     embed = ipy.Embed(
         title=f"**{base.district} Base**",
-        description=f"{base.link}\n"
+        description=f"{format_base_link(base.link)}\n"
                     f"*Expires {expiration_ts}*",
         fields=[
             ipy.EmbedField(

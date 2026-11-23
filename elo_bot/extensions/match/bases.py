@@ -37,6 +37,7 @@ from elo_bot.db import BaseLayout, BaseLink, Match, OverrideCode, Participant
 from elo_bot.discord.mentions import mention_user
 from elo_bot.extensions.match.groups import base_group
 from elo_bot.core.finals import is_final_match
+from elo_bot.core.links import format_base_link
 from elo_bot.features.finals.scout_images import store_scout_image
 from elo_bot.features.finals.scout_ui import scout_opening_text, scout_panel
 from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, scheduled_scout_opens_at, scout_opens_at
@@ -977,7 +978,7 @@ class MatchBaseCommands:
                     embed.description = "This is a helpers' base"
                 else:
                     embed.set_image(base.image)
-                    embed.description = base.link
+                    embed.description = format_base_link(base.link)
 
             embeds.append(embed)
 

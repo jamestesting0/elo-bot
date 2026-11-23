@@ -104,9 +104,12 @@ embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
 - **Times:** Discord timestamps, never formatted dates. `RelativeTime` for ages, countdowns, expiry and
   cooldowns; `LongDateTime` for scheduled times and season bounds (a match's **Time** field shows the long
   time with the relative time on the next line); `LongDate` for whole days. Durations read `1h 2m 3s`.
-- **Links:** clans `[Name (#TAG)](share_link)`, in-game players `[name (tag)](share_link)`, bases
-  `[District](link)`. Wrap profile URLs in `<...>` to suppress previews and send raw link lists with
-  `suppress_embeds=True`.
+- **Links:** clans `[Name (#TAG)](share_link)`, in-game players `[name (tag)](share_link)`. Display base URLs
+  as `[Base Link](url)` via `format_base_link` in `elo_bot/core/links.py`, including base cards, presets,
+  search results, submission reviews and outcomes, match base views, renewal warnings and logs.
+  District lists keep their descriptive `[District](url)` links. Store and submit raw URLs; message readers
+  use `extract_base_link` to accept both hyperlinks and older raw-link messages. Editable URL inputs stay raw.
+  Wrap profile URLs in `<...>` to suppress previews and send raw link lists with `suppress_embeds=True`.
 - **Emphasis:** bold for the state or quantity that matters (`**cancelled**`, `**disabled**`, `**all**`),
   italics for reminders and notes (`{IMPORTANT_EMOJI} *Please kick the players out of the clan!*`).
   In guides, put supplementary notes and exceptions in separate italic paragraphs, including confirmation

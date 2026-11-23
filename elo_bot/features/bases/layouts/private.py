@@ -2,6 +2,7 @@ import interactions as ipy
 from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import ERROR_EMOJI
+from elo_bot.core.links import extract_base_link
 from elo_bot.db import BaseLayout, Player
 from elo_bot.discord.members import member_guild
 from elo_bot.features.bases.layouts.ui import base_embed_names, construct_base_embed
@@ -74,7 +75,7 @@ async def find_private_base_action(
     else:
         if not ctx.message.embeds or not ctx.message.embeds[0].description:
             return None
-        query["link"] = ctx.message.embeds[0].description.splitlines()[0]
+        query["link"] = extract_base_link(ctx.message.embeds[0].description)
     if district != "Any":
         query["district"] = district
     return await BaseLayout.find_one(query)

@@ -154,19 +154,22 @@ class TestPrivateBaseActionIdentity(unittest.IsolatedAsyncioTestCase):
         ])
 
     async def test_valid_legacy_delete_resolves_the_displayed_link(self) -> None:
-        # Given: an older message still refers to an existing owned base.
-        self.ctx.custom_id = "p_base_delete|Any|0"
-        self.base_model.find_one.return_value = self.shown
-        # When: its original Delete control is used.
-        await self.click_private("p_base_delete")
-        # Then: the displayed link identifies the deleted document.
-        self.assertEqual(self.base_model.find_one.await_args.args[0], {
-            "quality": "Private", "builder_id": "111", "link": self.shown.link,
-        })
-        self.assertEqual(self.collection.delete_one.await_args.args[0], {
-            "_id": self.shown.id, "builder_id": "111", "quality": "Private", "district": self.shown.district,
-        })
-        self.assertIn(str(SUCCESS_EMOJI), self.ctx.send.await_args.args[0])
+        for displayed_link in (self.shown.link, f"[Base Link]({self.shown.link})"):
+            with self.subTest(displayed_link=displayed_link):
+                # Given: a message with legacy controls displays an existing owned base.
+                self.ctx.message.embeds[0].description = f"{displayed_link}\n*Expires later*"
+                self.ctx.custom_id = "p_base_delete|Any|0"
+                self.base_model.find_one.return_value = self.shown
+                # When: its original Delete control is used.
+                await self.click_private("p_base_delete")
+                # Then: the displayed link identifies the deleted document.
+                self.assertEqual(self.base_model.find_one.await_args.args[0], {
+                    "quality": "Private", "builder_id": "111", "link": self.shown.link,
+                })
+                self.assertEqual(self.collection.delete_one.await_args.args[0], {
+                    "_id": self.shown.id, "builder_id": "111", "quality": "Private", "district": self.shown.district,
+                })
+                self.assertIn(str(SUCCESS_EMOJI), self.ctx.send.await_args.args[0])
 
     async def test_bound_delete_uses_identity_when_list_position_changes(self) -> None:
         # Given: another base now occupies the index recorded by a newer message.

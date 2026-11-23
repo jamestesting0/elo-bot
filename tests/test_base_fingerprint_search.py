@@ -38,7 +38,7 @@ class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsynci
         self.assertTrue(payload["ephemeral"])
         self.assertEqual(payload["embeds"][0].title, "**Similar Base 1/3**")
         self.assertIn("100.0%", payload["embeds"][0].fields[0].value)
-        self.assertEqual(payload["embeds"][0].description, self.bases[0].link + "\n")
+        self.assertEqual(payload["embeds"][0].description, f"[Base Link]({self.bases[0].link})\n")
         self.assertEqual(payload["embeds"][0].fields[2].value,
                          "**[Builder](<https://discordapp.com/users/123?tab=wishlist>)**")
         self.assertEqual([b.disabled for b in payload["components"][0].components], [True, False, False])
@@ -209,36 +209,38 @@ class TestFingerprintSearch(FingerprintSearchStateMixin, unittest.IsolatedAsynci
         self.pending.link = "https://base/pending"
         query = MagicMock()
         query.sort.return_value.limit.return_value.to_list = AsyncMock(return_value=[self.pending])
-        embed = ipy.Embed(title="Base Submission Review", description=self.pending.link,
-                          fields=[ipy.EmbedField(name="Review Status", value="Pending")])
-        client = MagicMock()
-        client.cache.get_user.return_value = self.bot.user
-        message = ipy.Message(client=client, id=int(self.pending.id), channel_id=BASE_SUBMISSION_CHANNEL,
-                              author_id=self.bot.user.id, embeds=[embed],
-                              components=[build_review_components(disabled=True)])
+        for description in (self.pending.link, f"[Base Link]({self.pending.link})"):
+            with self.subTest(description=description):
+                embed = ipy.Embed(title="Base Submission Review", description=description,
+                                  fields=[ipy.EmbedField(name="Review Status", value="Pending")])
+                client = MagicMock()
+                client.cache.get_user.return_value = self.bot.user
+                message = ipy.Message(client=client, id=int(self.pending.id), channel_id=BASE_SUBMISSION_CHANNEL,
+                                      author_id=self.bot.user.id, embeds=[embed],
+                                      components=[build_review_components(disabled=True)])
 
-        def receive(payload):
-            message.components = [ipy.ActionRow.from_dict(row) for row in payload["components"]]
-            return message
+                def receive(payload):
+                    message.components = [ipy.ActionRow.from_dict(row) for row in payload["components"]]
+                    return message
 
-        client.http.edit_message = AsyncMock(side_effect=lambda payload, *_args, **_kwargs: payload)
-        client.cache.place_message_data.side_effect = receive
-        channel = SimpleNamespace(fetch_message=AsyncMock(return_value=message))
-        self.bot.fetch_channel = AsyncMock(return_value=channel)
-        callback = self.cog.refresh_similarity_buttons.callback
-        callback = getattr(callback, "func", callback)
-        with patch.object(PendingBaseSubmission, "find", return_value=query):
-            await callback(self.cog)
-            await callback(self.cog)
-        self.assertEqual(channel.fetch_message.await_args.kwargs, {"force": True})
-        client.http.edit_message.assert_awaited_once()
-        payload = client.http.edit_message.await_args.args[0]
-        self.assertEqual([button["disabled"] for button in payload["components"][0]["components"]],
-                         [False, False, False])
-        self.assertNotIn("embeds", payload)
-        self.assertTrue(all(not button.disabled for button in message.components[0].components))
-        self.assertIsNone(self.pending.resolution)
-        self.bot.base_fingerprints.query.assert_not_awaited()
+                client.http.edit_message = AsyncMock(side_effect=lambda payload, *_args, **_kwargs: payload)
+                client.cache.place_message_data.side_effect = receive
+                channel = SimpleNamespace(fetch_message=AsyncMock(return_value=message))
+                self.bot.fetch_channel = AsyncMock(return_value=channel)
+                callback = self.cog.refresh_similarity_buttons.callback
+                callback = getattr(callback, "func", callback)
+                with patch.object(PendingBaseSubmission, "find", return_value=query):
+                    await callback(self.cog)
+                    await callback(self.cog)
+                self.assertEqual(channel.fetch_message.await_args.kwargs, {"force": True})
+                client.http.edit_message.assert_awaited_once()
+                payload = client.http.edit_message.await_args.args[0]
+                self.assertEqual([button["disabled"] for button in payload["components"][0]["components"]],
+                                 [False, False, False])
+                self.assertNotIn("embeds", payload)
+                self.assertTrue(all(not button.disabled for button in message.components[0].components))
+                self.assertIsNone(self.pending.resolution)
+                self.bot.base_fingerprints.query.assert_not_awaited()
 
     async def test_review_refresh_does_not_reopen_terminal_missing_or_mismatched_disabled_review(self):
         self.pending.link = "https://base/pending"

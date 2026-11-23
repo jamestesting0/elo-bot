@@ -92,7 +92,7 @@ class TestBaseSubmissionSubmit(unittest.IsolatedAsyncioTestCase):
         self.bot.owner.send.assert_awaited_once()
         sent = review_channel.send.await_args.kwargs
         self.assertNotIn("file", sent)
-        self.assertEqual(sent["embed"].description, BASE_LINK)
+        self.assertEqual(sent["embed"].description, f"[Base Link]({BASE_LINK})")
         self.assertEqual(
             self._field(sent["embed"], "Submitter"),
             "**[Submitter Name](<https://discordapp.com/users/123?tab=wishlist>)**",

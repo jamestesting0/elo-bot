@@ -14,6 +14,7 @@ from pymongo.errors import PyMongoError
 from elo_bot.db.fingerprint_types import BaseFingerprint, HALL_TYPES, ImageAttachment, PIPELINE_IDENTITIES
 from elo_bot.features.bases.fingerprints.types import DISTRICTS, FingerprintError, LayoutMatch, MatchScore
 from elo_bot.config.emojis import BASE_QUALITY_EMOJIS, ERROR_EMOJI, LOADING_EMOJI
+from elo_bot.core.links import format_base_link
 from elo_bot.discord.embeds import embed_color
 from elo_bot.config.ids import LVL1_ROLES, LVL3_ROLES, WHITELISTED_STAFFS
 from elo_bot.discord.pagination import build_page_button, parse_page_number
@@ -175,7 +176,7 @@ async def render_page(session: SearchSession, ctx, *, page_number: str | None = 
     guild = await member_guild(ctx)
     embed = ipy.Embed(
         title=f"**Similar Base {session.page + 1}/{len(visible)}**",
-        description=f"{base.link}\n",
+        description=f"{format_base_link(base.link)}\n",
         color=embed_color(),
         fields=[ipy.EmbedField(name="**Score**", value=score_text),
                 ipy.EmbedField(name="**Quality**", value=f"{BASE_QUALITY_EMOJIS[base.quality]} {base.quality}"),

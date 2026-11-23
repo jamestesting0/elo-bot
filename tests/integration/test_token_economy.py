@@ -215,7 +215,7 @@ class TestTokenEconomy(FinalScenarioCase):
         await transaction(lambda session: freeze_prediction_awards(final, session))
         await recover_awards(str(final.id))
         await recover_awards(str(final.id))
-        self.assertEqual((await TokenWallet.get("1")).balance, 7800)
+        self.assertEqual((await TokenWallet.get("1")).balance, 8500)
         self.assertIsNone(await TokenWallet.get("2"))
 
     async def test_failed_prediction_credit_remains_pending_and_retries_once(self):
@@ -233,7 +233,7 @@ class TestTokenEconomy(FinalScenarioCase):
         self.assertEqual((await TokenWallet.get("1")).balance, 5000)
         self.assertTrue(await recover_awards(str(final.id)))
         self.assertTrue(await recover_awards(str(final.id)))
-        self.assertEqual((await TokenWallet.get("1")).balance, 5800)
+        self.assertEqual((await TokenWallet.get("1")).balance, 6000)
         self.assertEqual(await TokenLedgerEntry.find({"kind": "prediction_reward"}).count(), 1)
 
     async def test_challenge_code_is_private_and_consumed_on_acceptance(self):

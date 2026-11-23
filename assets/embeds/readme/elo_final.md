@@ -9,7 +9,7 @@
 
 **Predictions**
 - Run `/final predict` or through <#1392523333043617992> to make predictions.
-- Each correct prediction awards you 400 <:token:1555865080711876660>.
+- Each correct prediction awards you 500 <:token:1555865080711876660>.
 
 **Betting**
 - Available at the start of each round in <#1392523333043617992>.

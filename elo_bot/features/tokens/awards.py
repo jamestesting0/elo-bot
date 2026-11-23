@@ -25,7 +25,7 @@ async def freeze_prediction_awards(final, session) -> None:
         allocation = TokenAward(id=f"prediction:{edition}:{wallet['_id'] if wallet else user_id}",
                                 source=edition, user_id=user_id,
                                 wallet_id=str(wallet["_id"]) if wallet else None,
-                                kind="prediction_reward", amount=400 * row["points"], revision=revision)
+                                kind="prediction_reward", amount=500 * row["points"], revision=revision)
         await awards.update_one({"_id": allocation.id}, {"$setOnInsert": allocation.model_dump(by_alias=True)},
                                 upsert=True, session=session)
 

@@ -16,10 +16,10 @@ from elo_bot.db.final_models import FinalPrediction
 
 
 NAME_PLATES = (
-    (312, 502, 495, 536), (312, 551, 495, 585), (312, 600, 495, 635), (312, 650, 495, 684),
-    (312, 700, 495, 735), (312, 752, 495, 786), (312, 800, 495, 834), (312, 849, 495, 883),
-    (601, 535, 781, 572), (601, 632, 780, 669), (601, 725, 781, 761), (601, 820, 780, 856),
-    (885, 594, 1063, 630), (885, 766, 1063, 802), (1157, 636, 1360, 691),
+    (132, 502, 315, 536), (132, 551, 315, 585), (132, 600, 315, 635), (132, 650, 315, 684),
+    (132, 700, 315, 735), (132, 752, 315, 786), (132, 800, 315, 834), (132, 849, 315, 883),
+    (421, 535, 601, 572), (421, 632, 600, 669), (421, 725, 601, 761), (421, 820, 600, 856),
+    (705, 594, 883, 630), (705, 766, 883, 802), (977, 636, 1180, 691),
 )
 PLATE_MIDLINES = (520, 569, 619, 668, 719, 770, 818, 867, 555, 652, 744, 839, 613, 785, 666)
 
@@ -50,8 +50,8 @@ class TestFinalRendering(unittest.TestCase):
                     patch.object(Image.Image, "save", partialmethod(Image.Image.save, compress_level=0)), \
                     Image.open("assets/finals/elo_final_bracket.png") as template, \
                     Image.open(BytesIO(render_bracket(final))) as rendered:
-                self.assertEqual(rendered.size, (1672, 941))
-                difference = ImageChops.difference(template.convert("RGB"), rendered).convert("L")
+                self.assertEqual(rendered.size, (1312, 941))
+                difference = ImageChops.difference(template.crop((180, 0, 1492, 941)).convert("RGB"), rendered).convert("L")
                 remaining = difference.copy()
                 for plate, center_y in zip(NAME_PLATES, PLATE_MIDLINES, strict=True):
                     with self.subTest(plate=plate):
@@ -109,7 +109,7 @@ class TestFinalRendering(unittest.TestCase):
         self.assertEqual(labels[8:], ["Player 0", "Player 3", "Player 1", "Player 2",
                                       "Player 3", "Player 2", "Player 2"])
         with Image.open(BytesIO(render_bracket(final, picks))) as rendered:
-            self.assertEqual(rendered.size, (1672, 941))
+            self.assertEqual(rendered.size, (1312, 941))
         self.assertEqual(final.model_dump(), before)
 
     def test_prediction_markers_follow_submitted_picks_without_changing_official_image(self):
@@ -126,9 +126,9 @@ class TestFinalRendering(unittest.TestCase):
         with Image.open(BytesIO(render_bracket(final, picks))) as plain, \
                 Image.open(BytesIO(render_bracket(final, picks, statuses))) as marked:
             diff = ImageChops.difference(plain, marked)
-            for x, y in ((793, 554), (793, 651), (793, 743)):
+            for x, y in ((613, 554), (613, 651), (613, 743)):
                 self.assertIsNotNone(diff.crop((x - 15, y - 15, x + 16, y + 16)).getbbox())
-            self.assertIsNone(diff.crop((778, 823, 809, 854)).getbbox())
+            self.assertIsNone(diff.crop((598, 823, 629, 854)).getbbox())
         self.assertEqual(official, render_bracket(final))
 
     def test_measured_long_name_is_shortened_to_box_width(self):

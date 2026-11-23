@@ -18,12 +18,13 @@ FALLBACK_FONTS = (Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
                   Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
                   Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
 TEMPLATE_SIZE = (1672, 941)
+BRACKET_CROP = (180, 0, 1492, 941)
 SCOREBOARD_TEMPLATE_SIZE = (1672, 1033)
-ENTRANT_CENTERS = ((404, 520), (404, 569), (404, 619), (404, 668),
-                   (404, 719), (404, 770), (404, 818), (404, 867))
-SEMIFINAL_CENTERS = ((691, 555), (691, 652), (691, 744), (691, 839))
-FINAL_CENTERS = ((974, 613), (974, 785))
-CHAMPION_CENTER = (1258, 666)
+ENTRANT_CENTERS = ((224, 520), (224, 569), (224, 619), (224, 668),
+                   (224, 719), (224, 770), (224, 818), (224, 867))
+SEMIFINAL_CENTERS = ((511, 555), (511, 652), (511, 744), (511, 839))
+FINAL_CENTERS = ((794, 613), (794, 785))
+CHAMPION_CENTER = (1078, 666)
 SCOREBOARD_NAMES = ((453, 336, 739, 386), (933, 336, 1219, 386))
 SCOREBOARD_AVATARS = ((359, 325, 431, 397), (1241, 325, 1313, 397))
 SCOREBOARD_ROWS = (473, 535, 597, 659, 721, 783, 845)
@@ -111,11 +112,11 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
                    statuses: dict[str, str] | None = None) -> bytes:
     try:
         with Image.open(TEMPLATE) as source:
-            image = source.convert("RGB")
+            if source.size != TEMPLATE_SIZE:
+                raise FinalError("The bracket template dimensions changed. The text bracket is still available.")
+            image = source.crop(BRACKET_CROP).convert("RGB")
     except (FileNotFoundError, OSError) as error:
         raise FinalError("The bracket image is unavailable. The text bracket is still available.") from error
-    if image.size != TEMPLATE_SIZE:
-        raise FinalError("The bracket template dimensions changed. The text bracket is still available.")
     draw = ImageDraw.Draw(image)
     centers = (*ENTRANT_CENTERS, *SEMIFINAL_CENTERS, *FINAL_CENTERS, CHAMPION_CENTER)
     plates = [(user, node_id) for node_id in NODE_IDS[:4] for user in final.nodes[node_id].contestants]

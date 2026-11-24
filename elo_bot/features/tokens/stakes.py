@@ -56,11 +56,11 @@ def stake_cutoff_reached(match: Match) -> bool:
 
 
 def validate_stake_match(match: Match, user_id: str, amount: StakeInput) -> None:
-    if (match.is_challenge or match.final_superseded or len(match.participants) != 2
+    if (match.final_superseded or len(match.participants) != 2
             or user_id not in {p.user_id for p in match.participants}):
-        raise FinalError("Only participants in a queued match or Final can place a stake here.")
+        raise FinalError("Only the players in this match can place a stake.")
     if not is_final_match(match) and isinstance(amount, int) and amount > 1_000:
-        raise FinalError("Queued matches have a 1,000-token stake limit.")
+        raise FinalError("This match has a 1,000-token stake limit.")
     if stake_cutoff_reached(match) or is_match_finished(match) or match.result_operation:
         raise FinalError("Stakes close when the match starts.")
 

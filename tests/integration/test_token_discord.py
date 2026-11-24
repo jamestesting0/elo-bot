@@ -928,6 +928,24 @@ class TestTokenDiscord(FinalScenarioCase):
         self.assertEqual(state.offer_message_id, 700)
         self.stake_channel.send.assert_awaited_once()
 
+    async def test_challenge_players_can_place_and_match_a_stake_before_start(self) -> None:
+        match = await Match(token="challenge-stake", thread="100", thread_message_id=456, matched_time=1,
+                            is_challenge=True, participants=[Participant(user_id="1", confirmed=True),
+                                                             Participant(user_id="2", confirmed=True)]).insert()
+        self.stake_announcement(match)
+        offered = await self.stake("1", "500")
+        self.assertIn("Stake offer sent.", offered["content"])
+        post = self.stake_posts[700]
+        accepted = await self.stake_reply(post, post.components[0].components[0])
+        self.assertIn(f"Stakes fixed at 500 {TOKEN_EMOJI} each.", accepted["content"])
+        self.assertEqual((await ParticipantStake.get(str(match.id))).state, "locked")
+        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [4500, 4500])
+
+        await stake_window_closed(match)
+        self.assertIn("Stakes close when the match starts.", (await self.stake("2", "500"))["content"])
+        self.assertTrue(await delete_unreserved_match(await Match.get(match.id)))
+        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [5000, 5000])
+
     async def test_callback_rejects_matching_an_open_offer_after_start(self):
         match = await Match(token="late-stake", thread="100", thread_message_id=456, matched_time=1,
                             participants=[Participant(user_id="1"), Participant(user_id="2")]).insert()

@@ -31,7 +31,7 @@ class TestFinalBracketAcknowledgement(unittest.IsolatedAsyncioTestCase):
             events.append("loaded")
             return edition
 
-        def render(final):
+        def render(final, _picks, _statuses, _usernames):
             self.assertIs(final, edition)
             events.append("rendered")
             return b"bracket-image"

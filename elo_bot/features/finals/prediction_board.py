@@ -8,7 +8,7 @@ from elo_bot.discord.embeds import embed_color, footer_image, profile_author
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult, FinalPrediction
-from elo_bot.discord.mentions import fetch_members, member_names, mention_user
+from elo_bot.discord.mentions import fetch_members, member_usernames, mention_user
 from elo_bot.features.finals.labels import prediction_label
 from elo_bot.features.finals.prediction_display import (
     finished_results,
@@ -105,7 +105,8 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
               if result.snapshot.outcome == "Played"
               and (started := getattr(result.snapshot, "actual_started_at", None)) is not None}
     user_ids = {user for result in results for user in result.snapshot.contestants}
-    names = await member_names(guild, user_ids)
+    members = await fetch_members(guild, user_ids)
+    names = {user: mention_user(member, user) for user, member in members.items()}
     result_text = finished_results(final, results, names, starts)
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=embed_color(),
                       author=profile_author(user), description=f"**Results**\n{result_text}" if result_text else None)
@@ -113,7 +114,8 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
         embed.add_field(name="**Predictions**", value=f"`{points}/{eligible}`")
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     try:
-        image = await anyio.to_thread.run_sync(render_bracket, final, prediction.submitted, statuses)
+        image = await anyio.to_thread.run_sync(render_bracket, final, prediction.submitted, statuses,
+                                                member_usernames(members))
     except FinalError as error:
         embed.add_field(name="**Image**", value=str(error))
         embed.add_field(name="**Picks**", value="\n".join(

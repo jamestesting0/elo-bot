@@ -14,6 +14,7 @@ sys.path.append(os.getcwd())
 from elo_bot.extensions.player import PlayerCommands
 from elo_bot.config.emojis import ERROR_EMOJI, TOKEN_EMOJI
 from elo_bot.config.ids import PLAYER_ROLE
+from elo_bot.features.finals.head_to_head import render_head_to_head
 from tests._patch_sites import patch_sites
 
 class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
@@ -228,12 +229,14 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         player1 = MagicMock(spec=ipy.User)
         player1.id = 123
         player1.display_name = "Player1"
+        player1.username = "al.pal"
         player1.display_avatar.fetch = AsyncMock(return_value=b"")
         player1.__str__.return_value = "Player1"
 
         player2 = MagicMock(spec=ipy.User)
         player2.id = 456
         player2.display_name = "Player2"
+        player2.username = "player2"
         player2.display_avatar.fetch = AsyncMock(return_value=b"")
         player2.__str__.return_value = "Player2"
 
@@ -259,7 +262,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
 
         sent = []
 
-        async def capture(*, embed, file, ephemeral):
+        async def capture(*, embed, file=None, ephemeral):
+            self.assertIsNotNone(file, "H2H should attach its graphic")
             sent.append((embed, file.file_name, file.description, file.file.getvalue(), ephemeral))
 
         ctx.send.side_effect = capture
@@ -293,6 +297,15 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
                 self.assertLessEqual(abs(field[1] + (ink[1] + ink[3]) / 2 - 840), 1)
                 difference.paste((0, 0, 0), field)
             self.assertIsNone(difference.getbbox())
+
+        player1.display_name = "Al Pal | (っ◔ᴗ◔)っ ♥ asmo ♥"
+        mock_player.find_one.side_effect = [mock_p1_doc, SimpleNamespace(elo=1600)]
+        with patch("elo_bot.features.finals.graphic_labels.FALLBACK_FONTS", ()):
+            await self.cog.player_h2h.callback.func(self.cog, ctx, player1, player2, hidden=False)
+        fallback_embed, _, _, fallback_png, _ = sent[-1]
+        self.assertEqual(fallback_embed.author.name, player1.display_name)
+        expected = render_head_to_head(("al.pal", "Player2"), (None, None), (102, 7), (12, 10))
+        self.assertEqual(fallback_png, expected)
 
     @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
     @patch("elo_bot.extensions.player.RecordedMatch")

@@ -11,7 +11,7 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.discord.mentions import fetch_members, member_names, member_usernames, mention_user
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import bracket_group, final
 from elo_bot.features.finals.bracket_ui import bracket_controls, bracket_embed
@@ -62,14 +62,15 @@ class Views:
         edition = await self._edition(ctx, final_season)
         user_ids = set(edition.entrant_ids)
         guild = await member_guild(ctx)
-        names = await member_names(guild, user_ids)
+        members = await fetch_members(guild, user_ids)
+        names = {user: mention_user(member, user) for user, member in members.items()}
         embed = bracket_embed(edition, names, await submitted_predictions(edition))
         controls = await bracket_controls(edition)
         if not edition.nodes:
             await ctx.send(embed=embed, components=controls)
             return
         try:
-            rendered = await anyio.to_thread.run_sync(render_bracket, edition)
+            rendered = await anyio.to_thread.run_sync(render_bracket, edition, None, None, member_usernames(members))
         except FinalError as error:
             embed.add_field(name="**Image**", value=str(error))
             await ctx.send(embed=embed, components=controls)

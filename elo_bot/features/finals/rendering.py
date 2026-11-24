@@ -1,22 +1,19 @@
 from io import BytesIO
 from pathlib import Path
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
-from PIL import Image, ImageDraw, ImageFont, ImageChops, ImageOps
+from PIL import Image, ImageDraw, ImageChops, ImageOps
 
 from elo_bot.core.finals import FinalError, NODE_IDS, FINAL_DISTRICTS
 from elo_bot.db import EloFinal
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db.final_models import FinalResultSnapshot
+from elo_bot.features.finals.graphic_labels import fitted_label
 
 TEMPLATE = Path("assets/finals/elo_final_bracket.png")
 SCOREBOARD_TEMPLATE = Path("assets/finals/elo_final_scoreboard.png")
 ELO_KINGS_TEMPLATE = Path("assets/finals/elo_kings_leaderboard.png")
 CAPITAL_TROPHY = Path("assets/finals/capital_trophy.png")
-FONT = Path("assets/finals/supercell_magic_webfont.ttf")
-FALLBACK_FONTS = (Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
-                  Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
-                  Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
 TEMPLATE_SIZE = (1672, 941)
 BRACKET_CROP = (180, 0, 1492, 941)
 SCOREBOARD_TEMPLATE_SIZE = (1672, 1033)
@@ -54,33 +51,6 @@ def bracket_labels(final: EloFinal, picks: dict[str, str] | None = None) -> list
     return labels
 
 
-def fitted_label(text: str, width: int = 168, size: int = 24) -> tuple[str, ImageFont.FreeTypeFont]:
-    text = " ".join(text.split())
-    candidates = (FONT,) if text.isascii() else (FONT, *FALLBACK_FONTS)
-    font_path = None
-    for path in candidates:
-        if not path.is_file():
-            continue
-        probe = ImageFont.truetype(str(path), 24)
-        missing = bytes(probe.getmask(chr(0x10FFFF)))
-        if all(char.isspace() or bytes(probe.getmask(char)) != missing for char in text):
-            font_path = path
-            break
-    if font_path is None:
-        raise FinalError("A bracket font for these names is unavailable. The text bracket is still available.")
-    font = ImageFont.truetype(str(font_path), 14)
-    for font_size in range(size, 13, -1):
-        font = ImageFont.truetype(str(font_path), font_size)
-        bounds = font.getbbox(text, stroke_width=1)
-        if bounds[2] - bounds[0] <= width:
-            return text, font
-    bounds = font.getbbox(text + "…", stroke_width=1)
-    while text and bounds[2] - bounds[0] > width:
-        text = text[:-1]
-        bounds = font.getbbox(text + "…", stroke_width=1)
-    return text + "…", font
-
-
 # Pillow draws shapes without anti-aliasing, so badges are drawn this many times larger and scaled down.
 BADGE_SUPERSAMPLE = 8
 PREDICTION_MARKS = {
@@ -109,7 +79,7 @@ def status_badge(status: str) -> Image.Image:
 
 
 def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
-                   statuses: dict[str, str] | None = None) -> bytes:
+                   statuses: dict[str, str] | None = None, usernames: Mapping[str, str] | None = None) -> bytes:
     try:
         with Image.open(TEMPLATE) as source:
             if source.size != TEMPLATE_SIZE:
@@ -124,8 +94,10 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
                    next((later for later in NODE_IDS[4:] if key in final.nodes[later].feeders), "F1"))
                   for key in NODE_IDS[:6])
     plates.append((final.champion if picks is None else picks.get("F1"), "F1"))
+    usernames = usernames or {}
     for label, center, (user, node_id) in zip(bracket_labels(final, picks), centers, plates, strict=True):
-        text, font = fitted_label(label, width=188 if center == CHAMPION_CENTER else 168)
+        text, font = fitted_label(label, width=188 if center == CHAMPION_CENTER else 168,
+                                  username=usernames.get(user) if user else None, default=user or "TBD")
         left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
         position = (center[0] - (left + right) / 2, center[1] - (top + bottom) / 2)
         color = "#fff6e5"
@@ -150,7 +122,8 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
         return output.getvalue()
 
 
-def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: dict[str, bytes]) -> bytes:
+def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: dict[str, bytes],
+                      usernames: Mapping[str, str] | None = None) -> bytes:
     """Render the saved scores in district order, preserving all template artwork."""
     try:
         with Image.open(SCOREBOARD_TEMPLATE) as source:
@@ -159,11 +132,13 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
             raise FinalError("The scoreboard template dimensions changed. The text result is still available.")
         draw = ImageDraw.Draw(image)
         centered_labels = []
+        usernames = usernames or {}
         star_labels = []
         for side, user in enumerate(snapshot.contestants):
             color = "#e2cfad" if user != snapshot.winner else "#fff0d5"
             name_color = "#e2cfad" if user != snapshot.winner else "#fff0d7"
-            centered_labels.append((final.player_nicknames.get(user, user), SCOREBOARD_NAMES[side], name_color, 25))
+            centered_labels.append((final.player_nicknames.get(user, user), SCOREBOARD_NAMES[side],
+                                    name_color, 25, user))
             if user in avatars:
                 paste_avatar(image, avatars[user], SCOREBOARD_AVATARS[side])
             stars, destruction = [], []
@@ -174,14 +149,15 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
                 star_labels.append((str(stars[-1]), SCOREBOARD_STAR_RIGHTS[side], y, color, 27))
                 center = SCOREBOARD_DESTRUCTION_CENTERS[side]
                 centered_labels.append((f"{destruction[-1]}%", (center - 80, y - 22, center + 80, y + 22),
-                                        color, 27))
+                                        color, 27, None))
             star_labels.append((str(sum(stars)), SCOREBOARD_TOTAL_STAR_RIGHTS[side], SCOREBOARD_TOTAL_CENTER,
                                 color, 31))
             center = SCOREBOARD_TOTAL_DESTRUCTION_CENTERS[side]
             centered_labels.append((f"{sum(destruction)}%", (center - 90, SCOREBOARD_TOTAL_CENTER - 28,
-                                        center + 90, SCOREBOARD_TOTAL_CENTER + 28), color, 31))
-        for label, box, color, size in centered_labels:
-            text, font = fitted_label(label, box[2] - box[0], size)
+                                        center + 90, SCOREBOARD_TOTAL_CENTER + 28), color, 31, None))
+        for label, box, color, size, user in centered_labels:
+            text, font = fitted_label(label, box[2] - box[0], size, username=usernames.get(user) if user else None,
+                                      default=user or "Player")
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
             position = ((box[0] + box[2] - left - right) / 2, (box[1] + box[3] - top - bottom) / 2)
             draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#3b2c2b")

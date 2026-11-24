@@ -8,7 +8,8 @@ from unittest.mock import patch
 from PIL import Image, ImageChops
 
 from elo_bot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket
-from elo_bot.features.finals.rendering import bracket_labels, fitted_label, render_bracket, render_elo_kings
+from elo_bot.features.finals.graphic_labels import fitted_label
+from elo_bot.features.finals.rendering import bracket_labels, render_bracket, render_elo_kings
 from elo_bot.features.finals.prediction_display import prediction_statuses
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
@@ -136,6 +137,25 @@ class TestFinalRendering(unittest.TestCase):
         bounds = font.getbbox(label, stroke_width=1)
         self.assertLessEqual(bounds[2] - bounds[0], 168)
         self.assertTrue(label.endswith("…"))
+
+    def test_bracket_renders_saved_names_when_only_the_bundled_font_is_available(self):
+        final = self.edition(8)
+        final.player_nicknames.update({"0": "Al Pal | (っ◔ᴗ◔)っ ♥ asmo ♥", "1": "👾\u200d🎮"})
+        with patch("elo_bot.features.finals.graphic_labels.FALLBACK_FONTS", ()):
+            actual = render_bracket(final)
+
+        final.player_nicknames.update({"0": "Al Pal asmo", "1": "1"})
+        self.assertEqual(actual, render_bracket(final))
+
+    def test_graphic_labels_normalize_stylized_names_and_replace_invisible_names(self):
+        cases = ((" 𝓐𝓵\u202e \nＰａｌ ", "Al Pal"), ("\u200b\u200d\u2800", "al.pal"),
+                 ("\u0301" * 20, "al.pal"))
+        with patch("elo_bot.features.finals.graphic_labels.FALLBACK_FONTS", ()):
+            for name, expected in cases:
+                with self.subTest(name=name):
+                    label, font = fitted_label(name, username="al.pal")
+                    self.assertEqual(label, expected)
+                    self.assertIsNotNone(font.getmask(label).getbbox())
 
     def test_missing_template_reports_truthful_error(self):
         with patch("elo_bot.features.finals.rendering.TEMPLATE", Path("absent-final-template.png")):

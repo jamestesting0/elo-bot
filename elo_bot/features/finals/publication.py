@@ -7,7 +7,7 @@ import json
 
 from elo_bot.features.finals.rendering import render_bracket
 from elo_bot.core.finals import FinalError
-from elo_bot.discord.mentions import mention_user, fetch_members
+from elo_bot.discord.mentions import mention_user, fetch_members, member_usernames
 from elo_bot.db import EloFinal
 from elo_bot.features.finals.bracket_ui import bracket_controls, bracket_embed
 from elo_bot.features.finals.lifecycle import refresh_display_names, reload_final
@@ -44,7 +44,8 @@ async def publish_bracket(bot: ipy.Client, final: EloFinal) -> ipy.Message:
             rendered = None
             if final.nodes:
                 try:
-                    rendered = await anyio.to_thread.run_sync(render_bracket, final)
+                    rendered = await anyio.to_thread.run_sync(render_bracket, final, None, None,
+                                                              member_usernames(members))
                     embed.set_image(url="attachment://bracket.png")
                 except FinalError as error:
                     render_error = str(error)

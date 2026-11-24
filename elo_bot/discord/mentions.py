@@ -16,6 +16,11 @@ async def member_names(guild: Guild, user_ids: Iterable[str]) -> dict[str, str]:
     return {user: mention_user(member, user) for user, member in (await fetch_members(guild, user_ids)).items()}
 
 
+def member_usernames(members: dict[str, Member | None]) -> dict[str, str]:
+    return {user: username for user, member in members.items()
+            if isinstance(username := getattr(member, "username", None), str) and username}
+
+
 def mention_user(user: User | Member | None, user_id: int | str = 0,
                  mention_type: Literal["Player", "Builder", "Unknown Builder", "Helper"] = "Player",
                  *, include_wishlist_tab: bool = True) -> str:

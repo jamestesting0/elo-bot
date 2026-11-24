@@ -10,7 +10,7 @@ from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.core.finals import FinalError
 from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.discord.mentions import fetch_members, member_names, member_usernames, mention_user
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final, predictions_group
 from elo_bot.features.finals.prediction_board import (
@@ -101,7 +101,8 @@ class Predictions:
                 node_id=None if node == "-" else node, choice=ctx.values[0] if action == "pick" else None,
             ))
             guild = await member_guild(ctx)
-            names = await member_names(guild, edition.entrant_ids)
+            members = await fetch_members(guild, edition.entrant_ids)
+            names = {user: mention_user(member, user) for user, member in members.items()}
             outcome = ""
             if action == "submit":
                 try:
@@ -112,8 +113,9 @@ class Predictions:
                                                 outcome=outcome)
             if prediction.stage == 3 or action == "submit":
                 try:
-                    rendered = await anyio.to_thread.run_sync(render_bracket, edition,
-                                                              prediction.submitted if action == "submit" else prediction.draft)
+                    picks = prediction.submitted if action == "submit" else prediction.draft
+                    rendered = await anyio.to_thread.run_sync(render_bracket, edition, picks, None,
+                                                              member_usernames(members))
                 except FinalError as error:
                     embed, components = prediction_view(edition, prediction, names, submitted=action == "submit",
                         outcome=f"{IMPORTANT_EMOJI} Image unavailable: {error}", image_available=False)

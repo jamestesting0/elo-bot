@@ -11,7 +11,7 @@ from pymongo.errors import PyMongoError
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.final_models import FinalMatchResult
-from elo_bot.discord.mentions import mention_user
+from elo_bot.discord.mentions import member_usernames, mention_user
 from elo_bot.features.finals.lifecycle import refresh_display_names, reload_final
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostReference, publish_post
 from elo_bot.features.finals.rendering import render_scoreboard
@@ -109,7 +109,8 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
             match result.snapshot.outcome:
                 case "Played":
                     try:
-                        rendered = await anyio.to_thread.run_sync(render_scoreboard, final, result.snapshot, avatars)
+                        rendered = await anyio.to_thread.run_sync(render_scoreboard, final, result.snapshot, avatars,
+                                                                  member_usernames(members))
                     except FinalError as error:
                         render_error = str(error)
                 case "Forfeit":

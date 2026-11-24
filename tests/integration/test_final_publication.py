@@ -1,10 +1,12 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 from io import BytesIO
+from types import SimpleNamespace
 
 import interactions as ipy
 from PIL import Image
 
 from tests.integration._final_fixture import FinalScenarioCase
+from elo_bot.features.finals.head_to_head import render_head_to_head
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.publication import bracket_signature, publish_bracket
@@ -178,11 +180,23 @@ class TestFinalPublication(FinalScenarioCase):
         self.assertEqual(images, [(1672, 941)])
         self.channel.send.side_effect = self.send
         stored = await FinalBettingMarket.get(market.id)
-        await self.final.set({"player_nicknames.1": "Sen", "seed_elo.8": 2000})
-        self.assertEqual(await recover_final(await final_for_view(), bot=self.bot), [])
+        nickname = "Al Pal | (っ◔ᴗ◔)っ ♥ asmo ♥"
+        member = SimpleNamespace(id=1, display_name=nickname, username="al.pal",
+                                 display_avatar=SimpleNamespace(fetch=AsyncMock(return_value=b"")))
+        self.channel.guild.fetch_member.side_effect = {"1": member}.get
+        await self.final.set({"player_nicknames.1": nickname, "seed_elo.8": 2000})
+
+        expected = render_head_to_head(("al.pal", "Player 8"), (None, None), (2, 1))
+
+        async def edit(**payload):
+            self.assertEqual(payload["file"].file.getvalue(), expected)
+
+        self.messages[stored.announcement_id].edit.side_effect = edit
+        with patch("elo_bot.features.finals.graphic_labels.FALLBACK_FONTS", ()):
+            self.assertEqual(await recover_final(await final_for_view(), bot=self.bot), [])
         updated = await FinalBettingMarket.get(market.id)
         payload = self.messages[stored.announcement_id].edit.await_args.kwargs
-        self.assertEqual(payload["file"].description, "Sen (seed #2) vs. Player 8 (seed #1)")
+        self.assertEqual(payload["file"].description, f"{nickname} (seed #2) vs. Player 8 (seed #1)")
         self.assertEqual(updated.announcement_id, stored.announcement_id)
         self.assertEqual(payload["attachments"], [])
         self.assertIsNone(updated.publication_error)

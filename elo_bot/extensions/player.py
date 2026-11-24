@@ -262,8 +262,10 @@ class PlayerCommands(ipy.Extension):
                  1 + await Player.find(Player.elo > p2_doc.elo).count())
         portraits = (await matchup_avatar(player1), await matchup_avatar(player2))
         names = (player1.display_name, player2.display_name)
+        usernames = (player1.username, player2.username)
         try:
-            rendered = await anyio.to_thread.run_sync(render_head_to_head, names, portraits, ranks, (wins, losses))
+            rendered = await anyio.to_thread.run_sync(render_head_to_head, names, portraits, ranks,
+                                                      (wins, losses), usernames)
         except (OSError, FinalError):
             logging.exception("Could not render the head-to-head graphic")
             await ctx.send(embed=embed, ephemeral=hidden)

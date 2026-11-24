@@ -11,7 +11,8 @@ from PIL import Image, ImageDraw, ImageFont
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.features.finals.bracket import seeded_players
-from elo_bot.features.finals.rendering import fitted_label, paste_avatar
+from elo_bot.features.finals.graphic_labels import fitted_label
+from elo_bot.features.finals.rendering import paste_avatar
 
 VERSUS_TEMPLATE: Final = Path("assets/finals/elo_head_to_head.png")
 RECORD_TEMPLATE: Final = Path("assets/finals/elo_head_to_head_record.png")
@@ -36,16 +37,17 @@ def _center_text(draw: ImageDraw.ImageDraw, label: tuple[str, ImageFont.FreeType
 
 
 def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, bytes | None],
-                        ranks: tuple[int | None, int | None], record: tuple[int, int] | None = None) -> bytes:
+                        ranks: tuple[int | None, int | None], record: tuple[int, int] | None = None,
+                        fallback_names: tuple[str | None, str | None] = (None, None)) -> bytes:
     with (Image.open(VERSUS_TEMPLATE if record is None else RECORD_TEMPLATE) as artwork,
           artwork.convert("RGB") as image, BytesIO() as output):
         draw = ImageDraw.Draw(image)
-        for name, avatar, rank, name_center, avatar_box, rank_center in zip(
-            names, avatars, ranks, NAME_FIELDS, AVATAR_BOXES, RANK_CENTERS, strict=True,
+        for name, fallback, avatar, rank, name_center, avatar_box, rank_center in zip(
+            names, fallback_names, avatars, ranks, NAME_FIELDS, AVATAR_BOXES, RANK_CENTERS, strict=True,
         ):
             if avatar is not None:
                 paste_avatar(image, avatar, avatar_box)
-            _center_text(draw, fitted_label(name, 438, 42), name_center, "#3b2c2b")
+            _center_text(draw, fitted_label(name, 438, 42, username=fallback), name_center, "#3b2c2b")
             if rank is not None:
                 _center_text(draw, fitted_label(f"#{rank}", 76, 22), rank_center, "#ffedc1")
         if record is not None:
@@ -71,11 +73,12 @@ async def final_matchup_attachment(final: EloFinal, contestants: tuple[str, str]
     first, second = members[left], members[right]
     names = (final.player_nicknames.get(left, first.display_name if first else left),
              final.player_nicknames.get(right, second.display_name if second else right))
+    fallbacks = (getattr(first, "username", left), getattr(second, "username", right))
     seeds = {user: seed for seed, user in enumerate(seeded_players(final), 1)}
     ranks = (seeds.get(left), seeds.get(right))
     avatars = (await matchup_avatar(first) if first else None, await matchup_avatar(second) if second else None)
     try:
-        png = await anyio.to_thread.run_sync(render_head_to_head, names, avatars, ranks)
+        png = await anyio.to_thread.run_sync(render_head_to_head, names, avatars, ranks, None, fallbacks)
     except (OSError, FinalError):
         logging.exception("Could not render the Final matchup graphic")
         return None

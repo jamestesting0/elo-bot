@@ -98,6 +98,8 @@ class ParticipantStake(Document):
     settlement_key: str | None = None
     paid: dict[str, int] = Field(default_factory=dict)
     publication_pending: bool = True
+    offer_message_id: int | None = None
+    offer_message_revision: int | None = None
 
     def committed_amount(self, user: str) -> int:
         return self.contributions.get(user, self.amount)

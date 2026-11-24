@@ -4,7 +4,7 @@
 import interactions as ipy
 
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import embed_color, footer_image, profile_author
 from elo_bot.config.emojis import STAR_EMOJI, WIN_EMOJI, LOSS_EMOJI
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.features.tokens.stats import betting_lines, betting_stats
@@ -15,7 +15,7 @@ from elo_bot.db.token_models import TokenWallet
 from elo_bot.discord.mentions import member_names
 
 
-async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
+async def profile_view(final: EloFinal, user: ipy.User | ipy.Member, owner: str, *, guild: ipy.Guild):
     user_id = str(user.id)
     player = await Player.find_one({"user_id": user_id})
     wallet = await ensure_wallet(user_id) if player else await TokenWallet.find_one({"user_id": user_id})
@@ -28,7 +28,7 @@ async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
             FinalEditionStats(season_number=final.season_number)
     claims = wallet.identity_claims if wallet else [user_id]
     prediction = await FinalPrediction.find_one({"final_id": str(final.id), "user_id": user_id})
-    embed = ipy.Embed(title=f"**{user}'s Final Profile**", color=embed_color(),
+    embed = ipy.Embed(title="**Final Profile**", color=embed_color(), author=profile_author(user),
         description=(f"[{player.tag}](https://link.clashofclans.com/en?action=OpenPlayerProfile&tag=%23{player.tag.lstrip('#')})\n" if player else "")
         + f"Season {final.season_number} Final\n"
         + (stats.placement or ("Entrant" if set(claims) & set(final.entrant_ids) else "No participation in this Final")))
@@ -65,9 +65,6 @@ async def profile_view(final: EloFinal, user, owner: str, *, guild: ipy.Guild):
             f"{sum(get_stars(score) for score in opponent_scores)}{STAR_EMOJI} " \
             f"{sum(get_destruction(score) for score in opponent_scores)}%\n"
     embed.add_field(name="__**Recent Matches**__", value=recent_matches or "No recent matches.")
-    avatar = getattr(user, "avatar", None)
-    if avatar:
-        embed.set_thumbnail(url=avatar.url)
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     latest = {}
     for edition in await EloFinal.find({"schema_version": 2}).sort([("season_number", -1), ("_id", -1)]).to_list():

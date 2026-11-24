@@ -125,6 +125,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.author.id = 123
+        ctx.author.display_name = "James"
+        ctx.author.display_avatar.url = "https://cdn.discordapp.com/embed/avatars/1.png"
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
 
@@ -166,6 +168,10 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         # Verify
         ctx.send.assert_called()
         embed = ctx.send.call_args[1]['embed']
+        self.assertEqual(embed.title, "**Player Profile**")
+        self.assertEqual((embed.author.name, embed.author.url, embed.author.icon_url),
+                         ("James", "https://discord.com/users/123", "https://cdn.discordapp.com/embed/avatars/1.png"))
+        self.assertIsNone(embed.thumbnail)
         self.assertIn("TestPlayer", embed.description)
         self.assertTrue(embed.description.endswith(f"**Rank:** #6 in the server\n**Tokens:** 5,000 {TOKEN_EMOJI}"))
         self.assertNotIn("__**Tokens**__", [field.name for field in embed.fields])
@@ -260,7 +266,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         await self.cog.player_h2h.callback.func(self.cog, ctx, player1, player2, hidden=False)
 
         [(embed, filename, alt_text, rendered, ephemeral)] = sent
-        self.assertIn("Player1's Record Against Player2", embed.title)
+        self.assertEqual(embed.title, "**H2H Against Player2**")
+        self.assertEqual((embed.author.name, embed.author.url), ("Player1", "https://discord.com/users/123"))
         self.assertIn("12 - 10", embed.description)
         self.assertEqual(embed.images[0].url, f"attachment://{filename}")
         self.assertFalse(ephemeral)
@@ -288,34 +295,41 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(difference.getbbox())
 
     @patch_sites(('elo_bot.extensions.player.Player', 'elo_bot.features.players.match_choices.Player'))
-    @patch("elo_bot.extensions.player.construct_match_embed")
-    async def test_player_matches_view_success(self, mock_construct_match_embed, mock_player):
+    @patch("elo_bot.extensions.player.RecordedMatch")
+    async def test_player_matches_view_shows_the_selected_player_and_opponent(self, recorded_match, mock_player):
         # Setup
         ctx = MagicMock(spec=ipy.SlashContext)
         ctx.guild = MagicMock()
         ctx.send = AsyncMock()
 
-        user = MagicMock(spec=ipy.User)
-        user.id = 123
+        user = ipy.User.from_dict({"id": "123", "username": "james", "global_name": "James",
+                                   "discriminator": "0", "avatar": None}, self.bot)
+        opponent = ipy.User.from_dict({"id": "456", "username": "nasa", "global_name": "NASA",
+                                       "discriminator": "0", "avatar": None}, self.bot)
+        ctx.guild.fetch_member = AsyncMock(side_effect={"123": user, "456": opponent}.get)
 
         # Mock player found with matches
         mock_p_doc = MagicMock()
-        mock_match = MagicMock()
-        mock_match.id = "1"
+        districts = dict.fromkeys(("Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs"),
+                                  SimpleNamespace(stars=3, destruction=100))
+        mock_match = SimpleNamespace(id="1", time=1_700_000_000, players={
+            "123": SimpleNamespace(opponent="456", stars=9, destruction=300, districts=districts, elo_change=30),
+            "456": SimpleNamespace(opponent="123", stars=9, destruction=300, districts=districts, elo_change=-30),
+        })
         mock_p_doc.matches = [mock_match]
         mock_player.find_one = AsyncMock(return_value=mock_p_doc)
 
-        # Mock construct_match_embed
-        mock_embed = MagicMock(spec=ipy.Embed)
-        mock_construct_match_embed.return_value = mock_embed
+        recorded_match.find_one = AsyncMock(return_value=mock_match)
 
         # Execute
         await self.cog.player_matches_view.callback(ctx, user=user, hidden=False)
 
         # Verify
-        mock_construct_match_embed.assert_called_with(unittest.mock.ANY, ctx.guild, "1", "123")
-        ctx.send.assert_called()
-        self.assertEqual(ctx.send.call_args[1]['embed'], mock_embed)
+        embed = ctx.send.await_args.kwargs["embed"]
+        self.assertEqual(embed.title, "**Match Details**")
+        self.assertEqual((embed.author.name, embed.author.url), ("James", "https://discord.com/users/123"))
+        self.assertEqual(embed.description.splitlines()[0], "vs. NASA · Match `1`")
+        self.assertIn("**Final Score**", embed.description)
 
     @patch("elo_bot.extensions.player.construct_match_embed", new_callable=AsyncMock)
     async def test_player_matches_search_uses_requested_visibility_and_hides_inconsistent_data(self, construct):
@@ -357,6 +371,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         user = MagicMock(spec=ipy.User)
         user.id = 123
         user.__str__.return_value = "Player1"
+        user.display_name = "Player One"
 
         # Mock player found with matches
         mock_p_doc = MagicMock()
@@ -383,7 +398,8 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         # Verify
         ctx.send.assert_called()
         embed = ctx.send.call_args[1]['embed']
-        self.assertIn("Player1's Hitrates", embed.title)
+        self.assertEqual(embed.title, "**Hit Rates**")
+        self.assertEqual((embed.author.name, embed.author.url), ("Player One", "https://discord.com/users/123"))
         self.assertIn("Barbarian Camp", embed.description)
         self.assertIn("Wizard Valley", embed.description)
         season_options = ctx.send.call_args[1]['components'].options

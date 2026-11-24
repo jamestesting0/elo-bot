@@ -60,8 +60,9 @@ class TestFinalPredictionsView(FinalUICase):
                 clicker.defer.assert_awaited_once_with(ephemeral=True)
                 card = clicker.send.await_args.kwargs
                 self.assertTrue(card["ephemeral"])
-                self.assertTrue(card["embed"].description.startswith(
-                    "**[Display 8](<https://discordapp.com/users/8?tab=wishlist>)**"))
+                self.assertEqual(card["embed"].author.name, "Display 8")
+                self.assertEqual(card["embed"].author.url, "https://discord.com/users/8")
+                self.assertFalse(card["embed"].description)
                 self.assertEqual(card["file"].file_name, "prediction.png")
                 self.assertEqual([field.name for field in card["embed"].fields], [])
                 clicker.edit.assert_not_awaited()
@@ -70,6 +71,7 @@ class TestFinalPredictionsView(FinalUICase):
         await change_prediction_state(self.final, False)
         sent = await self.view(self.viewer(), player=MagicMock(id=8), hidden=True)
         self.assertTrue(sent.kwargs["ephemeral"])
+        self.assertEqual(sent.kwargs["embed"].author.url, "https://discord.com/users/8")
         self.assertEqual(sent.kwargs["embed"].image.url, "attachment://prediction.png")
         sent = await self.view(self.viewer(), player=MagicMock(id=7))
         self.assertEqual(sent.args[0], f"{ERROR_EMOJI} This player didn't submit a prediction.")

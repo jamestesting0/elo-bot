@@ -50,8 +50,10 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
 
 ### Embed anatomy
 
-- **Title:** bold, `title="**Tokens**"`. Name the subject and add scope after ` · `:
-  `**Season 14 Final · QF1 Betting**`, `**{user}'s Profile**`, `**{district} Base**`, `**{label} Stats**`.
+- **Title:** bold, `title="**Tokens**"`. Name the view and add scope after ` · ` when needed.
+  Examples include `**Player Profile**`, `**Season 14 Final · QF1 Betting**` and `**{district} Base**`.
+- **Author:** player and helper views show the selected person's Discord display name and avatar in the author row.
+  The display name links to their Discord profile.
 - **Color:** `embed_color()` selects the default accent for the running bot. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
 - **Footer:** Use `FOOTER_TEXT` with `footer_image()` for the signed-in bot's Discord avatar. Before login, the helper
@@ -62,8 +64,8 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   instructions use `__**...**__` (`__**Statistics (All Seasons)**__`, `__**Recent Matches**__`, `__**Instruction**__`).
 - **Label lines:** profile descriptions and stat blocks use `**Label:** value` per line. Statistic lists that
   show counts (season stats, base performance) use `Label: \`value\``. Follow the comparable screen.
-- **Images:** `set_image(base.image_url)` for bases, `UNAVAILABLE_IMAGE` when the image is missing, the
-  user's avatar as a profile thumbnail, a clan badge for clan views. Generated images are attached as files
+- **Images:** `set_image(base.image_url)` for bases, `UNAVAILABLE_IMAGE` when the image is missing, and a
+  clan badge for clan views. Generated images are attached as files
   and referenced with `url="attachment://bracket.png"`. Static art is served from `ASSETS_URL`.
 - **Empty states:** a short sentence or placeholder value: "No recent matches.", "No defenses so far",
   "Not assigned", "Unknown builder". Omit optional statistics with no recorded samples and avoid repeating
@@ -274,14 +276,20 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Bets show `**Won:** `x/y` → `%`` and `**Profit:** +1,250 🪙 · `+41.67%``, counting settled bets only: per Final
   on the Final profile, overall on `/tokens balance` (Available, Debt when owed, Bets, Open Bets while in play) and
   on the Betting leaderboard (ranked by profit). `/tokens history` labels are inline code (`` `Bet switched` ``).
+- `/tokens balance`, `/tokens history` and `/tokens inventory` default to your wallet. Select `user` to view another
+  player's wallet. The embed title names the player using their Discord handle.
 - Final and token buttons ignore double clicks: a second click while the first runs, or a click on a view the
   same user's earlier click already replaced, is acknowledged without a reply (`ignore_repeated_clicks`).
 - `/tokens add` and `/tokens remove` (level-1 roles) change a player's Available tokens and show as a Manager
   adjustment in `/tokens history`. Remove never takes more than the Available balance.
 - `/tokens shop` and `/tokens inventory` are public by default. Use `hidden:True` for a private view.
-  Challenge Override codes appear in private replies and hidden inventory views. A select lists the current page's items.
+  Using Challenge Override immediately sends one private code per copy and shows when the codes expire.
+  Save the codes for `/challenge send`.
+  Other players' inventory views only offer page navigation. A select lists the usable items in your own inventory.
   Purchases use an owner-only confirmation. Item emojis use the shared config when registered.
-- `/match stake` replies privately. Show the offer and reply in the match announcement's **Notes** field, one line per player.
+- `/match stake` replies privately and posts an offer in the match thread that pings only the opponent.
+  **Match Stake** accepts the displayed amount and **Pass** closes the offer without moving tokens.
+  Show the offer and reply in the match announcement's **Notes** field, one line per player.
   Use `put 500 {TOKEN_EMOJI} at stake`, `matches the stake with 500 {TOKEN_EMOJI}`, or `went all in (500 {TOKEN_EMOJI})`.
   Edit the offer's existing line when it changes. Show the actual held amount if a short all-in reduces the offer.
   Wallet balance lists locked match stakes separately from spectator bets.

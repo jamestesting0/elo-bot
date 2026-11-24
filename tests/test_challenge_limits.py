@@ -103,7 +103,8 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
                     action = "send" if sender else "receive"
                     self.ctx.send.assert_awaited_once_with(
                         f"{ERROR_EMOJI} {subject} an unused normal ranked match from the past "
-                        f"7 days to {action} a challenge. Available challenges: `0`.",
+                        f"7 days to {action} a challenge. Available challenges: `0`. "
+                        "Buy Challenge Override in `/tokens shop`.",
                         ephemeral=True,
                     )
                     self.assertEqual(self.persisted, [])
@@ -341,7 +342,7 @@ class TestChallengeLimits(unittest.IsolatedAsyncioTestCase):
         await self.send()
         # Then: the separate repeat-opponent rule still rejects the request before storage.
         self.ctx.send.assert_awaited_once_with(
-            f"{ERROR_EMOJI} You have already challenged <@222> in your recent challenges.", ephemeral=True,
+            f"{ERROR_EMOJI} You challenged <@222> recently. Buy Challenge Override in `/tokens shop`.", ephemeral=True,
         )
         self.assertEqual(self.persisted, [])
         self.opponent.send.assert_not_awaited()

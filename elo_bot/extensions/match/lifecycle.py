@@ -18,11 +18,9 @@ from elo_bot.config.emojis import (
     LOADING_EMOJI,
     SUCCESS_EMOJI,
     TICK_EMOJI,
-    TOKEN_EMOJI,
 )
 from elo_bot.config.ids import (
     COMMAND_CHANNEL,
-    ELO_BLACKLIST_ROLE,
     LVL2_ROLES,
     MATCH_CHANNEL,
     STAFF_ROLE,
@@ -37,7 +35,7 @@ from elo_bot.discord.mentions import mention_user
 from elo_bot.features.base_store.match_adapters import clear_match_base_stores
 from elo_bot.extensions.match.groups import base
 from elo_bot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
-from elo_bot.core.finals import FinalError, is_final_match
+from elo_bot.core.finals import is_final_match
 from elo_bot.features.matches.cleanup import (
     delete_unreserved_match,
     has_pending_match_operation,
@@ -65,53 +63,9 @@ from elo_bot.features.queue.state import remove_matched_queue_attempts
 from elo_bot.features.results.operations import (
     ResultOperationConflict,
 )
-from elo_bot.features.tokens.stakes import parse_stake, set_stake
-from elo_bot.features.tokens.stake_publication import publish_stake
 
 
 class MatchLifecycleCommands:
-    @base.subcommand(sub_cmd_name="stake", sub_cmd_description="Put tokens at stake before the match starts")
-    @ipy.slash_option(name="amount", description="Tokens to stake, all-in, or 0 to withdraw",
-                      opt_type=ipy.OptionType.STRING, max_length=19, required=True)
-    async def match_stake(self, ctx: ipy.SlashContext, amount: str):
-        await ctx.defer(ephemeral=True)
-        if ctx.author.has_role(ELO_BLACKLIST_ROLE):
-            await ctx.send(f"{ERROR_EMOJI} You can’t place stakes while Elo access is restricted.", ephemeral=True)
-            return
-        match = await Match.find_one({"thread": str(ctx.channel_id)})
-        if match is None:
-            await ctx.send(f"{ERROR_EMOJI} Use `/match stake` in your match thread.", ephemeral=True)
-            return
-        user_id = str(ctx.author.id)
-        try:
-            tokens = parse_stake(amount)
-            stake = await set_stake(match, user_id, tokens)
-        except FinalError as error:
-            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
-            return
-        if stake is None or (not tokens and stake.state == "offer" and stake.author != user_id):
-            await ctx.send(f"{ERROR_EMOJI} You don’t have a stake offer to withdraw.", ephemeral=True)
-            return
-        try:
-            published = await publish_stake(self.bot, match)
-        except (ipy.errors.HTTPException, PyMongoError):
-            logging.exception("Stake announcement for match %s is pending", match.id)
-            published = False
-        if not published:
-            await ctx.send(f"{IMPORTANT_EMOJI} Stake saved. The Notes update is pending.", ephemeral=True)
-        elif stake.state == "locked":
-            yours = stake.committed_amount(user_id)
-            theirs = next(stake.committed_amount(user) for user in stake.users if user != user_id)
-            if yours == theirs:
-                await ctx.send(f"{SUCCESS_EMOJI} Stakes fixed at {yours:,} {TOKEN_EMOJI} each.", ephemeral=True)
-            else:
-                await ctx.send(f"{SUCCESS_EMOJI} Stakes fixed. Yours {yours:,} {TOKEN_EMOJI} · "
-                               f"Opponent’s {theirs:,} {TOKEN_EMOJI}.", ephemeral=True)
-        elif stake.state == "closed":
-            await ctx.send(f"{SUCCESS_EMOJI} Stake offer removed.", ephemeral=True)
-        else:
-            await ctx.send(f"{SUCCESS_EMOJI} Stake offer saved.", ephemeral=True)
-
     @ipy.component_callback(re.compile(r"^district_select\|\w+\|\d+$"))
     @acknowledge_privately
     async def district_select(self, ctx: ipy.ComponentContext):

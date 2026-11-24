@@ -1,11 +1,12 @@
 import logging
 import re
+from hashlib import sha256
 
 import interactions as ipy
 from beanie import PydanticObjectId
 from pymongo.errors import PyMongoError
 
-from elo_bot.config.emojis import TOKEN_EMOJI
+from elo_bot.config.emojis import TICK_EMOJI, TOKEN_EMOJI
 from elo_bot.core.finals import FinalError
 from elo_bot.db import Match
 from elo_bot.db.token_models import ParticipantStake
@@ -19,6 +20,7 @@ STAKE_NOTE = re.compile(
     rf"^- <@!?(\d+)>(?: put {STAKE_AMOUNT} at stake| matches the stake with {STAKE_AMOUNT}"
     rf"| went all in \({STAKE_AMOUNT}\)|[’']s stake was reduced to {STAKE_AMOUNT})\.$"
 )
+STAKE_REPLY_PATTERN = re.compile(r"^stakereply\|(match|pass)\|[0-9a-f]{24}\|\d+$")
 
 
 def stake_note_users(stake: ParticipantStake) -> tuple[str, ...]:
@@ -42,6 +44,60 @@ def stake_lines(stake: ParticipantStake) -> list[str]:
     return lines
 
 
+async def _find_offer_message(channel: ipy.ThreadChannel, stake: ParticipantStake, bot_id: int) -> ipy.Message | None:
+    if stake.offer_message_id is not None:
+        try:
+            return await channel.fetch_message(stake.offer_message_id)
+        except ipy.errors.NotFound:
+            return None
+    if stake.offer_message_revision is not None:
+        marker = f"stakereply|match|{stake.id}|{stake.offer_message_revision}"
+        async for message in channel.history(limit=0):
+            if message.author.id == bot_id and any(
+                getattr(button, "custom_id", None) == marker
+                for row in message.components or () for button in row.components
+            ):
+                return message
+    return None
+
+
+async def _publish_offer(channel: ipy.ThreadChannel, state: ParticipantStake, bot_id: int) -> bool:
+    message = await _find_offer_message(channel, state, bot_id)
+    stakes = ParticipantStake.get_pymongo_collection()
+    if message is not None and state.state == "offer" and state.offer_message_revision == state.revision:
+        if state.offer_message_id is not None:
+            return True
+    else:
+        if message is not None:
+            text = {"offer": "Stake offer updated.", "closed": "Stake offer closed."}.get(state.state, "Stake matched.")
+            await edit_channel_message(message, content=text, components=[], allowed_mentions=ipy.AllowedMentions.none())
+        if state.state != "offer":
+            return True
+        claimed = await stakes.update_one(
+            {"_id": state.id, "revision": state.revision, "state": "offer"},
+            {"$set": {"offer_message_id": None, "offer_message_revision": state.revision}},
+        )
+        if not claimed.matched_count:
+            return False
+        opponent = next(user for user in state.users if user != state.author)
+        nonce = sha256(f"stake:{state.id}:{state.revision}".encode()).hexdigest()[:24]
+        message = await channel.send(
+            f"<@{opponent}>, <@{state.author}> put **{state.amount:,}** {TOKEN_EMOJI} at stake. "
+            "Match the offer or play without a stake.",
+            components=[
+                ipy.Button(style=ipy.ButtonStyle.SUCCESS, label="Match Stake", emoji=TICK_EMOJI,
+                           custom_id=f"stakereply|match|{state.id}|{state.revision}"),
+                ipy.Button(style=ipy.ButtonStyle.SECONDARY, label="Pass",
+                           custom_id=f"stakereply|pass|{state.id}|{state.revision}"),
+            ],
+            allowed_mentions=ipy.AllowedMentions(users=[int(opponent)]),
+            nonce=nonce, enforce_nonce=True,
+        )
+    bound = await stakes.update_one({"_id": state.id, "offer_message_revision": state.revision},
+                                    {"$set": {"offer_message_id": int(message.id)}})
+    return bound.matched_count == 1
+
+
 async def publish_stake(bot, match: Match) -> bool:
     if match.thread is None:
         return False
@@ -51,6 +107,8 @@ async def publish_stake(bot, match: Match) -> bool:
             return True
         channel = await bot.fetch_channel(int(match.thread))
         if channel is None:
+            return False
+        if not await _publish_offer(channel, state, bot.user.id):
             return False
         message = await find_match_thread_announcement(channel, match, bot.user.id)
         if message is None:

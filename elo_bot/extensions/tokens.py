@@ -4,7 +4,7 @@ import re
 import interactions as ipy
 
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import embed_color, footer_image, profile_author
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, GUILD_IDS, LVL1_ROLES
 from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.discord.pagination import build_page_button, build_page_jump_modal, parse_page_number, InvalidPageError
@@ -13,21 +13,21 @@ from elo_bot.core.token_items import ITEMS, TokenItem
 from elo_bot.config.game import DISTRICT_INDEX
 from elo_bot.features.tokens import items
 from elo_bot.features.tokens.exp import recover_exp, redeem_exp
-from elo_bot.features.tokens.item_view import PAGES, active_item_panel, item_panel
+from elo_bot.features.tokens.item_view import PAGES, active_item_panel, challenge_code_receipt, item_panel
 from elo_bot.features.tokens.item_management import ItemAdjustment, adjust_items, deactivate_item
 from elo_bot.features.tokens.awards import recover_awards
 from elo_bot.features.tokens.stake_publication import recover_stakes
 from elo_bot.features.tokens.queue_items import release_orphan_queue_items
 from elo_bot.features.tokens.stats import betting_lines, betting_stats
 from elo_bot.features.tokens.wallets import adjust_balance, ensure_wallet, wallet_summary
-from elo_bot.db.token_models import ParticipantStake, TokenLedgerEntry
+from elo_bot.db.token_models import ParticipantStake, TokenLedgerEntry, TokenWallet
 from elo_bot.discord.decorators import ignore_repeated_clicks
-from elo_bot.discord.members import member_guild
+from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
 from elo_bot.discord.mentions import member_names
 from elo_bot.features.tokens.history import ledger_label, market_scopes, open_bet_lines
 
 ITEM_CONTROL = re.compile(
-    r"^tokenitems\|(page|pick|buy|district|back)\|\d+\|(shop|inventory)\|[01]\|[a-f0-9]{32}(\|[a-z_]+)?$"
+    r"^tokenitems\|(page|pick|buy|district|back)\|\d+\|(shop|inventory)\|[01]\|[a-f0-9]{32}(\|(?:[a-z_]+|\d+))?$"
 )
 
 
@@ -46,15 +46,35 @@ class TokenCommands(ipy.Extension):
     async def start_token_recovery(self):
         self.recover_token_work.start()
 
-    async def _wallet(self, ctx):
+    async def _wallet(self, ctx: ipy.InteractionContext, *, user_id: str | None = None) -> TokenWallet:
         if ctx.guild_id not in GUILD_IDS or ctx.author.has_role(ELO_BLACKLIST_ROLE):
             raise FinalError("Use token commands in the Final's server while eligible.")
-        return await ensure_wallet(str(ctx.author.id))
+        owner = str(ctx.author.id)
+        if user_id is None or user_id == owner:
+            return await ensure_wallet(owner)
+        wallet = await TokenWallet.find_one({"user_id": user_id})
+        if wallet is None:
+            raise FinalError("This player has no token wallet.")
+        return wallet
 
-    async def _items(self, ctx: ipy.SlashContext, mode: str, *, hidden: bool) -> None:
+    async def _wallet_user(self, ctx: ipy.InteractionContext, wallet: TokenWallet) -> ipy.User | ipy.Member | None:
+        if wallet.user_id == str(ctx.author.id):
+            return ctx.author
+        return await fetch_member_otherwise_user(await member_guild(ctx), ctx.client, wallet.user_id)
+
+    async def _item_view(self, ctx: ipy.InteractionContext, wallet: TokenWallet, mode: str, page: int,
+                         *, hidden: bool, user: ipy.User | ipy.Member | None = None) -> tuple[ipy.Embed, list[ipy.ActionRow]]:
+        embed, controls = await item_panel(wallet, mode, page, hidden=hidden, viewer_id=str(ctx.author.id))
+        if mode == "inventory":
+            embed.author = profile_author(user or await self._wallet_user(ctx, wallet))
+        return embed, controls
+
+    async def _items(self, ctx: ipy.SlashContext, mode: str, *, hidden: bool,
+                     user: ipy.User | ipy.Member | None = None) -> None:
         await ctx.defer(ephemeral=hidden)
         try:
-            embed, controls = await item_panel(await self._wallet(ctx), mode, 0, hidden=hidden)
+            wallet = await self._wallet(ctx, user_id=str(user.id) if user is not None else None)
+            embed, controls = await self._item_view(ctx, wallet, mode, 0, hidden=hidden, user=user)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
@@ -93,28 +113,27 @@ class TokenCommands(ipy.Extension):
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
     async def tokens_use(self, ctx: ipy.SlashContext, item: str, amount: int = 1, district: str | None = None,
                          hidden: bool = False) -> None:
-        await ctx.defer(ephemeral=hidden)
+        selected = TokenItem(item)
+        await ctx.defer(ephemeral=hidden or selected is TokenItem.CHALLENGE)
         try:
-            selected = TokenItem(item)
             uses = await items.activate_many(await self._wallet(ctx), selected, f"command-use:{ctx.id}",
                                              amount=amount, district=district)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
+        if selected is TokenItem.CHALLENGE:
+            await ctx.send(challenge_code_receipt(uses), ephemeral=True)
+            return
         verb = "Queued" if selected is TokenItem.EXP else "Activated"
-        content = f"{SUCCESS_EMOJI} {verb} `{amount:,}` × {ITEMS[selected].name}. Items will be used in order."
-        code = next((use.target for use in uses if selected is TokenItem.CHALLENGE and use.state == "armed"), None)
-        code_message = f"Use code `{code}` with `/challenge send`." if code else None
-        if code_message and hidden:
-            content += f"\n{code_message}"
-        await ctx.send(content, ephemeral=hidden)
-        if code_message and not hidden:
-            await ctx.send(f"{SUCCESS_EMOJI} {code_message}", ephemeral=True)
+        await ctx.send(f"{SUCCESS_EMOJI} {verb} `{amount:,}` × {ITEMS[selected].name}. Items will be used in order.",
+                       ephemeral=hidden)
 
-    @tokens.subcommand(sub_cmd_name="inventory", sub_cmd_description="View and use your items")
+    @tokens.subcommand(sub_cmd_name="inventory", sub_cmd_description="View a player's items or use your own")
+    @ipy.slash_option(name="user", description="Player whose token inventory to show", opt_type=ipy.OptionType.USER)
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
-    async def tokens_inventory(self, ctx: ipy.SlashContext, hidden: bool = False) -> None:
-        await self._items(ctx, "inventory", hidden=hidden)
+    async def tokens_inventory(self, ctx: ipy.SlashContext, hidden: bool = False,
+                               user: ipy.User | ipy.Member | None = None) -> None:
+        await self._items(ctx, "inventory", hidden=hidden, user=user)
 
     @tokens.subcommand(sub_cmd_name="items", sub_cmd_description="View and disable your activated items")
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
@@ -122,6 +141,7 @@ class TokenCommands(ipy.Extension):
         await ctx.defer(ephemeral=hidden)
         try:
             embed, controls = await active_item_panel(await self._wallet(ctx), hidden=hidden)
+            embed.author = profile_author(ctx.author)
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
@@ -146,6 +166,7 @@ class TokenCommands(ipy.Extension):
                     content = f"{ERROR_EMOJI} {error}"
             hidden = ctx.message is not None and bool(ctx.message.flags & ipy.MessageFlags.EPHEMERAL)
             embed, controls = await active_item_panel(wallet, hidden=hidden, page=page)
+            embed.author = profile_author(ctx.author)
             await ctx.edit_origin(content=content, embed=embed, components=controls)
         except FinalError as error:
             await ctx.client.http.post_followup(
@@ -160,14 +181,18 @@ class TokenCommands(ipy.Extension):
             return
         await ctx.defer(edit_origin=True)
         try:
-            wallet = await self._wallet(ctx)
             message = ctx.message
             hidden = message is not None and bool(message.flags & ipy.MessageFlags.EPHEMERAL)
             page = int(raw_page)
             if not 0 <= page < PAGES:
                 raise FinalError("This page is unavailable.")
+            if action == "page":
+                wallet = await self._wallet(ctx, user_id=values[0] if values else None)
+                embed, controls = await self._item_view(ctx, wallet, mode, page, hidden=hidden)
+                await ctx.edit_origin(content="", embed=embed, components=controls)
+                return
+            wallet = await self._wallet(ctx)
             content = ""
-            code_message = None
             district = None
             if action == "pick":
                 item = TokenItem(ctx.values[0])
@@ -208,25 +233,25 @@ class TokenCommands(ipy.Extension):
                     try:
                         use = await redeem_exp(wallet, key)
                     except FinalError as error:
-                        embed, controls = await item_panel(await self._wallet(ctx), mode, page, hidden=hidden)
+                        embed, controls = await self._item_view(ctx, await self._wallet(ctx), mode, page, hidden=hidden)
                         await ctx.edit(ctx.message, content=f"{ERROR_EMOJI} {error}", embed=embed, components=controls)
                         return
                     content = (f"{SUCCESS_EMOJI} EXP Potion queued." if use.state == "queued"
                                else f"{SUCCESS_EMOJI} Granted 3,000 server EXP.")
                 else:
                     use = await items.activate(wallet, item, key, district=district)
-                    content = f"{SUCCESS_EMOJI} {ITEMS[item].name} {'ready' if use.state == 'armed' else use.state}."
-                if item is TokenItem.CHALLENGE and use.state == "armed":
-                    code_message = f"{SUCCESS_EMOJI} Use code `{use.target}` with `/challenge send`."
-                    if hidden:
-                        content, code_message = code_message, None
-            embed, controls = await item_panel(await self._wallet(ctx), mode, page, hidden=hidden)
+                    if item is TokenItem.CHALLENGE:
+                        await ctx.client.http.post_followup(
+                            {"content": challenge_code_receipt([use]), "flags": int(ipy.MessageFlags.EPHEMERAL)},
+                            ctx.client.app.id, ctx.token)
+                        content = f"{SUCCESS_EMOJI} Used {ITEMS[item].name}."
+                    else:
+                        content = f"{SUCCESS_EMOJI} {ITEMS[item].name} {'ready' if use.state == 'armed' else use.state}."
+            embed, controls = await self._item_view(ctx, await self._wallet(ctx), mode, page, hidden=hidden)
             if ctx.responded:
                 await ctx.edit(ctx.message, content=content, embed=embed, components=controls)
             else:
                 await ctx.edit_origin(content=content, embed=embed, components=controls)
-            if code_message is not None:
-                await ctx.send(code_message, ephemeral=True)
         except FinalError as error:
             await ctx.client.http.post_followup(
                 {"content": f"{ERROR_EMOJI} {error}", "flags": int(ipy.MessageFlags.EPHEMERAL)},
@@ -234,13 +259,17 @@ class TokenCommands(ipy.Extension):
             )
 
     @tokens.subcommand(sub_cmd_name="balance", sub_cmd_description="Show Available Tokens, stakes, and debt")
+    @ipy.slash_option(name="user", description="Player whose token balance to show", opt_type=ipy.OptionType.USER)
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
-    async def tokens_balance(self, ctx: ipy.SlashContext, hidden: bool = False):
+    async def tokens_balance(self, ctx: ipy.SlashContext, hidden: bool = False,
+                             user: ipy.User | ipy.Member | None = None) -> None:
         await ctx.defer(ephemeral=hidden)
         try:
-            wallet = await self._wallet(ctx)
+            wallet = await self._wallet(ctx, user_id=str(user.id) if user is not None else None)
             available, _, debt = await wallet_summary(wallet)
-            embed = ipy.Embed(title="**Tokens**", color=embed_color(), description=f"**Available:** {available:,} {TOKEN_EMOJI}"
+            subject = user or ctx.author
+            embed = ipy.Embed(title="**Tokens**", color=embed_color(), author=profile_author(subject),
+                              description=f"**Available:** {available:,} {TOKEN_EMOJI}"
                               + (f"\n**Debt:** {debt:,} {TOKEN_EMOJI}" if debt else ""))
             embed.add_field(name="__**Bets**__", value=betting_lines((await betting_stats()).get(wallet.id)))
             lines = await open_bet_lines(wallet, await member_guild(ctx))
@@ -259,24 +288,31 @@ class TokenCommands(ipy.Extension):
         except FinalError as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
-    async def _history(self, ctx, page, *, edit=False, hidden=True):
-        wallet = await self._wallet(ctx)
+    async def _history(self, ctx: ipy.SlashContext | ipy.ComponentContext | ipy.ModalContext, page: int | str,
+                       *, user_id: str | None = None, edit: bool = False, hidden: bool = True) -> None:
+        wallet = await self._wallet(ctx, user_id=user_id)
         entries = await TokenLedgerEntry.find({"wallet_id": wallet.id, "kind": {"$ne": "identity"}}).sort(
             [("created_at", -1), ("_id", -1)]).to_list()
         pages = max(1, math.ceil(len(entries) / 10))
         page = parse_page_number(str(page), pages)
         selected = entries[(page - 1) * 10:page * 10]
         scopes = await market_scopes({entry.market_id for entry in selected if entry.market_id})
-        embed = ipy.Embed(title="**Token History**", color=embed_color(), description="\n".join(
+        subject = await self._wallet_user(ctx, wallet)
+        embed = ipy.Embed(title="**Token History**", color=embed_color(), author=profile_author(subject), description="\n".join(
             f"`{ledger_label(entry)}`" + ("" if entry.kind == "item_adjust" else f" {entry.amount:+,} {TOKEN_EMOJI}")
             + (f" · {scopes[entry.market_id]}" if entry.market_id in scopes else "")
             + f" · {ipy.Timestamp.fromtimestamp(entry.created_at).format(ipy.TimestampStyles.RelativeTime)}"
             for entry in selected) or "No token activity.")
         embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
         owner = str(ctx.author.id)
-        controls = [ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️", custom_id=f"tokenpage|{owner}|{page - 1}", disabled=page == 1),
-            build_page_button(page, pages, f"tokenjump|{owner}|{pages}"),
-            ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="▶️", custom_id=f"tokenpage|{owner}|{page + 1}", disabled=page == pages)]
+        target_suffix = f"|{wallet.user_id}" if wallet.user_id != owner else ""
+        controls = [
+            ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️", disabled=page == 1,
+                       custom_id=f"tokenpage|{owner}|{page - 1}{target_suffix}"),
+            build_page_button(page, pages, f"tokenjump|{owner}|{pages}{target_suffix}"),
+            ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="▶️", disabled=page == pages,
+                       custom_id=f"tokenpage|{owner}|{page + 1}{target_suffix}"),
+        ]
         if edit:
             if isinstance(ctx, ipy.ModalContext):
                 await ctx.edit(ctx.message, embed=embed, components=controls)
@@ -353,42 +389,44 @@ class TokenCommands(ipy.Extension):
                                                    str(ctx.author.id), f"item-adjust:{ctx.id}"))
 
     @tokens.subcommand(sub_cmd_name="history", sub_cmd_description="Show grants, bets, payouts, and corrections")
+    @ipy.slash_option(name="user", description="Player whose token history to show", opt_type=ipy.OptionType.USER)
     @ipy.slash_option(name="hidden", description="Make the bot response hidden or not", opt_type=ipy.OptionType.BOOLEAN)
-    async def tokens_history(self, ctx: ipy.SlashContext, hidden: bool = False):
+    async def tokens_history(self, ctx: ipy.SlashContext, hidden: bool = False,
+                             user: ipy.User | ipy.Member | None = None) -> None:
         await ctx.defer(ephemeral=hidden)
         try:
-            await self._history(ctx, 1, hidden=hidden)
+            await self._history(ctx, 1, user_id=str(user.id) if user is not None else None, hidden=hidden)
         except (FinalError, InvalidPageError) as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
     @ipy.component_callback(re.compile(r"^tokenpage\|.+$"))
     @ignore_repeated_clicks
     async def token_page(self, ctx: ipy.ComponentContext):
-        _, owner, page = ctx.custom_id.split("|")
+        _, owner, page, *target_ids = ctx.custom_id.split("|")
         try:
             if owner != str(ctx.author.id):
                 raise FinalError("This history belongs to another user.")
-            await self._history(ctx, page, edit=True)
+            await self._history(ctx, page, user_id=target_ids[0] if target_ids else None, edit=True)
         except (FinalError, InvalidPageError) as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 
     @ipy.component_callback(re.compile(r"^tokenjump\|.+$"))
     @ignore_repeated_clicks
     async def token_jump(self, ctx: ipy.ComponentContext):
-        _, owner, pages = ctx.custom_id.split("|")
+        _, owner, *_ = ctx.custom_id.split("|")
         if owner != str(ctx.author.id):
             await ctx.send(f"{ERROR_EMOJI} This history belongs to another user.", ephemeral=True)
             return
-        await ctx.send_modal(build_page_jump_modal(f"tokenjumpmodal|{owner}|{pages}"))
+        await ctx.send_modal(build_page_jump_modal(ctx.custom_id.replace("tokenjump|", "tokenjumpmodal|", 1)))
 
     @ipy.modal_callback(re.compile(r"^tokenjumpmodal\|.+$"))
     @ignore_repeated_clicks
     async def token_jump_modal(self, ctx: ipy.ModalContext, page: str):
-        _, owner, _ = ctx.custom_id.split("|")
+        _, owner, _, *target_ids = ctx.custom_id.split("|")
         try:
             if owner != str(ctx.author.id):
                 raise FinalError("This history belongs to another user.")
-            await self._history(ctx, page, edit=ctx.message is not None)
+            await self._history(ctx, page, user_id=target_ids[0] if target_ids else None, edit=ctx.message is not None)
         except (FinalError, InvalidPageError) as error:
             await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
 

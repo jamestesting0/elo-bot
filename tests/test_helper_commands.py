@@ -32,7 +32,9 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         await self.cog.helper_leaderboard.callback(ctx, lb_type="Points", hidden=False)
 
         # Then: its 1/2 middle control is a clickable helper page button
-        page_button = ctx.send.await_args.kwargs["components"][0].components[1]
+        select, pagination = ctx.send.await_args.kwargs["components"]
+        self.assertEqual([option.label for option in select.components[0].options if option.default], ["Helper Points"])
+        page_button = pagination.components[1]
         self.assertEqual(page_button.label, "1/2")
         self.assertEqual(page_button.custom_id, "helper_lb_page")
         self.assertFalse(page_button.disabled)
@@ -55,10 +57,10 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         ctx.send = AsyncMock()
 
         # When: the right-arrow callback renders the last page
-        await self.cog.helper_lb_right_button.callback(ctx)
+        await self.cog.helper_lb_arrow.callback.func(self.cog, ctx)
 
         # Then: the updated middle control stays enabled at 2/2
-        page_button = ctx.message.components[0].components[1]
+        page_button = ctx.edit_origin.await_args.kwargs["components"][-1].components[1]
         self.assertEqual(page_button.label, "2/2")
         self.assertEqual(page_button.custom_id, "helper_lb_page")
         self.assertFalse(page_button.disabled)
@@ -100,12 +102,12 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         # When: the owner submits page two
         await self.cog.helper_lb_page_modal.callback.func(self.cog, ctx, page="2")
 
-        # Then: the renderer receives offset ten and row zero becomes terminal 2/2
         self.assertEqual(mock_construct_leaderboard.await_args.args[-1], LB_ENTRIES_PER_PAGE)
-        page_button = ctx.message.components[0].components[1]
+        pagination = ctx.edit.await_args.kwargs["components"][-1]
+        page_button = pagination.components[1]
         self.assertEqual(page_button.label, "2/2")
         self.assertFalse(page_button.disabled)
-        self.assertTrue(ctx.message.components[0].components[2].disabled)
+        self.assertTrue(pagination.components[2].disabled)
         ctx.edit.assert_awaited_once()
         ctx.message.edit.assert_not_awaited()
         ctx.defer.assert_not_awaited()
@@ -135,6 +137,70 @@ class TestHelperPagination(unittest.IsolatedAsyncioTestCase):
         ctx.edit.assert_not_awaited()
         ctx.message.edit.assert_not_awaited()
         ctx.defer.assert_not_awaited()
+
+    @patch("elo_bot.extensions.helper.Helper")
+    async def test_owner_can_switch_the_ranking_and_page_through_the_selected_metric(self, mock_helper) -> None:
+        helpers = [SimpleNamespace(user_id=str(index), points=index,
+                                   history=[SimpleNamespace(player2="opponent")] * (LB_ENTRIES_PER_PAGE + 1 - index))
+                   for index in range(1, LB_ENTRIES_PER_PAGE + 2)]
+        mock_helper.find_all.return_value.to_list = AsyncMock(side_effect=lambda: list(helpers))
+        ctx = MagicMock(spec=ipy.ComponentContext)
+        ctx.guild.fetch_member = AsyncMock(side_effect=lambda user: SimpleNamespace(id=user, display_name=f"Helper {user}"))
+        ctx.message.interaction.user.id = 123
+        ctx.message.embeds = [ipy.Embed(title="**Helper Points Leaderboard**")]
+        ctx.values = ["Matches Host"]
+        ctx.edit_origin = AsyncMock()
+        ctx.send = AsyncMock()
+
+        ctx.author.id = 456
+        await self.cog.helper_lb_type_select.callback.func(self.cog, ctx)
+        ctx.edit_origin.assert_not_awaited()
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+
+        ctx.author.id = 123
+        await self.cog.helper_lb_type_select.callback.func(self.cog, ctx)
+        view = ctx.edit_origin.await_args.kwargs
+        self.assertEqual(view["embed"].title, "**Helper Matches Hosted Leaderboard**")
+        self.assertIn("[Helper 1]", view["embed"].description.splitlines()[0])
+        self.assertTrue(view["embed"].description.splitlines()[0].endswith(f"`{LB_ENTRIES_PER_PAGE:.1f}`"))
+        self.assertEqual([option.label for option in view["components"][0].components[0].options if option.default],
+                         ["Matches Hosted"])
+        self.assertEqual(view["components"][-1].components[1].label, "1/2")
+
+        ctx.message.embeds = [view["embed"]]
+        ctx.custom_id = view["components"][-1].components[-1].custom_id
+        await self.cog.helper_lb_arrow.callback.func(self.cog, ctx)
+        next_page = ctx.edit_origin.await_args.kwargs
+        self.assertEqual(next_page["embed"].title, view["embed"].title)
+        self.assertIn(f"[Helper {LB_ENTRIES_PER_PAGE + 1}]", next_page["embed"].description)
+        self.assertEqual(next_page["components"][-1].components[1].label, "2/2")
+
+
+class TestHelperViews(unittest.IsolatedAsyncioTestCase):
+    @patch("elo_bot.extensions.helper.Helper")
+    async def test_read_only_views_default_to_caller_or_show_the_selected_helper(self, mock_helper) -> None:
+        bot = MagicMock(ext={})
+        bot.coc_client.get_player = AsyncMock(return_value=SimpleNamespace(
+            town_hall=16, name="Base", tag="#TAG", share_link="https://link.clashofclans.com/", clan=None))
+        cog = HelperCommands(bot)
+        mock_helper.find_one = AsyncMock(return_value=SimpleNamespace(history=[], points=12, accounts=["#TAG"]))
+        caller = MagicMock(spec=ipy.Member, id=123, display_name="James")
+        selected = MagicMock(spec=ipy.Member, id=456, display_name="NASA")
+        for member in (caller, selected):
+            member.has_role.side_effect = lambda role: role == STAFF_ROLE
+            member.display_avatar.url = f"https://cdn.discordapp.com/avatars/{member.id}/avatar.png"
+
+        for command, title in ((cog.helper_info, "**Helper Profile**"), (cog.helper_account_view, "**Linked Accounts**")):
+            for helper, subject in ((None, caller), (selected, selected)):
+                with self.subTest(title=title, user=subject.display_name):
+                    ctx = MagicMock(author=caller, defer=AsyncMock(), send=AsyncMock())
+                    ctx.guild.fetch_member = AsyncMock()
+                    await command.callback.func(cog, ctx, helper=helper)
+                    embed = ctx.send.await_args.kwargs["embed"]
+                    self.assertEqual(embed.title, title)
+                    self.assertEqual((embed.author.name, embed.author.url, embed.author.icon_url),
+                                     (subject.display_name, f"https://discord.com/users/{subject.id}",
+                                      subject.display_avatar.url))
 
 
 class TestHelperRemove(unittest.IsolatedAsyncioTestCase):

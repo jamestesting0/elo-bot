@@ -9,7 +9,7 @@ import coc
 import interactions as ipy
 from elo_bot.config.ids import BOT_ID, LVL1_ROLES, MAIN_GUILD, PLAYER_ROLE
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import embed_color, footer_image, profile_author
 from elo_bot.config.emojis import (
     DISTRICT_EMOJI, ERROR_EMOJI, LEAGUE_EMOJIS, LOSS_EMOJI, STAR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, WIN_EMOJI,
 )
@@ -71,12 +71,10 @@ async def construct_match_embed(bot: ipy.Client, guild: ipy.Guild, match_id: str
     opponent = await fetch_member_otherwise_user(guild, bot, opponent_id)
 
     embed = ipy.Embed(
-        author=ipy.EmbedAuthor(
-            name=f"{player.display_name}",
-            icon_url=player.display_avatar.url
-        ),
-        title=f"**vs. {opponent.display_name} ({match_id})**",
-        description=f"{ipy.Timestamp.fromtimestamp(match.time).format(ipy.TimestampStyles.LongDateTime)}\n"
+        author=profile_author(player),
+        title="**Match Details**",
+        description=f"vs. {opponent.display_name if opponent else 'Unknown Player'} · Match `{match_id}`\n"
+                    f"{ipy.Timestamp.fromtimestamp(match.time).format(ipy.TimestampStyles.LongDateTime)}\n"
                     f"{ipy.Timestamp.fromtimestamp(match.time).format(ipy.TimestampStyles.RelativeTime)}\n"
                     f"{elo_change}\n\n"
                     f"{match_info}",
@@ -242,7 +240,8 @@ class PlayerCommands(ipy.Extension):
         recent_matches = "No recent matches." if not recent_matches else recent_matches
 
         embed = ipy.Embed(
-            title=f"**{player1}'s Record Against {player2}**",
+            title=f"**H2H Against {player2.display_name}**",
+            author=profile_author(player1),
             description=f"**Results:** {wins} - {losses}\n"
                         f"**Stars:** {avg_stars:.2f}{STAR_EMOJI} - {opp_avg_stars:.2f}{STAR_EMOJI}\n"
                         f"**Destruction:** {avg_destruction:.2f}% - {opp_avg_destruction:.2f}%\n"
@@ -268,7 +267,6 @@ class PlayerCommands(ipy.Extension):
             rendered = await anyio.to_thread.run_sync(render_head_to_head, names, portraits, ranks, (wins, losses))
         except (OSError, FinalError):
             logging.exception("Could not render the head-to-head graphic")
-            embed.set_thumbnail(url=player1.display_avatar.url)
             await ctx.send(embed=embed, ephemeral=hidden)
         else:
             embed.set_image(url="attachment://head-to-head.png")
@@ -540,7 +538,8 @@ class PlayerCommands(ipy.Extension):
             tokens_str = f"Unavailable: {error}"
 
         embed = ipy.Embed(
-            title=f"**{user}'s Profile**",
+            title="**Player Profile**",
+            author=profile_author(user),
             description=f"[{player_account.name} ({player_account.tag})]({player_account.share_link})\n"
                         f"**Elo:** {elo}\n"
                         f"**Highest Elo:** {player_doc.highest_elo}\n"
@@ -561,7 +560,6 @@ class PlayerCommands(ipy.Extension):
                     value=recent_matches
                 )
             ],
-            thumbnail=ipy.EmbedAttachment(url=user.avatar.url),
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color()
         )
@@ -854,7 +852,8 @@ class PlayerCommands(ipy.Extension):
             hitrates_str += f"{DISTRICT_EMOJI} **{key}**\n{value}\n\n"
 
         embed = ipy.Embed(
-            title=f"**{user}'s Hitrates**",
+            title="**Hit Rates**",
+            author=profile_author(user),
             description=hitrates_str,
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color()

@@ -5152,6 +5152,30 @@
       "default": null,
       "title": "Final Id"
      },
+     "offer_message_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Offer Message Id"
+     },
+     "offer_message_revision": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Offer Message Revision"
+     },
      "paid": {
       "additionalProperties": {
        "type": "integer"

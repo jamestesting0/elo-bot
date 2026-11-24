@@ -4295,7 +4295,7 @@
     "SlashCommandOption()"
    ],
    "parameters": {
-    "helper": "SlashCommandParameter(name='helper', type=<class Member>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "helper": "SlashCommandParameter(name='helper', type=interactions.models.discord.user.Member | interactions.models.discord.user.User | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
@@ -4409,7 +4409,7 @@
     "SlashCommandOption()"
    ],
    "parameters": {
-    "helper": "SlashCommandParameter(name='helper', type=<class Member>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "helper": "SlashCommandParameter(name='helper', type=interactions.models.discord.user.Member | interactions.models.discord.user.User | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
@@ -4470,7 +4470,7 @@
     888075522536505394,
     1033924790513311756
    ],
-   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='List the number of matches the helpers hosted'>",
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Rank helpers by points or matches hosted'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='leaderboard'>",
    "type": "SlashCommand"
   },
@@ -5728,10 +5728,12 @@
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
    "options": [
+    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
-    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -5893,10 +5895,12 @@
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
    "options": [
+    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
-    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -5941,10 +5945,12 @@
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
    "options": [
+    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
-    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -5954,7 +5960,7 @@
     888075522536505394,
     1033924790513311756
    ],
-   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View and use your items'>",
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View a player's items or use your own'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='inventory'>",
    "type": "SlashCommand"
   },
@@ -10769,7 +10775,7 @@
     "SlashCommandOption()"
    ],
    "parameters": {
-    "helper": "SlashCommandParameter(name='helper', type=<class Member>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "helper": "SlashCommandParameter(name='helper', type=interactions.models.discord.user.Member | interactions.models.discord.user.User | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
@@ -10883,7 +10889,7 @@
     "SlashCommandOption()"
    ],
    "parameters": {
-    "helper": "SlashCommandParameter(name='helper', type=<class Member>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "helper": "SlashCommandParameter(name='helper', type=interactions.models.discord.user.Member | interactions.models.discord.user.User | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
@@ -10944,7 +10950,7 @@
     888075522536505394,
     1033924790513311756
    ],
-   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='List the number of matches the helpers hosted'>",
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='Rank helpers by points or matches hosted'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='leaderboard'>",
    "type": "SlashCommand"
   },
@@ -12202,10 +12208,12 @@
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
    "options": [
+    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
-    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -12367,10 +12375,12 @@
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
    "options": [
+    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
-    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -12415,10 +12425,12 @@
    "name": "<LocalisedName: default_locale=english_us, value='tokens'>",
    "nsfw": false,
    "options": [
+    "SlashCommandOption()",
     "SlashCommandOption()"
    ],
    "parameters": {
-    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)"
+    "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -12428,7 +12440,7 @@
     888075522536505394,
     1033924790513311756
    ],
-   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View and use your items'>",
+   "sub_cmd_description": "<LocalisedDesc: default_locale=english_us, value='View a player's items or use your own'>",
    "sub_cmd_name": "<LocalisedName: default_locale=english_us, value='inventory'>",
    "type": "SlashCommand"
   },
@@ -16583,6 +16595,39 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "helper_lb_type_select"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "HelperCommands",
+    "id": "helper_lb_type",
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::['helper_lb_type']",
+    "nsfw": false,
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "name": "view_accounts_button"
     },
     "checks": [],
@@ -18286,7 +18331,7 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
-     "name": "helper_lb_left_button"
+     "name": "helper_lb_arrow"
     },
     "checks": [],
     "cmd_id": {},
@@ -18306,43 +18351,9 @@
      "IntegrationType.GUILD_INSTALL"
     ],
     "max_concurrency": "Missing",
-    "name": "ComponentCallback::[re.compile('helper_lb_left\\\\|.*')]",
+    "name": "ComponentCallback::[re.compile('^helper_lb_(left|right)\\\\|-?\\\\d+$')]",
     "nsfw": false,
-    "pattern": "helper_lb_left\\|.*",
-    "post_run_callback": null,
-    "pre_run_callback": null,
-    "scopes": [
-     0
-    ],
-    "type": "ComponentCommand"
-   },
-   {
-    "_application_id": null,
-    "auto_defer": "Missing",
-    "callback": {
-     "name": "helper_lb_right_button"
-    },
-    "checks": [],
-    "cmd_id": {},
-    "contexts": [
-     "ContextType.GUILD",
-     "ContextType.BOT_DM",
-     "ContextType.PRIVATE_CHANNEL"
-    ],
-    "cooldown": "Missing",
-    "default_member_permissions": null,
-    "dm_permission": true,
-    "enabled": true,
-    "error_callback": null,
-    "extension": "HelperCommands",
-    "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
-    "max_concurrency": "Missing",
-    "name": "ComponentCallback::[re.compile('helper_lb_right\\\\|.*')]",
-    "nsfw": false,
-    "pattern": "helper_lb_right\\|.*",
+    "pattern": "^helper_lb_(left|right)\\|-?\\d+$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -18967,6 +18978,40 @@
     "name": "ComponentCallback::[re.compile('^match_confirm\\\\|\\\\w+$')]",
     "nsfw": false,
     "pattern": "^match_confirm\\|\\w+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "name": "match_stake_reply"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "MatchCommands",
+    "flags": 32,
+    "integration_types": [
+     "IntegrationType.GUILD_INSTALL"
+    ],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^stakereply\\\\|(match|pass)\\\\|[0-9a-f]{24}\\\\|\\\\d+$')]",
+    "nsfw": false,
+    "pattern": "^stakereply\\|(match|pass)\\|[0-9a-f]{24}\\|\\d+$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -19780,9 +19825,9 @@
      "IntegrationType.GUILD_INSTALL"
     ],
     "max_concurrency": "Missing",
-    "name": "ComponentCallback::[re.compile('^tokenitems\\\\|(page|pick|buy|district|back)\\\\|\\\\d+\\\\|(shop|inventory)\\\\|[01]\\\\|[a-f0-9]{32}(\\\\|[a-z_]+)?$')]",
+    "name": "ComponentCallback::[re.compile('^tokenitems\\\\|(page|pick|buy|district|back)\\\\|\\\\d+\\\\|(shop|inventory)\\\\|[01]\\\\|[a-f0-9]{32}(\\\\|(?:[a-z_]+|\\\\d+))?$')]",
     "nsfw": false,
-    "pattern": "^tokenitems\\|(page|pick|buy|district|back)\\|\\d+\\|(shop|inventory)\\|[01]\\|[a-f0-9]{32}(\\|[a-z_]+)?$",
+    "pattern": "^tokenitems\\|(page|pick|buy|district|back)\\|\\d+\\|(shop|inventory)\\|[01]\\|[a-f0-9]{32}(\\|(?:[a-z_]+|\\d+))?$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -26342,7 +26387,7 @@
         "autocomplete": false,
         "channel_types": null,
         "choices": [],
-        "description": "A code to override Elo difference restriction",
+        "description": "A Challenge Override code",
         "description_localizations": null,
         "max_length": 16,
         "max_value": null,
@@ -28072,7 +28117,7 @@
           "min_value": null,
           "name": "helper",
           "name_localizations": null,
-          "required": true,
+          "required": false,
           "type": 6
          },
          {
@@ -28323,7 +28368,7 @@
         "min_value": null,
         "name": "helper",
         "name_localizations": null,
-        "required": true,
+        "required": false,
         "type": 6
        },
        {
@@ -28350,7 +28395,7 @@
        1,
        2
       ],
-      "description": "List the number of matches the helpers hosted",
+      "description": "Rank helpers by points or matches hosted",
       "description_localizations": null,
       "integration_types": [
        0
@@ -28363,7 +28408,7 @@
         "channel_types": null,
         "choices": [
          {
-          "name": "Points",
+          "name": "Helper Points",
           "name_localizations": null,
           "value": "Points"
          },
@@ -29519,6 +29564,21 @@
         "autocomplete": false,
         "channel_types": null,
         "choices": [],
+        "description": "Player whose token balance to show",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "user",
+        "name_localizations": null,
+        "required": false,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
         "description": "Make the bot response hidden or not",
         "description_localizations": null,
         "max_length": null,
@@ -29737,6 +29797,21 @@
         "autocomplete": false,
         "channel_types": null,
         "choices": [],
+        "description": "Player whose token history to show",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "user",
+        "name_localizations": null,
+        "required": false,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
         "description": "Make the bot response hidden or not",
         "description_localizations": null,
         "max_length": null,
@@ -29757,7 +29832,7 @@
        1,
        2
       ],
-      "description": "View and use your items",
+      "description": "View a player's items or use your own",
       "description_localizations": null,
       "integration_types": [
        0
@@ -29765,6 +29840,21 @@
       "name": "inventory",
       "name_localizations": null,
       "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Player whose token inventory to show",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "user",
+        "name_localizations": null,
+        "required": false,
+        "type": 6
+       },
        {
         "autocomplete": false,
         "channel_types": null,
@@ -31922,7 +32012,7 @@
         "autocomplete": false,
         "channel_types": null,
         "choices": [],
-        "description": "A code to override Elo difference restriction",
+        "description": "A Challenge Override code",
         "description_localizations": null,
         "max_length": 16,
         "max_value": null,
@@ -33652,7 +33742,7 @@
           "min_value": null,
           "name": "helper",
           "name_localizations": null,
-          "required": true,
+          "required": false,
           "type": 6
          },
          {
@@ -33903,7 +33993,7 @@
         "min_value": null,
         "name": "helper",
         "name_localizations": null,
-        "required": true,
+        "required": false,
         "type": 6
        },
        {
@@ -33930,7 +34020,7 @@
        1,
        2
       ],
-      "description": "List the number of matches the helpers hosted",
+      "description": "Rank helpers by points or matches hosted",
       "description_localizations": null,
       "integration_types": [
        0
@@ -33943,7 +34033,7 @@
         "channel_types": null,
         "choices": [
          {
-          "name": "Points",
+          "name": "Helper Points",
           "name_localizations": null,
           "value": "Points"
          },
@@ -35099,6 +35189,21 @@
         "autocomplete": false,
         "channel_types": null,
         "choices": [],
+        "description": "Player whose token balance to show",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "user",
+        "name_localizations": null,
+        "required": false,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
         "description": "Make the bot response hidden or not",
         "description_localizations": null,
         "max_length": null,
@@ -35317,6 +35422,21 @@
         "autocomplete": false,
         "channel_types": null,
         "choices": [],
+        "description": "Player whose token history to show",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "user",
+        "name_localizations": null,
+        "required": false,
+        "type": 6
+       },
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
         "description": "Make the bot response hidden or not",
         "description_localizations": null,
         "max_length": null,
@@ -35337,7 +35457,7 @@
        1,
        2
       ],
-      "description": "View and use your items",
+      "description": "View a player's items or use your own",
       "description_localizations": null,
       "integration_types": [
        0
@@ -35345,6 +35465,21 @@
       "name": "inventory",
       "name_localizations": null,
       "options": [
+       {
+        "autocomplete": false,
+        "channel_types": null,
+        "choices": [],
+        "description": "Player whose token inventory to show",
+        "description_localizations": null,
+        "max_length": null,
+        "max_value": null,
+        "min_length": null,
+        "min_value": null,
+        "name": "user",
+        "name_localizations": null,
+        "required": false,
+        "type": 6
+       },
        {
         "autocomplete": false,
         "channel_types": null,

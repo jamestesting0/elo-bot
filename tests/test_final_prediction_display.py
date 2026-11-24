@@ -49,6 +49,7 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response["image_bytes"], render_bracket(final, picks, {}))
         self.assertNotEqual(response["image_bytes"], render_bracket(final))
         self.assertEqual(response["embed"].fields[0].value, "`2/3`")
+        self.assertEqual(response["embed"].author.url, "https://discord.com/users/99")
 
     async def test_missing_prediction_remains_private_error(self):
         self.cog._edition = AsyncMock(return_value=EloFinal.model_construct(id=PydanticObjectId()))

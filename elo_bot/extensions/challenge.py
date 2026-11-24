@@ -24,6 +24,7 @@ from elo_bot.features.tokens.challenge_items import accept_challenge, insert_cha
 
 
 CHALLENGE_ACCEPT_LOCK = asyncio.Lock()
+CHALLENGE_OVERRIDE_HINT = "Buy Challenge Override in `/tokens shop`."
 
 
 def get_last_challenge(player_matches: list[RecordedMatch], player_id: str) -> MatchPlayerStats | None:
@@ -118,7 +119,7 @@ class ChallengeCommands(ipy.Extension):
     )
     @ipy.slash_option(
         name="override_code",
-        description="A code to override Elo difference restriction",
+        description="A Challenge Override code",
         opt_type=ipy.OptionType.STRING,
         min_length=16,
         max_length=16,
@@ -208,8 +209,8 @@ class ChallengeCommands(ipy.Extension):
         player_last_challenge = get_last_challenge(player.matches, str(ctx.author.id))
         if (player_last_challenge and player_last_challenge.opponent == str(opponent.id) and
             not has_override):
-            await ctx.send(f"{ERROR_EMOJI} You have already challenged {opponent.mention} in your "
-                           f"recent challenges.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You challenged {opponent.mention} recently. {CHALLENGE_OVERRIDE_HINT}",
+                           ephemeral=True)
             await self.challenge_send.cooldown.reset(ctx)
 
             return
@@ -217,8 +218,8 @@ class ChallengeCommands(ipy.Extension):
         opponent_last_challenge = get_last_challenge(opponent_player.matches, str(opponent.id))
         if (opponent_last_challenge and opponent_last_challenge.opponent == str(ctx.author.id) and
                 not has_override):
-            await ctx.send(f"{ERROR_EMOJI} The player you are challenging was {opponent.mention} challenged "
-                           f"by you recently.", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} You challenged {opponent.mention} recently. {CHALLENGE_OVERRIDE_HINT}",
+                           ephemeral=True)
             await self.challenge_send.cooldown.reset(ctx)
 
             return
@@ -226,14 +227,16 @@ class ChallengeCommands(ipy.Extension):
         now = datetime.now().timestamp()
         if not has_override and not await available_challenges(player, now):
             await ctx.send(f"{ERROR_EMOJI} You need an unused normal ranked match from the past "
-                           f"7 days to send a challenge. Available challenges: `0`.", ephemeral=True)
+                           f"7 days to send a challenge. Available challenges: `0`. {CHALLENGE_OVERRIDE_HINT}",
+                           ephemeral=True)
             await self.challenge_send.cooldown.reset(ctx)
 
             return
 
         if not has_override and not await available_challenges(opponent_player, now):
             await ctx.send(f"{ERROR_EMOJI} {opponent.mention} needs an unused normal ranked match from the past "
-                           f"7 days to receive a challenge. Available challenges: `0`.", ephemeral=True)
+                           f"7 days to receive a challenge. Available challenges: `0`. {CHALLENGE_OVERRIDE_HINT}",
+                           ephemeral=True)
             await self.challenge_send.cooldown.reset(ctx)
 
             return

@@ -21,6 +21,7 @@ ITEM_SLOTS = {
     TokenItem.PROTECTION: "protection",
     TokenItem.EXP: "exp",
 }
+CODE_LIFETIME_SECONDS = int(OVERRIDE_CODE_LIFETIME.total_seconds())
 
 
 def same_activation(use: TokenItemUse, item: TokenItem, district: str | None) -> TokenItemUse:
@@ -68,7 +69,7 @@ async def promote_next(wallet_id: str, slot: str, session) -> TokenItemUse | Non
     fields = {"state": "armed"}
     if slot == "challenge":
         fields.update(target=secrets.token_hex(8), expires_at=int(datetime.now(UTC).timestamp())
-                      + int(OVERRIDE_CODE_LIFETIME.total_seconds()))
+                      + CODE_LIFETIME_SECONDS)
     row = await uses.find_one_and_update(
         {"wallet_id": wallet_id, "slot": slot, "active": True, "state": "queued"}, {"$set": fields},
         sort=[("activation_order", 1), ("_id", 1)], return_document=ReturnDocument.AFTER, session=session)
@@ -89,6 +90,7 @@ async def activate_many(wallet: TokenWallet, item: TokenItem, action_id: str, *,
     elif district is not None:
         raise FinalError("A district can only be selected for District Choice.")
     slot = ITEM_SLOTS[item]
+    issues_code = item is TokenItem.CHALLENGE
     use_id = f"{wallet.id}:{action_id}"
     use_ids = [use_id, *(f"{use_id}:{index}" for index in range(1, amount))]
     now = int(datetime.now(UTC).timestamp())
@@ -106,10 +108,6 @@ async def activate_many(wallet: TokenWallet, item: TokenItem, action_id: str, *,
         existing = await uses.find_one({"_id": use_id}, session=session)
         if existing:
             return await replay(uses, existing, session)
-        previous = await uses.find_one({"wallet_id": wallet.id, "slot": slot, "state": "armed"}, session=session)
-        if previous:
-            if previous.get("expires_at") is not None and previous["expires_at"] <= now and previous["state"] == "armed":
-                await finish_use(TokenItemUse.model_validate(previous), session, consume=False)
         season = None
         if item is TokenItem.PROTECTION:
             season = await current_season(session)
@@ -118,14 +116,18 @@ async def activate_many(wallet: TokenWallet, item: TokenItem, action_id: str, *,
             {"$inc": {f"inventory.{item}": -amount, "version": amount}}, session=session, return_document=ReturnDocument.AFTER)
         if updated is None:
             raise FinalError("You don’t have enough of this item in inventory.")
-        activations = [TokenItemUse(id=identifier, wallet_id=wallet.id, item=item, slot=slot, district=district,
-                                    season=season, state="queued", batch_size=amount,
-                                    activation_order=updated["version"] - amount + index + 1)
-                       for index, identifier in enumerate(use_ids)]
+        activations = [TokenItemUse(
+            id=identifier, wallet_id=wallet.id, item=item, slot=slot, district=district, season=season,
+            active=not issues_code, state="armed" if issues_code else "queued", batch_size=amount,
+            target=secrets.token_hex(8) if issues_code else None,
+            expires_at=now + CODE_LIFETIME_SECONDS if issues_code else None,
+            activation_order=updated["version"] - amount + index + 1,
+        ) for index, identifier in enumerate(use_ids)]
         await uses.insert_many([use.model_dump(by_alias=True) for use in activations], session=session)
-        await promote_next(wallet.id, slot, session)
-        await Player.get_pymongo_collection().update_one(
-            {"user_id": wallet.user_id}, {"$set": {"token_items_active": True}}, session=session)
+        if not issues_code:
+            await promote_next(wallet.id, slot, session)
+            await Player.get_pymongo_collection().update_one(
+                {"user_id": wallet.user_id}, {"$set": {"token_items_active": True}}, session=session)
         return await replay(uses, {"batch_size": amount}, session)
 
     try:

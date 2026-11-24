@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Literal
 
 from beanie import PydanticObjectId
@@ -15,6 +16,22 @@ from elo_bot.features.tokens.wallets import ensure_wallet
 
 
 type StakeInput = int | Literal["all-in"]
+
+
+@dataclass(frozen=True, slots=True)
+class StakeReply:
+    revision: int
+    message_id: int
+
+
+def validate_stake_reply(stake: ParticipantStake | None, user_id: str, reply: StakeReply) -> ParticipantStake:
+    if (stake is None or stake.state != "offer" or stake.revision != reply.revision
+            or stake.offer_message_revision != reply.revision
+            or stake.offer_message_id != reply.message_id):
+        raise FinalError("This stake offer is no longer open.")
+    if user_id not in stake.users or user_id == stake.author:
+        raise FinalError("Only the opponent can respond to this stake offer.")
+    return stake
 
 
 def parse_stake(value: str) -> StakeInput:
@@ -48,7 +65,8 @@ def validate_stake_match(match: Match, user_id: str, amount: StakeInput) -> None
         raise FinalError("Stakes close when the match starts.")
 
 
-async def set_stake(match: Match, user_id: str, requested: StakeInput) -> ParticipantStake | None:
+async def set_stake(match: Match, user_id: str, requested: StakeInput,
+                    *, reply: StakeReply | None = None) -> ParticipantStake | None:
     validate_stake_match(match, user_id, requested)
     users = tuple(p.user_id for p in match.participants)
     wallet = await ensure_wallet(user_id) if requested else None
@@ -75,13 +93,15 @@ async def set_stake(match: Match, user_id: str, requested: StakeInput) -> Partic
         stakes = ParticipantStake.get_pymongo_collection()
         row = await stakes.find_one({"_id": match_id}, session=session)
         stake = ParticipantStake.model_validate(row) if row else None
+        if reply is not None:
+            validate_stake_reply(stake, user_id, reply)
         if stake and stake.state == "locked":
             if requested == stake.committed_amount(user_id) or (requested == "all-in" and user_id in stake.all_in_users):
                 return stake
             raise FinalError("Both stakes are already fixed.")
         if (stake and (observed is None or stake.revision != observed.revision)) or (not stake and observed):
             raise FinalError("The offer changed. Run `/match stake` again.")
-        if not requested and (not stake or stake.state != "offer" or stake.author != user_id):
+        if not requested and reply is None and (not stake or stake.state != "offer" or stake.author != user_id):
             return stake
         current_wallet = None
         amount = requested
@@ -98,8 +118,10 @@ async def set_stake(match: Match, user_id: str, requested: StakeInput) -> Partic
         revision = current.match_stake_revision + 1
         result = ParticipantStake(id=match_id, final_id=current.final_id, users=users, author=user_id,
                                   amount=amount, state="offer" if amount else "closed", revision=revision,
-                                  all_in_users=[user_id] if requested == "all-in" else [])
-        if stake and stake.state == "offer" and stake.author != user_id:
+                                  all_in_users=[user_id] if requested == "all-in" else [],
+                                  offer_message_id=stake.offer_message_id if stake else None,
+                                  offer_message_revision=stake.offer_message_revision if stake else None)
+        if stake and stake.state == "offer" and stake.author != user_id and amount:
             if requested != "all-in" and amount != stake.amount:
                 raise FinalError(f"Enter {stake.amount:,} tokens to match the current stake.")
             other = await TokenWallet.get_pymongo_collection().find_one(

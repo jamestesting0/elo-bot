@@ -10,7 +10,7 @@ from interactions import OptionType, SlashContext, slash_option
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult
-from elo_bot.discord.members import member_guild
+from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
 from elo_bot.discord.mentions import member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import bracket_group, final
@@ -46,8 +46,11 @@ class Views:
             raise FinalError("You cannot interact with another user's components.")
         season = int(parts[3]) if parts[0] == "finalprofilerefresh" else int(ctx.values[0])
         edition = await self._edition(ctx, season)
-        user = await self.bot.fetch_user(int(parts[2]))
-        embed, controls = await profile_view(edition, user, parts[1], guild=await member_guild(ctx))
+        guild = await member_guild(ctx)
+        user = await fetch_member_otherwise_user(guild, self.bot, parts[2])
+        if user is None:
+            raise FinalError("This player is unavailable.")
+        embed, controls = await profile_view(edition, user, parts[1], guild=guild)
         await ctx.edit_origin(embed=embed, components=controls)
 
     @bracket_group.subcommand(sub_cmd_name="view", sub_cmd_description="View the saved Final bracket")

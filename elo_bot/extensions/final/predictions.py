@@ -9,7 +9,7 @@ from pymongo.errors import PyMongoError
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.core.finals import FinalError
-from elo_bot.discord.members import member_guild
+from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
 from elo_bot.discord.mentions import member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final, predictions_group
@@ -132,7 +132,7 @@ class Predictions:
         prediction = await submitted_prediction(edition, str(ctx.author.id))
         if prediction is None:
             raise FinalError("Predictions are closed. You didn't submit one.")
-        await self._send_card(ctx, await prediction_card(edition, prediction, await member_guild(ctx), show_owner=False),
+        await self._send_card(ctx, await prediction_card(edition, prediction, await member_guild(ctx), user=ctx.author),
                               ephemeral=True)
 
     async def _send_card(self, ctx, card, *, ephemeral):
@@ -168,7 +168,7 @@ class Predictions:
         prediction = await submitted_prediction(edition, str(player.id))
         if prediction is None:
             raise FinalError("This player didn't submit a prediction.")
-        await self._send_card(ctx, await prediction_card(edition, prediction, guild, show_owner=True), ephemeral=private)
+        await self._send_card(ctx, await prediction_card(edition, prediction, guild, user=player), ephemeral=private)
 
     @ipy.component_callback(re.compile(r"^finalpredpage\|\d+\|\d+\|\d+$"))
     @final_action
@@ -190,5 +190,6 @@ class Predictions:
         prediction = await submitted_prediction(edition, ctx.values[0])
         if prediction is None:
             raise FinalError("This prediction is no longer available.")
-        await self._send_card(ctx, await prediction_card(edition, prediction, await member_guild(ctx), show_owner=True),
-                              ephemeral=True)
+        guild = await member_guild(ctx)
+        user = await fetch_member_otherwise_user(guild, self.bot, prediction.user_id)
+        await self._send_card(ctx, await prediction_card(edition, prediction, guild, user=user), ephemeral=True)

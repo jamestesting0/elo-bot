@@ -175,9 +175,31 @@ class TestItemActivationQueue(FinalScenarioCase):
             await uses.update_one({"_id": second.id}, {"$set": {"state": "armed"}})
         self.assertEqual((await TokenItemUse.get(second.id)).state, "queued")
 
-    async def test_challenge_codes_receive_a_fresh_lifetime_only_when_their_turn_starts(self):
+    async def test_issued_challenge_codes_can_expire_and_redeem_independently(self):
         wallet = await self.give(TokenItem.CHALLENGE, 3)
-        first, second, third = [await activate(wallet, TokenItem.CHALLENGE, f"code:{index}") for index in range(3)]
+        first, second, third = await activate_many(wallet, TokenItem.CHALLENGE, "code", amount=3)
+        self.assertFalse((await Player.get("1")).token_items_active)
+        for use in (first, second, third):
+            self.assertEqual((await owned_challenge_code("1", use.target)).id, use.id)
+            self.assertGreater(use.expires_at, int(datetime.now(UTC).timestamp()))
+        await TokenItemUse.get_pymongo_collection().update_one({"_id": first.id}, {"$set": {"expires_at": 0}})
+        await release_expired_codes()
+        self.assertIsNone(await owned_challenge_code("1", first.target))
+        match = self.match("challenge-instant")
+        await insert_challenge(match, second)
+        self.assertEqual((await owned_challenge_code("1", third.target)).id, third.id)
+        await accept_challenge(match)
+        self.assertIsNone(await owned_challenge_code("1", second.target))
+        self.assertEqual((await owned_challenge_code("1", third.target)).id, third.id)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.CHALLENGE], 1)
+
+    async def test_legacy_queued_challenge_codes_receive_a_fresh_lifetime_when_their_turn_starts(self):
+        wallet = await self.give(TokenItem.CHALLENGE, 3)
+        first, second, third = await activate_many(wallet, TokenItem.CHALLENGE, "legacy-code", amount=3)
+        await first.set({TokenItemUse.active: True})
+        for use in (second, third):
+            await use.set({TokenItemUse.active: True, TokenItemUse.state: "queued", TokenItemUse.target: None,
+                           TokenItemUse.expires_at: None})
         self.assertIsNone(second.target)
         self.assertIsNone(second.expires_at)
         self.assertIsNone(third.target)

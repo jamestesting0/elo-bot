@@ -22,7 +22,7 @@ ITEMS = {
     TokenItem.PRIORITY_PRO: ItemListing("Queue Priority Pro", 800, "Start one queue tier higher."),
     TokenItem.PRIORITY_ULTRA: ItemListing("Queue Priority Ultra", 1600, "Start two queue tiers higher."),
     TokenItem.DISTRICT: ItemListing("District Choice", 1800, "Reserve one eligible district for a queued match."),
-    TokenItem.CHALLENGE: ItemListing("Challenge Override", 2400, "Get a private code for one challenge."),
+    TokenItem.CHALLENGE: ItemListing("Challenge Override", 2400, "Use to get a private challenge code immediately."),
     TokenItem.PROTECTION: ItemListing("Rank Protection", 3600, "Protect your league boundary on one loss per season."),
     TokenItem.EXP: ItemListing("EXP Potion", 10000, "Grants 3,000 server EXP when used."),
 }

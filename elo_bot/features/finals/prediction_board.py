@@ -4,7 +4,7 @@ import anyio
 import interactions as ipy
 
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import embed_color, footer_image, profile_author
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult, FinalPrediction
@@ -96,7 +96,7 @@ async def prediction_board(final: EloFinal, guild: ipy.Guild, owner: str,
 
 
 async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: ipy.Guild,
-                          *, show_owner: bool) -> PredictionCard:
+                          *, user: ipy.User | ipy.Member | None) -> PredictionCard:
     statuses = prediction_statuses(final, prediction)
     points, eligible = prediction_score(final, prediction)
     result_ids = [node.result_id for node in final.nodes.values() if node.result_id]
@@ -105,15 +105,10 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
               if result.snapshot.outcome == "Played"
               and (started := getattr(result.snapshot, "actual_started_at", None)) is not None}
     user_ids = {user for result in results for user in result.snapshot.contestants}
-    if show_owner:
-        user_ids.add(prediction.user_id)
     names = await member_names(guild, user_ids)
     result_text = finished_results(final, results, names, starts)
-    parts = [names[prediction.user_id]] if show_owner else []
-    if result_text:
-        parts.append(f"**Results**\n{result_text}")
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=embed_color(),
-                      description="\n\n".join(parts) or None)
+                      author=profile_author(user), description=f"**Results**\n{result_text}" if result_text else None)
     if eligible:
         embed.add_field(name="**Predictions**", value=f"`{points}/{eligible}`")
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())

@@ -52,7 +52,8 @@ class TestTokenDiscord(FinalScenarioCase):
 
     def context(self, kind, data, user="1"):
         self.sequence += 1
-        user_object = MagicMock(id=int(user), has_role=MagicMock(return_value=False))
+        user_object = MagicMock(id=int(user), display_name=f"Player {user}", has_role=MagicMock(return_value=False),
+                                display_avatar=SimpleNamespace(url="https://cdn.discordapp.com/embed/avatars/0.png"))
         self.discord.cache.get_member.return_value = user_object
         self.discord.cache.get_user.return_value = user_object
         return kind.from_dict(self.discord, {
@@ -77,13 +78,65 @@ class TestTokenDiscord(FinalScenarioCase):
         message = MagicMock(id=456, author=MagicMock(id=42), embeds=[embed], edit=AsyncMock(),
                             components=[ipy.ActionRow(ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="Submit",
                                                                custom_id=f"submit_button|{match.token}"))])
-        self.discord.fetch_channel = AsyncMock(return_value=MagicMock(fetch_message=AsyncMock(return_value=message)))
+        self.stake_posts = {}
+
+        async def send(content, *, components, allowed_mentions, **kwargs):
+            post = MagicMock(id=700 + len(self.stake_posts), author=MagicMock(id=42), content=content,
+                             components=[ipy.ActionRow(*components)], allowed_mentions=allowed_mentions)
+
+            async def edit(**changes):
+                post.content = changes["content"]
+                post.components = changes["components"]
+
+            post.edit = AsyncMock(side_effect=edit)
+            self.stake_posts[post.id] = post
+            return post
+
+        async def history(**_kwargs):
+            for post in reversed(self.stake_posts.values()):
+                yield post
+
+        self.stake_channel = MagicMock(
+            send=AsyncMock(side_effect=send), history=history,
+            fetch_message=AsyncMock(side_effect=lambda message_id: message if message_id == 456 else self.stake_posts.get(message_id)),
+        )
+        self.discord.fetch_channel = AsyncMock(return_value=self.stake_channel)
         return embed, message
 
     async def stake(self, user, amount):
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "match"}, user)
         await self.matches.match_stake.callback.func(self.matches, ctx, amount)
         return self.edit()
+
+    async def stake_reply(self, post, button, *, user="2"):
+        self.discord.cache.get_message.return_value = post
+        ctx = self.context(ipy.ComponentContext, {"custom_id": button.custom_id, "component_type": 2}, user)
+        await self.matches.match_stake_reply.callback.func(self.matches, ctx)
+        return self.edit()
+
+    async def test_balance_user_option_shows_the_selected_wallet_without_creating_the_callers_wallet(self) -> None:
+        await adjust_balance("2", 242, "9", "view-other-balance")
+        self.discord.cache.place_user_data.return_value = ipy.User.from_dict(
+            {"id": "2", "username": "james", "discriminator": "0", "avatar": None}, self.discord)
+        self.discord.cache.get_guild.return_value.fetch_member = AsyncMock(return_value=None)
+        ctx = self.context(ipy.SlashContext, {
+            "id": "42", "name": "tokens", "resolved": {"users": {"2": {"id": "2", "username": "james"}}},
+            "options": [{"name": "balance", "type": ipy.OptionType.SUB_COMMAND, "options": [
+                {"name": "user", "type": ipy.OptionType.USER, "value": "2"},
+            ]}],
+        })
+
+        await self.tokens.tokens_balance(ctx)
+
+        self.assertNotIn("data", self.http.post_initial_response.await_args.args[0])
+        embed = self.edit()["embeds"][0]
+        self.assertIn(f"5,242 {TOKEN_EMOJI}", embed["description"])
+        self.assertEqual(embed["title"], "**Tokens**")
+        self.assertEqual(embed["author"]["name"], "james")
+        self.assertEqual(embed["author"]["url"], "https://discord.com/users/2")
+        self.assertNotIn("thumbnail", embed)
+        self.assertEqual([field["name"] for field in embed["fields"]], ["__**Bets**__"])
+        self.assertIsNone(await TokenWallet.get("1"))
 
     async def test_bulk_buy_command_charges_once_reports_total_and_supports_default_amount_and_hidden(self):
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
@@ -142,27 +195,28 @@ class TestTokenDiscord(FinalScenarioCase):
                          [("Barbarian Camp", "armed"), ("Barbarian Camp", "queued")])
         self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.DISTRICT], 0)
 
-    async def test_bulk_challenge_use_shares_only_the_ready_code_privately(self):
-        for user, hidden in (("1", False), ("2", True)):
+    async def test_bulk_challenge_use_immediately_issues_every_code_privately(self):
+        for user, hidden, amount in (("1", False, 100), ("2", True, 3)):
             with self.subTest(hidden=hidden):
-                await adjust_items(ItemAdjustment(user, TokenItem.CHALLENGE, 3, "9", f"give-codes:{user}"))
+                await adjust_items(ItemAdjustment(user, TokenItem.CHALLENGE, amount, "9", f"give-codes:{user}"))
                 ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"}, user)
                 self.http.post_followup.reset_mock()
-                await self.tokens.tokens_use.callback.func(self.tokens, ctx, "challenge_override", 3, hidden=hidden)
+                await self.tokens.tokens_use.callback.func(self.tokens, ctx, "challenge_override", amount, hidden=hidden)
                 uses = await TokenItemUse.find({"wallet_id": user}).sort("activation_order").to_list()
-                code = uses[0].target
-                self.assertIsNotNone(code)
-                self.assertTrue(all(use.target is None for use in uses[1:]))
-                if hidden:
-                    self.assertIn(code, self.edit()["content"])
-                    self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"],
-                                     ipy.MessageFlags.EPHEMERAL)
-                    self.http.post_followup.assert_not_awaited()
-                else:
-                    self.assertNotIn(code, json.dumps(self.edit()))
-                    followup = self.http.post_followup.await_args.args[0]
-                    self.assertIn(code, followup["content"])
-                    self.assertEqual(followup["flags"], ipy.MessageFlags.EPHEMERAL)
+                self.assertEqual([use.state for use in uses], ["armed"] * amount)
+                codes = {use.target for use in uses}
+                self.assertEqual(len(codes), amount)
+                self.assertNotIn(None, codes)
+                content = self.edit()["content"]
+                self.assertLessEqual(len(content), 2000)
+                for code in codes:
+                    self.assertIn(code, content)
+                self.assertIn("Save", content)
+                self.assertIn(f"expire <t:{uses[0].expires_at}:R>", content)
+                self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"],
+                                 ipy.MessageFlags.EPHEMERAL)
+                self.http.post_followup.assert_not_awaited()
+                self.assertEqual((await TokenWallet.get(user)).inventory[TokenItem.CHALLENGE], 0)
 
     async def test_bulk_use_delivery_failure_preserves_the_batch_and_retry_does_not_activate_more(self):
         await adjust_items(ItemAdjustment("1", TokenItem.PROTECTION, 3, "9", "give-protection"))
@@ -416,13 +470,14 @@ class TestTokenDiscord(FinalScenarioCase):
                                                  "values": [use_id]}, user)
         await self.tokens.token_active_control.callback.func(self.tokens, ctx)
 
-    async def test_active_items_keep_codes_private_and_disable_only_the_owners_exact_activation_once(self):
-        wallet = await adjust_items(ItemAdjustment("1", TokenItem.CHALLENGE, 2, "9", "give-codes"))
-        use = await activate(wallet, TokenItem.CHALLENGE, "first-code")
+    async def test_active_items_disable_only_the_owners_exact_activation_once(self):
+        wallet = await adjust_items(ItemAdjustment("1", TokenItem.PRIORITY_PRO, 2, "9", "give-items"))
+        use = await activate(wallet, TokenItem.PRIORITY_PRO, "first-item")
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_items.callback.func(self.tokens, ctx)
         panel = self.edit()
-        self.assertNotIn(use.target, json.dumps(panel))
+        self.assertEqual(panel["embeds"][0]["title"], "**Activated Items**")
+        self.assertEqual(panel["embeds"][0]["author"]["url"], "https://discord.com/users/1")
         control = panel["components"][0]["components"][0]
         await self.active_control(control, use.id, user="2")
         self.assertTrue((await TokenItemUse.get(use.id)).active)
@@ -430,23 +485,20 @@ class TestTokenDiscord(FinalScenarioCase):
         other_wallet = await ensure_wallet("2")
         with self.assertRaises(FinalError):
             await deactivate_item(other_wallet, use.id)
-        hidden_ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
-        await self.tokens.tokens_items.callback.func(self.tokens, hidden_ctx, hidden=True)
-        self.assertIn(use.target, json.dumps(self.edit()))
         with patch.object(self.http, "edit_interaction_message", side_effect=RuntimeError("Discord unavailable")):
             with self.assertRaisesRegex(RuntimeError, "Discord unavailable"):
                 await self.active_control(control, use.id)
-        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.CHALLENGE], 2)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 2)
         self.assertFalse((await TokenItemUse.get(use.id)).active)
         await self.active_control(control, use.id)
         await self.active_control(control, use.id)
-        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.CHALLENGE], 2)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 2)
         self.assertFalse((await Player.get("1")).token_items_active)
         self.assertIn("Returned to inventory", self.edit()["content"])
-        newer = await activate(wallet, TokenItem.CHALLENGE, "new-code")
+        newer = await activate(wallet, TokenItem.PRIORITY_PRO, "new-item")
         await self.active_control(control, use.id)
         self.assertTrue((await TokenItemUse.get(newer.id)).active)
-        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.CHALLENGE], 1)
+        self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 1)
 
     async def test_active_menu_hides_reserved_and_exp_items_and_rejects_stale_disable(self):
         wallet = await adjust_items(ItemAdjustment("1", TokenItem.PRIORITY_PRO, 1, "9", "give-boost"))
@@ -651,14 +703,66 @@ class TestTokenDiscord(FinalScenarioCase):
         await self.click(self.edit()["components"][0]["components"][0], value="challenge_override")
         receipt = self.http.post_followup.await_args.args[0]
         code = receipt["content"].split("`")[1]
+        use = await TokenItemUse.find_one({"target": code})
         self.assertEqual(receipt["flags"], ipy.MessageFlags.EPHEMERAL)
-        self.assertIn("Challenge Override ready", self.edit()["content"])
+        self.assertIn("Used Challenge Override", self.edit()["content"])
+        self.assertIn("Save", receipt["content"])
+        self.assertIn(f"expires <t:{use.expires_at}:R>", receipt["content"])
         self.assertNotIn(code, json.dumps(self.edit(), default=str))
 
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_inventory.callback.func(self.tokens, ctx, hidden=True)
         self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
-        self.assertIn(code, json.dumps(self.edit(), default=str))
+        self.assertNotIn(code, json.dumps(self.edit(), default=str))
+        self.assertEqual(self.edit()["components"], [])
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_items.callback.func(self.tokens, ctx, hidden=True)
+        self.assertNotIn(code, json.dumps(self.edit(), default=str))
+        self.assertFalse(self.edit()["embeds"][0].get("fields"))
+
+    async def test_hidden_inventory_for_another_player_only_allows_the_viewer_to_page(self) -> None:
+        wallet = await ensure_wallet("2")
+        await wallet.set({TokenWallet.inventory: dict.fromkeys((
+            TokenItem.PRIORITY_PRO, TokenItem.PRIORITY_ULTRA, TokenItem.DISTRICT,
+            TokenItem.CHALLENGE, TokenItem.PROTECTION,
+        ), 1)})
+        use = await activate(wallet, TokenItem.CHALLENGE, "inventory-other-code")
+        await use.set({TokenItemUse.active: True})
+        target = ipy.User.from_dict({"id": "2", "username": "james", "discriminator": "0", "avatar": None}, self.discord)
+        self.discord.cache.place_user_data.return_value = target
+        self.discord.cache.get_guild.return_value.fetch_member = AsyncMock(return_value=target)
+        self.discord.cache.get_message.return_value.flags = ipy.MessageFlags.EPHEMERAL
+        ctx = self.context(ipy.SlashContext, {
+            "id": "42", "name": "tokens", "resolved": {"users": {"2": {"id": "2", "username": "james"}}},
+            "options": [{"name": "inventory", "type": ipy.OptionType.SUB_COMMAND, "options": [
+                {"name": "user", "type": ipy.OptionType.USER, "value": "2"},
+                {"name": "hidden", "type": ipy.OptionType.BOOLEAN, "value": True},
+            ]}],
+        })
+
+        await self.tokens.tokens_inventory(ctx)
+
+        first = self.edit()
+        self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
+        self.assertEqual(first["embeds"][0]["title"], "**Tokens Inventory**")
+        self.assertEqual(first["embeds"][0]["author"]["url"], "https://discord.com/users/2")
+        self.assertNotIn("thumbnail", first["embeds"][0])
+        self.assertEqual(len(first["components"]), 1)
+        right = first["components"][0]["components"][2]
+        self.http.edit_interaction_message.reset_mock()
+        await self.click(right, user="2")
+        self.http.edit_interaction_message.assert_not_awaited()
+        await self.click(right)
+
+        last = self.edit()
+        self.assertEqual(last["embeds"][0]["title"], first["embeds"][0]["title"])
+        self.assertEqual(last["embeds"][0]["author"], first["embeds"][0]["author"])
+        self.assertEqual(len(last["components"]), 1)
+        self.assertEqual(last["components"][0]["components"][1]["label"], "2/2")
+        self.assertIn("Challenge Override", last["embeds"][0]["fields"][0]["name"])
+        self.assertIn("Ready", last["embeds"][0]["fields"][0]["value"])
+        self.assertNotIn(use.target, json.dumps(last, default=str))
+        self.assertIsNone(await TokenWallet.get("1"))
 
     async def test_stake_command_edits_only_its_notes(self):
         match = await Match(token="stake-discord", thread="100", thread_message_id=456, matched_time=1,
@@ -681,7 +785,7 @@ class TestTokenDiscord(FinalScenarioCase):
         with self.assertLogs(level="ERROR"):
             await self.stake("2", "600")
         pending = self.edit()
-        self.assertIn("Notes update is pending", pending["content"])
+        self.assertIn("thread update is pending", pending["content"])
         self.assertTrue((await ParticipantStake.get(str(match.id))).publication_pending)
         message.edit.side_effect = None
         await recover_stakes(self.discord)
@@ -720,15 +824,123 @@ class TestTokenDiscord(FinalScenarioCase):
                                              "escrow": stake.model_dump(mode="json"),
                                              "held_balances": held, "refunded_balances": refunded}, default=str))
 
+    async def test_stake_button_matches_only_the_current_offer_for_the_opponent(self) -> None:
+        match = await Match(token="stake-button", thread="100", thread_message_id=456, matched_time=1,
+                            participants=[Participant(user_id="1"), Participant(user_id="2")]).insert()
+        embed, _ = self.stake_announcement(match)
+        await self.stake("1", "500")
+        initial = self.stake_posts[700]
+        old_button, pass_button = initial.components[0].components
+        self.assertEqual(initial.content, f"<@2>, <@1> put **500** {TOKEN_EMOJI} at stake. "
+                                          "Match the offer or play without a stake.")
+        self.assertEqual((old_button.style, pass_button.style), (ipy.ButtonStyle.SUCCESS, ipy.ButtonStyle.SECONDARY))
+        self.assertEqual(initial.allowed_mentions.to_dict(), {"users": [2], "replied_user": False})
+        self.assertIn("Only the opponent", (await self.stake_reply(initial, old_button, user="1"))["content"])
+        self.assertIn("Only the opponent", (await self.stake_reply(initial, old_button, user="3"))["content"])
+        await self.stake("1", "600")
+        self.assertEqual(initial.components, [])
+        self.assertIn("no longer open", (await self.stake_reply(initial, old_button))["content"])
+        current = self.stake_posts[701]
+        accept = current.components[0].components[0]
+        self.assertEqual((await ParticipantStake.get(str(match.id))).offer_message_id, current.id)
+        self.assertIn("no longer open", (await self.stake_reply(initial, accept))["content"])
+        self.assertIsNone(await TokenWallet.get("2"))
+
+        accepted = await self.stake_reply(current, accept)
+
+        self.assertIn(f"Stakes fixed at 600 {TOKEN_EMOJI} each", accepted["content"])
+        self.assertEqual(current.components, [])
+        self.assertIn(f"<@2> matches the stake with 600 {TOKEN_EMOJI}", embed.fields[0].value)
+        self.assertIn("no longer open", (await self.stake_reply(current, accept))["content"])
+        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [4400, 4400])
+        self.assertEqual(await TokenLedgerEntry.find({"kind": "match_hold"}).count(), 2)
+
+    async def test_pass_closes_the_offer_without_moving_tokens(self) -> None:
+        match = await Match(token="stake-pass", thread="100", thread_message_id=456, matched_time=1,
+                            participants=[Participant(user_id="1"), Participant(user_id="2")]).insert()
+        embed, _ = self.stake_announcement(match)
+        await self.stake("1", "500")
+        post = self.stake_posts[700]
+        accept, decline = post.components[0].components
+
+        response = await self.stake_reply(post, decline)
+
+        self.assertIn("You passed on the stake", response["content"])
+        self.assertEqual((await ParticipantStake.get(str(match.id))).state, "closed")
+        self.assertEqual(post.components, [])
+        self.assertEqual(embed.fields[0].value, "- Existing note.")
+        self.assertIn("no longer open", (await self.stake_reply(post, accept))["content"])
+        self.assertEqual((await TokenWallet.get("1")).balance, 5000)
+        self.assertIsNone(await TokenWallet.get("2"))
+        self.assertEqual(await TokenLedgerEntry.find({"kind": "match_hold"}).count(), 0)
+
+    async def test_stake_button_cannot_accept_a_reopened_offer_for_the_same_amount(self) -> None:
+        match = await Match(token="stake-reopened", thread="100", thread_message_id=456, matched_time=1,
+                            participants=[Participant(user_id="1"), Participant(user_id="2")]).insert()
+        self.stake_announcement(match)
+        await self.stake("1", "500")
+        post = self.stake_posts[700]
+        accept = post.components[0].components[0]
+        await ensure_wallet("2")
+        accepting = asyncio.Event()
+        reopened = asyncio.Event()
+
+        async def wallet_during_reply(user_id):
+            if user_id == "2":
+                accepting.set()
+                await asyncio.wait_for(reopened.wait(), timeout=5)
+            return await ensure_wallet(user_id)
+
+        with patch("elo_bot.features.tokens.stakes.ensure_wallet", side_effect=wallet_during_reply):
+            async with asyncio.TaskGroup() as group:
+                reply = group.create_task(self.stake_reply(post, accept))
+                await asyncio.wait_for(accepting.wait(), timeout=5)
+                await self.stake("1", "0")
+                await self.stake("1", "500")
+                reopened.set()
+
+        self.assertIn("no longer open", reply.result()["content"])
+        state = await ParticipantStake.get(str(match.id))
+        self.assertEqual((state.state, state.amount), ("offer", 500))
+        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [5000, 5000])
+        self.assertEqual(await TokenLedgerEntry.find({"kind": "match_hold"}).count(), 0)
+
+    async def test_stake_recovery_reuses_an_offer_post_after_discord_loses_the_response(self) -> None:
+        match = await Match(token="stake-post-recovery", thread="100", thread_message_id=456, matched_time=1,
+                            participants=[Participant(user_id="1"), Participant(user_id="2")]).insert()
+        self.stake_announcement(match)
+        send = self.stake_channel.send.side_effect
+
+        async def lose_response(*args, **kwargs):
+            await send(*args, **kwargs)
+            raise ipy.errors.HTTPException(SimpleNamespace(status=503, reason="Unavailable"))
+
+        self.stake_channel.send.side_effect = lose_response
+        with self.assertLogs(level="ERROR"):
+            response = await self.stake("1", "500")
+        self.assertIn("thread update is pending", response["content"])
+        self.assertIsNone((await ParticipantStake.get(str(match.id))).offer_message_id)
+
+        await recover_stakes(self.discord)
+
+        state = await ParticipantStake.get(str(match.id))
+        self.assertFalse(state.publication_pending)
+        self.assertEqual(state.offer_message_id, 700)
+        self.stake_channel.send.assert_awaited_once()
+
     async def test_callback_rejects_matching_an_open_offer_after_start(self):
         match = await Match(token="late-stake", thread="100", thread_message_id=456, matched_time=1,
                             participants=[Participant(user_id="1"), Participant(user_id="2")]).insert()
         embed, _ = self.stake_announcement(match)
         await self.stake("1", "500")
+        post = self.stake_posts[700]
+        accept = post.components[0].components[0]
         await stake_window_closed(match)
         late = await self.stake("2", "500")
         self.assertIn("Stakes close when the match starts.", late["content"])
+        self.assertIn("Stakes close when the match starts.", (await self.stake_reply(post, accept))["content"])
         await recover_stakes(self.discord)
+        self.assertEqual(post.components, [])
         holds = await TokenLedgerEntry.find({"kind": "match_hold"}).count()
         self.assertEqual(holds, 0)
         self.assertEqual(embed.fields[0].value, "- Existing note.")

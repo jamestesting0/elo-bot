@@ -66,14 +66,21 @@ response; keep exception types and messages; pass locals explicitly.
 
 ## Token item activations
 
-Token item activations persist one record per copy. `activation_order` follows the wallet's version counter;
-one item per category can be ready or reserved, while later copies remain queued. Finishing or disabling a
+Token item activations persist one record per copy. `activation_order` follows the wallet's version counter.
+For queued activations, one item per category can be ready or reserved. Finishing or disabling a
 copy promotes the oldest waiting copy in the same transaction. Rank Protection still permits one use per season.
-Bulk activation commits the inventory deduction and all unit records together. Each record stores its batch size
-to reject retries with a changed amount; older activation records default to a batch size of one.
+Challenge Override issues one independently redeemable code per copy immediately. Issued codes use the armed
+state with `active=False`, so they stay available to challenge redemption without occupying an activation slot.
+Legacy queued copies still advance through their original slot. Bulk activation commits the inventory deduction
+and all unit records together. Each record stores its batch size to reject retries with a changed amount. Older
+activation records default to a batch size of one.
 At startup, `register_final_indexes` creates the `token_item_head` constraint before dropping the old
 `token_active_item_slot` index. Existing activations keep their state and default to order zero. Older releases
 cannot read queued activations; return waiting copies to inventory before downgrading.
+
+Match stake offers store the Discord message and offer revision on the stake. The publication task can recover
+a sent message by its button IDs before sending again. A button reply checks that binding inside the same
+transaction that accepts or closes the offer. Older stake records can omit the message fields.
 
 ## Tests
 

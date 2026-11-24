@@ -22,6 +22,7 @@ from elo_bot.features.finals.results import FinalResultSubmission, submit_result
 from elo_bot.features.finals.leaderboards import FinalBoardRow, final_board_text
 from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market, void_market
 from elo_bot.features.tokens.presentation import bet_review, market_controls, market_embed, publish_market
+from elo_bot.features.tokens.wallets import adjust_balance
 from elo_bot.db import EloFinal, Match, Player
 from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
@@ -152,9 +153,21 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.bot.fetch_channel.assert_not_awaited()
 
     async def test_profile_and_board_use_established_labels_without_refresh_or_revision(self):
-        user = MagicMock(id=1, avatar=None)
+        user = ipy.User.from_dict({"id": "1", "username": "james", "global_name": "James",
+                                   "discriminator": "0", "avatar": None}, self.bot)
         embed, controls = await profile_view(self.final, user, "9", guild=self.ctx.guild)
-        self.assertTrue(embed.title.startswith("**") and embed.title.endswith("**"))
+        self.assertEqual(embed.title, "**Final Profile**")
+        self.assertEqual((embed.author.name, embed.author.url, embed.author.icon_url),
+                         ("James", "https://discord.com/users/1", user.display_avatar.url))
+        self.assertIsNone(embed.thumbnail)
+        self.ctx.guild.fetch_member.return_value = SimpleNamespace(
+            id=1, display_name="James in Elo", display_avatar=SimpleNamespace(url="https://cdn.discordapp.com/guild-avatar.png"))
+        self.ctx.custom_id = controls[0].components[0].custom_id
+        self.ctx.values = [str(self.final.season_number)]
+        await self.cog.final_profile_navigation.callback.func(self.cog, self.ctx)
+        edited = self.ctx.edit_origin.await_args.kwargs["embed"]
+        self.assertEqual((edited.author.name, edited.author.url, edited.author.icon_url),
+                         ("James in Elo", "https://discord.com/users/1", "https://cdn.discordapp.com/guild-avatar.png"))
         self.assertTrue(all("**" in field.name for field in embed.fields))
         text = "\n".join(field.value for field in embed.fields)
         self.assertIn("**Avg. Stars:** 0.00", text)
@@ -294,6 +307,47 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.assertIn("another user", self.ctx.send.await_args.args[0])
         self.assertEqual(before, (await TokenWallet.get("9")).model_dump())
         self.assertEqual(ledger, [row.model_dump() for row in await TokenLedgerEntry.find_all().to_list()])
+
+    async def test_token_history_navigation_keeps_the_selected_wallet_and_invoker(self) -> None:
+        for amount in range(101, 111):
+            await adjust_balance("7", amount, "9", f"view-other:{amount}")
+        target = ipy.User.from_dict({"id": "7", "username": "nasa", "discriminator": "0", "avatar": None}, self.bot)
+        self.ctx.guild.fetch_member.return_value = target
+        self.ctx.author.has_role.side_effect = lambda _: False
+        cog = TokenCommands(self.bot)
+
+        await cog.tokens_history.callback.func(cog, self.ctx, user=target, hidden=True)
+        first = self.ctx.send.await_args.kwargs
+        self.assertTrue(first["ephemeral"])
+        self.assertEqual(first["embed"].title, "**Token History**")
+        self.assertEqual(first["embed"].author.name, "nasa")
+        self.assertEqual(first["embed"].author.url, "https://discord.com/users/7")
+        self.assertFalse(first["embed"].fields)
+        self.assertIsNone(first["embed"].thumbnail)
+        self.assertIn(f"+110 {TOKEN_EMOJI}", first["embed"].description)
+
+        self.ctx.custom_id = first["components"][2].custom_id
+        await cog.token_page.callback.func(cog, self.ctx)
+        last = self.ctx.edit_origin.await_args.kwargs
+        self.assertEqual(last["components"][1].label, "2/2")
+        self.assertIn(f"+5,000 {TOKEN_EMOJI}", last["embed"].description)
+
+        self.ctx.custom_id = last["components"][1].custom_id
+        await cog.token_jump.callback.func(cog, self.ctx)
+        modal_ctx = self.context()
+        modal_ctx.__class__ = ipy.ModalContext
+        modal_ctx.guild.fetch_member.return_value = target
+        modal_ctx.message = self.message
+        modal_ctx.custom_id = self.ctx.send_modal.await_args.args[0].custom_id
+        await cog.token_jump_modal.callback.func(cog, modal_ctx, "1")
+        self.assertEqual(modal_ctx.edit.await_args.kwargs["embed"].to_dict(), first["embed"].to_dict())
+
+        target_ctx = self.context(user=7)
+        target_ctx.custom_id = first["components"][2].custom_id
+        await cog.token_page.callback.func(cog, target_ctx)
+        target_ctx.edit_origin.assert_not_awaited()
+        self.assertTrue(target_ctx.send.await_args.kwargs["ephemeral"])
+        self.assertIsNone(await TokenWallet.get("9"))
 
     async def test_bet_review_shows_profit_and_required_debt_without_changing_the_bet(self):
         market = await open_market(self.final, "QF1")

@@ -10,13 +10,18 @@ from pymongo.errors import PyMongoError
 import interactions as ipy
 from elo_bot.config.emojis import CLAN_EMOJI, ERROR_EMOJI, RANK_EMOJIS, SUCCESS_EMOJI, TOWNHALL_EMOJIS
 from elo_bot.config.presentation import FOOTER_TEXT, LB_ENTRIES_PER_PAGE
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import embed_color, footer_image, profile_author
 from elo_bot.config.ids import GUILD_IDS, LVL1_ROLES, LVL2_ROLES, STAFF_ROLE
 from elo_bot.config.game import HOST_CLAN_CHOICES
+from elo_bot.core.finals import FinalError
 from elo_bot.db import Helper
 from elo_bot.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.members import member_guild
+
+
+HELPER_POINTS_TITLE = "**Helper Points Leaderboard**"
+HELPER_HOSTED_TITLE = "**Helper Matches Hosted Leaderboard**"
 
 
 async def generate_account_helper_pairs() -> dict:
@@ -83,6 +88,66 @@ async def construct_helper_leaderboard_string(guild: ipy.Guild, helpers_sorted: 
     return description
 
 
+async def _helper_leaderboard_view(guild: ipy.Guild, lb_type: str,
+                                   page: str = "1") -> tuple[ipy.Embed, list[ipy.ActionRow]]:
+    helpers = await Helper.find_all().to_list()
+    if not helpers:
+        raise FinalError("There are no helpers.")
+    if lb_type == "Points":
+        helpers.sort(key=lambda helper: helper.points, reverse=True)
+        title = HELPER_POINTS_TITLE
+    else:
+        helpers.sort(key=lambda helper: sum(0.5 if entry.player2 is None else 1 for entry in helper.history),
+                     reverse=True)
+        title = HELPER_HOSTED_TITLE
+    total_pages = math.ceil(len(helpers) / LB_ENTRIES_PER_PAGE)
+    current_page = parse_page_number(page, total_pages)
+    offset = (current_page - 1) * LB_ENTRIES_PER_PAGE
+    description = await construct_helper_leaderboard_string(guild, helpers, lb_type, offset)
+    embed = ipy.Embed(title=title, description=description, color=embed_color(),
+                      footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
+    select = ipy.StringSelectMenu(
+        ipy.StringSelectOption(label="Helper Points", value="Points", default=lb_type == "Points"),
+        ipy.StringSelectOption(label="Matches Hosted", value="Matches Host", default=lb_type == "Matches Host"),
+        custom_id="helper_lb_type", placeholder="🔍 Select a leaderboard type",
+    )
+    controls = ipy.ActionRow(
+        ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️", disabled=current_page == 1,
+                   custom_id=f"helper_lb_left|{offset - LB_ENTRIES_PER_PAGE}"),
+        build_page_button(current_page, total_pages, "helper_lb_page"),
+        ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="▶️", disabled=current_page == total_pages,
+                   custom_id=f"helper_lb_right|{offset + LB_ENTRIES_PER_PAGE}"),
+    )
+    return embed, [ipy.ActionRow(select), controls]
+
+
+def _helper_leaderboard_type(message: ipy.Message) -> str:
+    return "Points" if message.embeds[0].title == HELPER_POINTS_TITLE else "Matches Host"
+
+
+async def _helper_leaderboard_message(ctx: ipy.ComponentContext | ipy.ModalContext) -> ipy.Message | None:
+    message = ctx.message
+    if message is None:
+        await ctx.send(f"{ERROR_EMOJI} The paginated message is no longer available.", ephemeral=True)
+        return None
+    if message.interaction.user.id != ctx.author.id:
+        await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.", ephemeral=True)
+        return None
+    return message
+
+
+async def _helper_view_member(ctx: ipy.SlashContext, helper: ipy.Member | ipy.User | None) -> ipy.Member | None:
+    member = helper or ctx.author
+    if isinstance(member, ipy.Member) and member.has_role(STAFF_ROLE):
+        return member
+    if helper is None:
+        text = "You’re not a 1v1 helper. Select a helper to view."
+    else:
+        text = f"{helper.mention} is not a 1v1 helper."
+    await ctx.send(f"{ERROR_EMOJI} {text}", ephemeral=True)
+    return None
+
+
 class HelperCommands(ipy.Extension):
     def __init__(self, bot):
         self.bot: ipy.Client = bot
@@ -93,12 +158,12 @@ class HelperCommands(ipy.Extension):
 
     base = ipy.SlashCommand(name="helper", description="", scopes=GUILD_IDS)
 
-    @base.subcommand(sub_cmd_name="leaderboard", sub_cmd_description="List the number of matches the helpers hosted")
+    @base.subcommand(sub_cmd_name="leaderboard", sub_cmd_description="Rank helpers by points or matches hosted")
     @ipy.slash_option(
         name="lb_type",
         description="Type of leaderboard",
         choices=[
-            ipy.SlashCommandChoice(name="Points", value="Points"),
+            ipy.SlashCommandChoice(name="Helper Points", value="Points"),
             ipy.SlashCommandChoice(name="Matches Hosted", value="Matches Host")
         ],
         opt_type=ipy.OptionType.STRING
@@ -110,235 +175,67 @@ class HelperCommands(ipy.Extension):
     )
     async def helper_leaderboard(self, ctx: ipy.SlashContext, lb_type: str = "Points", hidden: bool = False):
         await ctx.defer(ephemeral=hidden)
-
-        helpers: List[Helper] = await Helper.find_all().to_list()
-        if not helpers:
-            await ctx.send(f"{ERROR_EMOJI} There are no helpers.", ephemeral=True)
+        try:
+            embed, components = await _helper_leaderboard_view(ctx.guild, lb_type)
+        except FinalError as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
-
-        if lb_type == "Points":
-            helpers_sorted = sorted(helpers, key=lambda h: h.points, reverse=True)
-        else:
-            helpers_sorted = sorted(
-                helpers,
-                key=lambda h: sum(0.5 if entry.player2 is None else 1 for entry in h.history),
-                reverse=True
-            )
-
-        description = await construct_helper_leaderboard_string(ctx.guild, helpers_sorted, lb_type)
-
-        embed = ipy.Embed(
-            title=f"**Helper {lb_type} Leaderboard**",
-            description=description,
-            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=embed_color()
-        )
-
-        left_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="◀️️",
-            custom_id=f"helper_lb_left|{0 - LB_ENTRIES_PER_PAGE}",
-            disabled=True,
-        )
-
-        total_pages = math.ceil(len(helpers_sorted) / LB_ENTRIES_PER_PAGE)
-        current_page = int(0 / LB_ENTRIES_PER_PAGE) + 1
-        page_number_button = build_page_button(current_page, total_pages, "helper_lb_page")
-
-        right_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="▶️",
-            custom_id=f"helper_lb_right|{0 + LB_ENTRIES_PER_PAGE}",
-            disabled=(0 + LB_ENTRIES_PER_PAGE) >= len(helpers_sorted)
-        )
-
-        components = [ipy.ActionRow(left_button, page_number_button, right_button)]
-
         await ctx.send(embed=embed, components=components, ephemeral=hidden)
 
-    @ipy.component_callback(re.compile(r"helper_lb_right\|.*"))
-    async def helper_lb_right_button(self, ctx: ipy.ComponentContext):
-        if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
-                           ephemeral=True)
+    async def _edit_helper_leaderboard(self, ctx: ipy.ComponentContext | ipy.ModalContext,
+                                       lb_type: str, page: str = "1") -> None:
+        try:
+            embed, components = await _helper_leaderboard_view(ctx.guild, lb_type, page)
+        except (FinalError, InvalidPageError) as error:
+            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
             return
-
-        lb_type = ctx.message.embeds[0].title.replace("**Helper ", "").replace(" Leaderboard**", "")
-        _, starting_index = ctx.custom_id.split("|")
-        starting_index = int(starting_index)
-
-        helpers: List[Helper] = await Helper.find_all().to_list()
-        if not helpers:
-            await ctx.send(f"{ERROR_EMOJI} No helper have hosted any matches.", ephemeral=True)
-            return
-
-        if lb_type == "Points":
-            helpers_sorted = sorted(helpers, key=lambda h: h.points, reverse=True)
+        if isinstance(ctx, ipy.ModalContext):
+            await ctx.edit(ctx.message, embed=embed, components=components)
         else:
-            helpers_sorted = sorted(
-                helpers,
-                key=lambda h: sum(0.5 if entry.player2 is None else 1 for entry in h.history),
-                reverse=True
-            )
+            await ctx.edit_origin(embed=embed, components=components)
 
-        leaderboard = await construct_helper_leaderboard_string(ctx.guild, helpers_sorted, lb_type, starting_index)
-        ctx.message.embeds[0].description = leaderboard
+    @ipy.component_callback("helper_lb_type")
+    async def helper_lb_type_select(self, ctx: ipy.ComponentContext):
+        if await _helper_leaderboard_message(ctx) is not None:
+            await self._edit_helper_leaderboard(ctx, ctx.values[0])
 
-        left_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="◀️️",
-            custom_id=f"helper_lb_left|{starting_index - LB_ENTRIES_PER_PAGE}",
-            disabled=False,
-        )
-
-        total_pages = math.ceil(len(helpers_sorted) / LB_ENTRIES_PER_PAGE)
-        current_page = int(starting_index / LB_ENTRIES_PER_PAGE) + 1
-        page_number_button = build_page_button(current_page, total_pages, "helper_lb_page")
-
-        right_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="▶️",
-            custom_id=f"helper_lb_right|{starting_index + LB_ENTRIES_PER_PAGE}",
-            disabled=(starting_index + LB_ENTRIES_PER_PAGE) >= len(helpers_sorted)
-        )
-
-        ctx.message.components[0] = ipy.ActionRow(left_button, page_number_button, right_button)
-
-        await ctx.edit_origin(embeds=ctx.message.embeds, components=ctx.message.components)
-
-    @ipy.component_callback(re.compile(r"helper_lb_left\|.*"))
-    async def helper_lb_left_button(self, ctx: ipy.ComponentContext):
-        if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
-                           ephemeral=True)
+    @ipy.component_callback(re.compile(r"^helper_lb_(left|right)\|-?\d+$"))
+    async def helper_lb_arrow(self, ctx: ipy.ComponentContext):
+        message = await _helper_leaderboard_message(ctx)
+        if message is None:
             return
-
-        lb_type = ctx.message.embeds[0].title.replace("**Helper ", "").replace(" Leaderboard**", "")
         _, starting_index = ctx.custom_id.split("|")
-        starting_index = int(starting_index)
-
-        helpers: List[Helper] = await Helper.find_all().to_list()
-        if not helpers:
-            await ctx.send(f"{ERROR_EMOJI} No helper have hosted any matches.", ephemeral=True)
-            return
-
-        if lb_type == "Points":
-            helpers_sorted = sorted(helpers, key=lambda h: h.points, reverse=True)
-        else:
-            helpers_sorted = sorted(
-                helpers,
-                key=lambda h: sum(0.5 if entry.player2 is None else 1 for entry in h.history),
-                reverse=True
-            )
-
-        leaderboard = await construct_helper_leaderboard_string(ctx.guild, helpers_sorted, lb_type, starting_index)
-        ctx.message.embeds[0].description = leaderboard
-
-        left_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="◀️️",
-            custom_id=f"helper_lb_left|{starting_index - LB_ENTRIES_PER_PAGE}",
-            disabled=(starting_index - LB_ENTRIES_PER_PAGE) < 0,
-        )
-
-        total_pages = math.ceil(len(helpers_sorted) / LB_ENTRIES_PER_PAGE)
-        current_page = int(starting_index / LB_ENTRIES_PER_PAGE) + 1
-        page_number_button = build_page_button(current_page, total_pages, "helper_lb_page")
-
-        right_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="▶️",
-            custom_id=f"helper_lb_right|{starting_index + LB_ENTRIES_PER_PAGE}",
-            disabled=False
-        )
-
-        ctx.message.components[0] = ipy.ActionRow(left_button, page_number_button, right_button)
-
-        await ctx.edit_origin(embeds=ctx.message.embeds, components=ctx.message.components)
+        page = int(starting_index) // LB_ENTRIES_PER_PAGE + 1
+        await self._edit_helper_leaderboard(ctx, _helper_leaderboard_type(message), str(page))
 
     @ipy.component_callback("helper_lb_page")
     async def helper_lb_page_button(self, ctx: ipy.ComponentContext):
-        if str(ctx.message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
-                           ephemeral=True)
-            return
-
-        await ctx.send_modal(build_page_jump_modal("helper_lb_page_modal"))
+        if await _helper_leaderboard_message(ctx) is not None:
+            await ctx.send_modal(build_page_jump_modal("helper_lb_page_modal"))
 
     @ipy.modal_callback("helper_lb_page_modal")
-    async def helper_lb_page_modal(self, ctx: ipy.ModalContext, **response):
-        message = ctx.message
-        if message is None:
-            await ctx.send(f"{ERROR_EMOJI} The paginated message is no longer available.", ephemeral=True)
-            return
+    async def helper_lb_page_modal(self, ctx: ipy.ModalContext, page: str):
+        message = await _helper_leaderboard_message(ctx)
+        if message is not None:
+            await self._edit_helper_leaderboard(ctx, _helper_leaderboard_type(message), page)
 
-        if str(message.interaction.user.id) != str(ctx.author.id):
-            await ctx.send(f"{ERROR_EMOJI} You cannot interact with another user's components.",
-                           ephemeral=True)
-            return
-
-        lb_type = message.embeds[0].title.replace("**Helper ", "").replace(" Leaderboard**", "")
-        helpers: List[Helper] = await Helper.find_all().to_list()
-        if not helpers:
-            await ctx.send(f"{ERROR_EMOJI} No helper have hosted any matches.", ephemeral=True)
-            return
-
-        if lb_type == "Points":
-            helpers_sorted = sorted(helpers, key=lambda helper: helper.points, reverse=True)
-        else:
-            helpers_sorted = sorted(
-                helpers,
-                key=lambda helper: sum(0.5 if entry.player2 is None else 1 for entry in helper.history),
-                reverse=True,
-            )
-
-        total_pages = math.ceil(len(helpers_sorted) / LB_ENTRIES_PER_PAGE)
-        try:
-            page = parse_page_number(response["page"], total_pages)
-        except InvalidPageError as error:
-            await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
-            return
-
-        starting_index = (page - 1) * LB_ENTRIES_PER_PAGE
-        leaderboard = await construct_helper_leaderboard_string(
-            ctx.guild, helpers_sorted, lb_type, starting_index
-        )
-        message.embeds[0].description = leaderboard
-
-        left_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="◀️️",
-            custom_id=f"helper_lb_left|{starting_index - LB_ENTRIES_PER_PAGE}",
-            disabled=starting_index == 0,
-        )
-        page_number_button = build_page_button(page, total_pages, "helper_lb_page")
-        right_button = ipy.Button(
-            style=ipy.ButtonStyle.PRIMARY,
-            label="▶️",
-            custom_id=f"helper_lb_right|{starting_index + LB_ENTRIES_PER_PAGE}",
-            disabled=(starting_index + LB_ENTRIES_PER_PAGE) >= len(helpers_sorted),
-        )
-
-        message.components[0] = ipy.ActionRow(left_button, page_number_button, right_button)
-        await ctx.edit(message, embeds=message.embeds, components=message.components)
 
     @base.subcommand(sub_cmd_name="info", sub_cmd_description="View a helper's hosting information")
     @ipy.slash_option(
         name="helper",
         description="A 1v1 helper",
         opt_type=ipy.OptionType.USER,
-        required=True
     )
     @ipy.slash_option(
         name="hidden",
         description="Make the bot response hidden or not",
         opt_type=ipy.OptionType.BOOLEAN
     )
-    async def helper_info(self, ctx: ipy.SlashContext, helper: ipy.Member, hidden: bool = False):
+    async def helper_info(self, ctx: ipy.SlashContext, helper: ipy.Member | ipy.User | None = None, hidden: bool = False):
         await ctx.defer(ephemeral=hidden)
 
-        if STAFF_ROLE not in [int(role.id) for role in helper.roles]:
-            await ctx.send(f"{ERROR_EMOJI} {helper.mention} is not a 1v1 helper.", ephemeral=True)
+        helper = await _helper_view_member(ctx, helper)
+        if helper is None:
             return
 
         helper_doc = await Helper.find_one(Helper.user_id == str(helper.id))
@@ -370,7 +267,8 @@ class HelperCommands(ipy.Extension):
                 description += f"{ts} {names[entry.player1]}\n"
 
         embed = ipy.Embed(
-            title=f"**{helper} Host History**",
+            title="**Helper Profile**",
+            author=profile_author(helper),
             description=description if description else "No matches hosted.",
             fields=[
                 ipy.EmbedField(name="**Helper Points**", value=str(points)),
@@ -633,18 +531,18 @@ class HelperCommands(ipy.Extension):
         name="helper",
         description="The helper to view accounts for",
         opt_type=ipy.OptionType.USER,
-        required=True
     )
     @ipy.slash_option(
         name="hidden",
         description="Make the bot response hidden or not",
         opt_type=ipy.OptionType.BOOLEAN
     )
-    async def helper_account_view(self, ctx: ipy.SlashContext, helper: ipy.Member, hidden: bool = False):
+    async def helper_account_view(self, ctx: ipy.SlashContext, helper: ipy.Member | ipy.User | None = None,
+                                  hidden: bool = False):
         await ctx.defer(ephemeral=hidden)
 
-        if not helper.has_role(STAFF_ROLE):
-            await ctx.send(f"{ERROR_EMOJI} {helper.mention} is not a helper.", ephemeral=True)
+        helper = await _helper_view_member(ctx, helper)
+        if helper is None:
             return
 
         helper_doc = await Helper.find_one(Helper.user_id == str(helper.id))
@@ -665,7 +563,8 @@ class HelperCommands(ipy.Extension):
                 description += f"{account.role} of {account.clan}\n\n"
 
         embed = ipy.Embed(
-            title=f"**{helper}'s Linked Accounts**",
+            title="**Linked Accounts**",
+            author=profile_author(helper),
             description=description,
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color()

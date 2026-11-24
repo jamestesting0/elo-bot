@@ -14997,7 +14997,7 @@
    "parameters": {
     "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
     "season": "SlashCommandParameter(name='season', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default='All Seasons', converter=None, _option_name=None)",
-    "user": "SlashCommandParameter(name='user', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -15048,7 +15048,7 @@
    "parameters": {
     "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
     "match_id": "SlashCommandParameter(name='match_id', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
-    "user": "SlashCommandParameter(name='user', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -15097,7 +15097,7 @@
    ],
    "parameters": {
     "hidden": "SlashCommandParameter(name='hidden', type=<class bool>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=False, converter=None, _option_name=None)",
-    "user": "SlashCommandParameter(name='user', type=<class User>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)"
+    "user": "SlashCommandParameter(name='user', type=interactions.models.discord.user.User | interactions.models.discord.user.Member | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
    "post_run_callback": null,
    "pre_run_callback": null,
@@ -24035,21 +24035,6 @@
         "name_localizations": null,
         "options": [
          {
-          "autocomplete": false,
-          "channel_types": null,
-          "choices": [],
-          "description": "A user registered in the elo system",
-          "description_localizations": null,
-          "max_length": null,
-          "max_value": null,
-          "min_length": null,
-          "min_value": null,
-          "name": "user",
-          "name_localizations": null,
-          "required": true,
-          "type": 6
-         },
-         {
           "autocomplete": true,
           "channel_types": null,
           "choices": [],
@@ -24063,6 +24048,21 @@
           "name_localizations": null,
           "required": true,
           "type": 3
+         },
+         {
+          "autocomplete": false,
+          "channel_types": null,
+          "choices": [],
+          "description": "Player to view (defaults to you)",
+          "description_localizations": null,
+          "max_length": null,
+          "max_value": null,
+          "min_length": null,
+          "min_value": null,
+          "name": "user",
+          "name_localizations": null,
+          "required": false,
+          "type": 6
          },
          {
           "autocomplete": false,
@@ -24100,7 +24100,7 @@
           "autocomplete": false,
           "channel_types": null,
           "choices": [],
-          "description": "A user registered in the elo system",
+          "description": "Player to view (defaults to you)",
           "description_localizations": null,
           "max_length": null,
           "max_value": null,
@@ -24108,7 +24108,7 @@
           "min_value": null,
           "name": "user",
           "name_localizations": null,
-          "required": true,
+          "required": false,
           "type": 6
          },
          {
@@ -24276,7 +24276,7 @@
         "autocomplete": false,
         "channel_types": null,
         "choices": [],
-        "description": "A user registered in the elo system",
+        "description": "Player to view (defaults to you)",
         "description_localizations": null,
         "max_length": null,
         "max_value": null,
@@ -24284,7 +24284,7 @@
         "min_value": null,
         "name": "user",
         "name_localizations": null,
-        "required": true,
+        "required": false,
         "type": 6
        },
        {

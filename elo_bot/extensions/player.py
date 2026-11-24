@@ -72,9 +72,8 @@ async def construct_match_embed(bot: ipy.Client, guild: ipy.Guild, match_id: str
 
     embed = ipy.Embed(
         author=profile_author(player),
-        title="**Match Details**",
-        description=f"vs. {opponent.display_name if opponent else 'Unknown Player'} · Match `{match_id}`\n"
-                    f"{ipy.Timestamp.fromtimestamp(match.time).format(ipy.TimestampStyles.LongDateTime)}\n"
+        title=f"**vs. {opponent.display_name if opponent else 'Unknown Player'} ({match_id})**",
+        description=f"{ipy.Timestamp.fromtimestamp(match.time).format(ipy.TimestampStyles.LongDateTime)}\n"
                     f"{ipy.Timestamp.fromtimestamp(match.time).format(ipy.TimestampStyles.RelativeTime)}\n"
                     f"{elo_change}\n\n"
                     f"{match_info}",
@@ -606,25 +605,26 @@ class PlayerCommands(ipy.Extension):
     @matches_group.subcommand(sub_cmd_name="view", sub_cmd_description="To view all matches of a player as a list")
     @ipy.slash_option(
         name="user",
-        description="A user registered in the elo system",
+        description="Player to view (defaults to you)",
         opt_type=ipy.OptionType.USER,
-        required=True
     )
     @ipy.slash_option(
         name="hidden",
         description="Make the bot response hidden or not",
         opt_type=ipy.OptionType.BOOLEAN
     )
-    async def player_matches_view(self, ctx: ipy.SlashContext, user: ipy.User, hidden: bool = False):
-        p_doc = await Player.find_one(Player.user_id == str(user.id), fetch_links=True)
+    async def player_matches_view(self, ctx: ipy.SlashContext, user: ipy.User | ipy.Member | None = None,
+                                   hidden: bool = False):
+        subject = user or ctx.author
+        p_doc = await Player.find_one(Player.user_id == str(subject.id), fetch_links=True)
         if not p_doc:
-            await ctx.send(f"{ERROR_EMOJI} {user.mention} is not registered in the elo system.",
+            await ctx.send(f"{ERROR_EMOJI} {subject.mention} is not registered in the elo system.",
                            ephemeral=hidden)
 
             return
 
         if not p_doc.matches:
-            await ctx.send(f"{ERROR_EMOJI} {user.mention} has not done any matches.",
+            await ctx.send(f"{ERROR_EMOJI} {subject.mention} has not done any matches.",
                            ephemeral=hidden)
 
             return
@@ -636,19 +636,19 @@ class PlayerCommands(ipy.Extension):
         left_button = ipy.Button(
             style=ipy.ButtonStyle.PRIMARY,
             label="◀️️",
-            custom_id=f"match_left|{user.id}|{index}",
+            custom_id=f"match_left|{subject.id}|{index}",
             disabled=index == 0,
         )
         right_button = ipy.Button(
             style=ipy.ButtonStyle.PRIMARY,
             label="▶️",
-            custom_id=f"match_right|{user.id}|{index}",
+            custom_id=f"match_right|{subject.id}|{index}",
             disabled=(index == len(p_doc.matches) - 1)
         )
         action_row = ipy.ActionRow(left_button, right_button)
 
         match = sorted_matches[index]
-        embed = await construct_match_embed(self.bot, ctx.guild, match.id, str(user.id))
+        embed = await construct_match_embed(self.bot, ctx.guild, match.id, str(subject.id))
 
         await ctx.send(embed=embed, ephemeral=hidden, components=action_row)
 
@@ -722,12 +722,6 @@ class PlayerCommands(ipy.Extension):
 
     @matches_group.subcommand(sub_cmd_name="search", sub_cmd_description="To search a match of a player")
     @ipy.slash_option(
-        name="user",
-        description="A user registered in the elo system",
-        opt_type=ipy.OptionType.USER,
-        required=True
-    )
-    @ipy.slash_option(
         name="match_id",
         description="The ID of match to check",
         opt_type=ipy.OptionType.STRING,
@@ -735,13 +729,20 @@ class PlayerCommands(ipy.Extension):
         required=True
     )
     @ipy.slash_option(
+        name="user",
+        description="Player to view (defaults to you)",
+        opt_type=ipy.OptionType.USER,
+    )
+    @ipy.slash_option(
         name="hidden",
         description="Make the bot response hidden or not",
         opt_type=ipy.OptionType.BOOLEAN
     )
-    async def player_matches_search(self, ctx: ipy.SlashContext, user: ipy.User, match_id: str, hidden: bool = False):
+    async def player_matches_search(self, ctx: ipy.SlashContext, match_id: str,
+                                     user: ipy.User | ipy.Member | None = None, hidden: bool = False):
+        subject = user or ctx.author
         try:
-            embed = await construct_match_embed(self.bot, ctx.guild, match_id, str(user.id))
+            embed = await construct_match_embed(self.bot, ctx.guild, match_id, str(subject.id))
         except KeyError:
             await ctx.send(
                 f"{ERROR_EMOJI} The match data is inconsistent and cannot be displayed. "
@@ -762,14 +763,14 @@ class PlayerCommands(ipy.Extension):
     async def match_id_autocomplete(self, ctx: ipy.AutocompleteContext):
         choices = None
         if str(ctx.command.name) == "player":
-            if "user" in ctx.kwargs:
-                choices = self.bot.match_id_choices.get(_option_user_id(ctx.kwargs["user"]))
-                if choices:
-                    registered = await Player.get_pymongo_collection().find_one(
-                        {"user_id": str(ctx.author.id)}, {"_id": 0, "user_id": 1}
-                    )
-                    if registered is None:
-                        choices = None
+            subject = ctx.kwargs.get("user") or ctx.author
+            choices = self.bot.match_id_choices.get(_option_user_id(subject))
+            if choices:
+                registered = await Player.get_pymongo_collection().find_one(
+                    {"user_id": str(ctx.author.id)}, {"_id": 0, "user_id": 1}
+                )
+                if registered is None:
+                    choices = None
         else:
             stored = self.bot.match_id_choices.get("all")
             if stored:
@@ -783,9 +784,8 @@ class PlayerCommands(ipy.Extension):
     @base.subcommand(sub_cmd_name="hitrates", sub_cmd_description="To check hit-rates of a player")
     @ipy.slash_option(
         name="user",
-        description="A user registered in the elo system",
+        description="Player to view (defaults to you)",
         opt_type=ipy.OptionType.USER,
-        required=True
     )
     @ipy.slash_option(
         name="season",
@@ -798,11 +798,13 @@ class PlayerCommands(ipy.Extension):
         description="Make the bot response hidden or not",
         opt_type=ipy.OptionType.BOOLEAN
     )
-    async def player_hitrates(self, ctx: ipy.SlashContext, user: ipy.User, season: str = "All Seasons",
-                              hidden: bool = False):
+    async def player_hitrates(self, ctx: ipy.SlashContext, user: ipy.User | ipy.Member | None = None,
+                              season: str = "All Seasons", hidden: bool = False):
         await ctx.defer(ephemeral=hidden)
 
-        p_doc = await Player.find_one(Player.user_id == str(user.id), fetch_links=True)
+        subject = user or ctx.author
+        player_id = str(subject.id)
+        p_doc = await Player.find_one(Player.user_id == player_id, fetch_links=True)
         if not p_doc:
             await ctx.send(f"{ERROR_EMOJI} The player is not registered in the elo system.",
                            ephemeral=True)
@@ -824,8 +826,6 @@ class PlayerCommands(ipy.Extension):
         district_stars = {}
         district_destruction = {}
         district_count = {}
-
-        player_id = str(user.id)
 
         for match in player_matches:
             if player_id not in match.players:
@@ -853,7 +853,7 @@ class PlayerCommands(ipy.Extension):
 
         embed = ipy.Embed(
             title="**Hit Rates**",
-            author=profile_author(user),
+            author=profile_author(subject),
             description=hitrates_str,
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color()
@@ -875,7 +875,7 @@ class PlayerCommands(ipy.Extension):
         hitrates_select = ipy.StringSelectMenu(
             *select_options,
             placeholder="🔍 Select a season",
-            custom_id=f"hitrates_select|{user.id}"
+            custom_id=f"hitrates_select|{player_id}"
         )
 
         await ctx.send(embed=embed, components=hitrates_select, ephemeral=hidden)

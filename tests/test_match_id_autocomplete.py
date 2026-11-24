@@ -511,10 +511,11 @@ class TestMatchIdAutocomplete(unittest.IsolatedAsyncioTestCase):
         ctx.send.assert_awaited_once_with([])
         collection.find_one.assert_not_awaited()
 
-    async def test_autocomplete_answers_before_the_user_option_is_filled(self):
-        ctx, collection = await self._autocomplete(options={}, text="1")
-        ctx.send.assert_awaited_once_with([])
-        collection.find_one.assert_not_awaited()
+    async def test_player_autocomplete_defaults_to_the_callers_matches(self):
+        self.bot.match_id_choices = {"111": [_user_match_choice("Ann", "19")],
+                                     "222": [_user_match_choice("Bob", "18")]}
+        ctx, _ = await self._autocomplete(text="1")
+        ctx.send.assert_awaited_once_with([{"name": "vs. Ann (19)", "value": "19"}])
 
     async def test_other_commands_autocomplete_from_the_global_list(self):
         self.bot.match_id_choices = {

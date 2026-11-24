@@ -210,6 +210,8 @@ hosting: show it with `LOADING_EMOJI` and its job ID until the job reports back.
 
 ## Screen-specific choices
 
+- `/player profile`, `/player hitrates`, `/player matches view`, and `/player matches search` default to the caller.
+  Select `user` to view another player. Match ID suggestions follow the selected player.
 - The `/player profile` description lists `**Elo:**`, `**Highest Elo:**`, `**League:**`, `**Rank:**` and
   `**Tokens:**`; its statistics show the player's and opponents' averages side by side
   (`f"**Stars:** {avg:.2f}{STAR_EMOJI} - {opp_avg:.2f}{STAR_EMOJI}"`). Final profiles use Avg. Stars and Avg. Destruction. Recent Matches lists

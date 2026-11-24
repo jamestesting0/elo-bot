@@ -321,15 +321,17 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
 
         recorded_match.find_one = AsyncMock(return_value=mock_match)
 
-        # Execute
-        await self.cog.player_matches_view.callback(ctx, user=user, hidden=False)
-
-        # Verify
-        embed = ctx.send.await_args.kwargs["embed"]
-        self.assertEqual(embed.title, "**Match Details**")
-        self.assertEqual((embed.author.name, embed.author.url), ("James", "https://discord.com/users/123"))
-        self.assertEqual(embed.description.splitlines()[0], "vs. NASA · Match `1`")
-        self.assertIn("**Final Score**", embed.description)
+        for author, options in ((opponent, {"user": user}), (user, {})):
+            with self.subTest(selected=bool(options)):
+                ctx.author = author
+                await self.cog.player_matches_view.callback.func(self.cog, ctx, **options)
+                response = ctx.send.await_args.kwargs
+                embed = response["embed"]
+                self.assertEqual(embed.title, "**vs. NASA (1)**")
+                self.assertEqual((embed.author.name, embed.author.url), ("James", "https://discord.com/users/123"))
+                self.assertEqual(embed.description.splitlines()[0], "<t:1700000000:F>")
+                self.assertIn("**Final Score**", embed.description)
+                self.assertEqual(response["components"].components[1].custom_id, "match_right|123|0")
 
     @patch("elo_bot.extensions.player.construct_match_embed", new_callable=AsyncMock)
     async def test_player_matches_search_uses_requested_visibility_and_hides_inconsistent_data(self, construct):
@@ -341,9 +343,11 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
             with self.subTest(hidden=hidden):
                 ctx = MagicMock(spec=ipy.SlashContext)
                 ctx.send = AsyncMock()
+                ctx.author.id = 123 if hidden else 456
+                options = {} if hidden else {"user": user}
 
                 await self.cog.player_matches_search.callback.func(
-                    self.cog, ctx, user=user, match_id="7", hidden=hidden,
+                    self.cog, ctx, match_id="7", hidden=hidden, **options,
                 )
 
                 construct.assert_awaited_with(self.cog.bot, ctx.guild, "7", "123")
@@ -392,22 +396,22 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
             SimpleNamespace(season_number=7, start=700, end=800),
         ])
 
-        # Execute
-        await self.cog.player_hitrates.callback(ctx, user=user, season="All Seasons", hidden=False)
-
-        # Verify
-        ctx.send.assert_called()
-        embed = ctx.send.call_args[1]['embed']
-        self.assertEqual(embed.title, "**Hit Rates**")
-        self.assertEqual((embed.author.name, embed.author.url), ("Player One", "https://discord.com/users/123"))
-        self.assertIn("Barbarian Camp", embed.description)
-        self.assertIn("Wizard Valley", embed.description)
-        season_options = ctx.send.call_args[1]['components'].options
-        self.assertEqual(
-            [(option.label, option.value) for option in season_options],
-            [("All Seasons", "All Seasons"), ("Current Season", "Current Season"), ("Season 3", "3"),
-             ("Season 7", "7")],
-        )
+        for author, options in ((MagicMock(id=456), {"user": user}), (user, {})):
+            with self.subTest(selected=bool(options)):
+                ctx.author = author
+                await self.cog.player_hitrates.callback.func(self.cog, ctx, **options)
+                response = ctx.send.await_args.kwargs
+                embed, select = response["embed"], response["components"]
+                self.assertEqual(embed.title, "**Hit Rates**")
+                self.assertEqual((embed.author.name, embed.author.url), ("Player One", "https://discord.com/users/123"))
+                self.assertIn("Barbarian Camp", embed.description)
+                self.assertIn("Wizard Valley", embed.description)
+                self.assertEqual(select.custom_id, "hitrates_select|123")
+                self.assertEqual(
+                    [(option.label, option.value) for option in select.options],
+                    [("All Seasons", "All Seasons"), ("Current Season", "Current Season"), ("Season 3", "3"),
+                     ("Season 7", "7")],
+                )
 
     @patch("elo_bot.extensions.player.Queue")
     @patch("elo_bot.extensions.player.Match")

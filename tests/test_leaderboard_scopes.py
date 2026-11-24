@@ -221,12 +221,17 @@ class TestLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(ctx.message.embeds[0].fields[0].value, "Current Season")
                 self.assertEqual(selected(ctx.message.components), ["Current Season"])
 
-    async def test_live_elo_refresh_has_no_season_menu(self):
+    async def test_live_elo_has_only_an_emoji_refresh_button(self):
         for lb_type in ("Elo", "Elo Reversed", "Highest Elo"):
             with self.subTest(lb_type=lb_type):
                 ctx = await self.invoke(lb_type, live=True)
-                ctx.message.embeds = [ctx.send.await_args.kwargs["embed"]]
-                ctx.message.components = [ipy.ActionRow(ctx.send.await_args.kwargs["components"])]
+                self.attach(ctx)
+                rows = ipy.process_components(ctx.message.components)
+                self.assertEqual([len(row["components"]) for row in rows], [1])
+                refresh = rows[0]["components"][0]
+                self.assertEqual(refresh["custom_id"], "lb_refresh")
+                self.assertIsNone(refresh.get("label"))
+                self.assertEqual(refresh["emoji"]["name"], "🔄")
                 await self.cog.lb_refresh.callback.func(self.cog, ctx)
                 self.assertEqual(ctx.message.embeds[0].fields[0].value, "Current Season")
                 ctx.message.edit.assert_awaited_once()

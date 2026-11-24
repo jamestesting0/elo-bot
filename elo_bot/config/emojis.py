@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 import re
+from typing import Final
 
 import interactions as ipy
 
@@ -66,6 +67,7 @@ IMPORTANT_EMOJI = application_emoji("important")
 GIVEAWAY_EMOJI = application_emoji("giveaway")
 CLASHING_SWORD_EMOJI = application_emoji("swordsclashing")
 LOADING_EMOJI = application_emoji("loading")
+REFRESH_EMOJI: Final = "🔄"
 RANK_EMOJIS = ["🥇", "🥈", "🥉"]
 RANK_REVERSED_EMOJIS = ["🤡", "🐷", "🌚"]
 BASE_QUALITY_EMOJIS = {

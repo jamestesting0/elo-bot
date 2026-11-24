@@ -520,7 +520,9 @@ class TestTokenDiscord(FinalScenarioCase):
         self.assertEqual((await TokenItemUse.get(boost.id)).state, "reserved")
         self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PRIORITY_PRO], 0)
         self.assertEqual(len(self.edit()["components"]), 1)
-        self.assertEqual(self.edit()["components"][0]["components"][0]["label"], "Refresh")
+        refresh = self.edit()["components"][0]["components"][0]
+        self.assertIsNone(refresh.get("label"))
+        self.assertEqual(refresh["emoji"]["name"], "🔄")
         statuses = [field["value"] for field in self.edit()["embeds"][0]["fields"]]
         self.assertCountEqual(statuses, ["Reserved", "Pending"])
         with self.assertRaises(FinalError):

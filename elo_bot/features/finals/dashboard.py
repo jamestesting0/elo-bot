@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import interactions as ipy
 
-from elo_bot.config.emojis import IMPORTANT_EMOJI, TOKEN_EMOJI
+from elo_bot.config.emojis import IMPORTANT_EMOJI, REFRESH_EMOJI, TOKEN_EMOJI
 from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.finals import FINAL_SEATS, NODE_IDS, ROUND_NODES
@@ -125,7 +125,7 @@ def dashboard_controls(state: DashboardState, owner: str) -> list[ipy.ActionRow]
     if buttons and not buttons[0].disabled:
         buttons[0].style = ipy.ButtonStyle.PRIMARY
     if final.active:
-        buttons.append(ipy.Button(emoji="🔄", style=ipy.ButtonStyle.SECONDARY,
+        buttons.append(ipy.Button(emoji=REFRESH_EMOJI, style=ipy.ButtonStyle.SECONDARY,
                                   custom_id=f"finaldash|refresh|{final.id}|{owner}"))
     rows = [ipy.ActionRow(*buttons[index:index + 5]) for index in range(0, len(buttons), 5)]
     if registering(final) and state.invitations:

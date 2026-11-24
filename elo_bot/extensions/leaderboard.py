@@ -9,7 +9,7 @@ import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.presentation import FOOTER_TEXT, LB_ENTRIES_PER_PAGE, LB_TYPE_OPTIONS
 from elo_bot.discord.embeds import embed_color, footer_image
-from elo_bot.config.emojis import ERROR_EMOJI, RANK_EMOJIS, RANK_REVERSED_EMOJIS, SUCCESS_EMOJI
+from elo_bot.config.emojis import ERROR_EMOJI, RANK_EMOJIS, RANK_REVERSED_EMOJIS, REFRESH_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import GUILD_IDS
 from elo_bot.db import RecordedMatch, Player, Season
 from elo_bot.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
@@ -41,13 +41,20 @@ def _is_hitrate(lb_type: str) -> bool:
     return lb_type == "Hitrate" or lb_type.endswith(" Hitrate")
 
 
-def _view_tier(message) -> str:
-    custom_id = message.components[0].components[0].custom_id
-    if isinstance(custom_id, str) and "|" in custom_id:
-        tier = custom_id.split("|", 1)[1]
-        if tier in _HITRATE_TIERS:
-            return tier
-    return "Overall"
+def _live_refresh_button(message: ipy.Message) -> ipy.Button | None:
+    for row in message.components or ():
+        for control in row.components:
+            if (isinstance(control, ipy.Button) and control.custom_id
+                    and control.custom_id.partition("|")[0] == "lb_refresh"):
+                return control
+    return None
+
+
+def _view_tier(message: ipy.Message) -> str:
+    control = _live_refresh_button(message) or message.components[0].components[0]
+    custom_id = control.custom_id
+    tier = custom_id.partition("|")[2] if isinstance(custom_id, str) else ""
+    return tier if tier in _HITRATE_TIERS else "Overall"
 
 
 def _tier_menu(tier: str) -> ipy.ActionRow:
@@ -56,6 +63,16 @@ def _tier_menu(tier: str) -> ipy.ActionRow:
         placeholder="Select base quality",
         custom_id="lb_tier_select",
     ))
+
+
+def _live_board_controls(lb_type: str, tier: str = "Overall") -> list[ipy.ActionRow]:
+    rows = [_tier_menu(tier)] if _is_hitrate(lb_type) else []
+    rows.append(ipy.ActionRow(ipy.Button(
+        style=ipy.ButtonStyle.SECONDARY,
+        emoji=REFRESH_EMOJI,
+        custom_id="lb_refresh" if tier == "Overall" else f"lb_refresh|{tier}",
+    )))
+    return rows
 
 
 def _ranking_type(lb_type: str, tier: str) -> str:
@@ -666,15 +683,7 @@ class LeaderboardCommands(ipy.Extension):
         )
 
         if live:
-            components = ipy.Button(
-                style=ipy.ButtonStyle.GRAY,
-                label="Refresh",
-                custom_id="lb_refresh",
-                emoji=ipy.PartialEmoji(name="🔄")
-            )
-            if _is_hitrate(lb_type):
-                components = [ipy.ActionRow(components), _tier_menu("Overall")]
-
+            components = _live_board_controls(lb_type)
             hidden = False
             timestamp = ipy.Timestamp.fromdatetime(datetime.now()).format(style=ipy.TimestampStyles.RelativeTime)
             embed.description = f"Last refreshed: {timestamp}\n\n{leaderboard}"
@@ -1038,16 +1047,13 @@ class LeaderboardCommands(ipy.Extension):
         ctx.message.embeds[0].description = await _board_text(
             ctx.guild, players, lb_type, season_start, season_end, paged=paged, tier=tier
         )
-        is_live = ctx.message.components[0].components[0].custom_id.startswith("lb_refresh")
-        ctx.message.components[0].components[0].custom_id = (
-            f"{'lb_refresh' if is_live else 'lb_type_select'}|{tier}" if tier != "Overall"
-            else ("lb_refresh" if is_live else "lb_type_select")
-        )
-        if is_live:
-            ctx.message.components[-1] = _tier_menu(tier)
-            await ctx.edit(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
+        if _live_refresh_button(ctx.message) is not None:
+            await ctx.edit(ctx.message, embeds=ctx.message.embeds, components=_live_board_controls(lb_type, tier))
             await ctx.send(f"{SUCCESS_EMOJI} The base quality is changed to `{tier}`.", ephemeral=True)
             return
+        ctx.message.components[0].components[0].custom_id = (
+            "lb_type_select" if tier == "Overall" else f"lb_type_select|{tier}"
+        )
         ctx.message.components[-2] = _tier_menu(tier)
         ctx.message.components[-1] = ipy.ActionRow(
             ipy.Button(style=ipy.ButtonStyle.PRIMARY, label="◀️️", custom_id=f"lb_left|{-LB_ENTRIES_PER_PAGE}",
@@ -1114,7 +1120,10 @@ class LeaderboardCommands(ipy.Extension):
                            disabled=starting_index + LB_ENTRIES_PER_PAGE >= board_size),
             )
 
-        if lb_type in {"Tokens", "Predictions", "Betting"}:
+        refresh_button = _live_refresh_button(ctx.message)
+        if refresh_button is not None and refresh_button.label == "Refresh":
+            await edit_channel_message(ctx.message, embeds=ctx.message.embeds, components=_live_board_controls(lb_type, tier))
+        elif lb_type in {"Tokens", "Predictions", "Betting"}:
             await edit_channel_message(ctx.message, embeds=ctx.message.embeds, components=ctx.message.components)
         else:
             await edit_channel_message(ctx.message, embeds=ctx.message.embeds)

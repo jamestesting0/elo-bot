@@ -136,6 +136,7 @@ arrow (`` `30` → `2.10⭐ 81.50%` ``), predictions show `` `correct/eligible` 
 |---|---|---|---|
 | Page back / forward | `◀️️` / `▶️` (keep these exact strings) | `PRIMARY` | none |
 | Page number and jump | `2/7` via `build_page_button` | `SECONDARY` | none |
+| Refresh the current view | None | `SECONDARY` | 🔄 via `REFRESH_EMOJI` |
 | Confirm a prompt; accept a request | Confirm, Accept | `SUCCESS` | `TICK_EMOJI` |
 | Cancel a prompt; reject a request | Cancel, Reject | `DANGER` | `CROSS_EMOJI` |
 | Form steps | Back / Next / Submit | `SECONDARY` / `PRIMARY` / `SUCCESS` | none |
@@ -155,6 +156,8 @@ on profiles was removed because it added nothing (leaderboards keep theirs). Ret
 - `StringSelectMenu` placeholders start with an emoji and say what to choose: "🔍 Select a season",
   "📊 Select the leaderboard type", "🛡️ Set the host clan". Mark the current choice with `default=True`;
   a preset district shows `✅ {district} (Preset)`. Trim option labels to 100 characters.
+- Put leaderboard select menus above the row with the 🔄 refresh button. Keep the selected option when
+  the leaderboard refreshes.
 - Modal titles are short noun phrases ("Jump to page", "Bug Response Form"). Use `ShortText` for single
   values and `ParagraphText` for multi-line input, with a placeholder that shows the format
   ("Format: [stars].[destruction]").

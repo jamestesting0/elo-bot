@@ -2,6 +2,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import interactions as ipy
+
 from elo_bot.extensions.leaderboard import LeaderboardCommands, sort_players
 from elo_bot.config.presentation import LB_ENTRIES_PER_PAGE
 from elo_bot.db.player_models import MatchDistrictStats
@@ -118,14 +120,60 @@ class TestLeaderboardTiers(unittest.IsolatedAsyncioTestCase):
         ctx.message.edit = AsyncMock()
         await self.cog.leaderboard.callback.func(self.cog, ctx, lb_type="Hitrate", season="1", live=True)
         payload = ctx.send.await_args.kwargs
+        self.assert_live_controls(payload["components"], "Overall")
         ctx.message.embeds = [payload["embed"]]
         ctx.message.components = payload["components"]
         ctx.values = ["Good"]
         await self.cog.lb_tier_select.callback.func(self.cog, ctx)
+        ctx.message.components = ctx.edit.await_args.kwargs["components"]
+        self.assert_live_controls(ctx.message.components, "Good")
+
         await self.cog.lb_refresh.callback.func(self.cog, ctx)
-        self.assertIn("`5`", ctx.message.embeds[0].description)
-        self.assertEqual([option.value for option in ctx.message.components[-1].components[0].options
-                          if option.default], ["Good"])
+
+        refreshed = ctx.message.edit.await_args.kwargs
+        self.assertIn("`5`", refreshed["embeds"][0].description)
+        self.assert_live_controls(refreshed.get("components", ctx.message.components), "Good")
+
+    async def test_legacy_live_hitrate_controls_are_updated_on_interaction(self):
+        self.cog._player_cache = [make_player("player", [("Good", 3, 90)] * 5)]
+        for action in ("select", "refresh"):
+            with self.subTest(action=action):
+                ctx = context()
+                ctx.message.edit = AsyncMock()
+                ctx.message.embeds = [ipy.Embed(
+                    title="**Hitrate Leaderboard**", fields=[ipy.EmbedField(name="Scope", value="Season 1")],
+                )]
+                ctx.message.components = [
+                    ipy.ActionRow(ipy.Button(style=ipy.ButtonStyle.SECONDARY, label="Refresh", emoji="🔄",
+                                             custom_id="lb_refresh|Good")),
+                    ipy.ActionRow(ipy.StringSelectMenu(
+                        ipy.StringSelectOption(label="Overall", value="Overall"),
+                        ipy.StringSelectOption(label="Good", value="Good", default=True),
+                        custom_id="lb_tier_select",
+                    )),
+                ]
+
+                if action == "select":
+                    ctx.values = ["Good"]
+                    await self.cog.lb_tier_select.callback.func(self.cog, ctx)
+                    edited = ctx.edit.await_args.kwargs
+                else:
+                    await self.cog.lb_refresh.callback.func(self.cog, ctx)
+                    edited = ctx.message.edit.await_args.kwargs
+
+                self.assertIn("`5`", edited["embeds"][0].description)
+                self.assert_live_controls(edited.get("components", []), "Good")
+
+    def assert_live_controls(self, components: list[ipy.ActionRow], tier: str) -> None:
+        rows = ipy.process_components(components)
+        self.assertEqual([len(row["components"]) for row in rows], [1, 1])
+        menu, refresh = (row["components"][0] for row in rows)
+        self.assertEqual(menu["type"], ipy.ComponentType.STRING_SELECT)
+        self.assertEqual([option["value"] for option in menu["options"] if option.get("default")], [tier])
+        self.assertEqual(refresh["type"], ipy.ComponentType.BUTTON)
+        self.assertEqual(refresh["custom_id"], "lb_refresh" if tier == "Overall" else f"lb_refresh|{tier}")
+        self.assertIsNone(refresh.get("label"))
+        self.assertEqual(refresh["emoji"]["name"], "🔄")
 
     async def test_tier_selection_completes_interaction_for_live_and_regular_boards(self):
         for live in (False, True):

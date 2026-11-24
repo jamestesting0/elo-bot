@@ -4,7 +4,7 @@ from time import time
 
 import interactions as ipy
 
-from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, TOKEN_ITEM_EMOJIS
+from elo_bot.config.emojis import ERROR_EMOJI, REFRESH_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI, TOKEN_ITEM_EMOJIS
 from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.token_items import ITEMS, TokenItem
@@ -79,7 +79,7 @@ async def active_item_panel(wallet: TokenWallet, *, hidden: bool = False, page: 
     if options:
         controls.append(ipy.ActionRow(ipy.StringSelectMenu(
             *options, custom_id=f"tokenactive|disable|{wallet.user_id}|{page}", placeholder="Select one activation to disable")))
-    buttons = [ipy.Button(style=ipy.ButtonStyle.SECONDARY, label="Refresh",
+    buttons = [ipy.Button(style=ipy.ButtonStyle.SECONDARY, emoji=REFRESH_EMOJI,
                            custom_id=f"tokenactive|refresh|{wallet.user_id}|{page}")]
     if pages > 1:
         buttons.extend([

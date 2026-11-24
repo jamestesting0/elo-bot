@@ -13,7 +13,6 @@ from pymongo import AsyncMongoClient
 from elo_bot.db.timestamp_models import (
     TIMESTAMP_DRAFT_INDEXES, TIMESTAMP_POST_INDEXES, TimestampDraft, TimestampPost, TimestampPreference,
 )
-from elo_bot.discord.contexts import ComponentsV2ModalContext
 from elo_bot.extensions.timestamp import TimestampCommands
 
 
@@ -77,7 +76,7 @@ class TimestampMongoCase(unittest.IsolatedAsyncioTestCase):
         client.cache.get_member.return_value = author
         client.cache.get_channel.return_value = self.channel
         client.cache.place_message_data.return_value = MagicMock(id=9001, flags=ipy.MessageFlags.EPHEMERAL)
-        kind = {ipy.SlashContext: 2, ipy.ComponentContext: 3, ipy.AutocompleteContext: 4, ComponentsV2ModalContext: 5}
+        kind = {ipy.SlashContext: 2, ipy.ComponentContext: 3, ipy.AutocompleteContext: 4, ipy.ModalContext: 5}
         payload = {"id": str(self.sequence), "application_id": "42", "type": kind[context_type],
                    "token": "offline", "locale": "en-US", "guild_id": "11", "channel_id": "77", "data": data,
                    "app_permissions": str(int(self.app_permissions)),

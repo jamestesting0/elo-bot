@@ -15793,9 +15793,7 @@
     "error_callback": null,
     "extension": "AuditlogCommands",
     "id": "auditlog_page",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['auditlog_page']",
     "nsfw": false,
@@ -15858,9 +15856,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_submission_accept",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_submission_accept']",
     "nsfw": false,
@@ -15891,9 +15887,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_lb_page",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_lb_page']",
     "nsfw": false,
@@ -15924,9 +15918,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_list_district_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_list_district_select']",
     "nsfw": false,
@@ -15957,9 +15949,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_list_embed_type_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_list_embed_type_select']",
     "nsfw": false,
@@ -15990,9 +15980,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_quality_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_quality_select']",
     "nsfw": false,
@@ -16055,9 +16043,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "renew_base_button",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['renew_base_button']",
     "nsfw": false,
@@ -16088,9 +16074,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "district_type_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['district_type_select']",
     "nsfw": false,
@@ -16153,9 +16137,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_submission_find_similar",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_submission_find_similar']",
     "nsfw": false,
@@ -16218,9 +16200,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_submission_reject",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['base_submission_reject']",
     "nsfw": false,
@@ -16251,9 +16231,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "build_button",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['build_button']",
     "nsfw": false,
@@ -16284,9 +16262,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "elo_final_details",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['elo_final_details']",
     "nsfw": false,
@@ -16317,9 +16293,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "free_clan_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['free_clan_select']",
     "nsfw": false,
@@ -16350,9 +16324,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "participate_button",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['participate_button']",
     "nsfw": false,
@@ -16383,9 +16355,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "readme_button",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['readme_button']",
     "nsfw": false,
@@ -16416,9 +16386,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "rewards_button",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['rewards_button']",
     "nsfw": false,
@@ -16449,9 +16417,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "support_button",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['support_button']",
     "nsfw": false,
@@ -16482,9 +16448,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "id": "support_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['support_select']",
     "nsfw": false,
@@ -16515,9 +16479,7 @@
     "error_callback": null,
     "extension": "GiveawayCommands",
     "id": "enter_giveaway",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['enter_giveaway']",
     "nsfw": false,
@@ -16548,9 +16510,7 @@
     "error_callback": null,
     "extension": "HelpCommands",
     "id": "help_category_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['help_category_select']",
     "nsfw": false,
@@ -16581,9 +16541,7 @@
     "error_callback": null,
     "extension": "HelperCommands",
     "id": "helper_lb_page",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['helper_lb_page']",
     "nsfw": false,
@@ -16614,9 +16572,7 @@
     "error_callback": null,
     "extension": "HelperCommands",
     "id": "helper_lb_type",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['helper_lb_type']",
     "nsfw": false,
@@ -16647,9 +16603,7 @@
     "error_callback": null,
     "extension": "HelperCommands",
     "id": "view_accounts",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['view_accounts']",
     "nsfw": false,
@@ -16680,9 +16634,7 @@
     "error_callback": null,
     "extension": "LeaderboardCommands",
     "id": "lb_page",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['lb_page']",
     "nsfw": false,
@@ -16713,9 +16665,7 @@
     "error_callback": null,
     "extension": "LeaderboardCommands",
     "id": "lb_season_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['lb_season_select']",
     "nsfw": false,
@@ -16746,9 +16696,7 @@
     "error_callback": null,
     "extension": "LeaderboardCommands",
     "id": "lb_tier_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['lb_tier_select']",
     "nsfw": false,
@@ -16779,9 +16727,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "id": "match_queue",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['match_queue']",
     "nsfw": false,
@@ -16812,9 +16758,7 @@
     "error_callback": null,
     "extension": "PlayerCommands",
     "id": "elo_select",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['elo_select']",
     "nsfw": false,
@@ -16845,9 +16789,7 @@
     "error_callback": null,
     "extension": "SeasonCommands",
     "id": "season_lb_page",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::['season_lb_page']",
     "nsfw": false,
@@ -16880,9 +16822,7 @@
     "error_callback": null,
     "extension": "AuditlogCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^auditlog_(left|right)\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -16914,9 +16854,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_defense\\\\|[^|]+\\\\|[0-9]+\\\\|(newer|older)$')]",
     "nsfw": false,
@@ -16948,9 +16886,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('base_lb_left\\\\|.*')]",
     "nsfw": false,
@@ -16982,9 +16918,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('base_lb_right\\\\|.*')]",
     "nsfw": false,
@@ -17016,9 +16950,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_left\\\\|.*\\\\|\\\\d+\\\\|.*$')]",
     "nsfw": false,
@@ -17050,9 +16982,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_page\\\\|.*\\\\|.*\\\\|.*\\\\|.*$')]",
     "nsfw": false,
@@ -17084,9 +17014,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_right\\\\|.*\\\\|\\\\d+\\\\|.*\\\\|.*$')]",
     "nsfw": false,
@@ -17118,9 +17046,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^p_base_delete\\\\|[^|]+\\\\|\\\\d+(?:\\\\|[0-9a-f]{24})?$')]",
     "nsfw": false,
@@ -17152,9 +17078,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^p_base_(left|right)\\\\|.*\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -17186,9 +17110,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^p_base_preset\\\\|[^|]+\\\\|\\\\d+(?:\\\\|[0-9a-f]{24}(?:\\\\|(?:add|remove))?)?$')]",
     "nsfw": false,
@@ -17220,9 +17142,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_compare\\\\|[\\\\w-]+\\\\|[0-9a-f]{24}$')]",
     "nsfw": false,
@@ -17254,9 +17174,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_labels\\\\|[\\\\w-]+\\\\|[0-9a-f]{24}$')]",
     "nsfw": false,
@@ -17288,9 +17206,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^base_similar\\\\|[\\\\w-]+\\\\|(previous|next|page)$')]",
     "nsfw": false,
@@ -17322,9 +17238,7 @@
     "error_callback": null,
     "extension": "ChallengeCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^challenge_accept\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -17356,9 +17270,7 @@
     "error_callback": null,
     "extension": "ChallengeCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^challenge_cancel\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -17390,9 +17302,7 @@
     "error_callback": null,
     "extension": "ChallengeCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^challenge_reject\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -17424,9 +17334,7 @@
     "error_callback": null,
     "extension": "EmbedCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^readme_section\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -17461,9 +17369,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betback\\\\|.+$')]",
     "nsfw": false,
@@ -17498,9 +17404,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betcancel\\\\|.+$')]",
     "nsfw": false,
@@ -17535,9 +17439,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betchoose\\\\|.+$')]",
     "nsfw": false,
@@ -17572,9 +17474,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betconfirm\\\\|.+$')]",
     "nsfw": false,
@@ -17609,9 +17509,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^betopen\\\\|.+$')]",
     "nsfw": false,
@@ -17659,9 +17557,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finaldash\\\\|(bracket|open|close|round|recover|end|refresh)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -17709,9 +17605,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalthreads\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -17746,9 +17640,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalhistjump\\\\|.+$')]",
     "nsfw": false,
@@ -17783,9 +17675,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalhist\\\\|.+$')]",
     "nsfw": false,
@@ -17820,9 +17710,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalinvite\\\\|(accept|decline)\\\\|[a-f0-9]{24}$')]",
     "nsfw": false,
@@ -17870,9 +17758,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalinvwithdraw\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -17920,9 +17806,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalmanage\\\\|(cancel|end|back)\\\\|[a-f0-9]{24}\\\\|\\\\d+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -17970,9 +17854,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalpair\\\\|.+$')]",
     "nsfw": false,
@@ -18007,9 +17889,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalpred\\\\|.+$')]",
     "nsfw": false,
@@ -18044,9 +17924,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalpredict\\\\|[a-f0-9]{24}$')]",
     "nsfw": false,
@@ -18081,9 +17959,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalpredpage\\\\|\\\\d+\\\\|\\\\d+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -18118,9 +17994,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalpredpick\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -18155,9 +18029,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalprofile(?:refresh)?\\\\|.+$')]",
     "nsfw": false,
@@ -18192,9 +18064,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^final(confirm|cancel)\\\\|[a-f0-9]{24}$')]",
     "nsfw": false,
@@ -18229,9 +18099,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finaledit\\\\|[a-f0-9]{24}$')]",
     "nsfw": false,
@@ -18266,9 +18134,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalresult\\\\|.+$')]",
     "nsfw": false,
@@ -18316,9 +18182,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalroster\\\\|(add|invite|replace)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -18350,9 +18214,7 @@
     "error_callback": null,
     "extension": "HelperCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_lb_(left|right)\\\\|-?\\\\d+$')]",
     "nsfw": false,
@@ -18384,9 +18246,7 @@
     "error_callback": null,
     "extension": "LeaderboardCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('lb_(right|left)\\\\|.*')]",
     "nsfw": false,
@@ -18418,9 +18278,7 @@
     "error_callback": null,
     "extension": "LeaderboardCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('lb_refresh(?:\\\\|.*)?')]",
     "nsfw": false,
@@ -18452,9 +18310,7 @@
     "error_callback": null,
     "extension": "LeaderboardCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('lb_type_select(?:\\\\|.*)?')]",
     "nsfw": false,
@@ -18489,9 +18345,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_abort\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18523,9 +18377,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^confirm_occupied_match\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18557,9 +18409,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^delete_thread\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18594,9 +18444,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^district_select\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -18628,9 +18476,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^finalscout\\\\|\\\\d+\\\\|[a-f0-9]{24}\\\\|(district|view)$')]",
     "nsfw": false,
@@ -18662,9 +18508,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^(helper_runs_left|helper_runs_right)\\\\|\\\\d+\\\\|(open|attention|uncertain|failed|all)\\\\|[^|]+$')]",
     "nsfw": false,
@@ -18696,9 +18540,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_runs_page\\\\|(open|attention|uncertain|failed|all)\\\\|[^|]+$')]",
     "nsfw": false,
@@ -18730,9 +18572,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_seq_cancel\\\\|[0-9a-f]{24}$')]",
     "nsfw": false,
@@ -18764,9 +18604,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_seq_continue\\\\|[0-9a-f]{24}$')]",
     "nsfw": false,
@@ -18798,9 +18636,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('helper_stored_start\\\\|\\\\w+\\\\|\\\\d+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -18832,9 +18668,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('helper_stored_undo\\\\|\\\\w+\\\\|\\\\d+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -18869,9 +18703,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^host_clan_select\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -18906,9 +18738,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_host\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18940,9 +18770,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_cancel\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -18977,9 +18805,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_confirm\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -19011,9 +18837,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^stakereply\\\\|(match|pass)\\\\|[0-9a-f]{24}\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -19045,9 +18869,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^queued_(?:district|confirm|cancel)\\\\|\\\\d+\\\\|\\\\w+(?:\\\\|[0-2])?$')]",
     "nsfw": false,
@@ -19079,9 +18901,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_result_store\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -19113,9 +18933,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^submit_button\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -19147,9 +18965,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^reveal_opponent\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -19181,9 +18997,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('start_match\\\\|\\\\d+\\\\|[^|]+\\\\|[^|]+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -19215,9 +19029,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^submit_bases\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -19249,9 +19061,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('undo_base_storage\\\\|\\\\w+\\\\|\\\\d+(?:\\\\|\\\\w+)?$')]",
     "nsfw": false,
@@ -19283,9 +19093,7 @@
     "error_callback": null,
     "extension": "PlayerCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^hitrates_select\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -19317,9 +19125,7 @@
     "error_callback": null,
     "extension": "PlayerCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_left\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -19351,9 +19157,7 @@
     "error_callback": null,
     "extension": "PlayerCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^match_right\\\\|\\\\w+\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -19385,9 +19189,7 @@
     "error_callback": null,
     "extension": "PlayerCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^stats_select\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -19419,9 +19221,7 @@
     "error_callback": null,
     "extension": "SeasonCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('season_lb_left\\\\|.*')]",
     "nsfw": false,
@@ -19453,9 +19253,7 @@
     "error_callback": null,
     "extension": "SeasonCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('season_lb_right\\\\|.*')]",
     "nsfw": false,
@@ -19487,9 +19285,7 @@
     "error_callback": null,
     "extension": "SeasonCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^season_stats_(left|right)\\\\|(current|[0-9]+)$')]",
     "nsfw": false,
@@ -19521,9 +19317,7 @@
     "error_callback": null,
     "extension": "SeasonCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^season_stats_page\\\\|(current|[0-9]+)$')]",
     "nsfw": false,
@@ -19555,9 +19349,7 @@
     "error_callback": null,
     "extension": "SelfCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "<MaxConcurrency object>",
     "name": "ComponentCallback::[re.compile('^live_spectate\\\\|\\\\w+\\\\|[0-9]+$')]",
     "nsfw": false,
@@ -19589,9 +19381,7 @@
     "error_callback": null,
     "extension": "SelfCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^live_match_request\\\\|accept\\\\|([^|]+)\\\\|(\\\\d+)\\\\|(\\\\d+)(?:\\\\|([0-9a-f]{16}))?$')]",
     "nsfw": false,
@@ -19623,9 +19413,7 @@
     "error_callback": null,
     "extension": "SelfCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^live_match_request\\\\|reject\\\\|([^|]+)\\\\|(\\\\d+)\\\\|(\\\\d+)(?:\\\\|([0-9a-f]{16}))?$')]",
     "nsfw": false,
@@ -19657,9 +19445,7 @@
     "error_callback": null,
     "extension": "SelfCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_stored_live_start\\\\|\\\\w+\\\\|[0-9a-f]{16}$')]",
     "nsfw": false,
@@ -19691,9 +19477,7 @@
     "error_callback": null,
     "extension": "SelfCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^helper_stored_live_undo\\\\|\\\\w+\\\\|[0-9a-f]{16}$')]",
     "nsfw": false,
@@ -19725,9 +19509,7 @@
     "error_callback": null,
     "extension": "SelfCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "<MaxConcurrency object>",
     "name": "ComponentCallback::[re.compile('^war_spectate\\\\|\\\\w+\\\\|[01]\\\\|[0-9]+$')]",
     "nsfw": false,
@@ -19759,9 +19541,7 @@
     "error_callback": null,
     "extension": "TimestampCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^timestamp_choose\\\\|[0-9]{1,20}\\\\|[0-9]{1,20}$')]",
     "nsfw": false,
@@ -19793,9 +19573,7 @@
     "error_callback": null,
     "extension": "TokenCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^tokenactive\\\\|(disable|refresh|page)\\\\|\\\\d+(\\\\|\\\\d+)?$')]",
     "nsfw": false,
@@ -19827,9 +19605,7 @@
     "error_callback": null,
     "extension": "TokenCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^tokenitems\\\\|(page|pick|buy|district|back)\\\\|\\\\d+\\\\|(shop|inventory)\\\\|[01]\\\\|[a-f0-9]{32}(\\\\|(?:[a-z_]+|\\\\d+))?$')]",
     "nsfw": false,
@@ -19864,9 +19640,7 @@
     "error_callback": null,
     "extension": "TokenCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^tokenjump\\\\|.+$')]",
     "nsfw": false,
@@ -19901,9 +19675,7 @@
     "error_callback": null,
     "extension": "TokenCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^tokenpage\\\\|.+$')]",
     "nsfw": false,
@@ -19935,9 +19707,7 @@
     "error_callback": null,
     "extension": null,
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ComponentCallback::[re.compile('^bug_respond_button\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -20706,9 +20476,7 @@
     "error_callback": null,
     "extension": "AuditlogCommands",
     "id": "auditlog_page_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['auditlog_page_modal']",
     "nsfw": false,
@@ -20772,9 +20540,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_submission_accept_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['base_submission_accept_modal']",
     "nsfw": false,
@@ -20806,9 +20572,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_lb_page_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['base_lb_page_modal']",
     "nsfw": false,
@@ -20840,9 +20604,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "renew_base_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['renew_base_modal']",
     "nsfw": false,
@@ -20906,9 +20668,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "id": "base_submission_reject_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['base_submission_reject_modal']",
     "nsfw": false,
@@ -20940,9 +20700,7 @@
     "error_callback": null,
     "extension": "HelperCommands",
     "id": "helper_lb_page_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['helper_lb_page_modal']",
     "nsfw": false,
@@ -20974,9 +20732,7 @@
     "error_callback": null,
     "extension": "LeaderboardCommands",
     "id": "lb_page_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['lb_page_modal']",
     "nsfw": false,
@@ -21008,9 +20764,7 @@
     "error_callback": null,
     "extension": "PlayerCommands",
     "id": "elo_registration_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['elo_registration_modal']",
     "nsfw": false,
@@ -21042,9 +20796,7 @@
     "error_callback": null,
     "extension": "SeasonCommands",
     "id": "season_lb_page_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['season_lb_page_modal']",
     "nsfw": false,
@@ -21076,9 +20828,7 @@
     "error_callback": null,
     "extension": null,
     "id": "bug_response_modal",
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::['bug_response_modal']",
     "nsfw": false,
@@ -21112,9 +20862,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^base_page_modal\\\\|.*\\\\|.*\\\\|.*\\\\|.*$')]",
     "nsfw": false,
@@ -21147,9 +20895,7 @@
     "error_callback": null,
     "extension": "BaseCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^base_similar_modal\\\\|[\\\\w-]+\\\\|page$')]",
     "nsfw": false,
@@ -21185,9 +20931,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^betamount\\\\|.+$')]",
     "nsfw": false,
@@ -21223,9 +20967,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^finalhistmodal\\\\|.+$')]",
     "nsfw": false,
@@ -21261,9 +21003,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^finaleditscore\\\\|[a-f0-9]{24}\\\\|[01]\\\\|[0-6]$')]",
     "nsfw": false,
@@ -21299,9 +21039,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^finalres\\\\|.+$')]",
     "nsfw": false,
@@ -21350,9 +21088,7 @@
     "error_callback": null,
     "extension": "FinalCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^finalrostermodal\\\\|(add|invite|replace)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
     "nsfw": false,
@@ -21388,9 +21124,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^confirm_occupied_match_modal\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -21423,9 +21157,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^helper_runs_jump\\\\|(open|attention|uncertain|failed|all)\\\\|[^|]+$')]",
     "nsfw": false,
@@ -21458,9 +21190,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^resubmit_modal\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -21496,9 +21226,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^store_modal\\\\|\\\\w+\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -21531,9 +21259,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^result_modal\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -21566,9 +21292,7 @@
     "error_callback": null,
     "extension": "MatchCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^submit_bases_modal\\\\|\\\\w+$')]",
     "nsfw": false,
@@ -21601,9 +21325,7 @@
     "error_callback": null,
     "extension": "SeasonCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^season_stats_page_modal\\\\|(current|[0-9]+)$')]",
     "nsfw": false,
@@ -21636,9 +21358,7 @@
     "error_callback": null,
     "extension": "TimestampCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^timestamp_time\\\\|[0-9]{1,20}\\\\|[0-9]{1,20}\\\\|[0-9]{1,2}$')]",
     "nsfw": false,
@@ -21674,9 +21394,7 @@
     "error_callback": null,
     "extension": "TokenCommands",
     "flags": 32,
-    "integration_types": [
-     "IntegrationType.GUILD_INSTALL"
-    ],
+    "integration_types": [],
     "max_concurrency": "Missing",
     "name": "ModalCallback::[re.compile('^tokenjumpmodal\\\\|.+$')]",
     "nsfw": false,

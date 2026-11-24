@@ -641,11 +641,12 @@ class TestMatchCommands(MatchCommandsCase):
 
         await self.cog.confirm_occupied_match_button.callback(ctx)
 
-        modal = ctx.send_modal.call_args.args[0]
+        modal = ctx.send_modal.await_args.args[0].to_dict()
         components = modal["data"]["components"]
         self.assertEqual("confirm_occupied_match_modal|abc123", modal["data"]["custom_id"])
         self.assertEqual(3, len(components))
         self.assertTrue(all(component["type"] == 18 for component in components))
+        self.assertTrue(all("disabled" not in label["component"] for label in components))
         self.assertEqual(
             [
                 "inline_district|abc123|0",

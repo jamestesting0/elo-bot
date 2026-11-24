@@ -105,8 +105,10 @@ class TestFinalInvitations(FinalScenarioCase):
 
     async def test_modal_and_controls_follow_open_seats(self):
         final = await self.roster(6)
-        modal = roster_modal("invite", final, "9")
-        self.assertEqual(modal["data"]["components"][0]["component"]["max_values"], 2)
+        modal = roster_modal("invite", final, "9").to_dict()
+        select = modal["data"]["components"][0]["component"]
+        self.assertEqual(select["max_values"], 2)
+        self.assertNotIn("disabled", select)
         await self.invite(final, 7)
         invitations = await FinalInvitation.find_all().to_list()
         rows = dashboard_controls(DashboardState(await EloFinal.get(final.id), invitations=invitations), "9")
@@ -153,7 +155,8 @@ class TestFinalInvitations(FinalScenarioCase):
         order = []
         ctx.defer = AsyncMock(side_effect=lambda **_: order.append("defer"))
         ctx.edit.side_effect = lambda *_args, **_kwargs: order.append("edit")
-        await cog.final_roster_submit.callback.func(cog, ctx, players=["6", "7"])
+        selected = ipy.User.from_dict({"id": "6", "username": "Player 6", "discriminator": "0", "avatar": None}, cog.bot)
+        await cog.final_roster_submit.callback.func(cog, ctx, players=[selected, "7"])
         self.assertEqual(order, ["defer", "edit"])
         ctx.defer.assert_awaited_once_with(edit_origin=True)
         self.assertEqual((await EloFinal.get(final.id)).entrant_ids[-2:], ["6", "7"])

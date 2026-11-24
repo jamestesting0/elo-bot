@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
 
-from elo_bot.config.ids import STAFF_CHANNEL
+from elo_bot.config.ids import LVL1_ROLES, STAFF_CHANNEL
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalPrediction
@@ -124,10 +124,26 @@ class TestFinalReplacement(FinalScenarioCase):
         cog = FinalCommands(bot)
         guild = MagicMock(fetch_member=AsyncMock(side_effect=lambda user: MagicMock(
             id=int(user), display_name=f"Player {user}", has_role=MagicMock(return_value=False))))
+        opener = MagicMock(spec=ipy.ComponentContext, custom_id=f"finalroster|replace|{final.id}|9",
+                           guild_id=final.guild_id, send_modal=AsyncMock())
+        opener.author.id = 9
+        opener.author.has_role.side_effect = lambda role: role in LVL1_ROLES
+        await cog.final_roster_open.callback.func(cog, opener)
+        modal = opener.send_modal.await_args.args[0].to_dict()
+        leaving, joining = [label["component"] for label in modal["data"]["components"]]
+        self.assertIn("8", [option["value"] for option in leaving["options"]])
+        self.assertEqual((joining["custom_id"], joining["max_values"]), ("replacement", 1))
+        self.assertNotIn("disabled", joining)
+        ctx = MagicMock(spec=ipy.ModalContext, custom_id=modal["data"]["custom_id"], author=opener.author,
+                        guild_id=final.guild_id, guild=guild, defer=AsyncMock(), edit=AsyncMock())
+        replacement = ipy.User.from_dict({"id": "9", "username": "Player 9", "discriminator": "0", "avatar": None}, bot)
         with patch.object(FinalCommands, "_recover", new=AsyncMock(return_value=[])), \
                 patch.object(FinalCommands, "_provision_node", new=AsyncMock(return_value=("777", True, []))) as provision, \
                 patch("elo_bot.extensions.final.roster.schedule_channel_name_edit") as rename:
-            await cog._replace(await EloFinal.get(final.id), guild, "8", "9")
+            await cog.final_roster_submit.callback.func(cog, ctx, leaving=["8"], replacement=[replacement])
+        self.assertIn("9", (await EloFinal.get(final.id)).entrant_ids)
+        ctx.defer.assert_awaited_once_with(edit_origin=True)
+        self.assertEqual(ctx.edit.await_args.args, ("@original",))
         self.assertEqual(rename.call_args.args[1:], ("🟡", f"{node_id} · user1 vs. user9"))
         self.assertEqual(opening.edit.await_args.kwargs["content"], "<@1>\n<@9>\n<@&5>")
         self.assertEqual(opening.edit.await_args.kwargs["attachments"], [other_file])

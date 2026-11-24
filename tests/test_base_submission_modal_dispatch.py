@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock
 import interactions as ipy
 
 import elo_bot.extensions.base as base_commands
-from elo_bot.discord.contexts import ComponentsV2ModalContext
 from tests._base_submission_fixtures import configure_pending_resolution
 from tests._patch_sites import BASE_MODULE_FAMILY, patch_family
 
@@ -56,7 +55,8 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
             BASE_MODULE_FAMILY, "BaseLayout", MagicMock(find_one=AsyncMock(return_value=None)),
         ))
 
-    def _modal_context(self, custom_id: str, components: list[dict]) -> ComponentsV2ModalContext:
+    def _modal_context(self, custom_id: str, components: list[dict], *,
+                       resolved_user_id: str | None = None) -> ipy.ModalContext:
         payload = {
             "id": "1750000000000000000",
             "application_id": "42",
@@ -75,7 +75,11 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
             "message": {"id": "9001"},
             "data": {"custom_id": custom_id, "components": components},
         }
-        ctx = ComponentsV2ModalContext.from_dict(self.client, payload)
+        if resolved_user_id:
+            builder = {"id": resolved_user_id, "username": "builder", "discriminator": "0", "avatar": None}
+            payload["data"]["resolved"] = {"users": {resolved_user_id: builder}}
+            self.client.cache.place_user_data.side_effect = lambda user: ipy.User.from_dict(user, self.client)
+        ctx = ipy.ModalContext.from_dict(self.client, payload)
         ctx.defer = AsyncMock()
         ctx.send = AsyncMock()
         return ctx
@@ -117,6 +121,7 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["data"]["custom_id"], "base_submission_accept_modal")
         labels = payload["data"]["components"]
         self.assertEqual([label["type"] for label in labels], [18, 18, 18])
+        self.assertTrue(all("disabled" not in label["component"] for label in labels))
         selected = [
             option["value"]
             for option in labels[0]["component"]["options"]
@@ -146,7 +151,8 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(reason["custom_id"], "reason")
         self.assertTrue(reason["required"])
 
-    async def test_accept_callback_receives_quality_and_note_from_raw_modal_payload(self) -> None:
+    async def test_accept_callback_persists_resolved_builder_from_discord(self) -> None:
+        builder_id = "1750000000000000001"
         ctx = self._modal_context(
             "base_submission_accept_modal",
             [
@@ -163,7 +169,7 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
                     "component": {
                         "type": 5,
                         "custom_id": "builder",
-                        "values": ["999"],
+                        "values": [builder_id],
                     },
                 },
                 {
@@ -175,6 +181,7 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
                     },
                 },
             ],
+            resolved_user_id=builder_id,
         )
         submitter = MagicMock()
         submitter.send = AsyncMock()
@@ -196,12 +203,8 @@ class TestBaseSubmissionModalDispatch(unittest.IsolatedAsyncioTestCase):
                 ctx,
             )
 
-        self.assertEqual(
-            ctx.responses,
-            {"quality": ["Excellent"], "builder": ["999"], "note": "Chosen in the modal"},
-        )
         self.assertEqual(base_layout.call_args.kwargs["quality"], "Excellent")
-        self.assertEqual(base_layout.call_args.kwargs["builder_id"], "999")
+        self.assertEqual(base_layout.call_args.kwargs["builder_id"], builder_id)
         notification = submitter.send.await_args.kwargs["embed"]
         self.assertEqual(next(field.value for field in notification.fields if field.name == "Moderator Note"),
                          "Chosen in the modal")

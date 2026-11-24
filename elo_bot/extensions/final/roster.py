@@ -17,6 +17,7 @@ from elo_bot.discord.decorators import ignore_repeated_clicks
 from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import fetch_members, member_names, mention_user
 from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.discord.modals import ModalSelectLabel, modal_user_id
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.features.finals.invitations import (
     accept_invitation, add_players, decline_invitation, invitation_embed, invite_players, notify, open_seats,
@@ -31,48 +32,36 @@ from elo_bot.features.finals.replacement import replace_entrant, replaceable_ent
 ROSTER_TITLES = {"add": "Add Players", "invite": "Invite Players", "replace": "Replace Player"}
 
 
-def replace_modal(final: EloFinal, owner: str) -> dict:
-    options = [{"label": final.player_nicknames.get(user, user)[:100], "value": user}
-               for user in replaceable_entrants(final)]
-    return {
-        "type": int(ipy.CallbackType.MODAL),
-        "data": {
-            "title": ROSTER_TITLES["replace"],
-            "custom_id": f"finalrostermodal|replace|{final.id}|{owner}",
-            "components": [
-                {"type": 18, "label": "Leaving player",
-                 "component": {"type": 3, "custom_id": "leaving", "options": options, "required": True}},
-                {"type": 18, "label": "Replacement",
-                 "component": {"type": int(ipy.ComponentType.USER_SELECT), "custom_id": "replacement",
-                               "placeholder": "Select a player", "min_values": 1, "max_values": 1,
-                               "required": True}},
-            ],
-        },
-    }
+def replace_modal(final: EloFinal, owner: str) -> ipy.Modal:
+    options = [
+        ipy.StringSelectOption(label=final.player_nicknames.get(user, user)[:100], value=user)
+        for user in replaceable_entrants(final)
+    ]
+    return ipy.Modal(
+        ModalSelectLabel(
+            label="Leaving player",
+            component=ipy.StringSelectMenu(*options, custom_id="leaving"),
+        ),
+        ModalSelectLabel(
+            label="Replacement",
+            component=ipy.UserSelectMenu(custom_id="replacement", placeholder="Select a player"),
+        ),
+        title=ROSTER_TITLES["replace"],
+        custom_id=f"finalrostermodal|replace|{final.id}|{owner}",
+    )
 
 
-def roster_modal(action: str, final: EloFinal, owner: str) -> dict:
+def roster_modal(action: str, final: EloFinal, owner: str) -> ipy.Modal:
     seats = open_seats(final)
-    return {
-        "type": int(ipy.CallbackType.MODAL),
-        "data": {
-            "title": ROSTER_TITLES[action],
-            "custom_id": f"finalrostermodal|{action}|{final.id}|{owner}",
-            "components": [{
-                "type": 18,
-                "label": "Players",
-                "description": f"Up to {seats} more player{'s' if seats > 1 else ''} can join.",
-                "component": {
-                    "type": int(ipy.ComponentType.USER_SELECT),
-                    "custom_id": "players",
-                    "placeholder": "Select players",
-                    "min_values": 1,
-                    "max_values": min(seats, 25),
-                    "required": True,
-                },
-            }],
-        },
-    }
+    return ipy.Modal(
+        ModalSelectLabel(
+            label="Players",
+            description=f"Up to {seats} more player{'s' if seats > 1 else ''} can join.",
+            component=ipy.UserSelectMenu(custom_id="players", placeholder="Select players", max_values=min(seats, 25)),
+        ),
+        title=ROSTER_TITLES[action],
+        custom_id=f"finalrostermodal|{action}|{final.id}|{owner}",
+    )
 
 
 def require_owner(ctx: ipy.InteractionContext, owner: str) -> None:
@@ -107,12 +96,13 @@ class Roster:
         require_owner(ctx, owner)
         edition = await self._ongoing_edition(ctx, final_id, access="manager")
         if action == "replace":
-            outcome = await self._replace(edition, await member_guild(ctx), response["leaving"][0],
-                                          response["replacement"][0])
+            joining = modal_user_id(response["replacement"][0])
+            outcome = await self._replace(edition, await member_guild(ctx), response["leaving"][0], joining)
             await self._show_dashboard(ctx, await reload_final(edition), outcome=outcome, edit=True)
             return
         require_registration(edition)
-        members = await fetch_members(await member_guild(ctx), response["players"])
+        player_ids = [modal_user_id(player) for player in response["players"]]
+        members = await fetch_members(await member_guild(ctx), player_ids)
         if action == "add":
             outcome = (await add_players(edition, members)).line("Added")
             await retire_outdated_invitations(self.bot)

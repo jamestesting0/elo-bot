@@ -9,6 +9,7 @@ import anyio
 import interactions as ipy
 import validators
 from beanie import PydanticObjectId
+from interactions.models.discord.components import SelectDefaultValues
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 import elo_bot.extensions.base.groups as groups
@@ -27,6 +28,7 @@ from elo_bot.db.base_submission_models import SubmissionAcceptance, SubmissionRe
 from elo_bot.discord.checks import has_any, has_any_id
 from elo_bot.discord.members import member_guild
 from elo_bot.discord.mentions import mention_user
+from elo_bot.discord.modals import ModalSelectLabel, modal_user_id
 from elo_bot.features.base_submission.models import (
     AcceptDecision,
     RejectDecision,
@@ -204,53 +206,29 @@ class BaseSubmissionCommands:
             await self._resolve_submission(ctx, AcceptDecision(submission.proposed_quality, ""))
             return
         options = [
-            {"label": quality, "value": quality, "default": quality == submission.proposed_quality}
+            ipy.StringSelectOption(label=quality, value=quality, default=quality == submission.proposed_quality)
             for quality in BASE_TIERS
         ]
-        await ctx.send_modal({
-            "type": int(ipy.CallbackType.MODAL),
-            "data": {
-                "title": "Accept Base Submission",
-                "custom_id": ACCEPT_MODAL_ID,
-                "components": [
-                    {
-                        "type": 18,
-                        "label": "Select the accepted quality",
-                        "component": {
-                            "type": 3,
-                            "custom_id": "quality",
-                            "options": options,
-                            "required": True,
-                        },
-                    },
-                    {
-                        "type": 18,
-                        "label": "Builder override",
-                        "description": "Select Elo Bot to set the builder to none.",
-                        "component": {
-                            "type": int(ipy.ComponentType.USER_SELECT),
-                            "custom_id": "builder",
-                            "placeholder": "Select a builder",
-                            "default_values": [{"id": submission.submitter_id, "type": "user"}],
-                            "min_values": 1,
-                            "max_values": 1,
-                            "required": True,
-                        },
-                    },
-                    {
-                        "type": 18,
-                        "label": "Moderator note",
-                        "component": {
-                            "type": 4,
-                            "custom_id": "note",
-                            "style": 2,
-                            "required": False,
-                            "max_length": 1000,
-                        },
-                    },
-                ],
-            },
-        })
+        default_builder = SelectDefaultValues.from_dict({"id": submission.submitter_id, "type": "user"}, self.bot)
+        await ctx.send_modal(ipy.Modal(
+            ModalSelectLabel(
+                label="Select the accepted quality",
+                component=ipy.StringSelectMenu(*options, custom_id="quality"),
+            ),
+            ModalSelectLabel(
+                label="Builder override",
+                description="Select Elo Bot to set the builder to none.",
+                component=ipy.UserSelectMenu(
+                    custom_id="builder", placeholder="Select a builder", default_values=[default_builder],
+                ),
+            ),
+            ipy.LabelComponent(
+                label="Moderator note",
+                component=ipy.ParagraphText(custom_id="note", required=False, max_length=1000),
+            ),
+            title="Accept Base Submission",
+            custom_id=ACCEPT_MODAL_ID,
+        ))
 
     @ipy.component_callback(REJECT_BUTTON_ID)
     @ipy.check(has_any(ipy.has_any_role(*LVL1_ROLES), has_any_id(*WHITELISTED_STAFFS)))
@@ -280,13 +258,13 @@ class BaseSubmissionCommands:
         ctx: ipy.ModalContext,
         quality: list[str],
         note: str = "",
-        builder: list[str] | None = None,
+        builder: list[ipy.User | ipy.Member | str] | None = None,
     ) -> None:
         selected_quality = quality[0] if quality else ""
         if selected_quality not in BASE_TIERS:
             await ctx.send(f"{ERROR_EMOJI} That base quality is invalid.", ephemeral=True)
             return
-        selected_builder_id = builder[0] if builder else None
+        selected_builder_id = modal_user_id(builder[0]) if builder else None
         await self._resolve_submission(
             ctx,
             AcceptDecision(selected_quality, note.strip(), selected_builder_id),

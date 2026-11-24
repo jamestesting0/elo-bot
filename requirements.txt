@@ -1,7 +1,7 @@
 --extra-index-url https://download.pytorch.org/whl/cu128
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-interactions.py==5.15.0
+interactions.py==6.0.0
 discord.py-self==2.1.0
 # Keep the staff client's transport compatible with the pinned certificate bundle.
 curl-cffi==0.14.0

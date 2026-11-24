@@ -17,6 +17,7 @@ from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.db import BaseLink, Match, Participant, Player, EloFinal
 from elo_bot.db.player_models import QueueDistrictSelection
 from elo_bot.discord.mentions import mention_user
+from elo_bot.discord.modals import ModalSelectLabel
 from elo_bot.core.finals import is_final_match
 from elo_bot.features.hosting.self_hosted.invitations import schedule_pairing_grants
 from elo_bot.features.matches.base_selection import get_base_quality
@@ -59,30 +60,19 @@ def build_district_confirmation_modal(
         token: str,
         wizard_valley_available: bool = False,
         capital_peak_available: bool = False,
-) -> dict:
+) -> ipy.Modal:
     district_options = get_district_options(wizard_valley_available, capital_peak_available)
     labels = [
-        {
-            "type": 18,
-            "label": f"Select the {index}{'st' if index == 1 else 'nd' if index == 2 else 'rd'} district",
-            "component": {
-                "type": 3,
-                "custom_id": f"inline_district|{token}|{index - 1}",
-                "options": [{"label": district, "value": district} for district in options],
-                "required": True,
-            },
-        }
-        for index, options in enumerate(district_options, start=1)
+        ModalSelectLabel(
+            label=f"Select the {ORDINAL_REPRESENTATIONS[index]} district",
+            component=ipy.StringSelectMenu(
+                *(ipy.StringSelectOption(label=district, value=district) for district in options),
+                custom_id=f"inline_district|{token}|{index}",
+            ),
+        )
+        for index, options in enumerate(district_options)
     ]
-
-    return {
-        "type": int(ipy.CallbackType.MODAL),
-        "data": {
-            "title": "Confirm Match",
-            "custom_id": f"confirm_occupied_match_modal|{token}",
-            "components": labels,
-        },
-    }
+    return ipy.Modal(*labels, title="Confirm Match", custom_id=f"confirm_occupied_match_modal|{token}")
 
 
 async def initiate_match(

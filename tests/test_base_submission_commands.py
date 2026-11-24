@@ -108,7 +108,7 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         ctx.send_modal = AsyncMock()
         return ctx
 
-    async def test_accept_button_opens_raw_quality_and_required_submitter_builder_modal(self) -> None:
+    async def test_accept_button_opens_quality_and_required_submitter_builder_modal(self) -> None:
         # Given: pending submission data exists independently of the rendered review.
         review = self._review()
         review.embeds = []
@@ -118,9 +118,8 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         # When: a moderator selects Accept.
         await self.cog.accept_submission_button.callback.func(self.cog, ctx)
 
-        # Then: the raw modal requires one builder and defaults it to the submitter.
         ctx.send_modal.assert_awaited_once()
-        modal = ctx.send_modal.await_args.args[0]
+        modal = ctx.send_modal.await_args.args[0].to_dict()
         labels = modal["data"]["components"]
         self.assertEqual([label["type"] for label in labels], [18, 18, 18])
         options = labels[0]["component"]["options"]
@@ -244,7 +243,8 @@ class TestBaseSubmissionCommands(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
     async def test_accept_persists_selected_builder_or_elobot_sentinel(self) -> None:
-        for selected, expected in (("999", "999"), ("42", None)):
+        bot_user = ipy.User.from_dict({"id": "42", "username": "Elo Bot", "discriminator": "0", "avatar": None}, self.bot)
+        for selected, expected in (("999", "999"), (bot_user, None)):
             with self.subTest(selected=selected):
                 self.pending = self._pending()
                 self.pending_model.get.return_value = self.pending

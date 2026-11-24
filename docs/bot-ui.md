@@ -162,8 +162,8 @@ on profiles was removed because it added nothing (leaderboards keep theirs). Ret
   values and `ParagraphText` for multi-line input, with a placeholder that shows the format
   ("Format: [stars].[destruction]").
 - Every message, the Final prediction wizard included, is an embed with the standard footer and icon.
-  Modals are parsed by `ComponentsV2ModalContext`, which also accepts selects inside modals (the base
-  submission user select).
+  interactions.py parses modal submissions. Use `ModalSelectLabel` for string and user selects in a modal.
+  Convert selected users or members to string IDs before passing them to persistence or domain logic.
 
 ### Custom IDs, state and ownership
 

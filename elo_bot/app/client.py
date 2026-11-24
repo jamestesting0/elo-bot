@@ -7,7 +7,6 @@ from elo_bot.discord import runtime
 from elo_bot.config.emojis import ERROR_EMOJI
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE
 from elo_bot.config.settings import TOKENS
-from elo_bot.discord.contexts import ComponentsV2ModalContext
 
 INTENTS = ipy.Intents.new(
     guilds=True,
@@ -61,7 +60,6 @@ def create_client(version: str) -> ipy.Client:
         send_command_tracebacks=False,
         send_not_ready_messages=True,
         show_ratelimit_tracebacks=True,
-        modal_context=ComponentsV2ModalContext,
         delete_unused_application_cmds=runtime.VERSION == "main",
         activity=ipy.Activity(
             name="DM your feedback to @jamestesting",

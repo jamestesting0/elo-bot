@@ -7,7 +7,6 @@ from pymongo.errors import OperationFailure
 
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.db.timestamp_models import TimestampDraft, TimestampPost, TimestampPreference
-from elo_bot.discord.contexts import ComponentsV2ModalContext
 from elo_bot.extensions.timestamp import TimestampCommands
 from tests.integration._timestamp_fixture import MESSAGE_PERMISSIONS, TimestampMongoCase, timestamp
 
@@ -213,7 +212,7 @@ class TestTimestampCommands(TimestampMongoCase):
         self.http.execute_webhook.assert_not_awaited()
 
         for clock in ("25:00", "19:30"):
-            ctx = self.context(ComponentsV2ModalContext, {"custom_id": modal["data"]["custom_id"], "components": [
+            ctx = self.context(ipy.ModalContext, {"custom_id": modal["data"]["custom_id"], "components": [
                 {"type": 1, "components": [{"type": 4, "custom_id": "clock", "value": clock}]},
             ]})
             await self.cog.enter_clock.callback.func(self.cog, ctx, **ctx.responses)

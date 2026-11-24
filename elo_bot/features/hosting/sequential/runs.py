@@ -6,6 +6,7 @@ from elo_bot.core.finals import FINAL_DISTRICTS, is_final_match
 from elo_bot.db import Match
 from elo_bot.db.sequential_models import LIVE_SIDE, HelperSequentialRun, SequentialRunEvent
 from elo_bot.features.hosting.sequential.policy import EVENT_LOG_LIMIT, HELPER_DISTRICT_NAMES, TRACKING_STALE_SECONDS
+from elo_bot.features.matches.resources import is_resource_match_side_locked
 from elo_bot.integrations.helper_api import HelperSequentialResult
 
 
@@ -50,10 +51,12 @@ async def open_runs(match_token: str, side: int | None = None) -> list[HelperSeq
 
 
 async def open_run_refusal(match: Match, side: int | None = None) -> str | None:
-    if not is_final_match(match) or not await open_runs(str(match.token), side):
-        return None
-    return ("Helper is running a sequential match here. Check it with `/match helper status`, "
-            "resume it with `/match helper recover`, or cancel it first.")
+    if not match.is_war and match.times[0] and is_resource_match_side_locked(str(match.token), 1):
+        return "Helper is setting up this live match. Try again when setup finishes."
+    if is_final_match(match) and await open_runs(str(match.token), side):
+        return ("Helper is running a sequential match here. Check it with `/match helper status`, "
+                "resume it with `/match helper recover`, or cancel it first.")
+    return None
 
 
 async def latest_run(match_id: PydanticObjectId, side: int | None) -> HelperSequentialRun | None:

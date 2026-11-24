@@ -38,7 +38,9 @@ class TestMatchCommands(MatchCommandsCase):
         ctx = MagicMock(spec=ipy.ComponentContext, message=thread_message, bot=self.bot)
         ctx.channel.id = ctx.channel_id = 12345
         ctx.author = MagicMock(id=555, display_name="New Host", roles=[MagicMock(id=STAFF_ROLE)])
+        ctx.author.has_role.side_effect = lambda role: role == STAFF_ROLE
         ctx.defer, ctx.send = AsyncMock(), AsyncMock()
+        ctx.send_modal = AsyncMock()
         ctx.values = ["#NEW"]
         clan = MagicMock(tag="#NEW", share_link="https://clan.example")
         clan.name = "New Clan"
@@ -48,6 +50,7 @@ class TestMatchCommands(MatchCommandsCase):
 
         with (
             patch("elo_bot.extensions.match.hosting.Match", find_one=AsyncMock(return_value=match)),
+            patch("elo_bot.extensions.match.result_store.Match", find_one=AsyncMock(return_value=match)),
             patch.object(Match, "find_one", new=AsyncMock(return_value=match)),
             patch.object(Match, "get_pymongo_collection", return_value=collection),
             patch.object(Match, "get_settings", return_value=settings),
@@ -57,6 +60,22 @@ class TestMatchCommands(MatchCommandsCase):
             patch("elo_bot.extensions.match.hosting.schedule_channel_name_edit"),
             patch("elo_bot.features.hosting.live.live_start.schedule_channel_name_edit"),
         ):
+            setup_reservation = await resources_module.try_reserve_resource_match_side("TOKEN", 1)
+            try:
+                for callback, control in (
+                    (self.cog.host_match_button, "match_host"),
+                    (self.cog.host_clan_select, "host_clan_select"),
+                    (self.cog.result_store_button, "match_result_store"),
+                    (self.cog.abort_match_button, "match_abort"),
+                ):
+                    ctx.custom_id = f"{control}|TOKEN|0"
+                    await callback.callback.func(self.cog, ctx)
+                    self.assertIn("Helper is setting up this live match", ctx.send.await_args.args[0])
+                collection.update_one.assert_not_awaited()
+                ctx.send_modal.assert_not_awaited()
+            finally:
+                setup_reservation.release()
+
             ctx.custom_id = "match_host|TOKEN|0"
             await self.cog.host_match_button.callback.func(self.cog, ctx)
             self.assertEqual(match.hosts, ["555", None])
@@ -635,6 +654,7 @@ class TestMatchCommands(MatchCommandsCase):
 
         async def run_job(*_args, **_kwargs) -> None:
             events.append("runner")
+            side1.release.assert_not_called()
 
         with (
                 patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,

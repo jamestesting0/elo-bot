@@ -135,7 +135,7 @@ async def host_live_automatically(
             return
         case unreachable:
             assert_never(unreachable)
-    keep_stored_reservations = False
+    keep_reservations = False
     try:
         if request.stored_reservation_id is None:
             if not await live_eligibility.clan_has_all_base_store_slots(request.clan.tag, bot=runtime.bot):
@@ -222,11 +222,9 @@ async def host_live_automatically(
                 stored_reservation_id=request.stored_reservation_id,
             ),
         )
-        keep_stored_reservations = bool(
-            request.stored_reservation_id and isinstance(start_outcome, live_start.LiveStartSucceeded)
-        )
+        keep_reservations = isinstance(start_outcome, live_start.LiveStartSucceeded)
     finally:
-        if not keep_stored_reservations:
+        if not keep_reservations:
             reservations.release()
 
     match start_outcome:
@@ -275,8 +273,7 @@ async def host_live_automatically(
             ),
         )
     finally:
-        if keep_stored_reservations:
-            reservations.release()
+        reservations.release()
 
 
 async def host_live_district_automatically(

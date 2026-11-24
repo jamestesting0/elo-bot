@@ -122,6 +122,11 @@ def is_resource_clan_locked(clan_tag: str) -> bool:
     return bool(lock and lock.locked())
 
 
+def is_resource_match_side_locked(match_token: str, player_index: int) -> bool:
+    lock = RESOURCE_MATCH_SIDE_LOCKS.get((match_token, player_index))
+    return bool(lock and lock.locked())
+
+
 def format_available_resource_clans(clans: list[Clan]) -> str:
     available_clans = [
         clan for clan in clans

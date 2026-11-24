@@ -134,7 +134,9 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         # Then: the SDK retains attacking order and final state before normal cleanup.
         self.assertEqual(self.message_data["content"], "<@100> (Attacking First)\n<@200>")
         self.assertEqual(self.message_data["embeds"][0]["title"], "**Match Started**")
-        self.assertEqual(self.message_data["components"], [])
+        select, actions = [row["components"] for row in self.message_data["components"]]
+        self.assertEqual(select[0]["custom_id"], "host_clan_select|TOKEN|0")
+        self.assertEqual([button["label"] for button in actions], ["Host", "Store Result", "Abort"])
         self.assertEqual(public.edit.await_args.kwargs["components"][0].to_dict(), {
             "type": 1,
             "components": [{
@@ -168,7 +170,9 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             await live_start.complete_live_start(self.bot, self.ctx, request)
         self.assertEqual(self.match.msg, "80")
         self.assertEqual(channel.send.await_args.kwargs["components"], [])
-        self.assertEqual(self.message_data["components"], [])
+        thread_custom_ids = {component["custom_id"] for row in self.message_data["components"]
+                             for component in row["components"]}
+        self.assertNotIn("live_spectate|TOKEN|1000", thread_custom_ids)
         self.assertEqual(public.edit.await_args.kwargs["components"][0].components[0].custom_id,
                          "live_spectate|TOKEN|1000")
 

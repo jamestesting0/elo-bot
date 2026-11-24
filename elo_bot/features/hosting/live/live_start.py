@@ -269,8 +269,7 @@ async def complete_live_start(
     spectate_controls = [ipy.ActionRow(spectate_button(f"live_spectate|{match_doc.token}|{timestamp}"))]
     message = await publish_match_message(
         ctx, match_doc, expected_message_state, content=mentions, embed=embed,
-        components=(start_components(match_doc, 0, show_clan_select=True)
-                    if isinstance(start.reply, ManualLiveStartReply) else None),
+        components=start_components(match_doc, 0, show_clan_select=True),
     )
 
     channel = await bot.fetch_channel(match_doc.routing_channel_id if is_final_match(match_doc)

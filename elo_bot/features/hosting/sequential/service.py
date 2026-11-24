@@ -237,30 +237,27 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
             reply=live_start.AutomaticLiveStartReply(), reservations=reservations,
             stored_reservation_id=host.stored_reservation_id,
         ))
+        match start_outcome:
+            case live_start.LiveStartSucceeded(message=started_message):
+                request = HelperSequentialJobCreateRequest(
+                    job_type="host_sequential_live_match", requested_by=str(ctx.author.id), payload=payload,
+                )
+                await launch_run(bot, ctx, LaunchRequest(
+                    match=match_doc, side=LIVE_SIDE, player_tags=[host.player1.tag, host.player2.tag], request=request,
+                    districts=list(FINAL_DISTRICTS), start_message_id=int(started_message.id),
+                ))
+            case live_start.LiveStartBusy():
+                await ctx.send(f"{ERROR_EMOJI} This match is already being started.\n\n"
+                               f"{await resources.available_resource_clans_text()}", ephemeral=True)
+            case live_start.LiveStartRefused():
+                return
+            case live_start.LiveStartClanUnavailable():
+                await ctx.send(f"{ERROR_EMOJI} **{host.clan.name}** is currently occupied.\n\n"
+                               f"{await resources.available_resource_clans_text()}", ephemeral=True)
+            case unreachable:
+                assert_never(unreachable)
     finally:
         reservations.release()
-    match start_outcome:
-        case live_start.LiveStartSucceeded(message=started_message):
-            pass
-        case live_start.LiveStartBusy():
-            await ctx.send(f"{ERROR_EMOJI} This match is already being started.\n\n"
-                           f"{await resources.available_resource_clans_text()}", ephemeral=True)
-            return
-        case live_start.LiveStartRefused():
-            return
-        case live_start.LiveStartClanUnavailable():
-            await ctx.send(f"{ERROR_EMOJI} **{host.clan.name}** is currently occupied.\n\n"
-                           f"{await resources.available_resource_clans_text()}", ephemeral=True)
-            return
-        case unreachable:
-            assert_never(unreachable)
-    request = HelperSequentialJobCreateRequest(
-        job_type="host_sequential_live_match", requested_by=str(ctx.author.id), payload=payload,
-    )
-    await launch_run(bot, ctx, LaunchRequest(
-        match=match_doc, side=LIVE_SIDE, player_tags=[host.player1.tag, host.player2.tag], request=request,
-        districts=list(FINAL_DISTRICTS), start_message_id=int(started_message.id),
-    ))
 
 
 async def launch_run(bot: ipy.Client, ctx: ipy.BaseContext, launch: LaunchRequest) -> None:

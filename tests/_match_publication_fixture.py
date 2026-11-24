@@ -33,6 +33,7 @@ class MatchPublicationStateMixin:
         self.persisted: dict[str, JsonValue | PydanticObjectId] = {
             "_id": self.match.id, "is_war": True, "msg": None,
             "participants.0.user_id": "100", "participants.1.user_id": "200",
+            "participants.0.result": [None, None, None], "participants.1.result": [None, None, None],
             "times.0": 1000, "times.1": None, "hosts.0": "999", "hosts.1": None,
             "host_clans.0": "#CLAN", "host_clans.1": None, "old_msgs.0": None, "old_msgs.1": None,
         }

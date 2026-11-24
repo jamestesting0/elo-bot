@@ -28,7 +28,8 @@ def _is_match_message(message: ipy.Message, bot: ipy.Client) -> bool:
     )
 
 
-async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, active: bool) -> None:
+async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, active: bool,
+                          clear_controls: bool = False) -> None:
     if not message.embeds:
         return
     pending = any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)
@@ -36,7 +37,7 @@ async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, act
         if pending:
             await edit_channel_message(message, embeds=match_message_embeds(message.embeds))
     elif ended or message.embeds[0].title == "**Match Ended**":
-        await mark_match_message_ended(message)
+        await mark_match_message_ended(message, clear_controls=clear_controls)
     elif bound and active and message.embeds[0].title in (
             "**Match Started**", "**Match Scheduled**", "**Match Rescheduled**",
     ):
@@ -66,7 +67,7 @@ async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, act
 
 async def _attempt_repair_message(message: ipy.Message, *, bound: bool, ended: bool, active: bool,
                           match: Match | None = None,
-                          player: int | None = None) -> None:
+                          player: int | None = None, clear_controls: bool = False) -> None:
     try:
         publication = (match.public_message_publication if player is None else match.message_publications[player]) \
             if match is not None else None
@@ -78,7 +79,7 @@ async def _attempt_repair_message(message: ipy.Message, *, bound: bool, ended: b
                 and await restore_match_publication(message, match, player)):
             logging.info("Restored match publication for message %s, side %s", message.id, player)
             return
-        await _repair_message(message, bound=bound, ended=ended, active=active)
+        await _repair_message(message, bound=bound, ended=ended, active=active, clear_controls=clear_controls)
     except (ipy.errors.HTTPException, PyMongoError):
         logging.exception("Unable to repair match message %s; retrying on the next sweep", message.id)
 
@@ -108,7 +109,7 @@ async def _repair_match(bot: ipy.Client, match: Match) -> None:
             message, bound=player is not None,
             ended=side_ended[player] if player is not None and match.is_war else ended,
             active=bool(match.times[player]) if player is not None else False,
-            match=match, player=player,
+            match=match, player=player, clear_controls=player is not None and completed and not match.is_war,
         )
     for message_id, player in bound.items():
         if message_id in seen:
@@ -124,7 +125,7 @@ async def _repair_match(bot: ipy.Client, match: Match) -> None:
             await _attempt_repair_message(
                 message, bound=True, ended=side_ended[player] if match.is_war else ended,
                 active=bool(match.times[player]),
-                match=match, player=player,
+                match=match, player=player, clear_controls=completed and not match.is_war,
             )
     if match.msg:
         public = await bot.fetch_channel(match.routing_channel_id if is_final_match(match)

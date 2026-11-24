@@ -37,16 +37,20 @@ def match_message_embeds(embeds: Sequence[ipy.Embed]) -> list[ipy.Embed | dict[s
     return result
 
 
-async def mark_match_message_ended(message: ipy.Message) -> None:
+async def mark_match_message_ended(message: ipy.Message, *, clear_controls: bool = False) -> None:
     if not message.embeds:
         return
     if (message.embeds[0].title != "**Match Ended**"
             or message.embeds[0].color != RED_COLOR
-            or any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)):
+            or any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)
+            or (clear_controls and message.components)):
         embeds = deepcopy(message.embeds)
         embeds[0].title = "**Match Ended**"
         embeds[0].color = RED_COLOR
-        await edit_channel_message(message, embeds=match_message_embeds(embeds))
+        if clear_controls:
+            await edit_channel_message(message, embeds=match_message_embeds(embeds), components=[])
+        else:
+            await edit_channel_message(message, embeds=match_message_embeds(embeds))
 
 
 @dataclass(frozen=True, slots=True)

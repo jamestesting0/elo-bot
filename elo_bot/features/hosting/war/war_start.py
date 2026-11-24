@@ -9,6 +9,7 @@ from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord.mentions import mention_user
 
 from elo_bot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
+from elo_bot.features.hosting.start_ui import start_components
 from elo_bot.features.matches.resources import ResourceClanReservation, ResourceMatchSideReservation
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
@@ -17,7 +18,6 @@ from elo_bot.features.base_store.start import FreshWarStartState, StoredStartSta
 from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.game import HOST_CLAN_OPTIONS
 from elo_bot.db import Match, Player
 from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.tokens.stake_publication import sync_stake_notes
@@ -160,45 +160,9 @@ async def complete_war_start(
     )
 
     token = match_doc.token
-    host_clan_select = ipy.StringSelectMenu(
-        *HOST_CLAN_OPTIONS,
-        placeholder="🛡️ Set the host clan",
-        custom_id=f"host_clan_select|{token}|{player}",
-    )
-    host_button = ipy.Button(
-        style=ipy.ButtonStyle.GRAY,
-        label="Host",
-        custom_id=f"match_host|{token}|{player}",
-        emoji=ipy.PartialEmoji(name="🙋"),
-    )
-    store_button = ipy.Button(
-        style=ipy.ButtonStyle.GRAY,
-        label="Store Result",
-        custom_id=f"match_result_store|{token}|{player}",
-        emoji=ipy.PartialEmoji(name="💾"),
-    )
-    spectate_button = ipy.Button(
-        style=ipy.ButtonStyle.GRAY, label="Spectate", emoji=ipy.PartialEmoji(name="👀"),
-        custom_id=f"war_spectate|{token}|{player}|{start_timestamp}",
-    )
-    abort_button = ipy.Button(
-        style=ipy.ButtonStyle.RED,
-        label="Abort",
-        custom_id=f"match_abort|{token}|{player}",
-        emoji=ipy.PartialEmoji(name="🛑"),
-    )
-
-    match ctx:
-        case ipy.SlashContext():
-            components = [ipy.ActionRow(host_clan_select)]
-        case ipy.ComponentContext():
-            components = []
-        case unreachable:
-            assert_never(unreachable)
-    components.append(ipy.ActionRow(host_button, store_button, spectate_button, abort_button))
-
     message = await publish_match_message(
-        ctx, match_doc, expected_message_state, content=player_obj.mention, embed=embed, components=components,
+        ctx, match_doc, expected_message_state, content=player_obj.mention, embed=embed,
+        components=start_components(match_doc, player, show_clan_select=isinstance(ctx, ipy.SlashContext)),
     )
 
     await attack_bases.assign_bases(bot, token, player, opponent)

@@ -417,7 +417,7 @@ class MatchResultCommands:
                     try:
                         old_msg = await match_thread.fetch_message(old_msg_id)
                         if old_msg:
-                            await mark_match_message_ended(old_msg)
+                            await mark_match_message_ended(old_msg, clear_controls=not mongo_match.is_war)
                     except ipy.errors.NotFound:
                         pass
         except (ipy.errors.HTTPException, PyMongoError, ResultOperationConflict):

@@ -13009,6 +13009,9 @@
    "auto_defer": "Missing",
    "autocomplete_callbacks": {},
    "callback": {
+    "closure": [
+     "match_abort"
+    ],
     "name": "match_abort"
    },
    "checks": [
@@ -18467,6 +18470,9 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "closure": [
+      "abort_match_button"
+     ],
      "name": "abort_match_button"
     },
     "checks": [],

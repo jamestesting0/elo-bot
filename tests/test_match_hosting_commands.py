@@ -5,6 +5,7 @@ from aiohttp import web
 import anyio
 import interactions as ipy
 from beanie import PydanticObjectId
+from elo_bot.config.ids import MATCH_CHANNEL, STAFF_ROLE
 from elo_bot.db import Match, Participant
 from tests._patch_sites import patch_sites
 import elo_bot.features.matches.resources as resources_module
@@ -14,6 +15,77 @@ from tests._match_commands_case import MatchCommandsCase
 
 
 class TestMatchCommands(MatchCommandsCase):
+    async def test_live_thread_controls_change_host_and_clan_then_abort_the_match(self) -> None:
+        match = Match.model_construct(
+            id=PydanticObjectId(), token="TOKEN", matched_time=1, thread="12345", msg="888", is_war=False,
+            times=[100, None], hosts=["999", None], host_clans=["#OLD", None], old_msgs=[777, None],
+            persistent_host_clans=["#OLD", None],
+            participants=[Participant(user_id="111"), Participant(user_id="222")],
+        )
+        thread_embed = ipy.Embed(title="**Match Started**", fields=[
+            ipy.EmbedField("**Time**", "100"), ipy.EmbedField("**Host**", "<@999>"),
+            ipy.EmbedField("**Host Clan**", "Old Clan"),
+        ])
+        public_embed = ipy.Embed(title="**Match Started**", fields=[
+            ipy.EmbedField("**Players**", "<@111> vs. <@222>"), ipy.EmbedField("**Time**", "100"),
+            ipy.EmbedField("**Host Clan**", "Old Clan"),
+        ])
+        thread_message = MagicMock(id=777, _channel_id=12345, embeds=[thread_embed], components=[], edit=AsyncMock())
+        spectate = ipy.ActionRow(ipy.Button(style=ipy.ButtonStyle.GRAY, label="Spectate", custom_id="live_spectate|TOKEN|100"))
+        public_message = MagicMock(id=888, _channel_id=MATCH_CHANNEL, embeds=[public_embed],
+                                   components=[spectate], edit=AsyncMock())
+        self.bot.fetch_channel.return_value = MagicMock(id=MATCH_CHANNEL, fetch_message=AsyncMock(return_value=public_message))
+        ctx = MagicMock(spec=ipy.ComponentContext, message=thread_message, bot=self.bot)
+        ctx.channel.id = ctx.channel_id = 12345
+        ctx.author = MagicMock(id=555, display_name="New Host", roles=[MagicMock(id=STAFF_ROLE)])
+        ctx.defer, ctx.send = AsyncMock(), AsyncMock()
+        ctx.values = ["#NEW"]
+        clan = MagicMock(tag="#NEW", share_link="https://clan.example")
+        clan.name = "New Clan"
+        self.cog.coc_client.get_clan.return_value = clan
+        collection = MagicMock(update_one=AsyncMock(return_value=MagicMock(matched_count=1)))
+        settings = MagicMock(use_state_management=True, state_management_save_previous=False, keep_nulls=True)
+
+        with (
+            patch("elo_bot.extensions.match.hosting.Match", find_one=AsyncMock(return_value=match)),
+            patch.object(Match, "find_one", new=AsyncMock(return_value=match)),
+            patch.object(Match, "get_pymongo_collection", return_value=collection),
+            patch.object(Match, "get_settings", return_value=settings),
+            patch.object(resources_module.Clan, "find_one", new=AsyncMock(return_value=MagicMock(availability_str="Available"))),
+            patch.object(resources_module, "occupy_clan", new=AsyncMock()) as occupy,
+            patch.object(resources_module, "free_clan", new=AsyncMock()) as free,
+            patch("elo_bot.extensions.match.hosting.schedule_channel_name_edit"),
+            patch("elo_bot.features.hosting.live.live_start.schedule_channel_name_edit"),
+        ):
+            ctx.custom_id = "match_host|TOKEN|0"
+            await self.cog.host_match_button.callback.func(self.cog, ctx)
+            self.assertEqual(match.hosts, ["555", None])
+            self.assertIn("New Host", public_message.edit.await_args.kwargs["embed"]["description"])
+
+            ctx.custom_id = "host_clan_select|TOKEN|0"
+            await self.cog.host_clan_select.callback.func(self.cog, ctx)
+            self.assertEqual(match.host_clans, ["#NEW", None])
+            occupy.assert_awaited_once_with(match, 0, 1)
+            self.assertIn("New Clan", public_message.edit.await_args.kwargs["embed"]["fields"][2]["value"])
+            self.assertNotIn("components", public_message.edit.await_args.kwargs)
+
+            ctx.custom_id = "match_abort|TOKEN|0"
+            ctx.author.id = 999
+            await self.cog.abort_match_button.callback.func(self.cog, ctx)
+            self.assertIn("not the host", ctx.send.await_args.args[0])
+            self.assertEqual(match.times, [100, None])
+
+            ctx.author.id = 555
+            await self.cog.abort_match_button.callback.func(self.cog, ctx)
+
+        self.assertEqual(match.times, [None, None])
+        self.assertEqual(match.host_clans, [None, None])
+        self.assertIn("has been aborted", ctx.send.await_args.args[0])
+        self.assertEqual(free.await_args_list, [call("#OLD", expected_thread="12345"), call("#NEW", expected_thread="12345")])
+        for message in (thread_message, public_message):
+            self.assertEqual(message.edit.await_args.kwargs["embeds"][0].title, "**Match Aborted**")
+            self.assertEqual(message.edit.await_args.kwargs["components"], [])
+
     @patch(
         'elo_bot.extensions.match.hosting.get_start_base_store_slot_availability',
         new_callable=AsyncMock,
@@ -225,6 +297,7 @@ class TestMatchCommands(MatchCommandsCase):
                 ("host_clans", ("#OTHER", None)),
                 ("old_msgs", (999, None)),
                 ("is_war", True),
+                ("participants.1.result", ("3.100", None, None)),
         ):
             with self.subTest(field=field):
                 match = Match.model_construct(
@@ -236,7 +309,7 @@ class TestMatchCommands(MatchCommandsCase):
                     host_clans=["#CURRENT", None],
                     persistent_host_clans=["#PREFERRED", None],
                     old_msgs=[777, None],
-                    participants=[],
+                    participants=[Participant(user_id="111"), Participant(user_id="222")],
                 )
                 match.id = PydanticObjectId()
                 if field is None:
@@ -248,6 +321,8 @@ class TestMatchCommands(MatchCommandsCase):
                     "hosts": ["100", None],
                     "host_clans": ["#CURRENT", None],
                     "old_msgs": [777, None],
+                    "participants.0.result": [None, None, None],
+                    "participants.1.result": [None, None, None],
                 }
                 if field:
                     stored[field] = list(actual) if isinstance(actual, tuple) else actual
@@ -272,6 +347,8 @@ class TestMatchCommands(MatchCommandsCase):
                     "hosts": ["100", None],
                     "host_clans": ["#CURRENT", None],
                     "old_msgs": [777, None],
+                    "participants.0.result": [None, None, None],
+                    "participants.1.result": [None, None, None],
                 })
                 self.assertEqual(update, {"$set": {
                     "times": [None, None], "hosts": [None, None],
@@ -382,6 +459,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send = AsyncMock()
         match = MagicMock(
             thread="12345",
+            is_war=False,
             times=[1000, None],
             hosts=["999", None],
             host_clans=["#CURRENT", None],
@@ -1351,6 +1429,9 @@ class TestMatchCommands(MatchCommandsCase):
         async def record_activate(**kwargs):
             self.assertEqual(match.old_msgs[0], 777)
             self.assertEqual(kwargs["embed"]["title"], "**Match Started**")
+            select, actions = [row.components for row in kwargs["components"]]
+            self.assertEqual(select[0].custom_id, "host_clan_select|TOKEN|0")
+            self.assertEqual([button.label for button in actions], ["Host", "Store Result", "Abort"])
             events.append(("activate", match.host_clans[0]))
 
         match.set = AsyncMock(side_effect=record_match_set)
@@ -1418,6 +1499,8 @@ class TestMatchCommands(MatchCommandsCase):
         mock_clear_base_stores.assert_not_awaited()
         self.assertEqual(public_channel.send.await_args.args[0], "tip")
         self.assertEqual(public_channel.send.await_args.kwargs["components"], [])
+        public_controls = public_message.edit.await_args.kwargs["components"]
+        self.assertEqual([button.label for row in public_controls for button in row.components], ["Spectate"])
         ctx.send.assert_called()
         self.assertIn("Successfully started the match", ctx.send.call_args[0][0])
         self.assertIn("non-occupied base slot `Slot 2`", ctx.send.call_args[0][0])

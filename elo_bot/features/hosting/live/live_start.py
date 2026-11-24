@@ -4,11 +4,13 @@ from copy import deepcopy
 import asyncio
 from dataclasses import dataclass, replace
 from datetime import datetime
+import logging
 import random
 from typing import assert_never
 
 from beanie import PydanticObjectId
 from pydantic import JsonValue
+from pymongo.errors import PyMongoError
 
 import coc
 import interactions as ipy
@@ -20,12 +22,15 @@ import elo_bot.features.hosting.live.live_reservations as live_reservations
 from elo_bot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
 from elo_bot.features.base_store.live import live_pair_ready, live_stores
 from elo_bot.features.base_store.start import StoredStartState
+from elo_bot.features.hosting.start_ui import spectate_button, start_components
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.config.presentation import FOOTER_TEXT, GREEN_COLOR, RED_COLOR
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.ids import MATCH_CHANNEL
-from elo_bot.config.emojis import SUCCESS_EMOJI
-from elo_bot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
+from elo_bot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
+from elo_bot.features.matches.messages import (
+    MatchMessagePublicationError, MatchMessageState, match_message_embeds, publish_match_message,
+)
 from elo_bot.features.matches.message_lock import coordinated_match_message, match_message_lock
 from elo_bot.db import Match
 from elo_bot.features.finals.hosting import accept_final_start
@@ -261,12 +266,11 @@ async def complete_live_start(
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=embed_color(),
     )
-    spectate_controls = [ipy.ActionRow(ipy.Button(
-        style=ipy.ButtonStyle.SECONDARY, label="Spectate", emoji="👀",
-        custom_id=f"live_spectate|{match_doc.token}|{timestamp}",
-    ))]
+    spectate_controls = [ipy.ActionRow(spectate_button(f"live_spectate|{match_doc.token}|{timestamp}"))]
     message = await publish_match_message(
         ctx, match_doc, expected_message_state, content=mentions, embed=embed,
+        components=(start_components(match_doc, 0, show_clan_select=True)
+                    if isinstance(start.reply, ManualLiveStartReply) else None),
     )
 
     channel = await bot.fetch_channel(match_doc.routing_channel_id if is_final_match(match_doc)
@@ -340,6 +344,30 @@ async def complete_live_start(
     await resources.remove_helper_task(match_doc.thread, match_doc.participants[1].user_id)
     schedule_channel_name_edit(ctx.channel, "🟢")
     return message
+
+
+async def publish_live_host_details(ctx: ipy.ComponentContext, match: Match, thread_embed: ipy.Embed) -> bool:
+    if not match.msg:
+        return True
+    try:
+        channel = await ctx.bot.fetch_channel(match.routing_channel_id if is_final_match(match) else MATCH_CHANNEL)
+        message = await channel.fetch_message(int(match.msg))
+        embed = deepcopy(message.embeds[0])
+        embed.description = (
+            "Spectate in the host clan with a TH5 or lower account. "
+            f"Host: {thread_embed.fields[1].value}."
+        )
+        embed.fields[2].value = thread_embed.fields[2].value
+        await publish_match_message(
+            ctx, match, MatchMessageState.capture(match, 0), embed=embed, existing_message=message,
+            public_channel=channel,
+        )
+    except (ipy.errors.HTTPException, MatchMessagePublicationError, PyMongoError):
+        logging.exception("Failed to update live match %s announcement %s", match.token, match.msg)
+        await ctx.send(f"{IMPORTANT_EMOJI} Hosting details saved. The public announcement could not be updated.",
+                       ephemeral=True)
+        return False
+    return True
 
 
 async def abort_live_start(

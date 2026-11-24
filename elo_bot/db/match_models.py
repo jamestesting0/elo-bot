@@ -332,6 +332,8 @@ class Match(Document):
             "host_clans": list(expected.host_clans),
             "old_msgs": list(expected.old_messages),
         }
+        for player, participant in enumerate(self.participants):
+            query[f"participants.{player}.result"] = list(participant.result)
         updates: dict[str, JsonValue] = {
             "times": [None, None],
             "hosts": [None, None],

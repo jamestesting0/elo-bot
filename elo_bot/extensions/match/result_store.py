@@ -1,3 +1,5 @@
+from hashlib import blake2s
+import json
 import logging
 import re
 from typing import assert_never
@@ -51,6 +53,11 @@ from elo_bot.integrations.helper_api import HelperScoreAttackLimit
 from elo_bot.features.finals.result_ui import SCORE_PLACEHOLDER, require_source_result_role
 
 
+def _live_result_revision(match: Match) -> str:
+    scores = json.dumps([participant.result for participant in match.participants]).encode()
+    return f"live_{blake2s(scores, digest_size=8).hexdigest()}"
+
+
 class MatchResultStoreCommands:
     @ipy.component_callback(re.compile(r"^match_result_store\|\w+\|\w+$"))
     async def result_store_button(self, ctx: ipy.ComponentContext):
@@ -73,6 +80,10 @@ class MatchResultStoreCommands:
             return
         if reason := result_input_error(match):
             await ctx.send(f"{ERROR_EMOJI} {reason}", ephemeral=True)
+            return
+        if not match.is_war:
+            if await self._check_live_result_control(ctx, match):
+                await ctx.send_modal(self._live_result_form(match))
             return
         if refusal := await open_run_refusal(match, index):
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
@@ -129,8 +140,9 @@ class MatchResultStoreCommands:
     @acknowledge_privately
     @coordinated_match_message
     async def result_store_modal(self, ctx: ipy.ModalContext, **response):
-        _, token, index = ctx.custom_id.split("|")
-        index = int(index)
+        _, token, selection = ctx.custom_id.split("|")
+        is_live_form = selection.startswith("live_")
+        index = 0 if is_live_form else int(selection)
         opponent_index = 0 if index else 1
 
         match = await Match.find_one(Match.token == token)
@@ -148,6 +160,17 @@ class MatchResultStoreCommands:
             return
         if reason := result_input_error(match):
             await ctx.send(f"{ERROR_EMOJI} {reason}", ephemeral=True)
+            return
+        if not match.is_war:
+            if await self._check_live_result_control(ctx, match):
+                if selection != _live_result_revision(match):
+                    await ctx.send(f"{ERROR_EMOJI} The scores changed. Reopen **Store Result** and try again.",
+                                   ephemeral=True)
+                else:
+                    await self._store_live_result_form(ctx, match, response)
+            return
+        if is_live_form:
+            await reject_outdated_match_control(ctx)
             return
         expected = MatchMessageState.capture(match, index)
 
@@ -255,6 +278,72 @@ class MatchResultStoreCommands:
             )
 
             await self._finish_stored_result_side(match, index)
+
+    async def _check_live_result_control(self, ctx: ipy.ComponentContext | ipy.ModalContext, match: Match) -> bool:
+        if not match.times[0] or not match.host_clans[0]:
+            await ctx.send(f"{ERROR_EMOJI} A live match has not been initiated.", ephemeral=True)
+            return False
+        if not is_final_match(match) and not any(ctx.author.has_role(role) for role in LVL2_ROLES):
+            await ctx.send(f"{ERROR_EMOJI} You do not have permission to store results.", ephemeral=True)
+            return False
+        if str(ctx.author.id) in {participant.user_id for participant in match.participants}:
+            await ctx.send(f"{ERROR_EMOJI} You cannot store your own match result.", ephemeral=True)
+            return False
+        if refusal := await open_run_refusal(match):
+            await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
+            return False
+        return True
+
+    @staticmethod
+    def _live_result_form(match: Match) -> ipy.Modal:
+        final = is_final_match(match)
+        return ipy.Modal(
+            *(ipy.ParagraphText(
+                label=f"Player {player + 1}", custom_id=f"results{player}", required=final, max_length=100,
+                placeholder=SCORE_PLACEHOLDER if final else "One stars.destruction score per district, e.g. 2.83",
+                value="\n".join(score or "" for score in participant.result) if any(participant.result) else None,
+            ) for player, participant in enumerate(match.participants)),
+            title="Store Live Match Results", custom_id=f"store_modal|{match.token}|{_live_result_revision(match)}",
+        )
+
+    async def _store_live_result_form(self, ctx: ipy.ModalContext, match: Match, response: dict[str, str | None]) -> None:
+        final = is_final_match(match)
+        count = 7 if final else MATCH_RESULT_ENTRY_COUNT
+        query = {
+            **MatchMessageState.capture(match, 0).binding_filter(), "result_operation": None,
+            "is_autowin": {"$ne": True}, "$or": [{"autowin_winner_id": None}, {"autowin_completed": True}],
+        }
+        updates = {}
+        complete = True
+        for player, participant in enumerate(match.participants):
+            entries = (response.get(f"results{player}") or "").splitlines()
+            if (len(entries) > count or (final and (len(entries) != count or not all(entries)))
+                    or any(entry and not is_valid_match_result_entry(entry) for entry in entries)):
+                await ctx.send(
+                    f"{ERROR_EMOJI} Enter valid scores for Player {player + 1}, one per district (e.g. `2.83`).",
+                    ephemeral=True,
+                )
+                return
+            entries += [""] * (count - len(entries))
+            field = f"participants.{player}.result"
+            query[field] = list(participant.result)
+            side_complete = all(entries)
+            complete = complete and side_complete
+            if entries != [score or "" for score in participant.result]:
+                updates[field] = entries
+                updates[f"submitters.{player}"] = str(ctx.author.id) if side_complete else None
+
+        if updates and not await update_match(match, query, {"$set": updates}):
+            await ctx.send(f"{ERROR_EMOJI} The match changed. Check the current scores before retrying.", ephemeral=True)
+            return
+        if complete:
+            await ctx.send(f"{SUCCESS_EMOJI} Both results stored.", ephemeral=True, components=ipy.Button(
+                style=ipy.ButtonStyle.GRAY, label="Submit Result", emoji="📥", custom_id=f"submit_button|{match.token}",
+            ))
+        elif updates:
+            await ctx.send(f"{SUCCESS_EMOJI} Scores saved.", ephemeral=True)
+        else:
+            await ctx.send("No scores changed.", ephemeral=True)
 
     async def _finish_stored_result_side(self, match: Match, player: int) -> None:
         old_message_id = match.old_msgs[player]

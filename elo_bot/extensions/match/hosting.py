@@ -496,8 +496,11 @@ class MatchHostingCommands:
         if not await check_match_control(ctx, match, index):
             return
         expected = MatchMessageState.capture(match, index)
+        if not match.is_war and not match.times[0]:
+            await ctx.send(f"{ERROR_EMOJI} A live match has not been initiated.", ephemeral=True)
+            return
 
-        if (is_match_finished(match, player=index)
+        if (is_match_finished(match, player=index if match.is_war else None)
                 or ctx.message.embeds[0].title == "**Match Ended**"):
             await ctx.send(
                 f"{ERROR_EMOJI} You cannot set a clan for a match that has ended.",
@@ -508,18 +511,24 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
-        # authorization: unchanged logic, read from the document
-        if match.hosts[index] and str(ctx.author.id) != match.hosts[index]:
+        if (not match.is_war or match.hosts[index]) and str(ctx.author.id) != match.hosts[index]:
             await ctx.send(f"{ERROR_EMOJI} You are not the host of this match.", ephemeral=True)
             return
 
         # fetch clan and update only the changed field
         clan = await self.coc_client.get_clan(ctx.values[0])
+        if not match.is_war and any(
+                store.clan_tag != clan.tag for participant in match.participants
+                if (store := held_store(participant)) is not None
+        ):
+            await ctx.send(f"{ERROR_EMOJI} Select the clan that holds the stored bases.", ephemeral=True)
+            return
         reservation = await try_reserve_resource_clan(clan.tag)
         if not reservation or not await claim_resource_clan(
                 reservation,
                 match,
                 index,
+                player2_index=None if match.is_war else 1,
                 allow_current_owner=True,
                 expected_control=expected,
         ):
@@ -536,6 +545,8 @@ class MatchHostingCommands:
         await publish_match_message(
             ctx, match, MatchMessageState.capture(match, index), embed=embed, existing_message=ctx.message,
         )
+        if not match.is_war and not await live_start.publish_live_host_details(ctx, match, embed):
+            return
 
         await ctx.send(
             f"{SUCCESS_EMOJI} You have set [{clan.name} ({clan.tag})]({clan.share_link}) as the host clan!",
@@ -651,9 +662,9 @@ class MatchHostingCommands:
             schedule_channel_name_edit(ctx.channel, "🔵")
 
     @ipy.component_callback(re.compile(r"^match_abort\|\w+\|\w+$"))
+    @acknowledge_privately
+    @coordinated_match_message
     async def abort_match_button(self, ctx: ipy.ComponentContext):
-        await ctx.defer(ephemeral=True)
-
         _, token, index = ctx.custom_id.split("|")
         index = int(index)
 
@@ -662,6 +673,11 @@ class MatchHostingCommands:
         if match is None:
             await edit_channel_message(ctx.message, components=utils.misc_utils.disable_components(*ctx.message.components))
             await ctx.send(f"{ERROR_EMOJI} Unable to fetch a valid match, the match has probably ended.")
+            return
+
+        if not match.is_war:
+            if await check_match_control(ctx, match, index):
+                await self._abort_live_match(ctx, match)
             return
 
         if (is_match_finished(match, player=index)
@@ -712,13 +728,15 @@ class MatchHostingCommands:
             return
 
         # disallow hosting own match
-        player_id = match.participants[index].user_id
-        if player_id and str(player_id) == str(ctx.author.id):
+        participants = (match.participants[index],) if match.is_war else match.participants
+        if str(ctx.author.id) in {participant.user_id for participant in participants}:
             await ctx.send(f"{ERROR_EMOJI} You cannot host your own matches.", ephemeral=True)
             return
 
-        # prevent hosting ended match (keep old UX)
-        if (is_match_finished(match, player=index)
+        if not match.is_war and not match.times[0]:
+            await ctx.send(f"{ERROR_EMOJI} A live match has not been initiated.", ephemeral=True)
+            return
+        if (is_match_finished(match, player=index if match.is_war else None)
                 or ctx.message.embeds[0].title == "**Match Ended**"):
             await ctx.send(f"{ERROR_EMOJI} You cannot host a match that has ended.", ephemeral=True)
             return
@@ -726,12 +744,16 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
-        if not await update_match_control(
-                match, MatchMessageState.capture(match, index), {f"hosts.{index}": str(ctx.author.id)},
-        ):
+        host_id = str(ctx.author.id)
+        updates = {f"hosts.{index}": host_id}
+        if not match.is_war and match.hosts[1]:
+            updates["hosts.1"] = host_id
+        if not await update_match_control(match, MatchMessageState.capture(match, index), updates):
             await reject_outdated_match_control(ctx)
             return
-        match.hosts[index] = str(ctx.author.id)
+        match.hosts[index] = host_id
+        if "hosts.1" in updates:
+            match.hosts[1] = host_id
 
         # update the embed field “Host”
         ctx.message.embeds[0].fields[1].value = mention_user(ctx.author, mention_type="Helper")
@@ -739,18 +761,19 @@ class MatchHostingCommands:
         await publish_match_message(
             ctx, match, MatchMessageState.capture(match, index), embed=embed, existing_message=ctx.message,
         )
+        if not match.is_war and not await live_start.publish_live_host_details(ctx, match, embed):
+            return
 
         await ctx.send(f"{SUCCESS_EMOJI} You have set yourself as the host of this match!", ephemeral=True)
 
-        # if both hosts chosen, flip the channel to green
-        if all(match.hosts):
+        if not match.is_war or all(match.hosts):
             schedule_channel_name_edit(ctx.channel, "🟢")
 
     @base.subcommand(sub_cmd_name="abort", sub_cmd_description="Abort a live match")
     @ipy.check(ipy.has_any_role(*LVL2_ROLES))
+    @acknowledge_privately
+    @coordinated_match_message
     async def match_abort(self, ctx: ipy.SlashContext):
-        await ctx.defer(ephemeral=True)
-
         match = await Match.find_one(Match.thread == str(ctx.channel.id))
         if match is None:
             await ctx.send(
@@ -761,6 +784,9 @@ class MatchHostingCommands:
 
         if not await check_current_match(ctx, match):
             return
+        await self._abort_live_match(ctx, match)
+
+    async def _abort_live_match(self, ctx: ipy.SlashContext | ipy.ComponentContext, match: Match) -> None:
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
@@ -769,8 +795,7 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
-        # a live match must have a scheduled time
-        if not match.times[0]:
+        if match.is_war or not match.times[0]:
             await ctx.send(f"{ERROR_EMOJI} A live match has not been initiated.", ephemeral=True)
             return
 
@@ -779,6 +804,9 @@ class MatchHostingCommands:
             if str(ctx.author.id) not in {h for h in match.hosts if h}:
                 await ctx.send(f"{ERROR_EMOJI} You are not the host of this match.", ephemeral=True)
                 return
+        elif isinstance(ctx, ipy.ComponentContext) and not any(ctx.author.has_role(role) for role in LVL2_ROLES):
+            await ctx.send(f"{ERROR_EMOJI} You are not the host of this match.", ephemeral=True)
+            return
 
         # disallow abort if any result already stored for either player
         p0 = match.participants[0].result
@@ -791,11 +819,11 @@ class MatchHostingCommands:
             )
             return
 
-        old_msg = (
-            await ctx.channel.fetch_message(match.old_msgs[0])
-            if match.old_msgs and match.old_msgs[0]
-            else None
-        )
+        old_msg = None
+        if isinstance(ctx, ipy.ComponentContext):
+            old_msg = ctx.message
+        elif match.old_msgs and match.old_msgs[0]:
+            old_msg = await ctx.channel.fetch_message(match.old_msgs[0])
         aborted = await live_start.abort_live_start(
             ctx,
             live_start.LiveAbort(match=match, message=old_msg, pause_scouting=True),

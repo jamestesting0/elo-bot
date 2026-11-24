@@ -2,12 +2,65 @@ from unittest.mock import MagicMock, AsyncMock, patch, call
 import interactions as ipy
 from beanie import PydanticObjectId
 from elo_bot.config.presentation import RED_COLOR
-from elo_bot.db import Match, Player
+from elo_bot.config.ids import STAFF_ROLE
+from elo_bot.db import Match, Participant, Player
 from tests._patch_sites import patch_sites
 from tests._match_commands_case import MatchCommandsCase
 
 
 class TestMatchCommands(MatchCommandsCase):
+    async def test_live_store_result_opens_one_form_and_saves_both_players(self) -> None:
+        match = Match.model_construct(
+            id=PydanticObjectId(), token="TOKEN", thread="12345", matched_time=1, is_war=False,
+            hosts=["999", None], host_clans=["#CLAN", None], times=[100, None], old_msgs=[777, None],
+            participants=[Participant(user_id="111", result=["2.80", "", ""]), Participant(user_id="222")],
+        )
+        message = MagicMock(id=777, embeds=[ipy.Embed(title="**Match Started**")], edit=AsyncMock())
+        ctx = MagicMock(spec=ipy.ComponentContext, custom_id="match_result_store|TOKEN|0", message=message)
+        ctx.author.id = 999
+        ctx.author.has_role.side_effect = lambda role: role == STAFF_ROLE
+        ctx.send = AsyncMock()
+        ctx.send_modal = AsyncMock()
+        modal_ctx = MagicMock(spec=ipy.ModalContext, message=message, author=ctx.author)
+        modal_ctx.channel.id = 12345
+        modal_ctx.defer = AsyncMock()
+        modal_ctx.send = AsyncMock()
+        stored = [list(participant.result) for participant in match.participants]
+
+        async def update(query, change):
+            for player, scores in enumerate(stored):
+                self.assertEqual(query[f"participants.{player}.result"], scores)
+                self.assertEqual(query["old_msgs.0"], 777)
+                stored[player] = change["$set"][f"participants.{player}.result"]
+            return MagicMock(matched_count=1)
+
+        collection = MagicMock(update_one=AsyncMock(side_effect=update))
+        with (
+            patch("elo_bot.extensions.match.result_store.Match", find_one=AsyncMock(return_value=match)),
+            patch.object(Match, "get_pymongo_collection", return_value=collection),
+        ):
+            await self.cog.result_store_button.callback.func(self.cog, ctx)
+            form = ctx.send_modal.await_args.args[0]
+            self.assertEqual([field.label for field in form.components], ["Player 1", "Player 2"])
+            self.assertEqual(form.components[0].value, "2.80\n\n")
+            modal_ctx.custom_id = form.custom_id
+            scores = {
+                form.components[0].custom_id: "2.80\n2.91\n3.100",
+                form.components[1].custom_id: "1.52\n2.71\n3.100",
+            }
+            await self.cog.result_store_modal.callback.func(self.cog, modal_ctx, **(scores | {"results1": "4.100"}))
+            collection.update_one.assert_not_awaited()
+            self.assertIn("Player 2", modal_ctx.send.await_args.args[0])
+
+            await self.cog.result_store_modal.callback.func(self.cog, modal_ctx, **scores)
+            self.assertEqual(stored, [["2.80", "2.91", "3.100"], ["1.52", "2.71", "3.100"]])
+            self.assertEqual(modal_ctx.send.await_args.kwargs["components"].custom_id, "submit_button|TOKEN")
+
+            match.participants[0].result, match.participants[1].result = stored
+            await self.cog.result_store_modal.callback.func(self.cog, modal_ctx, **scores)
+            self.assertIn("scores changed", modal_ctx.send.await_args.args[0])
+            collection.update_one.assert_awaited_once()
+
     @patch('elo_bot.extensions.match.results.record_match')
     @patch_sites(('elo_bot.features.hosting.war.war_start.Player', 'elo_bot.extensions.match.queue.Player', 'elo_bot.extensions.match.lifecycle.Player', 'elo_bot.extensions.match.results.Player', 'elo_bot.extensions.match.hosting.Player', 'elo_bot.features.queue.state.Player', 'elo_bot.features.queue.matching.Player', 'elo_bot.features.matches.lifecycle.Player', 'elo_bot.features.matches.attack_bases.Player', 'elo_bot.features.results.recording.Player'))
     async def test_match_submit_success(self, mock_player, mock_record_match):
@@ -205,6 +258,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send_modal = AsyncMock()
 
         match = MagicMock(spec=Match)
+        match.is_war = True
         match.result_operation = None
         match.autowin_winner_id = None
         match.autowin_completed = False
@@ -231,6 +285,7 @@ class TestMatchCommands(MatchCommandsCase):
         ctx.send_modal = AsyncMock()
 
         match = MagicMock(spec=Match)
+        match.is_war = True
         match.result_operation = None
         match.autowin_winner_id = None
         match.autowin_completed = False

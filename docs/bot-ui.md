@@ -292,6 +292,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Players can use `/match stake` once their match thread is created and until the match starts.
   The command replies privately and posts an offer in the thread that pings only the opponent.
   **Match Stake** accepts the displayed amount and **Pass** closes the offer without moving tokens.
+  Matching appends *Stake matched.* to the original offer and removes its buttons.
   Show the offer and reply in the match announcement's **Notes** field, one line per player.
   Use `put 500 {TOKEN_EMOJI} at stake`, `matches the stake with 500 {TOKEN_EMOJI}`, or `went all in (500 {TOKEN_EMOJI})`.
   Edit the offer's existing line when it changes. Show the actual held amount if a short all-in reduces the offer.

@@ -781,15 +781,19 @@ class TestTokenDiscord(FinalScenarioCase):
         self.assertEqual(embed.fields[0].value, "- Existing note.\n- A later match note.")
         removed = embed.to_dict()
         await self.stake("1", "600")
+        post = self.stake_posts[702]
+        original_offer = post.content
         message.edit.side_effect = ipy.errors.HTTPException(SimpleNamespace(status=503, reason="Unavailable"))
         with self.assertLogs(level="ERROR"):
             await self.stake("2", "600")
         pending = self.edit()
         self.assertIn("thread update is pending", pending["content"])
+        self.assertEqual(post.content, f"{original_offer}\n\n*Stake matched.*")
         self.assertTrue((await ParticipantStake.get(str(match.id))).publication_pending)
         message.edit.side_effect = None
         await recover_stakes(self.discord)
         self.assertFalse((await ParticipantStake.get(str(match.id))).publication_pending)
+        self.assertEqual(post.content, f"{original_offer}\n\n*Stake matched.*")
         self.assertEqual(embed.fields[0].value,
                          f"- Existing note.\n- A later match note.\n- <@1> put 600 {TOKEN_EMOJI} at stake.\n"
                          f"- <@2> matches the stake with 600 {TOKEN_EMOJI}.")
@@ -841,6 +845,7 @@ class TestTokenDiscord(FinalScenarioCase):
         self.assertEqual(initial.components, [])
         self.assertIn("no longer open", (await self.stake_reply(initial, old_button))["content"])
         current = self.stake_posts[701]
+        original_offer = current.content
         accept = current.components[0].components[0]
         self.assertEqual((await ParticipantStake.get(str(match.id))).offer_message_id, current.id)
         self.assertIn("no longer open", (await self.stake_reply(initial, accept))["content"])
@@ -849,6 +854,8 @@ class TestTokenDiscord(FinalScenarioCase):
         accepted = await self.stake_reply(current, accept)
 
         self.assertIn(f"Stakes fixed at 600 {TOKEN_EMOJI} each", accepted["content"])
+        self.assertEqual(current.content, f"{original_offer}\n\n*Stake matched.*")
+        self.assertEqual(current.edit.await_args.kwargs["allowed_mentions"].to_dict(), {"replied_user": False})
         self.assertEqual(current.components, [])
         self.assertIn(f"<@2> matches the stake with 600 {TOKEN_EMOJI}", embed.fields[0].value)
         self.assertIn("no longer open", (await self.stake_reply(current, accept))["content"])

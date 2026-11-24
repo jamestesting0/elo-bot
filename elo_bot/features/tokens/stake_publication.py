@@ -69,7 +69,13 @@ async def _publish_offer(channel: ipy.ThreadChannel, state: ParticipantStake, bo
             return True
     else:
         if message is not None:
-            text = {"offer": "Stake offer updated.", "closed": "Stake offer closed."}.get(state.state, "Stake matched.")
+            if state.state in {"locked", "settled"}:
+                text = message.content
+                status = "\n\n*Stake matched.*"
+                if text != "Stake matched." and not text.endswith(status):
+                    text += status
+            else:
+                text = "Stake offer updated." if state.state == "offer" else "Stake offer closed."
             await edit_channel_message(message, content=text, components=[], allowed_mentions=ipy.AllowedMentions.none())
         if state.state != "offer":
             return True

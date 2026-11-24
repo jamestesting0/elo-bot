@@ -36,7 +36,7 @@ from tests.integration._final_fixture import FinalScenarioCase
 
 class TestTokenEconomy(FinalScenarioCase):
     async def test_purchase_and_replay_share_one_debit_and_the_requested_units(self):
-        for user, amount, balance in (("1", 1, 4200), ("2", 3, 2600)):
+        for user, amount, balance in (("1", 1, 4000), ("2", 3, 2000)):
             with self.subTest(amount=amount):
                 wallet = await ensure_wallet(user)
                 await asyncio.gather(*(purchase(wallet, TokenItem.PRIORITY_PRO, "one", amount=amount) for _ in range(2)))
@@ -50,8 +50,8 @@ class TestTokenEconomy(FinalScenarioCase):
                 self.assertEqual(receipts[0].item_quantity, amount)
 
     async def test_concurrent_purchases_cannot_spend_the_same_balance(self):
-        for user, item, amount, balance in (("1", TokenItem.PROTECTION, 1, 1400),
-                                            ("2", TokenItem.PRIORITY_PRO, 4, 1800)):
+        for user, item, amount, balance in (("1", TokenItem.PROTECTION, 1, 1000),
+                                            ("2", TokenItem.PRIORITY_PRO, 4, 1000)):
             with self.subTest(amount=amount):
                 wallet = await ensure_wallet(user)
                 outcomes = await asyncio.gather(
@@ -75,7 +75,7 @@ class TestTokenEconomy(FinalScenarioCase):
         self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 0)
         await purchase(wallet, TokenItem.PRIORITY_PRO, "retry", amount=3)
         self.assertEqual((await TokenWallet.get(wallet.id)).inventory, {TokenItem.PRIORITY_PRO: 3})
-        self.assertEqual((await TokenWallet.get(wallet.id)).balance, 2600)
+        self.assertEqual((await TokenWallet.get(wallet.id)).balance, 2000)
 
     async def test_invalid_purchase_quantities_do_not_charge_or_add_items(self):
         wallet = await ensure_wallet("1")
@@ -113,7 +113,7 @@ class TestTokenEconomy(FinalScenarioCase):
         await finish_district_items(match, consume=False)
         await finish_district_items(match, consume=False)
         current = await TokenWallet.get(wallet.id)
-        self.assertEqual(current.balance, 1600)
+        self.assertEqual(current.balance, 1000)
         self.assertEqual(current.inventory, {TokenItem.DISTRICT: 1, TokenItem.PRIORITY_ULTRA: 0})
 
     async def queued_match(self):
@@ -311,17 +311,17 @@ class TestTokenEconomy(FinalScenarioCase):
             with self.assertRaises(OperationFailure):
                 await complete_result_operation(match)
         self.assertFalse((await Match.get(match.id)).result_operation.completed)
-        self.assertEqual((await TokenWallet.get("1")).balance, 1400)
+        self.assertEqual((await TokenWallet.get("1")).balance, 1000)
         await complete_result_operation(match)
         await complete_result_operation(match)
-        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [1500, 5200])
+        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [1100, 5200])
         await begin_result_operation(match, {"player1": "3.100\n3.100\n3.100", "player2": "2.80\n2.80\n2.80"}, stored)
         correction = record.model_copy(deep=True, update={"id": "2"})
         correction.players["1"].won, correction.players["1"].elo_change = True, 25
         correction.players["2"].won, correction.players["2"].elo_change = False, -30
         await persist_result_record(match, correction)
         await complete_result_operation(match)
-        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [1600, 5100])
+        self.assertEqual([(await TokenWallet.get(user)).balance for user in ("1", "2")], [1200, 5100])
         self.assertEqual((await TokenWallet.get("1")).inventory[TokenItem.PROTECTION], 1)
 
     async def test_archived_ranked_record_deletion_refunds_stake_and_reverses_rewards(self):

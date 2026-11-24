@@ -73,6 +73,10 @@ class TestTokenDiscord(FinalScenarioCase):
         ctx = self.context(ipy.ComponentContext, data, user)
         await self.tokens.token_item_control.callback.func(self.tokens, ctx)
 
+    async def confirm_purchase(self, confirmation, *, user="1"):
+        self.discord.cache.get_message.return_value.embeds = [ipy.Embed.from_dict(confirmation["embeds"][0])]
+        await self.click(confirmation["components"][0]["components"][0], user=user)
+
     def stake_announcement(self, match):
         embed = ipy.Embed(title="Match", fields=[ipy.EmbedField(name="**Notes**", value="- Existing note.")])
         message = MagicMock(id=456, author=MagicMock(id=42), embeds=[embed], edit=AsyncMock(),
@@ -143,19 +147,19 @@ class TestTokenDiscord(FinalScenarioCase):
         await self.tokens.tokens_buy.callback.func(self.tokens, ctx, "queue_priority_pro", 3)
         self.assertNotIn("data", self.http.post_initial_response.await_args.args[0])
         self.assertIn("`3` × Queue Priority Pro", self.edit()["content"])
-        self.assertIn(f"2,400 {TOKEN_EMOJI}", self.edit()["content"])
+        self.assertIn(f"3,000 {TOKEN_EMOJI}", self.edit()["content"])
         retry = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         retry.id = ctx.id
         await self.tokens.tokens_buy.callback.func(self.tokens, retry, "queue_priority_pro", 3)
         wallet = await TokenWallet.get("1")
-        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (2600, 3))
+        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (2000, 3))
         self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 1)
         hidden = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_buy.callback.func(self.tokens, hidden, "queue_priority_pro", hidden=True)
         self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
         self.assertIn("`1` × Queue Priority Pro", self.edit()["content"])
         wallet = await TokenWallet.get("1")
-        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (1800, 4))
+        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (1000, 4))
         history = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_history.callback.func(self.tokens, history)
         self.assertIn("Queue Priority Pro × 3", self.edit()["embeds"][0]["description"])
@@ -284,12 +288,12 @@ class TestTokenDiscord(FinalScenarioCase):
             with self.assertRaisesRegex(RuntimeError, "Discord unavailable"):
                 await self.tokens.tokens_buy.callback.func(self.tokens, ctx, "queue_priority_pro", 2)
         wallet = await TokenWallet.get("1")
-        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (3400, 2))
+        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (3000, 2))
         retry = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         retry.id = ctx.id
         await self.tokens.tokens_buy.callback.func(self.tokens, retry, "queue_priority_pro", 2)
         wallet = await TokenWallet.get("1")
-        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (3400, 2))
+        self.assertEqual((wallet.balance, wallet.inventory[TokenItem.PRIORITY_PRO]), (3000, 2))
         self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 1)
         self.assertIn("`2` × Queue Priority Pro", self.edit()["content"])
 
@@ -310,9 +314,9 @@ class TestTokenDiscord(FinalScenarioCase):
         field = next(field for field in shop["embeds"][0]["fields"] if "EXP Potion" in field["name"])
         self.assertIn("10,000", field["value"])
         await self.click(shop["components"][0]["components"][0], value="exp_potion")
-        buy = self.edit()["components"][0]["components"][0]
-        await self.click(buy)
-        await self.click(buy)
+        confirmation = self.edit()
+        await self.confirm_purchase(confirmation)
+        await self.confirm_purchase(confirmation)
         wallet = await TokenWallet.get("1")
         self.assertEqual((wallet.balance, wallet.inventory[TokenItem.EXP]), (15000, 1))
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
@@ -645,27 +649,49 @@ class TestTokenDiscord(FinalScenarioCase):
         self.assertEqual((await TokenWallet.get(wallet.id)).inventory.get(TokenItem.EXP, 0), 0)
         self.assertIsNone(await TokenLedgerEntry.get("failed-grant"))
 
+    async def test_stale_shop_confirmation_requires_reviewing_the_current_price(self):
+        ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
+        await self.tokens.tokens_shop.callback.func(self.tokens, ctx)
+        await self.click(self.edit()["components"][-1]["components"][2])
+        await self.click(self.edit()["components"][0]["components"][0], value="rank_protection")
+        confirmation = self.edit()
+        confirmation["embeds"][0]["description"] = f"3,600 {TOKEN_EMOJI}"
+
+        await self.confirm_purchase(confirmation)
+
+        wallet = await TokenWallet.get("1")
+        self.assertEqual(wallet.balance, 5000)
+        self.assertNotIn(TokenItem.PROTECTION, wallet.inventory)
+        self.assertEqual(await TokenLedgerEntry.find({"kind": "purchase"}).count(), 0)
+        refreshed = self.edit()
+        self.assertIn("Price changed", refreshed["content"])
+        self.assertIn(f"4,000 {TOKEN_EMOJI}", refreshed["embeds"][0]["fields"][1]["value"])
+
     async def test_public_shop_and_inventory_keep_item_controls_owner_only(self):
         ctx = self.context(ipy.SlashContext, {"id": "42", "name": "tokens"})
         await self.tokens.tokens_shop.callback.func(self.tokens, ctx)
         self.assertNotIn("data", self.http.post_initial_response.await_args.args[0])
         first = self.edit()
+        self.assertEqual([field["value"].splitlines()[0] for field in first["embeds"][0]["fields"]],
+                         [f"{price} {TOKEN_EMOJI}" for price in ("1,000", "2,000", "2,000")])
         self.assertEqual([option["label"] for option in first["components"][0]["components"][0]["options"]],
                          ["Queue Priority Pro", "Queue Priority Ultra", "District Choice"])
         await self.click(first["components"][1]["components"][2])
         last = self.edit()
+        self.assertEqual([field["value"].splitlines()[0] for field in last["embeds"][0]["fields"]],
+                         [f"{price} {TOKEN_EMOJI}" for price in ("2,500", "4,000", "10,000")])
         self.assertEqual(last["components"][1]["components"][1]["label"], "2/2")
         await self.click(last["components"][0]["components"][0], value="rank_protection")
-        confirm = self.edit()["components"][0]["components"][0]
-        await self.click(confirm, user="2")
+        confirmation = self.edit()
+        await self.confirm_purchase(confirmation, user="2")
         self.assertIsNone(await TokenWallet.get("2"))
         self.assertEqual(self.http.post_initial_response.await_args.args[0]["data"]["flags"], ipy.MessageFlags.EPHEMERAL)
-        await self.click(confirm)
-        await self.click(confirm)
-        self.assertEqual((await TokenWallet.get("1")).balance, 1400)
+        await self.confirm_purchase(confirmation)
+        await self.confirm_purchase(confirmation)
+        self.assertEqual((await TokenWallet.get("1")).balance, 1000)
         await self.click(self.edit()["components"][0]["components"][0], value="rank_protection")
-        await self.click(self.edit()["components"][0]["components"][0])
-        self.assertEqual((await TokenWallet.get("1")).balance, 1400)
+        await self.confirm_purchase(self.edit())
+        self.assertEqual((await TokenWallet.get("1")).balance, 1000)
         failure = self.http.post_followup.await_args.args[0]
         self.assertEqual(failure["flags"], ipy.MessageFlags.EPHEMERAL)
         self.assertIn("enough available tokens", failure["content"])

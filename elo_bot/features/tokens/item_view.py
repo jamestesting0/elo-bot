@@ -14,6 +14,10 @@ PAGE_SIZE = 3
 PAGES = -(-len(ITEMS) // PAGE_SIZE)
 
 
+def format_item_price(price: int) -> str:
+    return f"{price:,} {TOKEN_EMOJI}"
+
+
 def challenge_code_receipt(uses: list[TokenItemUse]) -> str:
     now = int(time())
     codes = [(use.target, use.expires_at) for use in uses if use.state == "armed" and use.target
@@ -118,7 +122,7 @@ async def item_panel(wallet: TokenWallet, mode: str, page: int, *,
         emoji = TOKEN_ITEM_EMOJIS.get(item)
         name = (f"{emoji} " if emoji else "") + f"**{listing.name}**"
         quantity = wallet.inventory.get(item, 0)
-        details = f"{listing.price:,} {TOKEN_EMOJI}" if shop else f"Owned: `{quantity:,}`"
+        details = format_item_price(listing.price) if shop else f"Owned: `{quantity:,}`"
         if item in active:
             details += f" · {activation_details(active[item], hidden=hidden and not read_only)}"
         embed.add_field(name=name, value=f"{details}\n{listing.description}")

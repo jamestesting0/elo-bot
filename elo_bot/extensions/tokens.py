@@ -13,7 +13,7 @@ from elo_bot.core.token_items import ITEMS, TokenItem
 from elo_bot.config.game import DISTRICT_INDEX
 from elo_bot.features.tokens import items
 from elo_bot.features.tokens.exp import recover_exp, redeem_exp
-from elo_bot.features.tokens.item_view import PAGES, active_item_panel, challenge_code_receipt, item_panel
+from elo_bot.features.tokens.item_view import PAGES, active_item_panel, challenge_code_receipt, format_item_price, item_panel
 from elo_bot.features.tokens.item_management import ItemAdjustment, adjust_items, deactivate_item
 from elo_bot.features.tokens.awards import recover_awards
 from elo_bot.features.tokens.stake_publication import recover_stakes
@@ -198,7 +198,7 @@ class TokenCommands(ipy.Extension):
                 item = TokenItem(ctx.values[0])
                 if mode == "shop":
                     listing = ITEMS[item]
-                    embed = ipy.Embed(title=f"**{listing.name}**", description=f"{listing.price:,} {TOKEN_EMOJI}",
+                    embed = ipy.Embed(title=f"**{listing.name}**", description=format_item_price(listing.price),
                                       color=embed_color(), footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()))
                     await ctx.edit_origin(content="", embed=embed, components=[
                         ipy.Button(style=ipy.ButtonStyle.SUCCESS, label="Buy",
@@ -220,8 +220,12 @@ class TokenCommands(ipy.Extension):
                     return
             if action == "buy":
                 item = TokenItem(values[0])
-                await items.purchase(wallet, item, key)
-                content = f"{SUCCESS_EMOJI} Purchased {ITEMS[item].name}."
+                listing = ITEMS[item]
+                if not message or not message.embeds or message.embeds[0].description != format_item_price(listing.price):
+                    content = f"{ERROR_EMOJI} Price changed. Select the item again to review the current price."
+                else:
+                    await items.purchase(wallet, item, key)
+                    content = f"{SUCCESS_EMOJI} Purchased {listing.name}."
             elif action in {"pick", "district"}:
                 if action == "district":
                     district = ctx.values[0]

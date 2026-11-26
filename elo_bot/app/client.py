@@ -2,6 +2,7 @@ import logging
 import re
 
 import interactions as ipy
+from interactions.models.discord.enums import EmbedType
 
 from elo_bot.discord import runtime
 from elo_bot.config.emojis import ERROR_EMOJI
@@ -49,7 +50,18 @@ async def dispatch_elo_interaction(event: ipy.events.RawGatewayEvent) -> None:
     await ipy.Client._dispatch_interaction.callback(runtime.bot, event)
 
 
+def register_component_embed_type() -> None:
+    if "components" in EmbedType:
+        return
+    # interactions.py 6.0.0 cannot decode component link previews until this enum accepts their type.
+    member = object.__new__(EmbedType)
+    member._name_ = "COMPONENTS"
+    member._value_ = "components"
+    EmbedType._value2member_map_.setdefault(member.value, member)
+
+
 def create_client(version: str) -> ipy.Client:
+    register_component_embed_type()
     runtime.VERSION = version
     logging.getLogger("interactions").addFilter(DiscordApiRouteFilter())
     runtime.bot = ipy.Client(

@@ -26,18 +26,16 @@ from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostRe
 def market_embed(final: EloFinal, market: FinalBettingMarket, names: dict[str, str] | None = None) -> ipy.Embed:
     names = names or {}
     total = sum(market.pools.values())
-    lines = []
+    lines = ["Closes when the match starts. Winning bets split the whole pool.", ""] if market.state == "OPEN" else []
     for user in market.contestants:
         pool = market.pools.get(user, 0)
         multiplier = f"×{total / pool:.2f}" if pool else "×—"
         won = f" {WIN_EMOJI}" if market.state == "PAID" and user == market.desired_winner else ""
         lines.append(f"{names.get(user, mention_user(None, user))}{won} — {pool:,} {TOKEN_EMOJI} · {multiplier}")
-    # The pool rows name both players and mark the winner, so the status line names nobody.
-    status = "Paid" if market.state == "PAID" else market_label(market, names)
+    status = {"OPEN": "Open", "PAID": "Paid"}.get(market.state) or market_label(market, names)
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Betting**", color=embed_color(),
-        description=status
-                    + (". Winning bets split the whole pool." if market.state == "OPEN" else "")
-                    + "\n\n" + "\n".join(lines))
+        description="\n".join(lines))
+    embed.set_author(name=status)
     embed.add_field(name="**Total Pool**", value=f"{total:,} {TOKEN_EMOJI}")
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed
@@ -55,7 +53,7 @@ def market_signature(market: FinalBettingMarket, final: EloFinal) -> str:
     )}
     state.update({"contestants": market.contestants, "seeding": seeded_players(final),
                   "names": {user: final.player_nicknames.get(user, user) for user in market.contestants}})
-    return sha256(json.dumps({"presentation": 4, **state}, sort_keys=True).encode()).hexdigest()
+    return sha256(json.dumps({"presentation": 5, **state}, sort_keys=True).encode()).hexdigest()
 
 
 async def publish_market(bot, final: EloFinal, market: FinalBettingMarket):

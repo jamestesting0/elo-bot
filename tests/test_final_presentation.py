@@ -79,13 +79,16 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
         final = self.edition()
         market = FinalBettingMarket.model_construct(id="market", node_id="QF2", contestants=["3", "4"],
             pools={"3": 4000, "4": 6000}, desired_winner="4")
-        for state in ("OPEN", "CLOSED", "SETTLING", "CORRECTING", "PAID", "REFUNDED"):
+        for state, label in (("OPEN", "Open"), ("CLOSED", "Closed"), ("SETTLING", "Paying out"),
+                             ("CORRECTING", "Paying out"), ("PAID", "Paid"), ("REFUNDED", "Refunded")):
             with self.subTest(state=state):
                 market.state = state
                 embed = market_embed(final, market, {"3": "Left", "4": "Right"})
+                self.assertEqual(embed.to_dict().get("author"), {"name": label})
                 self.assertIn("×2.50", embed.description)
                 self.assertIn("×1.67", embed.description)
-                self.assertNotIn(state, embed.description)
+                self.assertNotIn(label, embed.description)
+                self.assertEqual("Winning bets split the whole pool." in embed.description, state == "OPEN")
                 self.assertEqual((embed.description.count("Left"), embed.description.count("Right")), (1, 1))
                 winner_rows = [line for line in embed.description.splitlines() if str(WIN_EMOJI) in line]
                 self.assertEqual(winner_rows, [line for line in embed.description.splitlines()

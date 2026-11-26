@@ -13,6 +13,7 @@ from elo_bot.discord.pagination import InvalidPageError, build_page_jump_modal, 
 from elo_bot.features.hosting.sequential.ui import (
     CANCEL_PREFIX,
     CONTINUE_PREFIX,
+    REPLAY_PREFIX,
     LIST_JUMP_PREFIX,
     LIST_LEFT_PREFIX,
     LIST_PAGE_PREFIX,
@@ -130,3 +131,7 @@ class MatchSequentialCommands:
     @ipy.component_callback(re.compile(rf"^{CONTINUE_PREFIX}\|[0-9a-f]{{24}}$"))
     async def helper_sequential_continue(self, ctx: ipy.ComponentContext) -> None:
         await sequential_service.continue_from_button(self.bot, ctx, PydanticObjectId(ctx.custom_id.split("|")[1]))
+
+    @ipy.component_callback(re.compile(rf"^{REPLAY_PREFIX}\|[0-9a-f]{{24}}$"))
+    async def helper_sequential_replay(self, ctx: ipy.ComponentContext) -> None:
+        await sequential_service.replay_from_button(self.bot, ctx, PydanticObjectId(ctx.custom_id.split("|")[1]))

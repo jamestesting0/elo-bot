@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 HELPER_POLL_INTERVAL_SECONDS = 2
 HELPER_MAX_STATUS_FAILURES = 3
+HELPER_SEQUENTIAL_RESERVATION_PREFIX = "reserved_by_sequential_job:"
 type HelperJobStatus = Literal["queued", "running", "succeeded", "failed", "cancelled"]
 type HelperJobType = Literal[
     "host_war_match",
@@ -607,7 +608,9 @@ def helper_job_notification(outcome: HelperJob | HelperTrackingFailure) -> str:
 
 
 # Sequential matches play every district in one long job and report per-district progress in `result`.
-type HelperSequentialJobType = Literal["host_sequential_war_match", "host_sequential_live_match"]
+type HelperSequentialJobType = Literal[
+    "host_sequential_war_match", "host_sequential_live_match", "host_sequential_live_match_on_stored",
+]
 type HelperSequentialBaseSource = Literal["links", "stored"]
 
 
@@ -632,35 +635,41 @@ class HelperSequentialWarPayload(HelperModel):
         return self
 
 
-class HelperSequentialLivePayload(HelperModel):
+class _HelperSequentialLiveFields(HelperModel):
+    model_config = ConfigDict(extra="forbid")
+
     host_clan_tag: str
-    base_source: HelperSequentialBaseSource
     player_1_tag: str
     player_2_tag: str
-    base_links_for_player_1: list[str] | None = Field(default=None, min_length=1, max_length=9)
-    base_links_for_player_2: list[str] | None = Field(default=None, min_length=1, max_length=9)
-    districts: list[str] | None = Field(default=None, min_length=1, max_length=9)
-    remove_bases_after: Literal[False] | None = None
     attacks_first: str | None = None
 
-    @model_validator(mode="after")
-    def validate_source_fields(self) -> "HelperSequentialLivePayload":
-        linked = self.base_links_for_player_1 is not None and self.base_links_for_player_2 is not None
-        stored = self.districts is not None or self.remove_bases_after is not None
-        if (self.base_source == "links") != linked or linked == stored:
-            raise HelperContractMismatchError("Sequential live payload mixes linked and stored fields.")
-        return self
+
+class HelperSequentialLivePayload(_HelperSequentialLiveFields):
+    base_links_for_player_1: list[str] = Field(min_length=1, max_length=9)
+    base_links_for_player_2: list[str] = Field(min_length=1, max_length=9)
+
+
+class HelperSequentialLiveOnStoredPayload(_HelperSequentialLiveFields):
+    districts: list[str] = Field(min_length=1, max_length=9)
+    remove_bases_after: Literal[False] = False
 
 
 class HelperSequentialJobCreateRequest(HelperModel):
     job_type: HelperSequentialJobType = Field(alias="type")
     requested_by: str
-    payload: HelperSequentialWarPayload | HelperSequentialLivePayload
+    payload: HelperSequentialWarPayload | HelperSequentialLivePayload | HelperSequentialLiveOnStoredPayload
 
     @model_validator(mode="after")
     def validate_payload_type(self) -> "HelperSequentialJobCreateRequest":
-        expected = (HelperSequentialWarPayload if self.job_type == "host_sequential_war_match"
-                    else HelperSequentialLivePayload)
+        match self.job_type:
+            case "host_sequential_war_match":
+                expected = HelperSequentialWarPayload
+            case "host_sequential_live_match":
+                expected = HelperSequentialLivePayload
+            case "host_sequential_live_match_on_stored":
+                expected = HelperSequentialLiveOnStoredPayload
+            case unreachable:
+                assert_never(unreachable)
         if not isinstance(self.payload, expected):
             raise HelperContractMismatchError(f"{self.job_type} received an incompatible payload.")
         return self
@@ -704,6 +713,7 @@ class HelperSequentialPlayer(HelperModel):
 
 class HelperSequentialMatchInfo(HelperModel):
     players: list[HelperSequentialPlayer]
+    base_source: HelperSequentialBaseSource | None = None
 
 
 class HelperSequentialResult(HelperModel):

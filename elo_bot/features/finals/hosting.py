@@ -24,16 +24,14 @@ def require_startable(final: EloFinal, current: Match, source: Match, player: in
     require_round_ready(final, round_name)
     if final.prediction_state == "OPEN":
         raise FinalError("Predictions are still open. Ask a manager to close them before starting.")
+    if isinstance(current.final_replay_run_id, PydanticObjectId):
+        raise FinalError("Wait for the district replay to finish before starting another Helper run.")
     if current.scheduled_times != node.scheduled_times:
         raise FinalError("This Final match's schedule is inconsistent. Ask a manager to check the pairing.")
     if final_hosting_format_is_set(current) and current.is_war != (player is not None):
         if current.is_war:
             raise FinalError("This is a war-style match. Use `/match war start` or `/match war autostart`.")
         raise FinalError("This is a live match. Use `/match start` or `/match autostart`.")
-    sides = (0, 1) if player is None else (player,)
-    if any(side in current.final_scouting_paused_sides for side in sides):
-        command = "/match schedule" if player is None else "/match war schedule"
-        raise FinalError(f"This match was aborted. Reschedule it with `{command}` before starting.")
     return node
 
 

@@ -2,9 +2,11 @@
 import json
 import unittest
 from copy import deepcopy
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
+import anyio
 import interactions as ipy
 from aiohttp import web
 from beanie import PydanticObjectId
@@ -13,7 +15,7 @@ from pydantic import ValidationError
 import elo_bot.features.hosting.sequential.service as service
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.db.sequential_models import LIVE_SIDE, HelperSequentialRun
-from elo_bot.features.finals.result_ui import result_form
+from elo_bot.features.finals import result_ui
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.features.hosting.sequential import runs, scores, ui
 from elo_bot.integrations.helper_api import (
@@ -229,11 +231,26 @@ class TestLedger(unittest.TestCase):
         self.assertEqual(runs.remaining_districts(match, [as_run(live)]),
                          ["Balloon Lagoon", "Dragon Cliffs", "Golem Quarry", "Skeleton Park", "Goblin Mines"])
 
+    def test_different_player_orders_keep_partly_played_districts_in_continuation(self) -> None:
+        snapshot = helper_result({"player_1": ["BC", "BL"], "player_2": []}, [])
+        for index, code in enumerate(("BL", "BW", "BC")):
+            record = snapshot["completion"]["rounds"][index]
+            record["districts"]["player_2"] = code
+            record["players"]["player_2"].update(posted=index < 2, completed=index < 2)
+        run = as_run(run_document(snapshot=snapshot))
+        match = MagicMock(participants=[MagicMock(result=[None] * 7), MagicMock(result=[None] * 7)])
+        self.assertEqual(runs.remaining_districts(match, [run]),
+                         [district for district in FINAL_DISTRICTS if district != "Balloon Lagoon"])
+        result = HelperSequentialResult.model_validate(snapshot)
+        self.assertEqual(runs.district_states(result)["BC"], "in progress")
+        self.assertEqual(runs.district_states(result)["BL"], "played")
+
     def test_continuation_sends_only_remaining_links_in_final_order(self) -> None:
         request = service.continuation_request(as_run(run_document()), ["Dragon Cliffs", "Goblin Mines"], "9")
         self.assertEqual(request.payload.base_links_for_player_1, [LINKS[3], LINKS[6]])
         self.assertEqual(request.payload.base_links_for_player_2, [LINKS[3], LINKS[6]])
         self.assertEqual(request.requested_by, "9")
+        self.assertNotIn("base_source", request.model_dump(exclude_none=True)["payload"])
 
     def test_second_continuation_slices_the_shortened_request(self) -> None:
         first = service.continuation_request(as_run(run_document()), list(FINAL_DISTRICTS[3:]), "9")
@@ -241,6 +258,29 @@ class TestLedger(unittest.TestCase):
                                  districts=list(FINAL_DISTRICTS[3:]))
         second = service.continuation_request(as_run(shortened), list(FINAL_DISTRICTS[5:]), "9")
         self.assertEqual(second.payload.base_links_for_player_1, LINKS[5:])
+
+    def test_stored_live_continuation_uses_current_type_for_old_and_new_runs(self) -> None:
+        for legacy in (False, True):
+            with self.subTest(legacy=legacy):
+                payload = {
+                    "host_clan_tag": "#CLAN", "player_1_tag": "#P1", "player_2_tag": "#P2",
+                    "districts": list(FINAL_DISTRICTS), "remove_bases_after": False, "attacks_first": "#P2",
+                }
+                job_type = "host_sequential_live_match_on_stored"
+                if legacy:
+                    job_type = "host_sequential_live_match"
+                    payload["base_source"] = "stored"
+                saved = {"type": job_type, "requested_by": "7", "payload": payload}
+                run = as_run(run_document(create_request=saved))
+                remaining = ["Dragon Cliffs", "Goblin Mines"]
+                request = service.continuation_request(run, remaining, "9")
+                self.assertEqual(request.model_dump(by_alias=True, exclude_none=True), {
+                    "type": "host_sequential_live_match_on_stored", "requested_by": "9", "payload": {
+                        "host_clan_tag": "#CLAN", "player_1_tag": "#P1", "player_2_tag": "#P2",
+                        "districts": remaining, "remove_bases_after": False, "attacks_first": "#P2",
+                    },
+                })
+                self.assertEqual(run.create_request, saved)
 
 
 class TestLifecycle(unittest.IsolatedAsyncioTestCase):
@@ -283,15 +323,325 @@ class TestLifecycle(unittest.IsolatedAsyncioTestCase):
         self.watch.assert_called_once()
         self.assertIn("/match helper recover", self.ctx.send.await_args.args[0])
 
+    async def test_recovers_legacy_stored_live_job_without_resubmitting_its_legacy_payload(self) -> None:
+        rejected = HelperJobCreateRejected(error=f"reserved_by_sequential_job:{JOB_ID}")
+        payload = {
+            "host_clan_tag": "#CLAN", "player_1_tag": "#P1", "player_2_tag": "#P2",
+            "base_source": "stored", "districts": list(FINAL_DISTRICTS),
+        }
+        self.document.update(state="UNCERTAIN", create_request={
+            "type": "host_sequential_live_match", "requested_by": "7", "payload": payload,
+        })
+        result = helper_result({}, [])
+        result["match"]["base_source"] = "stored"
+        existing = HelperSequentialJob.model_validate({
+            "id": JOB_ID, "type": "host_sequential_live_match", "status": "running", "created_at": 1,
+            "started_at": 2, "finished_at": None, "error": None, "result": result,
+        })
+        client = MagicMock(create=AsyncMock(return_value=rejected), read=AsyncMock(return_value=existing))
+        with (
+            patch.object(service, "helper_client", return_value=client),
+            patch.object(service, "choose", new=AsyncMock(return_value="seq_adopt")),
+        ):
+            await service.adopt_uncertain(MagicMock(), self.ctx, as_run(self.document))
+        sent = client.create.await_args.args[1].model_dump(by_alias=True, exclude_none=True)
+        self.assertEqual(sent["type"], "host_sequential_live_match_on_stored")
+        self.assertNotIn("base_source", sent["payload"])
+        self.assertEqual((self.document["state"], self.document["job_id"]), ("ACTIVE", JOB_ID))
+        self.rollback.assert_not_awaited()
+
+    async def test_stale_replay_recovery_confirmation_cannot_queue_another_helper_job(self) -> None:
+        self.document.update(state="UNCERTAIN", replay_baseline={"Barbarian Camp": ["2.70", "1.40"]})
+        opened = as_run(self.document)
+
+        async def confirm_after_another_staff_member_closed_the_run(*args, **kwargs):
+            self.document.update(state="TERMINAL", open=False, job_id=JOB_ID, job_status="succeeded")
+            return "seq_adopt"
+
+        helper = MagicMock(create=AsyncMock(return_value=HelperJobCreated(id=JOB_ID)))
+        with (
+            patch.object(service, "choose", new=AsyncMock(side_effect=confirm_after_another_staff_member_closed_the_run)),
+            patch.object(service, "helper_client", return_value=helper),
+        ):
+            await service.adopt_uncertain(MagicMock(), self.ctx, opened)
+
+        helper.create.assert_not_awaited()
+        self.watch.assert_not_called()
+        self.assertEqual(self.document["state"], "TERMINAL")
+        self.assertIn("changed", self.ctx.send.await_args.args[0])
+
+    async def test_uncertain_replay_keeps_its_state_when_helper_reports_a_conflicting_job(self) -> None:
+        self.document.update(state="UNCERTAIN", replay_baseline={"Barbarian Camp": ["2.70", "1.40"]})
+        helper = MagicMock(create=AsyncMock(return_value=HelperJobCreateRejected(
+            error=f"reserved_by_sequential_job:{JOB_ID}")), read=AsyncMock())
+        with (
+            patch.object(service, "choose", new=AsyncMock(return_value="seq_adopt")),
+            patch.object(service, "validate_replay_retry", new_callable=AsyncMock),
+            patch.object(service, "helper_client", return_value=helper),
+        ):
+            await service.adopt_uncertain(MagicMock(), self.ctx, as_run(self.document))
+        helper.create.assert_awaited_once()
+        helper.read.assert_not_awaited()
+        self.watch.assert_not_called()
+        self.assertEqual(self.document["state"], "UNCERTAIN")
+        self.assertIn("Wait for it to finish", self.ctx.send.await_args.args[0])
+
     async def test_cancel_always_asks_for_confirmation(self) -> None:
         self.document.update(state="ACTIVE", job_id=JOB_ID, snapshot=None)
         client = MagicMock(cancel=AsyncMock())
-        ctx = MagicMock(author=MagicMock(id=7), send=AsyncMock())
-        with patch.object(service, "choose", new=AsyncMock(return_value="seq_cancel_back")) as choose, \
-                patch.object(service, "helper_client", return_value=client):
-            await service.cancel_run(MagicMock(), ctx, self.document["_id"])
-        choose.assert_awaited_once()
+        ctx = MagicMock(author=MagicMock(id=7), send=AsyncMock(return_value=MagicMock(id=56)))
+        back = MagicMock(custom_id="seq_cancel_back", edit_origin=AsyncMock())
+        bot = MagicMock(wait_for_component=AsyncMock(return_value=MagicMock(ctx=back)))
+        with patch.object(service, "helper_client", return_value=client):
+            await service.cancel_run(bot, ctx, self.document["_id"])
+        prompt = ctx.send.await_args.kwargs
+        self.assertTrue(prompt["ephemeral"])
+        self.assertEqual([(button["label"], button["custom_id"])
+                          for button in prompt["components"].to_dict()["components"]],
+                         [("Cancel", "seq_cancel_confirm"), ("Back", "seq_cancel_back")])
+        back.edit_origin.assert_awaited_once_with(components=[])
         client.cancel.assert_not_awaited()
+
+    async def test_continue_after_rollback_explains_how_to_start_again(self) -> None:
+        self.document.update(state="TERMINAL", open=False, job_status="cancelled", job_id=JOB_ID)
+        match = MagicMock(host_clans=[None, None], participants=[MagicMock(result=[None] * 7)] * 2)
+        for side, paused, command in (
+            (LIVE_SIDE, [], "/match autostart"),
+            (LIVE_SIDE, [0, 1], "/match autostart"),
+            (1, [], "/match war autostart"),
+            (1, [1], "/match war autostart"),
+        ):
+            with self.subTest(side=side, paused=paused):
+                run = as_run({**self.document, "side": side})
+                match.final_scouting_paused_sides = paused
+                with (
+                    patch.object(service.Match, "get", new=AsyncMock(return_value=match)),
+                    patch.object(service, "stale_reason", new=AsyncMock(return_value=None)),
+                    patch.object(service, "latest_run", new=AsyncMock(return_value=run)),
+                    patch.object(service, "launch_run", new_callable=AsyncMock) as launch,
+                ):
+                    await service.continue_run(MagicMock(), self.ctx, run)
+                launch.assert_not_awaited()
+                reply = self.ctx.send.await_args.args[0]
+                self.assertIn("was aborted" if paused else "has no active host", reply)
+                self.assertIn(command, reply)
+                self.assertNotIn("#CLAN", reply)
+                self.assertEqual(service.progress_components(run, match), [])
+
+    async def test_continue_after_a_clan_change_displays_the_clan_names(self) -> None:
+        self.document.update(state="TERMINAL", open=False, job_status="cancelled", job_id=JOB_ID)
+        run = as_run(self.document)
+        match = MagicMock(host_clans=["#NEW", None], participants=[MagicMock(result=[None] * 7)] * 2)
+        clans = MagicMock(to_list=AsyncMock(return_value=[
+            SimpleNamespace(tag="#CLAN", name="Lantern Clan"), SimpleNamespace(tag="#NEW", name="Maple Clan"),
+        ]))
+        with (
+            patch.object(service.Match, "get", new=AsyncMock(return_value=match)),
+            patch.object(service, "stale_reason", new=AsyncMock(return_value=None)),
+            patch.object(service, "latest_run", new=AsyncMock(return_value=run)),
+            patch.object(service.resources.Clan, "find", return_value=clans),
+            patch.object(service, "launch_run", new_callable=AsyncMock) as launch,
+        ):
+            await service.continue_run(MagicMock(), self.ctx, run)
+        launch.assert_not_awaited()
+        reply = self.ctx.send.await_args.args[0]
+        self.assertIn("**Lantern Clan**", reply)
+        self.assertIn("**Maple Clan**", reply)
+        self.assertNotIn("#CLAN", reply)
+        self.assertNotIn("#NEW", reply)
+
+    async def test_continue_in_the_same_clan_uses_the_existing_match_start(self) -> None:
+        self.document.update(state="TERMINAL", open=False, job_status="cancelled", job_id=JOB_ID, start_message_id=55)
+        run = as_run(self.document)
+        match = MagicMock(host_clans=["#CLAN", None], old_msgs=[55, None],
+                          participants=[MagicMock(result=[None] * 7)] * 2)
+        with (
+            patch.object(service.Match, "get", new=AsyncMock(return_value=match)),
+            patch.object(service, "stale_reason", new=AsyncMock(return_value=None)),
+            patch.object(service, "latest_run", new=AsyncMock(return_value=run)),
+            patch.object(service, "match_runs", new=AsyncMock(return_value=[run])),
+            patch.object(service, "launch_run", new_callable=AsyncMock) as launch,
+        ):
+            await service.continue_run(MagicMock(), self.ctx, run)
+        self.assertEqual(launch.await_args.args[2].start_message_id, 55)
+        self.assertEqual(launch.await_args.args[2].previous_run_id, run.id)
+        self.assertEqual(service.progress_components(run, match)[0].components[0].label, "Continue")
+
+    async def test_continue_picker_can_skip_districts_and_resume_them_from_the_original_layouts(self) -> None:
+        self.document.update(state="TERMINAL", open=False, snapshot=helper_result({
+            "player_1": ["BC"], "player_2": ["BC"],
+        }, []))
+        original = as_run(self.document)
+        match = MagicMock(host_clans=["#CLAN", None], participants=[MagicMock(result=[None] * 7)] * 2)
+        ctx = MagicMock(author=MagicMock(id=7), defer=AsyncMock(), send=AsyncMock(),
+                        custom_id=f"helper_seq_continue|{original.id}")
+        selected = SimpleNamespace(author=ctx.author, values=["Dragon Cliffs"], defer=AsyncMock(), edit_origin=AsyncMock(),
+                                   custom_id="seq_continue_district")
+        confirm = SimpleNamespace(defer=AsyncMock(), edit_origin=AsyncMock(), custom_id="seq_continue_confirm")
+
+        async def select_and_confirm(*, check, **_):
+            check(SimpleNamespace(ctx=selected))
+            return SimpleNamespace(ctx=confirm)
+
+        bot = MagicMock(wait_for_component=AsyncMock(side_effect=select_and_confirm))
+        cog = MatchCommands(bot)
+        with (
+            patch.object(service.Match, "get", new=AsyncMock(return_value=match)),
+            patch.object(service, "stale_reason", new=AsyncMock(return_value=None)),
+            patch.object(service, "latest_run", new=AsyncMock(side_effect=lambda *_: as_run(self.document))),
+            patch.object(service, "match_runs", new=AsyncMock(side_effect=lambda *_: [original, as_run(self.document)])),
+            patch.object(service, "launch_run", new_callable=AsyncMock) as launch,
+        ):
+            await cog.helper_sequential_continue.callback.func(cog, ctx)
+            prompt = ctx.send.await_args.kwargs
+            self.assertTrue(prompt["ephemeral"])
+            options = prompt["components"][0].to_dict()["components"][0]["options"]
+            self.assertEqual([option["value"] for option in options if option["default"]], ["Balloon Lagoon"])
+            selected.edit_origin.assert_awaited_once()
+            confirm.edit_origin.assert_awaited_once_with(components=[])
+            first = launch.await_args.args[2]
+            self.assertEqual(first.districts, list(FINAL_DISTRICTS[3:]))
+            self.assertEqual(first.request.payload.base_links_for_player_1, LINKS[3:])
+
+            completed = ["DC", "GQ", "SP", "GM"]
+            self.document.update(_id=PydanticObjectId(), previous_run_id=original.id, districts=first.districts,
+                                 create_request=first.request.model_dump(by_alias=True, exclude_none=True),
+                                 snapshot=helper_result({"player_1": completed, "player_2": completed}, []))
+            bot.wait_for_component.side_effect = None
+            bot.wait_for_component.return_value = SimpleNamespace(ctx=confirm)
+            ctx.custom_id = f"helper_seq_continue|{self.document['_id']}"
+            await cog.helper_sequential_continue.callback.func(cog, ctx)
+            second = launch.await_args.args[2]
+            self.assertEqual(second.districts, ["Balloon Lagoon", "Builder's Workshop"])
+            self.assertEqual(second.request.payload.base_links_for_player_1, LINKS[1:3])
+            self.assertEqual(second.request.payload.base_links_for_player_2, LINKS[1:3])
+
+    async def test_continue_confirmation_rechecks_a_district_that_was_scored_while_the_picker_was_open(self) -> None:
+        self.document.update(state="TERMINAL", open=False)
+        run = as_run(self.document)
+        match = MagicMock(host_clans=["#CLAN", None], participants=[
+            MagicMock(result=[None] * 7), MagicMock(result=[None] * 7),
+        ])
+        ctx = MagicMock(author=MagicMock(id=7), defer=AsyncMock(), send=AsyncMock())
+
+        async def confirm(**_):
+            match.participants[0].result[0] = "3.100"
+            match.participants[1].result[0] = "2.85"
+            return SimpleNamespace(ctx=SimpleNamespace(defer=AsyncMock(), edit_origin=AsyncMock()))
+
+        bot = MagicMock(wait_for_component=AsyncMock(side_effect=confirm))
+        with (
+            patch.object(service.Match, "get", new=AsyncMock(return_value=match)),
+            patch.object(service, "stale_reason", new=AsyncMock(return_value=None)),
+            patch.object(service, "latest_run", new=AsyncMock(return_value=run)),
+            patch.object(service, "match_runs", new=AsyncMock(return_value=[run])),
+            patch.object(service, "launch_run", new_callable=AsyncMock) as launch,
+        ):
+            await service.continue_from_button(bot, ctx, run.id)
+        launch.assert_not_awaited()
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+        self.assertIn("no longer pending", ctx.send.await_args.args[0])
+        self.assertEqual([participant.result[0] for participant in match.participants], ["3.100", "2.85"])
+
+    async def test_picker_acknowledges_new_choices_and_confirmation_during_a_slow_edit(self) -> None:
+        bot = ipy.Client()
+        registered, editing, next_choice, confirmed, release_edit = (anyio.Event() for _ in range(5))
+        author = SimpleNamespace(id=7)
+        ctx = SimpleNamespace(author=author, send=AsyncMock(return_value=SimpleNamespace(id=55)))
+        received = []
+        wait_for = bot.wait_for
+
+        def register(*args, **kwargs):
+            wait = wait_for(*args, **kwargs)
+            registered.set()
+            return wait
+
+        async def edit_selection(**kwargs):
+            editing.set()
+            await release_edit.wait()
+
+        async def acknowledge_choice(**kwargs):
+            next_choice.set()
+
+        async def acknowledge_confirm(**kwargs):
+            confirmed.set()
+
+        selected = SimpleNamespace(author=author, message_id=55, custom_id="seq_continue_district",
+                                   values=["Dragon Cliffs"], defer=AsyncMock(), edit_origin=edit_selection)
+        next_selected = SimpleNamespace(author=author, message_id=55, custom_id="seq_continue_district",
+                                        values=["Golem Quarry"], defer=acknowledge_choice, edit_origin=AsyncMock())
+        confirm = SimpleNamespace(author=author, message_id=55, custom_id="seq_continue_confirm",
+                                  defer=acknowledge_confirm, edit_origin=AsyncMock())
+
+        async def pick():
+            received.append(await service._pick_start_district(bot, ctx, list(FINAL_DISTRICTS)))
+
+        with patch.object(bot, "wait_for", side_effect=register), anyio.fail_after(2):
+            async with anyio.create_task_group() as tasks:
+                tasks.start_soon(pick)
+                await registered.wait()
+                bot.dispatch(ipy.events.Component(ctx=selected))
+                await editing.wait()
+                bot.dispatch(ipy.events.Component(ctx=next_selected))
+                bot.dispatch(ipy.events.Component(ctx=confirm))
+                await next_choice.wait()
+                await confirmed.wait()
+                release_edit.set()
+
+        self.assertEqual(received, ["Golem Quarry"])
+        next_selected.edit_origin.assert_awaited_once()
+        confirm.edit_origin.assert_awaited_once_with(components=[])
+
+    async def test_cancel_finishes_rollback_before_a_pending_continue_can_relaunch(self) -> None:
+        self.document.update(state="ACTIVE", job_id=JOB_ID, start_message_id=55)
+        match = MagicMock(host_clans=["#CLAN", None], participants=[MagicMock(result=[None] * 7)] * 2)
+        cancelled = HelperSequentialJob.model_validate({
+            "id": JOB_ID, "type": "host_sequential_live_match", "status": "cancelled", "created_at": 1,
+            "started_at": 2, "finished_at": 3, "error": None, "result": None,
+        })
+        client = MagicMock(cancel=AsyncMock(), read=AsyncMock(return_value=cancelled))
+        bot = MagicMock()
+        continue_ctx = MagicMock(author=MagicMock(id=7), defer=AsyncMock(), send=AsyncMock())
+        rolling_back = anyio.Event()
+        continue_clicked = anyio.Event()
+        allow_rollback = anyio.Event()
+
+        async def rollback(_ctx, _run):
+            rolling_back.set()
+            await allow_rollback.wait()
+            match.host_clans[0] = None
+            return "\n\nMatch aborted."
+
+        async def press_continue():
+            continue_clicked.set()
+            await service.continue_from_button(bot, continue_ctx, self.document["_id"])
+
+        self.rollback.side_effect = rollback
+        with (
+            patch.object(service, "choose", new=AsyncMock(return_value="seq_cancel_confirm")),
+            patch.object(service, "helper_client", return_value=client),
+            patch.object(service.Match, "get", new=AsyncMock(return_value=match)),
+            patch.object(service, "stale_reason", new=AsyncMock(return_value=None)),
+            patch.object(service, "latest_run", new=AsyncMock(side_effect=lambda *_: as_run(self.document))),
+            patch.object(service, "match_runs", new=AsyncMock(return_value=[as_run(self.document)])),
+            patch.object(service, "finish_stored_sides", new_callable=AsyncMock),
+            patch.object(service, "progress_message", new=AsyncMock(return_value=MagicMock())),
+            patch.object(service, "edit_channel_message", new_callable=AsyncMock) as edit,
+            patch.object(service, "launch_run", new_callable=AsyncMock) as launch,
+            anyio.fail_after(3),
+        ):
+            async with anyio.create_task_group() as tasks:
+                tasks.start_soon(service.cancel_run, bot, self.ctx, self.document["_id"])
+                await rolling_back.wait()
+                tasks.start_soon(press_continue)
+                await continue_clicked.wait()
+                allow_rollback.set()
+        self.assertEqual(self.document["state"], "TERMINAL")
+        self.assertIsNone(match.host_clans[0])
+        launch.assert_not_awaited()
+        edit.assert_awaited_once()
+        self.assertEqual(edit.await_args.kwargs["components"], [])
+        self.assertIn("/match autostart", continue_ctx.send.await_args.args[0])
 
     async def apply(self, outcome, stale: str | None = None) -> None:
         self.document.update(state="ACTIVE", job_id=JOB_ID)
@@ -302,7 +652,7 @@ class TestLifecycle(unittest.IsolatedAsyncioTestCase):
 
     async def test_terminal_job_stores_scores_before_closing(self) -> None:
         job = HelperSequentialJob.model_validate({
-            "id": JOB_ID, "type": "host_sequential_live_match", "status": "succeeded", "created_at": 1,
+            "id": JOB_ID, "type": "host_sequential_live_match_on_stored", "status": "succeeded", "created_at": 1,
             "started_at": 2, "finished_at": 3, "error": None,
             "result": helper_result({"player_1": CODES, "player_2": CODES}, [verified("BC", "player_1")]),
         })
@@ -319,6 +669,9 @@ class TestLifecycle(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.document["open"])
         self.assertEqual(self.document["poll_failures"], 2)
         self.assertEqual([event["kind"] for event in self.document["events"]], ["poll_failed"])
+        description = ui.progress_embed(as_run(self.document), None).description
+        self.assertIn("Helper status unavailable", description)
+        self.assertIn("last attempt", description)
 
     async def test_cancelled_final_cancels_helper_and_closes_without_finalizing_scores(self) -> None:
         self.document.update(state="ACTIVE", job_id=JOB_ID, final_id=str(PydanticObjectId()))
@@ -357,17 +710,69 @@ class TestLifecycle(unittest.IsolatedAsyncioTestCase):
 
 
 class TestStatus(unittest.TestCase):
+    def test_progress_distinguishes_sent_attacked_and_durably_stored_districts(self) -> None:
+        snapshot = helper_result(
+            {"player_1": ["BC", "BW"], "player_2": ["BC", "BW"]},
+            [verified("BW", "player_1"), verified("BW", "player_2")],
+        )
+        snapshot["stage"] = "SCORING"
+        for round_ in snapshot["completion"]["rounds"][3:]:
+            for player in round_["players"].values():
+                player["posted"] = False
+        match = MagicMock(participants=[
+            MagicMock(result=["3.100", None, "3.100", None, None, None, None]),
+            MagicMock(result=["2.85", None, None, None, None, None, None]),
+        ])
+        run = as_run(run_document(snapshot=snapshot, last_polled_at=1))
+        description = ui.progress_embed(run, match).to_dict()["description"]
+        self.assertIn("**Reading scores**", description)
+        rows = description.splitlines()
+        self.assertTrue(any(line.startswith(str(ui.SUCCESS_EMOJI)) and "Barbarian Camp" in line
+                            and "Scores stored" in line and "85%" in line for line in rows))
+        self.assertTrue(any("Balloon Lagoon" in line and "Challenge sent" in line for line in rows))
+        workshop = next(line for line in rows if "Builder's Workshop" in line)
+        self.assertIn("Attacked", workshop)
+        self.assertIn("Scores pending", workshop)
+        self.assertNotIn(str(ui.SUCCESS_EMOJI), workshop)
+        self.assertIn("➖ Dragon Cliffs", rows)
+
+    def test_terminal_progress_marks_attacked_district_with_no_score_for_review(self) -> None:
+        snapshot = helper_result({"player_1": ["BC"]}, [], ("player_1",))
+        run = as_run(run_document(snapshot=snapshot, side=1, state="TERMINAL", open=False,
+                                  close_reason="Helper job failed.", districts=["Barbarian Camp"]))
+        match = MagicMock(participants=[
+            MagicMock(result=["3.100"] + [None] * 6),
+            MagicMock(result=[None] * 7),
+        ])
+        description = ui.progress_embed(run, match).to_dict()["description"]
+        self.assertIn("Helper job failed.", description)
+        self.assertIn("Attacked", description)
+        self.assertIn("Scores missing", description)
+        self.assertNotIn(str(ui.SUCCESS_EMOJI), description)
+        match.participants[1].result[0] = "2.85"
+        description = ui.progress_embed(run, match).to_dict()["description"]
+        self.assertIn("Scores stored · P2 `2⭐ 85%`", description)
+        self.assertIn(str(ui.SUCCESS_EMOJI), description)
+
     def test_live_change_with_same_status_and_count_is_flagged(self) -> None:
         saved = helper_result({}, [])
+        fresh = deepcopy(saved)
+        for player in saved["completion"]["rounds"][0]["players"].values():
+            player["posted"] = False
         run = as_run(run_document(snapshot=saved, job_status="running", error=None))
         live = HelperSequentialJob.model_validate({
             "id": JOB_ID, "type": "host_sequential_live_match", "status": "running", "created_at": 1,
             "started_at": 2, "finished_at": None, "error": None,
-            "result": {**saved, "stage": "WAITING_FOR_ATTACKS"},
+            "result": {**fresh, "stage": "WAITING"},
         })
-        embed = ui.status_embed(run, None, [], live, None)
+        embed = ui.status_embed(run, None, [], live, None, "Lantern Clan")
         live_field = next(field for field in embed.fields if field.name == "**Helper (live)**")
         self.assertIn("Differs from the saved state", live_field.value)
+        overview = next(field.value for field in embed.fields if field.name == "**Run**")
+        self.assertIn("Lantern Clan", overview)
+        self.assertNotIn("#CLAN", overview)
+        districts = next(field.value for field in embed.fields if field.name == "**Districts**")
+        self.assertIn(f"{ui.CLASHING_SWORD_EMOJI} **Barbarian Camp** · Challenge sent", districts)
 
 
 class TestRunList(unittest.IsolatedAsyncioTestCase):
@@ -375,7 +780,11 @@ class TestRunList(unittest.IsolatedAsyncioTestCase):
         documents = [as_run(run_document(final_node_id=f"N{index}")) for index in range(count)]
         cursor = MagicMock()
         cursor.sort.return_value.to_list = AsyncMock(return_value=documents)
-        with patch.object(HelperSequentialRun, "find", return_value=cursor):
+        clans = MagicMock(to_list=AsyncMock(return_value=[SimpleNamespace(tag="#CLAN", name="Lantern Clan")]))
+        with (
+            patch.object(HelperSequentialRun, "find", return_value=cursor),
+            patch.object(service.resources.Clan, "find", return_value=clans),
+        ):
             return await service.list_page("all", "#CLAN", page)
 
     async def test_pages_cover_every_run_and_disable_arrows_at_the_ends(self) -> None:
@@ -387,6 +796,8 @@ class TestRunList(unittest.IsolatedAsyncioTestCase):
                 left, number, right = components[0].components
                 self.assertEqual(total, 3)
                 self.assertIn(f"**{first}**", embed.description.splitlines()[0])
+                self.assertIn("**Lantern Clan**", embed.description)
+                self.assertNotIn("#CLAN", embed.description)
                 self.assertEqual((left.disabled, right.disabled, number.label), (left_off, right_off, label))
                 self.assertTrue(right.custom_id.endswith("|all|#CLAN"))
 
@@ -437,9 +848,20 @@ class TestGuardAndForm(unittest.IsolatedAsyncioTestCase):
         self.assertIn("/match helper recover", refusal)
         open_runs.assert_awaited_once_with("T", 0)
 
-    def test_result_form_prefills_stored_scores_without_an_earlier_result(self) -> None:
-        final = MagicMock(season_number=3, player_nicknames={"1": "Alpha", "2": "Beta"})
-        node = MagicMock(id="QF1", contestants=["1", "2"], result_version=0, contestant_revision=1, attempt=1)
-        stored = {"1": ["3.100"] * 7}
-        modal = result_form(final, node, "9", stored=stored)
-        self.assertEqual([component.value for component in modal.components[:2]], ["\n".join(["3.100"] * 7), None])
+    async def test_result_form_prefills_missing_scores_without_moving_saved_districts(self) -> None:
+        node = MagicMock(id="QF1", contestants=["1", "2"], result_id=None,
+                         result_version=0, contestant_revision=1, attempt=1)
+        final = MagicMock(season_number=3, player_nicknames={"1": "Alpha", "2": "Beta"}, nodes={"QF1": node})
+        stored = ["3.100", None, "2.85", "", "1.44", None, "3.100"]
+        source = MagicMock(final_node_id="QF1", participants=[
+            MagicMock(user_id="1", result=stored.copy()), MagicMock(user_id="2", result=[None] * 7),
+        ])
+        ctx = MagicMock(author=MagicMock(id=9), send_modal=AsyncMock())
+        with patch.object(result_ui, "require_source_result_role", new=AsyncMock(return_value=final)):
+            await result_ui.show_source_result_form(ctx, source)
+        modal = ctx.send_modal.await_args.args[0]
+        self.assertEqual([component.value.splitlines() for component in modal.components[:2]], [
+            ["3.100", "0.00", "2.85", "0.00", "1.44", "0.00", "3.100"], ["0.00"] * 7,
+        ])
+        self.assertEqual(source.participants[0].result, stored)
+        self.assertEqual(source.participants[1].result, [None] * 7)

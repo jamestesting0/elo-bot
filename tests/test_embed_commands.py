@@ -296,8 +296,8 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         # Then the conflicting write is rejected and only unlocked clan B is listed.
         response = ctx.send.await_args.args[0]
         self.assertIn("Available clans:", response)
-        self.assertIn("- Bravo (#B)", response)
-        self.assertNotIn("- Alpha (#A)", response)
+        self.assertIn("- Bravo", response)
+        self.assertNotIn("- Alpha", response)
 
 
     async def test_member_update_without_cached_roles_is_ignored(self):

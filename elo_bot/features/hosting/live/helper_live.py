@@ -40,6 +40,7 @@ class AutomaticLiveHost:
     allow_opponent_cancel: bool = False
     stored_reservation_id: str | None = None
     attacks_first: int | None = None
+    reservations: live_reservations.LiveStartReservations | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,16 +116,14 @@ async def host_live_automatically(
         ctx: ipy.SlashContext | ipy.ComponentContext,
         request: AutomaticLiveHost,
 ) -> None:
-    reservation_outcome = await live_start.reserve_live_start(str(request.match.token), request.clan.tag)
+    reservation_outcome = request.reservations or await live_start.reserve_live_start(
+        str(request.match.token), request.clan.tag,
+    )
     match reservation_outcome:
         case live_reservations.LiveStartReservations() as reservations:
             pass
         case live_reservations.LiveReservationsBusy():
-            await ctx.send(
-                f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await resources.available_resource_clans_text()}",
-                ephemeral=True,
-            )
+            await ctx.send(f"{ERROR_EMOJI} This match is already being started.", ephemeral=True)
             return
         case live_reservations.LiveReservationsClanUnavailable():
             await ctx.send(
@@ -166,11 +165,7 @@ async def host_live_automatically(
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
             return
         if live_start.hosting_started(match_doc):
-            await ctx.send(
-                f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await resources.available_resource_clans_text()}",
-                ephemeral=True,
-            )
+            await ctx.send(f"{ERROR_EMOJI} This match has already started.", ephemeral=True)
             return
         if request.stored_reservation_id and (
                 not live_pair_ready(match_doc, request.stored_reservation_id)
@@ -231,11 +226,7 @@ async def host_live_automatically(
         case live_start.LiveStartSucceeded(message=started_message):
             pass
         case live_start.LiveStartBusy():
-            await ctx.send(
-                f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await resources.available_resource_clans_text()}",
-                ephemeral=True,
-            )
+            await ctx.send(f"{ERROR_EMOJI} The match changed before hosting could start.", ephemeral=True)
             return
         case live_start.LiveStartRefused():
             return
@@ -298,7 +289,7 @@ async def host_live_district_automatically(
         return
     if request.clan.tag != host_clan_tag:
         await ctx.send(
-            f"{ERROR_EMOJI} This match is hosted in **{host_clan_tag}**. "
+            f"{ERROR_EMOJI} This match is hosted in **{await resources.resource_clan_name(host_clan_tag)}**. "
             "Select that clan for a district rerun.",
             ephemeral=True,
         )

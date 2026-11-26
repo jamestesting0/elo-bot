@@ -63,6 +63,7 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
 
         self.assertNotIn("automatic", manual_options)
         self.assertNotIn("host", manual_options)
+        self.assertTrue(next(option for option in self.cog.match_war_start.options if str(option.name) == "clan").required)
         self.assertIsNotNone(autostart)
         self.assertEqual(
             {str(option.name) for option in autostart.options},
@@ -70,6 +71,7 @@ class TestMatchWarAutomatic(unittest.IsolatedAsyncioTestCase):
         )
         district = next(option for option in autostart.options if str(option.name) == "district")
         self.assertFalse(district.required)
+        self.assertFalse(next(option for option in autostart.options if str(option.name) == "clan").required)
         sequential = next(option for option in autostart.options if str(option.name) == "sequential")
         self.assertFalse(sequential.required)
         self.assertEqual(autostart.max_concurrency.concurrent, 1)

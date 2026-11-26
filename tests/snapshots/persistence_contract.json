@@ -2967,6 +2967,18 @@
       "default": null,
       "title": "Reason"
      },
+     "replay_revision": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Replay Revision"
+     },
      "result_id": {
       "anyOf": [
        {
@@ -3412,6 +3424,28 @@
       "default": null,
       "title": "Last Polled At"
      },
+     "layout_storage_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "anyOf": [
+          {
+           "type": "string"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Layout Storage Ids"
+     },
      "match_id": {
       "$ref": "#/$defs/PydanticObjectId"
      },
@@ -3470,6 +3504,72 @@
       ],
       "default": null,
       "title": "Progress Message Id"
+     },
+     "replay_baseline": {
+      "anyOf": [
+       {
+        "additionalProperties": {
+         "items": {
+          "anyOf": [
+           {
+            "type": "string"
+           },
+           {
+            "type": "null"
+           }
+          ]
+         },
+         "type": "array"
+        },
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Replay Baseline"
+     },
+     "replay_clan_claim": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Replay Clan Claim"
+     },
+     "replay_conflicts": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Replay Conflicts",
+      "type": "array"
+     },
+     "replay_previous_clan_availability": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Replay Previous Clan Availability"
+     },
+     "replay_replacements": {
+      "additionalProperties": {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      },
+      "title": "Replay Replacements",
+      "type": "object"
      },
      "requested_by": {
       "title": "Requested By",
@@ -4593,6 +4693,17 @@
       "default": null,
       "title": "Final Id"
      },
+     "final_last_helper_run_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
+     },
      "final_legacy_hosting_evidence": {
       "items": {
        "type": "boolean"
@@ -4613,6 +4724,22 @@
       ],
       "default": null,
       "title": "Final Node Id"
+     },
+     "final_replay_revision": {
+      "default": 0,
+      "title": "Final Replay Revision",
+      "type": "integer"
+     },
+     "final_replay_run_id": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/PydanticObjectId"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
      },
      "final_result_id": {
       "anyOf": [
@@ -4900,6 +5027,22 @@
       ],
       "default": null,
       "title": "Routing Guild Id"
+     },
+     "scheduled_host_clans": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Scheduled Host Clans",
+      "type": "array"
      },
      "scheduled_times": {
       "items": {

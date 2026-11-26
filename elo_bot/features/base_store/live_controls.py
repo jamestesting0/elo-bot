@@ -1,4 +1,5 @@
 import interactions as ipy
+from beanie import PydanticObjectId
 
 from elo_bot.features.base_store.live_publication import publish_live_storage
 from elo_bot.features.base_store.models import BaseStoreRuntime
@@ -98,6 +99,10 @@ async def undo_live_storage(runtime: BaseStoreRuntime, ctx: ipy.ComponentContext
             fresh = await Match.find_one({"token": match.token, "thread": str(ctx.channel.id)})
             if fresh is None or not any(i == index and s == store for i, s in live_stores(fresh, reservation_id)):
                 await ctx.send(f"{ERROR_EMOJI} The stored-base reservation changed. No newer reservation was removed.",
+                               ephemeral=True)
+                return
+            if isinstance(fresh.final_replay_run_id, PydanticObjectId):
+                await ctx.send(f"{ERROR_EMOJI} Wait for the district replay to finish before undoing stored bases.",
                                ephemeral=True)
                 return
             outcome = await remove_bases_interactively(runtime, ctx, HelperRemoveBasesPayload(

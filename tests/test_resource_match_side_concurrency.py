@@ -234,9 +234,8 @@ class TestResourceMatchSideConcurrency(unittest.IsolatedAsyncioTestCase):
         finally:
             side_reservation.release()
 
-        # Then it stops before Helper while both unlocked clans remain listed.
         host.assert_not_awaited()
+        bot.coc_client.get_clan.assert_not_awaited()
         response = ctx.send.await_args.args[0]
-        self.assertIn("Available clans:", response)
-        self.assertIn("- Alpha (#A)", response)
-        self.assertIn("- Bravo (#B)", response)
+        self.assertIn("already being started", response)
+        self.assertNotIn("Available clans:", response)

@@ -6,7 +6,9 @@ from contextvars import ContextVar
 from datetime import datetime
 
 import interactions as ipy
+from beanie import PydanticObjectId
 
+from elo_bot.config.game import HOST_CLAN_CHOICES, REPLAY_CLAN_SUFFIX
 from elo_bot.db import Clan, HelperTask, Match
 from elo_bot.discord.decorators import create_async_task
 from elo_bot.features.base_store.preparation import BASE_STORE_RESERVATION_LOCK
@@ -31,6 +33,19 @@ _RESOURCE_MATCH_SIDE_RESERVATIONS: ContextVar[dict[tuple[str, int], "ResourceMat
     "resource_match_side_reservations",
     default={},
 )
+
+
+async def resource_clan_names(tags: set[str]) -> dict[str, str]:
+    if not tags:
+        return {}
+    choices = {str(choice.value): str(choice.name) for choice in HOST_CLAN_CHOICES}
+    clans = await Clan.find({"tag": {"$in": sorted(tags)}}).to_list()
+    names = {clan.tag: clan.name for clan in clans if clan.name}
+    return {tag: names.get(tag) or choices.get(tag, "Unknown clan") for tag in tags}
+
+
+async def resource_clan_name(tag: str) -> str:
+    return (await resource_clan_names({tag}))[tag]
 
 
 async def is_clan_available(clan_tag: str) -> bool:
@@ -133,7 +148,7 @@ def format_available_resource_clans(clans: list[Clan]) -> str:
         if clan.availability_str == "Available"
         and not RESOURCE_CLAN_LOCKS.setdefault(clan.tag, asyncio.Lock()).locked()
     ]
-    available = "\n".join(f"- {clan.name} ({clan.tag})" for clan in available_clans) or "- None"
+    available = "\n".join(f"- {clan.name}" for clan in available_clans) or "- None"
     return f"Available clans:\n{available}"
 
 
@@ -169,11 +184,16 @@ async def claim_resource_clan(
         fresh_match = await Match.find_one({"token": match.token})
         if not fresh_match:
             return False
+        if isinstance(fresh_match.final_replay_run_id, PydanticObjectId):
+            return False
+        final = is_final_match(fresh_match)
         old_clan = (fresh_match.host_clans or [None, None])[player1_index]
         if old_clan != expected_old_clan:
             return False
         clan = await Clan.find_one({"tag": reservation.clan_tag})
         if not clan:
+            return False
+        if clan.availability_str.endswith(REPLAY_CLAN_SUFFIX):
             return False
         same_owner = (
             old_clan == reservation.clan_tag
@@ -184,10 +204,14 @@ async def claim_resource_clan(
         if "persistent_host_clans" not in fresh_match.model_fields_set:
             await fresh_match.ensure_persistent_host_clans()
         match_updates = dict(updates or {})
-        if is_final_match(fresh_match) and f"times.{player1_index}" in match_updates:
-            await fresh_match.ensure_final_hosting_times()
+        if f"times.{player1_index}" in match_updates:
+            if final:
+                await fresh_match.ensure_final_hosting_times()
             for side in (player1_index,) if player2_index is None else (player1_index, player2_index):
-                match_updates[f"final_hosting_times.{side}"] = match_updates[f"times.{player1_index}"]
+                if final:
+                    match_updates[f"final_hosting_times.{side}"] = match_updates[f"times.{player1_index}"]
+                elif fresh_match.scheduled_times[side] is not None:
+                    match_updates[f"scheduled_times.{side}"] = None
         match_updates[f"host_clans.{player1_index}"] = reservation.clan_tag
         match_updates[f"persistent_host_clans.{player1_index}"] = reservation.clan_tag
         previous_values = {}
@@ -198,15 +222,16 @@ async def claim_resource_clan(
             path = field.split(".")
             value = getattr(fresh_match, path[0])
             previous_values[field] = copy.deepcopy(value if len(path) == 1 else value[int(path[1])])
-        if expected_control is None and is_final_match(fresh_match):
+        if expected_control is None and final:
             if not await update_match_control(fresh_match, MatchMessageState.capture(fresh_match, player1_index),
-                                              match_updates):
+                                              match_updates, no_replay=True):
                 return False
         elif expected_control is None:
             await fresh_match.set(match_updates)
         else:
             async with BASE_STORE_RESERVATION_LOCK if isinstance(expected_control, StoredStartState) else nullcontext():
-                if not await update_match_control(fresh_match, expected_control, match_updates):
+                if not await update_match_control(fresh_match, expected_control, match_updates,
+                                                  **({"no_replay": True} if final else {})):
                     return False
         targets = [fresh_match] if fresh_match is match else [fresh_match, match]
         occupancy_complete = False
@@ -218,21 +243,24 @@ async def claim_resource_clan(
                         setattr(target, field, value)
                     else:
                         getattr(target, path[0])[int(path[1])] = value
-            if not player2_index:
-                await occupy_clan(fresh_match, player1_index)
-            else:
-                await occupy_clan(fresh_match, player1_index, player2_index)
+            extra = {"expected_availability": clan.availability_str} if final else {}
+            indexes = (player1_index,) if not player2_index else (player1_index, player2_index)
+            if await occupy_clan(fresh_match, *indexes, **extra) is False:
+                return False
             occupancy_complete = True
         finally:
             if not occupancy_complete:
-                if expected_control is None and is_final_match(fresh_match):
+                if expected_control is None and final:
                     await fresh_match.get_pymongo_collection().update_one(
-                        {"_id": fresh_match.id, **match_updates}, {"$set": previous_values})
+                        {"_id": fresh_match.id, "final_replay_run_id": None, **match_updates},
+                        {"$set": previous_values})
                 elif expected_control is None:
                     await fresh_match.set(previous_values)
                 else:
                     rollback_filter = dict(expected_control.binding_filter())
                     rollback_filter.update(match_updates)
+                    if final:
+                        rollback_filter["final_replay_run_id"] = None
                     await fresh_match.get_pymongo_collection().update_one(
                         rollback_filter, {"$set": previous_values},
                     )
@@ -251,7 +279,8 @@ async def claim_resource_clan(
     return True
 
 
-async def occupy_clan(match: Match, player1_index: int, player2_index: int | None = None):
+async def occupy_clan(match: Match, player1_index: int, player2_index: int | None = None,
+                      *, expected_availability: str | None = None) -> bool | None:
     if not match.thread or not match.participants or len(match.participants) < 2:
         return
 
@@ -274,6 +303,12 @@ async def occupy_clan(match: Match, player1_index: int, player2_index: int | Non
     discord_timestamp = ipy.Timestamp.fromtimestamp(now).format(ipy.TimestampStyles.RelativeTime)
     availability_str = f"<#{match.thread}> {players_str} {discord_timestamp}"
 
+    if expected_availability is not None:
+        write = await Clan.get_pymongo_collection().update_one(
+            {"tag": clan_tag, "availability_str": expected_availability},
+            {"$set": {"availability_str": availability_str}},
+        )
+        return write.matched_count == 1
     clan = await Clan.find_one(Clan.tag == clan_tag)
     if clan:
         await clan.update({"$set": {"availability_str": availability_str}})
@@ -291,8 +326,12 @@ async def _release_resource_clan_locked(
         return False
     if expected_availability and clan.availability_str != expected_availability:
         return False
-    await clan.update({"$set": {"availability_str": "Available"}})
-    return True
+    if clan.availability_str.endswith(REPLAY_CLAN_SUFFIX):
+        return False
+    write = await Clan.get_pymongo_collection().update_one(
+        {"tag": clan_tag, "availability_str": clan.availability_str}, {"$set": {"availability_str": "Available"}},
+    )
+    return write.matched_count == 1
 
 
 async def free_clan(

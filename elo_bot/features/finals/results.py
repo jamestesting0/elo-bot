@@ -32,6 +32,7 @@ class FinalResultSubmission:
     winner: str | None = None
     outcome: Outcome = "Played"
     reason: str | None = None
+    replay_revision: int | None = None
 
 
 def score_winner(contestants: list[str], scores: dict[str, list[str]]) -> str | None:
@@ -101,6 +102,10 @@ async def submit_result(request: FinalResultSubmission, *, session: AsyncClientS
         source = Match.model_validate(source_row) if source_row else None
         if source:
             require_current_match(final, source)
+            if source.final_replay_run_id is not None:
+                raise FinalError("Wait for the district replay to finish before confirming the result.")
+            if request.replay_revision is not None and source.final_replay_revision != request.replay_revision:
+                raise FinalError("Replay changed the scores. Open **Submit Result** again.")
         if snapshot.outcome == "Played":
             if prior and prior.snapshot.outcome == "Played":
                 snapshot.scheduled_times = list(prior.snapshot.scheduled_times)

@@ -25,7 +25,6 @@ from elo_bot.config.emojis import (
 from elo_bot.config.game import (
     DISTRICT_CHOICES,
     HOST_CLAN_CHOICES,
-    HOST_CLAN_OPTIONS,
 )
 from elo_bot.config.ids import (
     ADMIN_ROLE,
@@ -65,8 +64,11 @@ from elo_bot.features.base_store.slots import (
 from elo_bot.features.base_store.start import StoredStartState, held_store, shared_store_clan
 from elo_bot.features.finals.matches import schedule_final_match
 from elo_bot.core.finals import FinalError, is_final_match
+from elo_bot.features.hosting.autostart_clans import available_autostart_clans
+from elo_bot.features.hosting.live import live_reservations
 from elo_bot.features.hosting.live.preflight import LivePreflight
 from elo_bot.features.hosting.sequential.runs import open_run_refusal
+from elo_bot.features.hosting.start_ui import SCHEDULED_START, scheduled_start_message, scheduled_thread_embed, start_components
 from elo_bot.features.hosting.war.confirmation import PendingBaseConfirmation, confirm_pending_opponent_bases
 from elo_bot.features.hosting.war.district_selection import match_district_index, started_host_clan_tag
 from elo_bot.features.matches.controls import (
@@ -84,10 +86,12 @@ from elo_bot.features.matches.resources import (
     claim_resource_clan,
     is_clan_available,
     is_resource_clan_locked,
+    is_resource_match_side_locked,
+    resource_clan_name,
     try_reserve_resource_clan,
     try_reserve_resource_match_side,
 )
-from elo_bot.features.matches.timing import hosting_started
+from elo_bot.features.matches.timing import awaiting_scheduled_start, hosting_started
 from elo_bot.features.matches.tips import choose_tip
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.features.finals.hosting import check_final_start
@@ -124,10 +128,12 @@ class MatchHostingCommands:
                     task.start()
 
     async def _start_war(self, ctx: ipy.SlashContext | ipy.ComponentContext, player: int,
-                         clan: str, host: ipy.User = None, slot: str = None,
+                         clan: str | None, host: ipy.User = None, slot: str = None,
                          automatic: bool = False, district: str | None = None,
                          stored_reservation_id: str | None = None, sequential: bool | None = False):
-        await ctx.defer(ephemeral=True)
+        from_schedule = scheduled_start_message(ctx) is not None
+        if not from_schedule:
+            await ctx.defer(ephemeral=True)
 
         if not host:
             host = ctx.author
@@ -172,9 +178,9 @@ class MatchHostingCommands:
                     ephemeral=True,
                 )
                 return
-            if clan != host_clan_tag:
+            if clan is not None and clan != host_clan_tag:
                 await ctx.send(
-                    f"{ERROR_EMOJI} This side of the match is hosted in **{host_clan_tag}**. "
+                    f"{ERROR_EMOJI} This side of the match is hosted in **{await resource_clan_name(host_clan_tag)}**. "
                     "Select that clan for a district rerun.",
                     ephemeral=True,
                 )
@@ -226,7 +232,7 @@ class MatchHostingCommands:
                 await base_store_publication.mark_store_unavailable(ctx.message)
                 await ctx.send(failure, ephemeral=True)
                 return
-        if stored_clan and not isinstance(ctx, ipy.SlashContext):
+        if stored_clan and not isinstance(ctx, ipy.SlashContext) and not from_schedule:
             clan = stored_clan
             slot = stored_slot
 
@@ -239,11 +245,12 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} The match has already started.", ephemeral=True)
             return
 
-        if isinstance(ctx, ipy.SlashContext):
+        if isinstance(ctx, ipy.SlashContext) or from_schedule:
             participant = match.participants[player]
             store = held_store(participant)
             if (participant.base_store is not None or participant.opponent_bases_stored) and (
                     store is None or (store.reservation_id is not None and store.message_id is None)
+                    or ((from_schedule or clan is None) and store.ready is False)
             ):
                 await ctx.send(
                     f"{ERROR_EMOJI} Base storage is incomplete. Wait for **Bases Stored**, "
@@ -262,22 +269,24 @@ class MatchHostingCommands:
         opponent_id = match.participants[opponent].user_id
 
         stored_start = None
-        if is_raid_weekend() and isinstance(ctx, ipy.SlashContext):
+        raid_weekend = is_raid_weekend()
+        if from_schedule or clan is None or (raid_weekend and isinstance(ctx, ipy.SlashContext)):
             store = held_store(match.participants[player])
-            if store is None and int(self.bot.user.id) == BOT_ID:
+            if store is None and raid_weekend and int(self.bot.user.id) == BOT_ID:
                 await ctx.send(
                     f"{ERROR_EMOJI} You can only start a match with ready stored bases during the raid weekend.",
                     ephemeral=True,
                 )
                 return
             if store is not None:
-                if clan != store.clan_tag:
+                if clan is not None and clan != store.clan_tag:
                     await ctx.send(
-                        f"{ERROR_EMOJI} This player's bases are stored in **{store.clan_tag}**, **{store.slot}**. "
+                        f"{ERROR_EMOJI} This player's bases are stored in **{await resource_clan_name(store.clan_tag)}**, "
+                        f"**{store.slot}**. "
                         "Start the match in that clan.", ephemeral=True,
                     )
                     return
-                slot = store.slot
+                clan, slot = store.clan_tag, store.slot
                 stored_start = StoredStartState.capture_stores(match, (player,))
 
         player_id = match.participants[player].user_id
@@ -289,26 +298,29 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} You cannot host your own matches.", ephemeral=True)
             return
 
-        clan_obj = await self.coc_client.get_clan(clan)
         side_reservation = await try_reserve_resource_match_side(str(match.token), player)
         if not side_reservation:
-            await ctx.send(
-                f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await available_resource_clans_text()}",
-                ephemeral=True,
-            )
+            await ctx.send(f"{ERROR_EMOJI} This side of the match is already being started.", ephemeral=True)
             return
-        reservation = await try_reserve_resource_clan(clan_obj.tag)
-        if not reservation:
-            side_reservation.release()
-            await ctx.send(
-                f"{ERROR_EMOJI} **{clan_obj.name}** is currently occupied.\n\n"
-                f"{await available_resource_clans_text()}",
-                ephemeral=True,
-            )
-            return
+        reservation = None
         try:
-            if isinstance(ctx, ipy.ComponentContext) and ctx.custom_id.startswith("start_match|"):
+            if clan is None:
+                for tag in await available_autostart_clans(
+                        self.bot, live=False, preferred=match.scheduled_host_clans[player]):
+                    reservation = await try_reserve_resource_clan(tag)
+                    if reservation:
+                        if await is_clan_available(tag):
+                            break
+                        reservation.release()
+                        reservation = None
+                if reservation is None:
+                    await ctx.send(f"{ERROR_EMOJI} No Helper clans are available for this side of the match.",
+                                   ephemeral=True)
+                    return
+                clan = reservation.clan_tag
+            clan_obj = await self.coc_client.get_clan(clan)
+            reservation = reservation or await try_reserve_resource_clan(clan_obj.tag)
+            if reservation and isinstance(ctx, ipy.ComponentContext) and ctx.custom_id.startswith("start_match|"):
                 refreshed_match = await Match.find_one(match.base_store_filter(player))
                 if not refreshed_match:
                     failure = f"{ERROR_EMOJI} The stored-base reservation changed; the match was not started."
@@ -316,12 +328,9 @@ class MatchHostingCommands:
                     await ctx.send(failure, ephemeral=True)
                     return
                 match = refreshed_match
-            if not await is_clan_available(clan_obj.tag):
-                await ctx.send(
-                    f"{ERROR_EMOJI} **{clan_obj.name}** is currently occupied.\n\n"
-                    f"{await available_resource_clans_text()}",
-                    ephemeral=True,
-                )
+            if not reservation or not await is_clan_available(clan_obj.tag):
+                alternatives = "" if stored_start is not None else f"\n\n{await available_resource_clans_text()}"
+                await ctx.send(f"{ERROR_EMOJI} **{clan_obj.name}** is currently occupied.{alternatives}", ephemeral=True)
                 return
             if not automatic and stored_start is not None:
                 slot_instruction = ""
@@ -405,7 +414,8 @@ class MatchHostingCommands:
                     ephemeral=True,
                 )
         finally:
-            reservation.release()
+            if reservation:
+                reservation.release()
             side_reservation.release()
 
     @war_group.subcommand(sub_cmd_name="start", sub_cmd_description="Start a war-style match instantly")
@@ -446,10 +456,10 @@ class MatchHostingCommands:
     )
     @ipy.slash_option(
         name="clan",
-        description="The clan that will be used for the match",
+        description="Host clan; leave blank to let the bot choose",
         opt_type=ipy.OptionType.STRING,
         choices=HOST_CLAN_CHOICES,
-        required=True
+        required=False,
     )
     @ipy.slash_option(
         name="district",
@@ -465,7 +475,7 @@ class MatchHostingCommands:
         required=False,
     )
     async def match_war_autostart(self, ctx: ipy.SlashContext, player: int,
-                                  clan: str,
+                                  clan: str | None = None,
                                   district: str | None = None, sequential: bool | None = None):
         await self._start_war(
             ctx,
@@ -511,6 +521,31 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
+        if awaiting_scheduled_start(match, index):
+            if not any(ctx.author.has_role(role) for role in LVL2_ROLES):
+                await ctx.send(f"{ERROR_EMOJI} You do not have permission to interact with this component!",
+                               ephemeral=True)
+                return
+            if match.hosts[index] and str(ctx.author.id) != match.hosts[index]:
+                await ctx.send(f"{ERROR_EMOJI} You are not the host of this match.", ephemeral=True)
+                return
+            clan = await self.coc_client.get_clan(ctx.values[0])
+            chosen = list(match.scheduled_host_clans)
+            chosen[index] = clan.tag
+            if not await update_match_control(match, expected, {"scheduled_host_clans": chosen}):
+                await reject_outdated_match_control(ctx)
+                return
+            match.scheduled_host_clans = chosen
+            embed = scheduled_thread_embed(match, index, ctx.message)
+            embed.fields[2].value = f"[{clan.name}]({clan.share_link})"
+            await publish_match_message(
+                ctx, match, expected, embed=embed, existing_message=ctx.message,
+                components=start_components(match, index, show_clan_select=True, scheduled=True),
+                replace_thread_controls=True,
+            )
+            await ctx.send(f"{SUCCESS_EMOJI} **{clan.name}** is selected as the host clan.", ephemeral=True)
+            return
+
         if (not match.is_war or match.hosts[index]) and str(ctx.author.id) != match.hosts[index]:
             await ctx.send(f"{ERROR_EMOJI} You are not the host of this match.", ephemeral=True)
             return
@@ -540,7 +575,7 @@ class MatchHostingCommands:
             return
 
         # update the message embed as before
-        ctx.message.embeds[0].fields[2].value = f"[{clan.name} ({clan.tag})]({clan.share_link})"
+        ctx.message.embeds[0].fields[2].value = f"[{clan.name}]({clan.share_link})"
         embed = copy.deepcopy(ctx.message.embeds[0])
         await publish_match_message(
             ctx, match, MatchMessageState.capture(match, index), embed=embed, existing_message=ctx.message,
@@ -549,7 +584,7 @@ class MatchHostingCommands:
             return
 
         await ctx.send(
-            f"{SUCCESS_EMOJI} You have set [{clan.name} ({clan.tag})]({clan.share_link}) as the host clan!",
+            f"{SUCCESS_EMOJI} You have set [{clan.name}]({clan.share_link}) as the host clan!",
             ephemeral=True,
         )
 
@@ -588,7 +623,7 @@ class MatchHostingCommands:
 
         # pick the player user for mention (from participants; fallback to command invoker)
         player_obj = await self.bot.fetch_user(match.participants[player].user_id)
-        clan_tag = match.host_clans[player]
+        clan_tag = match.scheduled_host_clans[player] or match.host_clans[player]
         clan = await self.coc_client.get_clan(clan_tag) if clan_tag else None
 
         long_ts = ipy.Timestamp.fromtimestamp(ts).format(ipy.TimestampStyles.LongDateTime)
@@ -600,37 +635,10 @@ class MatchHostingCommands:
                 ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                 ipy.EmbedField(name="**Host**", value="Not assigned"),
                 ipy.EmbedField(name="**Host Clan**",
-                               value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned")
+                               value=f"[{clan.name}]({clan.share_link})" if clan else "Not assigned")
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color()
-        )
-
-        host_clan_select = ipy.StringSelectMenu(
-            *HOST_CLAN_OPTIONS,
-            placeholder="🛡️ Set the host clan",
-            custom_id=f"host_clan_select|{match.token}|{player}"
-        )
-
-        host_button = ipy.Button(
-            style=ipy.ButtonStyle.GRAY,
-            label="Host",
-            custom_id=f"match_host|{match.token}|{player}",
-            emoji=ipy.PartialEmoji(name="🙋")
-        )
-
-        store_button = ipy.Button(
-            style=ipy.ButtonStyle.GRAY,
-            label="Store Result",
-            custom_id=f"match_result_store|{match.token}|{player}",
-            emoji=ipy.PartialEmoji(name="💾")
-        )
-
-        abort_button = ipy.Button(
-            style=ipy.ButtonStyle.RED,
-            label="Abort",
-            custom_id=f"match_abort|{match.token}|{player}",
-            emoji=ipy.PartialEmoji(name="🛑")
         )
 
         if is_final_match(match):
@@ -640,18 +648,22 @@ class MatchHostingCommands:
                 await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
                 return
         else:
+            scheduled_times = list(match.scheduled_times)
+            scheduled_times[player] = int(ts)
             await match.set({
                 "is_war": True,
                 f"hosts.{player}": None,
                 f"times.{player}": int(ts),
+                "scheduled_times": scheduled_times,
             })
+            match.scheduled_times = scheduled_times
         match.is_war = True
         match.hosts[player] = None
         match.times[player] = int(ts)
         await append_helper_task(match.thread, match.participants[player].user_id, ts)
         await publish_match_message(
             ctx, match, MatchMessageState.capture(match, player), content=player_obj.mention, embed=embed,
-            components=[ipy.ActionRow(host_clan_select), ipy.ActionRow(host_button, store_button, abort_button)],
+            components=start_components(match, player, show_clan_select=True, scheduled=True),
         )
 
         await ctx.send(f"{SUCCESS_EMOJI} Match scheduled for {player_obj.mention} at {long_ts}.",
@@ -660,6 +672,38 @@ class MatchHostingCommands:
         # if both players have scheduled times, flip the channel name style
         if all(match.times):
             schedule_channel_name_edit(ctx.channel, "🔵")
+
+    @ipy.component_callback(re.compile(rf"^{SCHEDULED_START}\|\w+\|[01]$"))
+    @acknowledge_privately
+    @coordinated_match_message
+    async def scheduled_match_start(self, ctx: ipy.ComponentContext) -> None:
+        if not any(ctx.author.has_role(role) for role in LVL2_ROLES):
+            await ctx.send(f"{ERROR_EMOJI} You do not have permission to interact with this component!",
+                           ephemeral=True)
+            return
+        _, token, side = ctx.custom_id.split("|")
+        player = int(side)
+        match = await Match.find_one(Match.token == token)
+        if match is None or match.thread != str(ctx.channel.id):
+            await ctx.send(f"{ERROR_EMOJI} This scheduled match is unavailable.", ephemeral=True)
+            return
+        if not await check_match_control(ctx, match, player):
+            return
+        if not awaiting_scheduled_start(match, player) or is_match_finished(match, player if match.is_war else None):
+            await ctx.send(f"{ERROR_EMOJI} This match is no longer waiting to start.", ephemeral=True)
+            return
+        if match.hosts[player] and str(ctx.author.id) != match.hosts[player]:
+            await ctx.send(f"{ERROR_EMOJI} You are not the host of this match.", ephemeral=True)
+            return
+        clan = match.scheduled_host_clans[player]
+        if not clan:
+            await ctx.send(f"{ERROR_EMOJI} Set the host clan before starting the match.", ephemeral=True)
+            return
+        if match.is_war:
+            await self._start_war(ctx, player, clan, automatic=True)
+        else:
+            await self._start_live(ctx, LivePreflight(clan=clan, automatic=True, requested_by=str(ctx.author.id),
+                                                      defer_response=False, sequential=None))
 
     @ipy.component_callback(re.compile(r"^match_abort\|\w+\|\w+$"))
     @acknowledge_privately
@@ -755,18 +799,21 @@ class MatchHostingCommands:
         if "hosts.1" in updates:
             match.hosts[1] = host_id
 
-        # update the embed field “Host”
-        ctx.message.embeds[0].fields[1].value = mention_user(ctx.author, mention_type="Helper")
-        embed = copy.deepcopy(ctx.message.embeds[0])
+        scheduled = awaiting_scheduled_start(match, index)
+        embed = (scheduled_thread_embed(match, index, ctx.message) if scheduled
+                 else copy.deepcopy(ctx.message.embeds[0]))
+        embed.fields[1].value = mention_user(ctx.author, mention_type="Helper")
         await publish_match_message(
             ctx, match, MatchMessageState.capture(match, index), embed=embed, existing_message=ctx.message,
+            components=start_components(match, index, show_clan_select=True, scheduled=True) if scheduled else None,
+            replace_thread_controls=scheduled,
         )
         if not match.is_war and not await live_start.publish_live_host_details(ctx, match, embed):
             return
 
         await ctx.send(f"{SUCCESS_EMOJI} You have set yourself as the host of this match!", ephemeral=True)
 
-        if not match.is_war or all(match.hosts):
+        if not scheduled and (not match.is_war or all(match.hosts)):
             schedule_channel_name_edit(ctx.channel, "🟢")
 
     @base.subcommand(sub_cmd_name="abort", sub_cmd_description="Abort a live match")
@@ -856,10 +903,10 @@ class MatchHostingCommands:
     @ipy.check(ipy.has_any_role(*LVL2_ROLES))
     @ipy.slash_option(
         name="clan",
-        description="The clan that will be used for the match",
+        description="Host clan; leave blank to let the bot choose",
         opt_type=ipy.OptionType.STRING,
         choices=HOST_CLAN_CHOICES,
-        required=True,
+        required=False,
     )
     @ipy.slash_option(
         name="district",
@@ -887,7 +934,7 @@ class MatchHostingCommands:
     async def match_autostart(
             self,
             ctx: ipy.SlashContext,
-            clan: str,
+            clan: str | None = None,
             district: str | None = None,
             sequential: bool | None = None,
             attacks_first: int | None = None,
@@ -929,9 +976,9 @@ class MatchHostingCommands:
                 ephemeral=True,
             )
             return
-        if request.clan != host_clan_tag:
+        if request.clan is not None and request.clan != host_clan_tag:
             await ctx.send(
-                f"{ERROR_EMOJI} This match is hosted in **{host_clan_tag}**. "
+                f"{ERROR_EMOJI} This match is hosted in **{await resource_clan_name(host_clan_tag)}**. "
                 "Select that clan for a district rerun.",
                 ephemeral=True,
             )
@@ -1035,11 +1082,11 @@ class MatchHostingCommands:
             return
 
         if hosting_started(match):
-            await ctx.send(
-                f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{await available_resource_clans_text()}",
-                ephemeral=True,
-            )
+            await ctx.send(f"{ERROR_EMOJI} This match has already started.", ephemeral=True)
+            return
+        token = str(match.token)
+        if any(is_resource_match_side_locked(token, side) for side in (0, 1)):
+            await ctx.send(f"{ERROR_EMOJI} This match is already being started.", ephemeral=True)
             return
 
         if request.automatic:
@@ -1049,13 +1096,13 @@ class MatchHostingCommands:
                 return
             if reservation_id:
                 stored_clan = live_stores(match, reservation_id)[0][1].clan_tag
-                if request.clan != stored_clan:
+                if request.clan is not None and request.clan != stored_clan:
                     await ctx.send(
-                        f"{ERROR_EMOJI} Both players' bases are stored in **{stored_clan}**. "
+                        f"{ERROR_EMOJI} Both players' bases are stored in **{await resource_clan_name(stored_clan)}**. "
                         "Start the match in that clan.", ephemeral=True,
                     )
                     return
-                request = replace(request, stored_reservation_id=reservation_id)
+                request = replace(request, clan=stored_clan, stored_reservation_id=reservation_id)
 
         # host cannot be one of the two players
         player1_id = match.participants[0].user_id
@@ -1090,7 +1137,7 @@ class MatchHostingCommands:
                     return
                 if request.clan != stored_clan:
                     await ctx.send(
-                        f"{ERROR_EMOJI} Both players' bases are stored in **{stored_clan}**. "
+                        f"{ERROR_EMOJI} Both players' bases are stored in **{await resource_clan_name(stored_clan)}**. "
                         "Start the match in that clan.", ephemeral=True,
                     )
                     return
@@ -1103,39 +1150,41 @@ class MatchHostingCommands:
                            ephemeral=True)
             return
 
-        clan_obj = await self.coc_client.get_clan(request.clan)
-        if is_resource_clan_locked(clan_obj.tag) or not await is_clan_available(clan_obj.tag):
-            await ctx.send(
-                f"{ERROR_EMOJI} **{clan_obj.name}** is currently occupied.\n\n"
-                f"{await available_resource_clans_text()}",
-                ephemeral=True,
-            )
-            return
-        slot_instruction = ""
-        if request.automatic and request.sequential:
-            await sequential_service.host_live_sequentially(
-                self.bot,
-                ctx,
-                helper_live.AutomaticLiveHost(
-                    match=match,
-                    clan=clan_obj,
-                    host=host,
-                    player1=player1_acc,
-                    player2=player2_acc,
-                    player1_elo=p1_doc.elo,
-                    player2_elo=p2_doc.elo,
-                    requested_by=str(ctx.author.id),
-                    stored_reservation_id=request.stored_reservation_id,
-                    attacks_first=request.attacks_first,
-                ),
-            )
-            return
-        if request.automatic:
-            assert request.requested_by is not None
-            await helper_live.host_live_automatically(
-                self,
-                ctx,
-                helper_live.AutomaticLiveHost(
+        clan_tag = request.clan
+        reservations = None
+        if clan_tag is None:
+            tags = await available_autostart_clans(self.bot, live=True, preferred=match.scheduled_host_clans[0])
+            if not tags:
+                await ctx.send(f"{ERROR_EMOJI} No Helper clans are available for this live match.", ephemeral=True)
+                return
+            outcome = await live_start.reserve_live_start(token, *tags)
+            match outcome:
+                case live_reservations.LiveStartReservations() as reservations:
+                    clan_tag = reservations.clan.clan_tag
+                case live_reservations.LiveReservationsBusy():
+                    await ctx.send(f"{ERROR_EMOJI} This match is already being started.", ephemeral=True)
+                    return
+                case live_reservations.LiveReservationsClanUnavailable():
+                    await ctx.send(f"{ERROR_EMOJI} No Helper clans are available for this live match.", ephemeral=True)
+                    return
+                case unreachable:
+                    assert_never(unreachable)
+
+        try:
+            clan_obj = await self.coc_client.get_clan(clan_tag)
+            if ((reservations is None and is_resource_clan_locked(clan_obj.tag))
+                    or not await is_clan_available(clan_obj.tag)):
+                if reservations is None and any(is_resource_match_side_locked(token, side) for side in (0, 1)):
+                    await ctx.send(f"{ERROR_EMOJI} This match is already being started.", ephemeral=True)
+                    return
+                alternatives = ""
+                if request.stored_reservation_id is None:
+                    alternatives = f"\n\n{await available_resource_clans_text()}"
+                await ctx.send(f"{ERROR_EMOJI} **{clan_obj.name}** is currently occupied.{alternatives}", ephemeral=True)
+                return
+            if request.automatic:
+                assert request.requested_by is not None
+                automatic_host = helper_live.AutomaticLiveHost(
                     match=match,
                     clan=clan_obj,
                     host=host,
@@ -1147,9 +1196,17 @@ class MatchHostingCommands:
                     public_progress=request.public_progress,
                     allow_opponent_cancel=request.allow_opponent_cancel,
                     stored_reservation_id=request.stored_reservation_id,
-                ),
-            )
-            return
+                    attacks_first=request.attacks_first,
+                    reservations=reservations,
+                )
+                if request.sequential:
+                    await sequential_service.host_live_sequentially(self.bot, ctx, automatic_host)
+                else:
+                    await helper_live.host_live_automatically(self, ctx, automatic_host)
+                return
+        finally:
+            if reservations is not None:
+                reservations.release()
         if stored_start is None:
             available_slots, slot_owners = await get_start_base_store_slot_availability(
                 clan_obj.tag, match.thread, bot=self.bot,
@@ -1185,11 +1242,7 @@ class MatchHostingCommands:
             case live_start.LiveStartSucceeded():
                 return
             case live_start.LiveStartBusy():
-                await ctx.send(
-                    f"{ERROR_EMOJI} This match is already being started.\n\n"
-                    f"{await available_resource_clans_text()}",
-                    ephemeral=True,
-                )
+                await ctx.send(f"{ERROR_EMOJI} The match changed before hosting could start.", ephemeral=True)
             case live_start.LiveStartRefused():
                 return
             case live_start.LiveStartClanUnavailable():
@@ -1266,6 +1319,12 @@ class MatchHostingCommands:
             await ctx.send(f"{ERROR_EMOJI} {refusal}", ephemeral=True)
             return
 
+        index = 0 if player is None else player
+        if (not is_final_match(match) and match.match_stake_closed and match.times[index] is not None
+                and match.host_clans[index] and hosting_started(match, index)):
+            await ctx.send(f"{ERROR_EMOJI} Hosting has already started.", ephemeral=True)
+            return
+
         if player is None:
             await self._schedule_live(ctx, match, ts)
         else:
@@ -1286,7 +1345,9 @@ class MatchHostingCommands:
                 "is_war": False,
                 "times.0": int(ts),
                 "times.1": int(ts),
+                "scheduled_times": [int(ts), int(ts)],
             })
+            match.scheduled_times = [int(ts), int(ts)]
         match.is_war = False
         match.times = [int(ts), int(ts)]
 
@@ -1294,7 +1355,7 @@ class MatchHostingCommands:
         host_id = next((h for h in match.hosts if h), None)
         host_user = await self.bot.fetch_user(int(host_id)) if host_id else None
 
-        clan_tag = match.host_clans[0] or match.host_clans[1]
+        clan_tag = match.scheduled_host_clans[0] or match.host_clans[0] or match.host_clans[1]
         clan = await self.coc_client.get_clan(clan_tag) if clan_tag else None
 
         long_ts = ipy.Timestamp.fromtimestamp(ts).format(ipy.TimestampStyles.LongDateTime)
@@ -1311,7 +1372,7 @@ class MatchHostingCommands:
                                value=mention_user(host_user, mention_type="Helper") if host_user else "Not assigned"),
                 ipy.EmbedField(
                     name="**Host Clan**",
-                    value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"
+                    value=f"[{clan.name}]({clan.share_link})" if clan else "Not assigned"
                 ),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
@@ -1322,6 +1383,7 @@ class MatchHostingCommands:
         await append_helper_task(match.thread, match.participants[1].user_id, ts)
         await publish_match_message(
             ctx, match, MatchMessageState.capture(match, 0), content=f"<@{p1_id}>\n<@{p2_id}>", embed=embed,
+            components=start_components(match, 0, show_clan_select=True, scheduled=True),
         )
 
         # public message in MATCH_CHANNEL
@@ -1338,7 +1400,7 @@ class MatchHostingCommands:
                                value=f"{mention_user(members[0], p1_id)} vs. {mention_user(members[1], p2_id)}"),
                 ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                 ipy.EmbedField(name="**Host Clan**",
-                               value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"),
+                               value=f"[{clan.name}]({clan.share_link})" if clan else "Not assigned"),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=GREEN_COLOR,
@@ -1358,11 +1420,7 @@ class MatchHostingCommands:
 
         await ctx.send(f"{SUCCESS_EMOJI} Match scheduled for {long_ts}.", ephemeral=True)
 
-        # channel name color based on whether a host is set
-        if host_user is None:
-            schedule_channel_name_edit(ctx.channel, "🔵")
-        else:
-            schedule_channel_name_edit(ctx.channel, "🟢")
+        schedule_channel_name_edit(ctx.channel, "🔵")
 
     @ipy.Task.create(ipy.CronTrigger(cron="0 7 * * 4"))  # triggers 7:00 AM every Thursday UTC
     async def raid_weekend_start_notify(self):

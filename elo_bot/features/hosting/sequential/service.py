@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from io import BytesIO
 from typing import assert_never
@@ -19,9 +20,9 @@ import elo_bot.features.hosting.live.live_start as live_start
 import elo_bot.features.hosting.war.war_start as war_start
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
-from elo_bot.config.ids import LVL2_ROLES
+from elo_bot.config.ids import LVL1_ROLES, LVL2_ROLES
 from elo_bot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
-from elo_bot.core.finals import FINAL_DISTRICTS
+from elo_bot.core.finals import FINAL_DISTRICTS, FinalError
 from elo_bot.core.match_results import is_match_finished
 from elo_bot.db import EloFinal, Match, Player
 from elo_bot.db.sequential_models import LIVE_SIDE, HelperSequentialRun, SequentialRunEvent
@@ -33,6 +34,7 @@ from elo_bot.features.hosting.live.helper_live import (
     unpaired_bases_message,
 )
 from elo_bot.features.hosting.sequential import ui
+from elo_bot.features.hosting.sequential.replay import open_replay, replay_scores, validate_replay_retry
 from elo_bot.features.hosting.sequential.policy import (
     LIST_PAGE_SIZE,
     MAX_POLL_BACKOFF_SECONDS,
@@ -45,19 +47,23 @@ from elo_bot.features.hosting.sequential.runs import (
     is_tracked,
     latest_run,
     match_runs,
+    open_regular_run,
+    original_run,
+    played_district_codes,
     record_event,
     remaining_districts,
     result_sides,
     run_result,
     transition,
 )
-from elo_bot.features.hosting.sequential.scores import store_verified_scores
+from elo_bot.features.hosting.sequential.scores import store_replay_scores, store_verified_scores
 from elo_bot.features.hosting.war.helper_host import AutomaticWarHost
 from elo_bot.features.hosting.war.helper_slot import get_available_helper_slot
 from elo_bot.features.hosting.war.result_store import complete_stored_results
 from elo_bot.features.matches import attack_bases, resources
 from elo_bot.features.matches.timing import hosting_started
 from elo_bot.integrations.helper_api import (
+    HELPER_SEQUENTIAL_RESERVATION_PREFIX,
     HelperJobCreateAcceptedInvalid,
     HelperJobCreateConflict,
     HelperJobCreated,
@@ -68,6 +74,7 @@ from elo_bot.integrations.helper_api import (
     HelperSequentialClient,
     HelperSequentialJob,
     HelperSequentialJobCreateRequest,
+    HelperSequentialLiveOnStoredPayload,
     HelperSequentialLivePayload,
     HelperSequentialResult,
     HelperSequentialWarPayload,
@@ -75,7 +82,6 @@ from elo_bot.integrations.helper_api import (
 )
 
 TERMINAL_JOB_STATUSES = frozenset({"succeeded", "failed", "cancelled"})
-RESERVED_PREFIX = "reserved_by_sequential_job:"
 _WATCHERS: dict[PydanticObjectId, asyncio.Task[None]] = {}
 _RUN_LOCKS: dict[PydanticObjectId, anyio.Lock] = {}
 
@@ -89,6 +95,8 @@ class LaunchRequest:
     districts: list[str]
     start_message_id: int | None
     previous_run_id: PydanticObjectId | None = None
+    replay_source: HelperSequentialRun | None = None
+    replay_baseline: dict[str, list[str | None]] | None = None
 
 
 def helper_client() -> HelperSequentialClient:
@@ -114,7 +122,8 @@ async def clan_refusal(clan_tag: str) -> str | None:
             "Choose another clan or wait for that run to finish.")
 
 
-async def host_war_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: AutomaticWarHost) -> None:
+async def host_war_sequentially(bot: ipy.Client, ctx: ipy.SlashContext | ipy.ComponentContext,
+                                host: AutomaticWarHost) -> None:
     if refusal := await clan_refusal(host.clan.tag):
         await ctx.send(refusal, ephemeral=True)
         return
@@ -176,19 +185,21 @@ async def host_war_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: Au
     ))
 
 
-async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: AutomaticLiveHost) -> None:
+async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext | ipy.ComponentContext,
+                                 host: AutomaticLiveHost) -> None:
     if refusal := await clan_refusal(host.clan.tag):
         await ctx.send(refusal, ephemeral=True)
         return
     # Helper's attacks_first takes the tag of the player whose challenge goes first; omitted posts both together.
     first_attacker = None if host.attacks_first is None else (host.player1, host.player2)[host.attacks_first].tag
-    reservation_outcome = await live_start.reserve_live_start(str(host.match.token), host.clan.tag)
+    reservation_outcome = host.reservations or await live_start.reserve_live_start(
+        str(host.match.token), host.clan.tag,
+    )
     match reservation_outcome:
         case live_reservations.LiveStartReservations() as reservations:
             pass
         case live_reservations.LiveReservationsBusy():
-            await ctx.send(f"{ERROR_EMOJI} This match is already being started.\n\n"
-                           f"{await resources.available_resource_clans_text()}", ephemeral=True)
+            await ctx.send(f"{ERROR_EMOJI} This match is already being started.", ephemeral=True)
             return
         case live_reservations.LiveReservationsClanUnavailable():
             await ctx.send(f"{ERROR_EMOJI} **{host.clan.name}** is currently occupied.\n\n"
@@ -216,8 +227,9 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
                 await ctx.send(f"{ERROR_EMOJI} The stored live bases changed or are no longer ready.",
                                ephemeral=True)
                 return
-            payload = HelperSequentialLivePayload(
-                host_clan_tag=host.clan.tag, base_source="stored", player_1_tag=host.player1.tag,
+            job_type = "host_sequential_live_match_on_stored"
+            payload = HelperSequentialLiveOnStoredPayload(
+                host_clan_tag=host.clan.tag, player_1_tag=host.player1.tag,
                 player_2_tag=host.player2.tag, districts=list(FINAL_DISTRICTS), remove_bases_after=False,
                 attacks_first=first_attacker,
             )
@@ -226,8 +238,9 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
             if paired is None:
                 await ctx.send(unpaired_bases_message(match_doc), ephemeral=True)
                 return
+            job_type = "host_sequential_live_match"
             payload = HelperSequentialLivePayload(
-                host_clan_tag=host.clan.tag, base_source="links", player_1_tag=host.player1.tag,
+                host_clan_tag=host.clan.tag, player_1_tag=host.player1.tag,
                 player_2_tag=host.player2.tag, base_links_for_player_1=paired.for_player1,
                 base_links_for_player_2=paired.for_player2, attacks_first=first_attacker,
             )
@@ -240,15 +253,14 @@ async def host_live_sequentially(bot: ipy.Client, ctx: ipy.SlashContext, host: A
         match start_outcome:
             case live_start.LiveStartSucceeded(message=started_message):
                 request = HelperSequentialJobCreateRequest(
-                    job_type="host_sequential_live_match", requested_by=str(ctx.author.id), payload=payload,
+                    job_type=job_type, requested_by=str(ctx.author.id), payload=payload,
                 )
                 await launch_run(bot, ctx, LaunchRequest(
                     match=match_doc, side=LIVE_SIDE, player_tags=[host.player1.tag, host.player2.tag], request=request,
                     districts=list(FINAL_DISTRICTS), start_message_id=int(started_message.id),
                 ))
             case live_start.LiveStartBusy():
-                await ctx.send(f"{ERROR_EMOJI} This match is already being started.\n\n"
-                               f"{await resources.available_resource_clans_text()}", ephemeral=True)
+                await ctx.send(f"{ERROR_EMOJI} The match changed before hosting could start.", ephemeral=True)
             case live_start.LiveStartRefused():
                 return
             case live_start.LiveStartClanUnavailable():
@@ -264,25 +276,45 @@ async def launch_run(bot: ipy.Client, ctx: ipy.BaseContext, launch: LaunchReques
     match = launch.match
     actor_id = str(ctx.author.id)
     run = HelperSequentialRun(
+        id=PydanticObjectId(),
         match_id=match.id, match_token=str(match.token), thread_id=str(match.thread), final_id=match.final_id,
         final_node_id=match.final_node_id, final_contestant_revision=match.final_contestant_revision,
         final_attempt=match.final_attempt, side=launch.side, host_clan_tag=launch.request.payload.host_clan_tag,
         player_tags=launch.player_tags, districts=launch.districts,
         create_request=launch.request.model_dump(by_alias=True, exclude_none=True),
         requested_by=actor_id, previous_run_id=launch.previous_run_id, start_message_id=launch.start_message_id,
+        replay_baseline=launch.replay_baseline,
         state="CREATING", created_at=time.time(),
         events=[SequentialRunEvent(at=time.time(), kind="created", detail=", ".join(launch.districts),
                                    actor_id=actor_id)],
     )
+    async with _RUN_LOCKS.setdefault(run.id, anyio.Lock()):
+        await _register_and_queue(bot, ctx, launch, run)
+
+
+async def _register_and_queue(bot: ipy.Client, ctx: ipy.BaseContext, launch: LaunchRequest,
+                              run: HelperSequentialRun) -> None:
     try:
-        await run.insert()
+        if launch.replay_source is None:
+            if launch.request.job_type == "host_sequential_live_match_on_stored" or (
+                    isinstance(launch.request.payload, HelperSequentialWarPayload)
+                    and launch.request.payload.base_source == "stored"):
+                run.layout_storage_ids = [launch.match.participants[side].base_store.reservation_id
+                                          for side in result_sides(run.side)]
+            await open_regular_run(run)
+        else:
+            await open_replay(run, launch.replay_source)
+            run = await HelperSequentialRun.get(run.id)
+    except FinalError as error:
+        await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+        return
     except DuplicateKeyError:
         # The open run owns this match start, so it must not be rolled back here.
         await ctx.send(f"{ERROR_EMOJI} Another Helper run is already open for this side. "
                        "Use `/match helper status`.", ephemeral=True)
         return
     async with helper_session() as session:
-        outcome = await helper_client().create(session, launch.request)
+        outcome = await helper_client().create(session, _saved_create_request(run))
     await apply_create_outcome(bot, ctx, run, outcome)
 
 
@@ -292,8 +324,17 @@ async def apply_create_outcome(
     actor_id = str(ctx.author.id)
     match outcome:
         case HelperJobCreated(id=job_id):
-            await transition(run, {"state": "ACTIVE", "job_id": job_id, "job_status": "queued"},
-                             "job_created", job_id, actor_id)
+            if not await transition(run, {"state": "ACTIVE", "job_id": job_id, "job_status": "queued"},
+                                    "job_created", job_id, actor_id):
+                current = await HelperSequentialRun.get(run.id)
+                if current is None or not current.open:
+                    try:
+                        async with helper_session() as session:
+                            await helper_client().cancel(session, job_id)
+                    except (aiohttp.ClientError, TimeoutError):
+                        logging.exception("Unable to cancel Helper job %s after its run closed", job_id)
+                await ctx.send(f"{ERROR_EMOJI} The Helper run changed. Check `/match helper status`.", ephemeral=True)
+                return
             start_watcher(bot, run.id)
             active = await HelperSequentialRun.get(run.id)
             try:
@@ -314,12 +355,19 @@ async def apply_create_outcome(
             reason = f"Helper rejected the job: {error or 'no reason given'}"
             await close_run(run, reason, actor_id)
             notice = await rollback_first_run(ctx, run)
+            if run.replay_baseline is not None:
+                closed = await HelperSequentialRun.get(run.id)
+                if await progress_message(bot, closed) is None:
+                    await publish_progress(bot, closed, ctx.channel)
+                else:
+                    await refresh_progress(bot, closed)
             await ctx.send(f"{ERROR_EMOJI} {reason}{notice}", ephemeral=True)
         case HelperJobCreateUnavailable() | HelperJobCreateAcceptedInvalid():
             await transition(run, {"state": "UNCERTAIN"}, "create_uncertain", actor_id=actor_id)
             await publish_progress(bot, await HelperSequentialRun.get(run.id), ctx.channel)
+            next_step = "review your replay options" if run.replay_baseline is not None else "check and adopt it"
             await ctx.send(f"{IMPORTANT_EMOJI} Helper's response could not be confirmed, so the job may be running. "
-                           "Run `/match helper recover` to check and adopt it.", ephemeral=True)
+                           f"Run `/match helper recover` to {next_step}.", ephemeral=True)
         case unreachable:
             assert_never(unreachable)
 
@@ -349,12 +397,19 @@ def sides_stored(match: Match, side: int) -> bool:
     return all(all(match.participants[player].result) for player in result_sides(side))
 
 
+def _start_side(run: HelperSequentialRun) -> int:
+    return 0 if run.side == LIVE_SIDE else run.side
+
+
 def progress_components(run: HelperSequentialRun, match: Match | None) -> list[ipy.ActionRow]:
-    can_continue = (not run.open and run.job_id is not None and match is not None
-                    and not is_match_finished(match) and not sides_stored(match, run.side))
+    replay_active = match is not None and isinstance(match.final_replay_run_id, PydanticObjectId)
+    eligible = (not run.open and (run.job_id is not None or run.replay_baseline is not None) and match is not None
+                and match.host_clans[_start_side(run)] == run.host_clan_tag and not replay_active)
+    can_continue = eligible and not is_match_finished(match) and not sides_stored(match, run.side)
+    can_replay = eligible and not isinstance(match.final_result_id, str) and match.final_superseded is not True
     buttons = ui.progress_components(
-        run, can_continue=can_continue, can_submit=match is not None and complete_stored_results(match),
-        match_token=run.match_token,
+        run, can_continue=can_continue, can_submit=match is not None and not replay_active
+        and complete_stored_results(match), match_token=run.match_token, can_replay=can_replay,
     )
     return [ipy.ActionRow(*buttons)] if buttons else []
 
@@ -377,13 +432,14 @@ async def progress_message(bot: ipy.Client, run: HelperSequentialRun) -> ipy.Mes
         return None
 
 
-async def refresh_progress(bot: ipy.Client, run: HelperSequentialRun) -> None:
+async def refresh_progress(bot: ipy.Client, run: HelperSequentialRun, *, retire: bool = False) -> None:
     message = await progress_message(bot, run)
     if message is None:
         return
     match = await Match.get(run.match_id)
     try:
-        await edit_channel_message(message, embed=ui.progress_embed(run, match), components=progress_components(run, match))
+        await edit_channel_message(message, embed=ui.progress_embed(run, match),
+                                   components=[] if retire else progress_components(run, match))
     except ipy.errors.HTTPException:
         logging.exception("Unable to publish Helper sequential progress for run %s", run.id)
 
@@ -403,13 +459,7 @@ async def stale_reason(run: HelperSequentialRun, match: Match | None) -> str | N
 
 
 def completed_codes(snapshot: dict | None) -> set[str]:
-    if not snapshot:
-        return set()
-    return {
-        code for record in HelperSequentialResult.model_validate(snapshot).completion.rounds
-        if record.players and all(player.completed for player in record.players.values())
-        for code in record.districts.values()
-    }
+    return played_district_codes(HelperSequentialResult.model_validate(snapshot)) if snapshot else set()
 
 
 async def sync_run(bot: ipy.Client, run_id: PydanticObjectId) -> HelperSequentialRun | None:
@@ -417,22 +467,27 @@ async def sync_run(bot: ipy.Client, run_id: PydanticObjectId) -> HelperSequentia
         run = await HelperSequentialRun.get(run_id)
         if run is None or not run.open or run.state != "ACTIVE":
             return run
-        match = await Match.get(run.match_id)
-        stale = await stale_reason(run, match)
-        client = helper_client()
-        async with helper_session() as session:
-            outcome = await client.read(session, run.job_id)
-            if stale and isinstance(outcome, HelperSequentialJob) and outcome.status not in TERMINAL_JOB_STATUSES:
-                try:
-                    await client.cancel(session, run.job_id)
-                except (aiohttp.ClientError, TimeoutError) as error:
-                    await record_event(run, "cancel_failed", str(error))
-                else:
-                    outcome = await client.read(session, run.job_id)
-        await apply_read(bot, run, match, outcome, stale)
-        run = await HelperSequentialRun.get(run_id)
-        await refresh_progress(bot, run)
+        run = await _poll_active_run(bot, run)
+        if run is not None:
+            await refresh_progress(bot, run)
         return run
+
+
+async def _poll_active_run(bot: ipy.Client, run: HelperSequentialRun) -> HelperSequentialRun | None:
+    match = await Match.get(run.match_id)
+    stale = await stale_reason(run, match)
+    client = helper_client()
+    async with helper_session() as session:
+        outcome = await client.read(session, run.job_id)
+        if stale and isinstance(outcome, HelperSequentialJob) and outcome.status not in TERMINAL_JOB_STATUSES:
+            try:
+                await client.cancel(session, run.job_id)
+            except (aiohttp.ClientError, TimeoutError) as error:
+                await record_event(run, "cancel_failed", str(error))
+            else:
+                outcome = await client.read(session, run.job_id)
+    await apply_read(bot, run, match, outcome, stale)
+    return await HelperSequentialRun.get(run.id)
 
 
 async def apply_read(
@@ -454,6 +509,12 @@ async def apply_read(
                 update |= event_push("poll_failed", reason)
             await collection.update_one({"_id": run.id}, update)
         case HelperSequentialJob() as job:
+            if run.replay_baseline is not None and (job.id != run.job_id or not players_match(run, job)):
+                reason = "Helper returned a job for a different replay or player pairing."
+                await collection.update_one({"_id": run.id}, {
+                    "$set": {"last_polled_at": now, "last_poll_error": reason}, "$inc": {"poll_failures": 1},
+                })
+                return
             snapshot = job.result.model_dump(mode="json") if job.result else run.snapshot
             await collection.update_one({"_id": run.id}, {"$set": {
                 "snapshot": snapshot, "job_status": job.status, "error": job.error, "last_polled_at": now,
@@ -463,9 +524,13 @@ async def apply_read(
                 await record_event(run, "status", job.status)
             for code in sorted(completed_codes(snapshot) - completed_codes(run.snapshot)):
                 await record_event(run, "district_played", code)
-            if job.result is not None and match is not None and stale is None:
-                for stored in await store_verified_scores(run, job.result):
-                    await record_event(run, "score_stored", stored)
+            if match is not None and stale is None:
+                if run.replay_baseline is not None:
+                    if result := job.result or run_result(run):
+                        await store_replay_scores(run, result)
+                elif job.result is not None:
+                    for stored in await store_verified_scores(run, job.result):
+                        await record_event(run, "score_stored", stored)
             if job.status in TERMINAL_JOB_STATUSES:
                 detail = f": {job.error}" if job.error else ""
                 if await close_run(run, stale or f"Helper job {job.status}{detail}.") and stale is None:
@@ -479,9 +544,16 @@ async def finish_stored_sides(bot: ipy.Client, run: HelperSequentialRun) -> None
     match_commands = bot.get_ext("MatchCommands")
     if match is None or match_commands is None:
         return
+    preserve_live_clan = run.replay_baseline is not None and run.side == LIVE_SIDE and not sides_stored(match, LIVE_SIDE)
     for side in result_sides(run.side):
+        if run.replay_baseline is not None:
+            index = result_sides(run.side).index(side)
+            if all(scores[index] for scores in run.replay_baseline.values()):
+                continue
         if all(match.participants[side].result):
-            await match_commands._finish_stored_result_side(match, side)
+            await match_commands._finish_stored_result_side(
+                match, side, **({"release_clan": False} if preserve_live_clan else {}),
+            )
 
 
 def is_watching(run_id: PydanticObjectId) -> bool:
@@ -537,68 +609,193 @@ async def cancel_run(bot: ipy.Client, ctx: ipy.ComponentContext, run_id: Pydanti
         return
     choice = await choose(
         bot, ctx,
-        f"{IMPORTANT_EMOJI} Cancel this Helper run? If Helper has not posted a challenge yet, the match start is "
-        "rolled back. Otherwise the match and its stored scores are kept, and you can continue the remaining "
-        "districts later.",
-        ipy.Button(style=ipy.ButtonStyle.DANGER, label="Cancel Run", emoji=ui.CROSS_EMOJI,
+        (f"{IMPORTANT_EMOJI} Cancel this replay? Verified score replacements are kept."
+         if run.replay_baseline is not None else
+         f"{IMPORTANT_EMOJI} Cancel this Helper run? If Helper has not posted a challenge yet, the match start is "
+         "rolled back. Otherwise the match and its stored scores are kept, and you can continue the remaining "
+         "districts later."),
+        ipy.Button(style=ipy.ButtonStyle.DANGER, label="Cancel", emoji=ui.CROSS_EMOJI,
                    custom_id="seq_cancel_confirm"),
         ipy.Button(style=ipy.ButtonStyle.GRAY, label="Back", custom_id="seq_cancel_back"),
     )
     if choice != "seq_cancel_confirm":
         return
-    try:
-        async with helper_session() as session:
-            await helper_client().cancel(session, run.job_id)
-    except (aiohttp.ClientError, TimeoutError):
-        await ctx.send(f"{ERROR_EMOJI} Helper could not cancel the job. Please try again.", ephemeral=True)
-        return
-    await record_event(run, "cancel_requested", actor_id=str(ctx.author.id))
-    run = await sync_run(bot, run_id)
-    if run is None or run.open:
-        await ctx.send(f"{IMPORTANT_EMOJI} Helper accepted the cancellation, but the run is still closing. "
-                       "Check it with `/match helper status`.", ephemeral=True)
-        return
-    result = run_result(run)
-    nothing_posted = result is None or not any(
-        player.posted for record in result.completion.rounds for player in record.players.values()
-    )
-    notice = await rollback_first_run(ctx, run) if nothing_posted else ""
+    async with _RUN_LOCKS.setdefault(run_id, anyio.Lock()):
+        run = await HelperSequentialRun.get(run_id)
+        if run is None or not run.open:
+            await ctx.send(f"{ERROR_EMOJI} This Helper run has already ended.", ephemeral=True)
+            return
+        try:
+            async with helper_session() as session:
+                await helper_client().cancel(session, run.job_id)
+        except (aiohttp.ClientError, TimeoutError):
+            await ctx.send(f"{ERROR_EMOJI} Helper could not cancel the job. Please try again.", ephemeral=True)
+            return
+        await record_event(run, "cancel_requested", actor_id=str(ctx.author.id))
+        run = await _poll_active_run(bot, run)
+        if run is None or run.open:
+            if run is not None:
+                await refresh_progress(bot, run)
+            await ctx.send(f"{IMPORTANT_EMOJI} Helper accepted the cancellation, but the run is still closing. "
+                           "Check it with `/match helper status`.", ephemeral=True)
+            return
+        result = run_result(run)
+        nothing_posted = result is None or not any(
+            player.posted for record in result.completion.rounds for player in record.players.values()
+        )
+        try:
+            notice = await rollback_first_run(ctx, run) if nothing_posted else ""
+        finally:
+            await refresh_progress(bot, run)
     await ctx.send(f"{SUCCESS_EMOJI} The Helper run was cancelled.{notice}", ephemeral=True)
 
 
-def continuation_request(run: HelperSequentialRun, remaining: list[str], actor_id: str) -> HelperSequentialJobCreateRequest:
+def _saved_create_request(run: HelperSequentialRun) -> HelperSequentialJobCreateRequest:
     payload = dict(run.create_request["payload"])
+    job_type = run.create_request["type"]
+    if job_type == "host_sequential_live_match" and payload.pop("base_source", None) == "stored":
+        job_type = "host_sequential_live_match_on_stored"
+    return HelperSequentialJobCreateRequest.model_validate({**run.create_request, "type": job_type, "payload": payload})
+
+
+def continuation_request(run: HelperSequentialRun, remaining: list[str], actor_id: str) -> HelperSequentialJobCreateRequest:
+    request = _saved_create_request(run)
+    payload = request.payload.model_dump(exclude_none=True)
     indexes = [run.districts.index(district) for district in remaining]
-    if payload["base_source"] == "stored":
+    if "districts" in payload:
         payload["districts"] = remaining
     for key in ("base_links", "base_links_for_player_1", "base_links_for_player_2"):
         if key in payload:
             payload[key] = [payload[key][index] for index in indexes]
     return HelperSequentialJobCreateRequest.model_validate(
-        {"type": run.create_request["type"], "requested_by": actor_id, "payload": payload},
+        {"type": request.job_type, "requested_by": actor_id, "payload": payload},
     )
 
 
-async def continue_run(bot: ipy.Client, ctx: ipy.BaseContext, run: HelperSequentialRun) -> None:
+async def _continuation_options(
+        ctx: ipy.BaseContext, run: HelperSequentialRun,
+) -> tuple[Match, HelperSequentialRun, list[str]] | None:
+    latest = await latest_run(run.match_id, run.side)
+    if latest is None or run.id != latest.id:
+        await ctx.send(f"{ERROR_EMOJI} A newer Helper run exists for this match. "
+                       "Use `/match helper recover`.", ephemeral=True)
+        return None
     match = await Match.get(run.match_id)
     if stale := await stale_reason(run, match):
         await ctx.send(f"{ERROR_EMOJI} {stale}", ephemeral=True)
-        return
-    started_side = 0 if run.side == LIVE_SIDE else run.side
-    if is_match_finished(match) or match.host_clans[started_side] != run.host_clan_tag:
-        await ctx.send(f"{ERROR_EMOJI} This match is no longer hosted in `{run.host_clan_tag}`.", ephemeral=True)
-        return
-    remaining = remaining_districts(match, await match_runs(match.id, run.side))
+        return None
+    if is_match_finished(match):
+        await ctx.send(f"{ERROR_EMOJI} This match has already finished.", ephemeral=True)
+        return None
+    if isinstance(match.final_replay_run_id, PydanticObjectId):
+        await ctx.send(f"{ERROR_EMOJI} Wait for the district replay to finish.", ephemeral=True)
+        return None
+    current_clan = match.host_clans[_start_side(run)]
+    if not current_clan:
+        subject, command = (("This match", "/match autostart") if run.side == LIVE_SIDE
+                            else ("This side", "/match war autostart"))
+        paused = any(side in match.final_scouting_paused_sides for side in result_sides(run.side))
+        reason = "was aborted" if paused else "has no active host"
+        await ctx.send(f"{ERROR_EMOJI} {subject} {reason}. Start it again with `{command}`.",
+                       ephemeral=True)
+        return None
+    if current_clan != run.host_clan_tag:
+        names = await resources.resource_clan_names({run.host_clan_tag, current_clan})
+        await ctx.send(f"{ERROR_EMOJI} This Helper run was hosted in **{names[run.host_clan_tag]}**. "
+                       f"The current host clan is **{names[current_clan]}**.", ephemeral=True)
+        return None
+    history = [earlier for earlier in await match_runs(match.id, run.side)
+               if (earlier.final_contestant_revision, earlier.final_attempt)
+               == (run.final_contestant_revision, run.final_attempt)]
+    remaining = remaining_districts(match, history)
     if not remaining:
         await ctx.send(f"{SUCCESS_EMOJI} Every district was played. Enter any missing scores with **Submit Result**.",
                        ephemeral=True)
-        return
-    actor_id = str(ctx.author.id)
-    await launch_run(bot, ctx, LaunchRequest(
-        match=match, side=run.side, player_tags=run.player_tags,
-        request=continuation_request(run, remaining, actor_id), districts=remaining,
-        start_message_id=run.start_message_id, previous_run_id=run.id,
-    ))
+        return None
+    original = original_run(run, history)
+    if not set(remaining).issubset(original.districts):
+        await ctx.send(f"{ERROR_EMOJI} The saved Helper layouts are missing for some districts.", ephemeral=True)
+        return None
+    return match, original, remaining
+
+
+async def continue_run(
+        bot: ipy.Client, ctx: ipy.BaseContext, run: HelperSequentialRun, start: str | None = None,
+) -> None:
+    async with _RUN_LOCKS.setdefault(run.id, anyio.Lock()):
+        options = await _continuation_options(ctx, run)
+        if options is None:
+            return
+        match, original, remaining = options
+        if start is not None:
+            if start not in remaining:
+                await ctx.send(f"{ERROR_EMOJI} That district is no longer pending. Open **Continue** again.",
+                               ephemeral=True)
+                return
+            remaining = remaining[remaining.index(start):]
+        actor_id = str(ctx.author.id)
+        await launch_run(bot, ctx, LaunchRequest(
+            match=match, side=run.side, player_tags=run.player_tags,
+            request=continuation_request(original, remaining, actor_id), districts=remaining,
+            start_message_id=run.start_message_id, previous_run_id=run.id,
+        ))
+
+
+async def _pick_start_district(bot: ipy.Client, ctx: ipy.ComponentContext, districts: list[str]) -> str | None:
+    selected = await _pick_districts(bot, ctx, [districts[0]], lambda chosen: ui.continuation_picker(districts, chosen[0]))
+    return selected[0] if selected else None
+
+
+async def _pick_districts(
+        bot: ipy.Client, ctx: ipy.ComponentContext, selected: list[str],
+        picker: Callable[[list[str]], tuple[str, list[ipy.ActionRow]]],
+) -> list[str] | None:
+    text, rows = picker(selected)
+    message = await ctx.send(text, components=rows, ephemeral=True)
+
+    send_selection, selections = anyio.create_memory_object_stream[tuple[ipy.ComponentContext, anyio.Event]](float("inf"))
+
+    async def acknowledge_selection(used: ipy.ComponentContext, acknowledged: anyio.Event) -> None:
+        await used.defer(edit_origin=True)
+        acknowledged.set()
+
+    async def update_selection() -> None:
+        async with selections:
+            async for used, acknowledged in selections:
+                await acknowledged.wait()
+                content, components = picker(used.values)
+                await used.edit_origin(content=content, components=components)
+
+    async with anyio.create_task_group() as tasks:
+        def is_confirmation(event: ipy.events.Component) -> bool:
+            nonlocal selected
+            used = event.ctx
+            if used.author.id != ctx.author.id:
+                return False
+            if used.custom_id == ui.CONTINUE_CONFIRM:
+                return bool(selected)
+            selected = used.values
+            acknowledged = anyio.Event()
+            tasks.start_soon(acknowledge_selection, used, acknowledged)
+            send_selection.send_nowait((used, acknowledged))
+            return False
+
+        tasks.start_soon(update_selection)
+        try:
+            confirmed = (await bot.wait_for_component(
+                messages=int(message.id), components=rows, check=is_confirmation, timeout=PROMPT_TIMEOUT_SECONDS,
+            )).ctx
+        except TimeoutError:
+            confirmed = None
+        else:
+            await confirmed.defer(edit_origin=True)
+        finally:
+            send_selection.close()
+    if confirmed is None:
+        await ctx.edit(message, components=[])
+        return None
+    await confirmed.edit_origin(components=[])
+    return selected
 
 
 async def continue_from_button(bot: ipy.Client, ctx: ipy.ComponentContext, run_id: PydanticObjectId) -> None:
@@ -610,11 +807,68 @@ async def continue_from_button(bot: ipy.Client, ctx: ipy.ComponentContext, run_i
     if str(ctx.author.id) != run.requested_by and not is_staff(ctx.author):
         await ctx.send(f"{ERROR_EMOJI} Only the requester or staff can continue this Helper run.", ephemeral=True)
         return
-    if run.id != (await latest_run(run.match_id, run.side)).id:
-        await ctx.send(f"{ERROR_EMOJI} A newer Helper run exists for this match. "
-                       "Use `/match helper recover`.", ephemeral=True)
+    async with _RUN_LOCKS.setdefault(run.id, anyio.Lock()):
+        options = await _continuation_options(ctx, run)
+    if options is not None and (start := await _pick_start_district(bot, ctx, options[2])) is not None:
+        await continue_run(bot, ctx, run, start)
+
+
+async def replay_from_button(bot: ipy.Client, ctx: ipy.ComponentContext, run_id: PydanticObjectId) -> None:
+    await ctx.defer(ephemeral=True)
+    if not any(ctx.author.has_role(role) for role in LVL1_ROLES):
+        await ctx.send(f"{ERROR_EMOJI} Only managers can replay districts.", ephemeral=True)
         return
-    await continue_run(bot, ctx, run)
+    run = await HelperSequentialRun.get(run_id)
+    if (run is None or run.open or ctx.channel_id != int(run.thread_id)
+            or ctx.message_id != run.progress_message_id):
+        await ctx.send(f"{ERROR_EMOJI} Use **Replay** on the current Helper progress message.", ephemeral=True)
+        return
+    match = await Match.get(run.match_id)
+    stale = await stale_reason(run, match)
+    latest = await latest_run(run.match_id, run.side)
+    if stale or latest is None or latest.id != run.id:
+        await ctx.send(f"{ERROR_EMOJI} {stale or 'A newer Helper run exists. Use its progress message.'}", ephemeral=True)
+        return
+    if match.final_replay_run_id or match.host_clans[_start_side(run)] != run.host_clan_tag:
+        await ctx.send(f"{ERROR_EMOJI} Replay is unavailable while hosting is active or the host clan has changed.",
+                       ephemeral=True)
+        return
+    history = await match_runs(match.id, run.side)
+    original = original_run(run, history)
+    baseline = replay_scores(match, run.side)
+    scores = {district: baseline[district] for district in FINAL_DISTRICTS if district in original.districts}
+    if not scores:
+        await ctx.send(f"{ERROR_EMOJI} The original layouts are unavailable for Replay.", ephemeral=True)
+        return
+    selected = await _pick_districts(bot, ctx, [], lambda chosen: ui.replay_picker(scores, chosen))
+    if not selected:
+        return
+    districts = [district for district in scores if district in selected]
+    if len(districts) != len(selected):
+        await ctx.send(f"{ERROR_EMOJI} The selected districts are unavailable. Open **Replay** again.", ephemeral=True)
+        return
+
+    async with _RUN_LOCKS.setdefault(run.id, anyio.Lock()):
+        reservations = []
+        try:
+            for side in (0, 1):
+                reservation = await resources.try_reserve_resource_match_side(str(match.token), side)
+                if reservation is None:
+                    await ctx.send(f"{ERROR_EMOJI} Another hosting action is in progress.", ephemeral=True)
+                    return
+                reservations.append(reservation)
+            await launch_run(bot, ctx, LaunchRequest(
+                match=match, side=run.side, player_tags=run.player_tags, districts=districts,
+                request=continuation_request(original, districts, str(ctx.author.id)),
+                start_message_id=run.start_message_id, previous_run_id=run.id,
+                replay_source=original, replay_baseline=baseline,
+            ))
+            latest = await latest_run(run.match_id, run.side)
+            if latest is not None and latest.id != run.id:
+                await refresh_progress(bot, run, retire=True)
+        finally:
+            for reservation in reversed(reservations):
+                reservation.release()
 
 
 def players_match(run: HelperSequentialRun, job: HelperSequentialJob) -> bool:
@@ -626,30 +880,66 @@ def players_match(run: HelperSequentialRun, job: HelperSequentialJob) -> bool:
 
 
 async def adopt_uncertain(bot: ipy.Client, ctx: ipy.SlashContext, run: HelperSequentialRun) -> None:
-    choice = await choose(
-        bot, ctx,
-        f"{IMPORTANT_EMOJI} Helper never confirmed this job. **Check and adopt** asks Helper again; if Helper "
-        "already has the job it is adopted, otherwise Helper starts it now. **Discard** closes this record only.",
-        ipy.Button(style=ipy.ButtonStyle.GRAY, label="Check and adopt", custom_id="seq_adopt"),
-        ipy.Button(style=ipy.ButtonStyle.DANGER, label="Discard", custom_id="seq_discard"),
-    )
-    if choice is None:
+    replay = run.replay_baseline is not None
+    if replay and not any(ctx.author.has_role(role) for role in LVL1_ROLES):
+        await ctx.send(f"{ERROR_EMOJI} Only managers can retry a replay.", ephemeral=True)
         return
+    prompt = (f"{IMPORTANT_EMOJI} Helper did not confirm this replay. A retry can start these districts again."
+              if replay else f"{IMPORTANT_EMOJI} Helper never confirmed this job. **Check and adopt** asks Helper "
+              "again; if Helper already has the job it is adopted, otherwise Helper starts it now. "
+              "**Discard** closes this record only.")
+    choice = await choose(
+        bot, ctx, prompt,
+        ipy.Button(style=ipy.ButtonStyle.GRAY, label="Try Again" if replay else "Check and adopt",
+                   custom_id="seq_adopt"),
+        (ipy.Button(style=ipy.ButtonStyle.GRAY, label="Back", custom_id="seq_adopt_back") if replay else
+         ipy.Button(style=ipy.ButtonStyle.DANGER, label="Discard", custom_id="seq_discard")),
+    )
+    if choice is None or choice == "seq_adopt_back":
+        return
+    async with _RUN_LOCKS.setdefault(run.id, anyio.Lock()):
+        current = await HelperSequentialRun.get(run.id)
+        if current is None or not current.open or current.state not in ("CREATING", "UNCERTAIN"):
+            await ctx.send(f"{ERROR_EMOJI} The Helper run changed. Check `/match helper status`.", ephemeral=True)
+            return
+        if current.replay_baseline is not None:
+            try:
+                await validate_replay_retry(current)
+            except FinalError as error:
+                await close_run(current, str(error), str(ctx.author.id))
+                await refresh_progress(bot, await HelperSequentialRun.get(run.id))
+                await ctx.send(f"{ERROR_EMOJI} {error}", ephemeral=True)
+                return
+        await _apply_recovery_choice(bot, ctx, current, choice)
+
+
+async def _apply_recovery_choice(bot: ipy.Client, ctx: ipy.SlashContext, run: HelperSequentialRun, choice: str) -> None:
     actor_id = str(ctx.author.id)
     if choice == "seq_discard":
         await close_run(run, "Discarded by staff. Helper may still be hosting; check in game.", actor_id)
         await refresh_progress(bot, await HelperSequentialRun.get(run.id))
         await ctx.send(f"{SUCCESS_EMOJI} The unconfirmed Helper run was discarded.", ephemeral=True)
         return
-    request = HelperSequentialJobCreateRequest.model_validate(run.create_request)
+    request = _saved_create_request(run)
     async with helper_session() as session:
         outcome = await helper_client().create(session, request)
-        if isinstance(outcome, HelperJobCreateRejected) and (outcome.error or "").startswith(RESERVED_PREFIX):
-            job_id = outcome.error.removeprefix(RESERVED_PREFIX)
+        if run.replay_baseline is not None and (
+                isinstance(outcome, HelperJobCreateConflict) or isinstance(outcome, HelperJobCreateRejected)
+                and (outcome.error or "").startswith((HELPER_SEQUENTIAL_RESERVATION_PREFIX, "clan_has_open_job:"))):
+            await ctx.send(f"{IMPORTANT_EMOJI} Helper already has a hosting job. Wait for it to finish before retrying.",
+                           ephemeral=True)
+            return
+        if (isinstance(outcome, HelperJobCreateRejected)
+                and (outcome.error or "").startswith(HELPER_SEQUENTIAL_RESERVATION_PREFIX)):
+            job_id = outcome.error.removeprefix(HELPER_SEQUENTIAL_RESERVATION_PREFIX)
             existing = await helper_client().read(session, job_id)
-            if (isinstance(existing, HelperSequentialJob) and existing.job_type == request.job_type
-                    and players_match(run, existing)):
-                outcome = HelperJobCreated(id=job_id)
+            if isinstance(existing, HelperSequentialJob) and players_match(run, existing):
+                existing_type = existing.job_type
+                if (existing_type == "host_sequential_live_match" and existing.result is not None
+                        and existing.result.match.base_source == "stored"):
+                    existing_type = "host_sequential_live_match_on_stored"
+                if existing_type == request.job_type:
+                    outcome = HelperJobCreated(id=job_id)
     await record_event(run, "adopt_checked", type(outcome).__name__, actor_id)
     await apply_create_outcome(bot, ctx, run, outcome)
 
@@ -676,19 +966,25 @@ async def recover(bot: ipy.Client, ctx: ipy.SlashContext, match: Match, side: in
         await ctx.send(f"{SUCCESS_EMOJI} The Helper run {state}", ephemeral=True)
         return
     if sides_stored(match, side):
-        await ctx.send(f"{SUCCESS_EMOJI} All scores for this side are stored. Use **Submit Result** to record the "
-                       "match.", ephemeral=True)
+        if not await stale_reason(run, match):
+            if await progress_message(bot, run) is None:
+                await publish_progress(bot, run, ctx.channel)
+            else:
+                await refresh_progress(bot, run)
+        await ctx.send(f"{SUCCESS_EMOJI} All scores for this side are stored. Check the Helper progress message.",
+                       ephemeral=True)
         return
     await continue_run(bot, ctx, run)
 
 
-async def run_checks(bot: ipy.Client, run: HelperSequentialRun, match: Match | None) -> tuple[list[str], str | None]:
+async def run_checks(
+        bot: ipy.Client, run: HelperSequentialRun, match: Match, clan_names: dict[str, str],
+) -> tuple[list[str], str | None]:
     stale = await stale_reason(run, match)
     checks = [ui.check_line(stale is None, stale or "The run matches the current Final pairing.")]
-    if match is not None:
-        started_side = 0 if run.side == LIVE_SIDE else run.side
-        checks.append(ui.check_line(match.host_clans[started_side] in (run.host_clan_tag, None),
-                                    f"Match host clan: `{match.host_clans[started_side] or '-'}`"))
+    tag = match.host_clans[_start_side(run)]
+    name = clan_names[tag] if tag else "None assigned"
+    checks.append(ui.check_line(tag == run.host_clan_tag, f"Match host clan: {name}"))
     message = await progress_message(bot, run)
     checks.append(ui.check_line(message is not None, "Progress message exists." if message
                                 else "Progress message is missing; `/match helper recover` posts a new one."))
@@ -721,8 +1017,12 @@ async def status(bot: ipy.Client, ctx: ipy.SlashContext, match: Match, side: int
                 live = "⚠️ Helper no longer has this job."
             case HelperTrackingFailure(reason=reason):
                 live = f"⚠️ Helper unreachable: {reason}"
-    checks, link = await run_checks(bot, run, match)
-    embed = ui.status_embed(run, match, checks, live, link)
+    clan_tags = {run.host_clan_tag}
+    if current_clan := match.host_clans[_start_side(run)]:
+        clan_tags.add(current_clan)
+    names = await resources.resource_clan_names(clan_tags)
+    checks, link = await run_checks(bot, run, match, names)
+    embed = ui.status_embed(run, match, checks, live, link, names[run.host_clan_tag])
     if not export:
         await ctx.send(embed=embed, ephemeral=hidden)
         return
@@ -748,16 +1048,21 @@ async def list_page(state: str, clan: str | None, page: int) -> tuple[ipy.Embed,
     total_pages = max(1, -(-len(runs) // LIST_PAGE_SIZE))
     page = min(max(page, 0), total_pages - 1)
     shown = runs[page * LIST_PAGE_SIZE:(page + 1) * LIST_PAGE_SIZE]
-    return ui.list_embed(shown), [ui.list_components(page, total_pages, state, clan)], total_pages
+    names = await resources.resource_clan_names({run.host_clan_tag for run in shown})
+    return ui.list_embed(shown, names), [ui.list_components(page, total_pages, state, clan)], total_pages
 
 
 async def close_runs_for_thread(thread_id: str) -> None:
     for run in await HelperSequentialRun.find({"thread_id": thread_id, "open": True}).to_list():
-        if run.job_id:
-            try:
-                async with helper_session() as session:
-                    await helper_client().cancel(session, run.job_id)
-            except (aiohttp.ClientError, TimeoutError):
-                logging.exception("Helper job %s could not be cancelled after its thread was deleted", run.job_id)
-                await record_event(run, "cancel_failed", "thread deleted")
-        await close_run(run, "The match thread was deleted.")
+        async with _RUN_LOCKS.setdefault(run.id, anyio.Lock()):
+            current = await HelperSequentialRun.get(run.id)
+            if current is None or not current.open:
+                continue
+            if current.job_id:
+                try:
+                    async with helper_session() as session:
+                        await helper_client().cancel(session, current.job_id)
+                except (aiohttp.ClientError, TimeoutError):
+                    logging.exception("Helper job %s could not be cancelled after its thread was deleted", current.job_id)
+                    await record_event(current, "cancel_failed", "thread deleted")
+            await close_run(current, "The match thread was deleted.")

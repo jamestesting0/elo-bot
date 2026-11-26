@@ -195,11 +195,7 @@ class SelfCommands(ipy.Extension):
         side_reservation = await try_reserve_resource_match_side(str(match.token), index)
         if not side_reservation:
             reservation.release()
-            await ctx.send(
-                f"{ERROR_EMOJI} This match is already being started.\n\n"
-                f"{format_available_resource_clans(await Clan.find_all().to_list())}",
-                ephemeral=True,
-            )
+            await ctx.send(f"{ERROR_EMOJI} This match is already being started.", ephemeral=True)
             return
 
         try:

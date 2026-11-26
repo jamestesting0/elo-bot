@@ -2,6 +2,7 @@ import logging
 from typing import assert_never
 
 import interactions as ipy
+from beanie import PydanticObjectId
 
 import elo_bot.features.hosting.war.helper_base_store as helper_base_store
 import elo_bot.features.hosting.war.helper_base_store_availability as helper_base_store_availability
@@ -242,6 +243,10 @@ async def undo_stored_bases(
                 pass
             case unreachable:
                 assert_never(unreachable)
+        if isinstance(state.match.final_replay_run_id, PydanticObjectId):
+            await ctx.send(f"{ERROR_EMOJI} Wait for the district replay to finish before undoing stored bases.",
+                           ephemeral=True)
+            return
         outcome = await helper_base_store.remove_bases_interactively(
             runtime,
             ctx,

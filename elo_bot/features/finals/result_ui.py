@@ -19,6 +19,10 @@ from elo_bot.features.finals.matches import require_ongoing_match
 SCORE_PLACEHOLDER: Final = "BC, BL, BW, DC, GQ, SP, GM · one per line, e.g. 2.83"
 
 
+def stored_result_fields(source: Match) -> dict[str, list[str | None]]:
+    return {participant.user_id: participant.result for participant in source.participants}
+
+
 def require_result_role(ctx: ipy.InteractionContext, needs_manager: bool) -> None:
     roles = LVL1_ROLES if needs_manager else LVL2_ROLES
     if any(ctx.author.has_role(role) for role in roles):
@@ -30,9 +34,11 @@ def require_result_role(ctx: ipy.InteractionContext, needs_manager: bool) -> Non
 
 def result_form(final: EloFinal, node: EloFinalMatch, owner: str, previous: FinalMatchResult | None = None,
                 *, winner: str | None = None, outcome: Outcome = "Played", reason: str | None = None,
-                stored: dict[str, list[str]] | None = None) -> ipy.Modal:
+                stored: dict[str, list[str | None]] | None = None, replay_revision: int = 0) -> ipy.Modal:
     custom_id = f"finalres|{final.id}|{node.id}|{owner}|{node.result_version}|" \
                 f"{node.contestant_revision}|{node.attempt}|{winner or '-'}|{int(outcome == 'Forfeit')}"
+    if replay_revision and outcome == "Played":
+        custom_id += f"|{replay_revision}"
     title = f"Season {final.season_number} Final · {node.id}"
     if outcome == "Forfeit":
         forfeiting = next(user for user in node.contestants if user != winner)
@@ -44,8 +50,10 @@ def result_form(final: EloFinal, node: EloFinalMatch, owner: str, previous: Fina
     for side, user in enumerate(node.contestants):
         if previous:
             value = "\n".join(previous.snapshot.scores[user])
-        elif stored and user in stored:
-            value = "\n".join(stored[user])
+        elif stored is not None:
+            count = len(FINAL_DISTRICTS)
+            scores = stored.get(user, [])
+            value = "\n".join([score or "0.00" for score in scores] + ["0.00"] * (count - len(scores)))
         else:
             value = None
         fields.append(ipy.ParagraphText(label=f"{final.player_nicknames[user][:35]}'s scores",
@@ -121,6 +129,5 @@ async def show_source_result_form(ctx, source: Match) -> None:
     final = await require_source_result_role(ctx, source)
     node = final.nodes[source.final_node_id]
     previous = await FinalMatchResult.get(node.result_id) if node.result_id else None
-    stored = {participant.user_id: list(participant.result) for participant in source.participants
-              if all(participant.result)}
-    await ctx.send_modal(result_form(final, node, str(ctx.author.id), previous, stored=stored))
+    await ctx.send_modal(result_form(final, node, str(ctx.author.id), previous, stored=stored_result_fields(source),
+                                     replay_revision=source.final_replay_revision))

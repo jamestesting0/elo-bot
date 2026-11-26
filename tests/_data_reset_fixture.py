@@ -73,6 +73,12 @@ class DataResetFixture(unittest.IsolatedAsyncioTestCase):
         async def set_clan(document: Clan, updates, **_kwargs) -> Clan:
             return await update_clan(document, {"$set": updates})
 
+        async def release_clan(query, update, **_kwargs) -> UpdateResult:
+            matched = query == {"tag": self.clan.tag, "availability_str": self.clan.availability_str}
+            if matched:
+                await update_clan(self.clan, update)
+            return UpdateResult({"n": int(matched), "nModified": int(matched)}, acknowledged=True)
+
         async def delete_match(query, **_kwargs) -> DeleteResult:
             self.assertEqual(query["_id"], self.match.id)
             self.assertEqual(query["thread"], "42")
@@ -102,6 +108,9 @@ class DataResetFixture(unittest.IsolatedAsyncioTestCase):
         )
         self.enterContext(patch.object(Match, "get_pymongo_collection", return_value=self.match_collection))
         self.enterContext(patch.object(Clan, "find_one", new=AsyncMock(side_effect=lambda *_a, **_k: self.clan)))
+        self.enterContext(patch.object(Clan, "get_pymongo_collection", return_value=MagicMock(
+            update_one=AsyncMock(side_effect=release_clan),
+        )))
         self.enterContext(patch.object(Clan, "set", new=set_clan))
         self.enterContext(patch.object(Clan, "update", new=update_clan))
         self.reset_players = AsyncMock(side_effect=lambda *_a, **_k: self.events.append("reset-players"))

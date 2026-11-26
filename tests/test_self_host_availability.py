@@ -449,12 +449,11 @@ class TestSelfHostAvailability(unittest.IsolatedAsyncioTestCase):
         finally:
             side_reservation.release()
 
-        # Then it rejects before CoC or Helper and keeps the unlocked clan in the alternative list.
         automatic_host.assert_not_awaited()
         self.bot.coc_client.get_clan.assert_not_awaited()
         response = ctx.send.await_args.args[0]
-        self.assertIn("Available clans:", response)
-        self.assertIn("- Alpha (#A)", response)
+        self.assertIn("already being started", response)
+        self.assertNotIn("Available clans:", response)
 
 
 if __name__ == "__main__":

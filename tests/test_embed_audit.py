@@ -33,6 +33,9 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         match.thread = "42"
         match.is_war = is_war
         match.times = times
+        match.scheduled_times = [None, None]
+        match.scheduled_host_clans = [None, None]
+        match.match_stake_closed = False
         match.hosts = hosts
         match.host_clans = host_clans
         match.old_msgs = old_msgs
@@ -98,7 +101,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(public_payload["title"], "**Match Started**")
         self.assertIn("**[User 999](<https://discordapp.com/users/999?tab=wishlist>)**", public_payload["description"])
         self.assertEqual(public_payload["fields"][2]["value"],
-                         "[New Clan (#OLD)](https://example.test/clan)")
+                         "[New Clan](https://example.test/clan)")
 
     async def test_set_clan_preserves_started_title_and_updates_public_clan(self) -> None:
         match = self.make_match(
@@ -144,7 +147,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(thread_payload["title"], "**Match Started**")
         self.assertEqual(public_payload["embeds"][0]["title"], "**Match Started**")
         self.assertEqual(public_payload["embeds"][0]["fields"][2]["value"],
-                         "[New Clan (#NEW)](https://example.test/clan)")
+                         "[New Clan](https://example.test/clan)")
 
     async def test_war_schedule_retains_existing_host_clan_in_thread_embed(self) -> None:
         match = self.make_match(
@@ -172,7 +175,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         payload = embed.to_dict()
         self.assertEqual(payload["title"], "**Match Scheduled**")
         self.assertEqual(payload["fields"][2]["value"],
-                         "[New Clan (#WAR)](https://example.test/clan)")
+                         "[New Clan](https://example.test/clan)")
 
     async def test_live_schedule_rebuilds_existing_public_embed_with_title_host_and_clan(self) -> None:
         match = self.make_match(
@@ -217,7 +220,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(embed["title"], "**Match Rescheduled**")
         self.assertIn("**[User 999](<https://discordapp.com/users/999?tab=wishlist>)**", embed["description"])
         self.assertEqual(embed["fields"][2]["value"],
-                         "[New Clan (#LIVE)](https://example.test/clan)")
+                         "[New Clan](https://example.test/clan)")
 
     async def test_live_start_refreshes_existing_public_host_clan_field(self) -> None:
         from tests import _match_publication_fixture as publication_tests
@@ -259,7 +262,7 @@ class EmbedAuditFixture(unittest.IsolatedAsyncioTestCase):
         if hasattr(public_embed, "to_dict"):
             public_embed = public_embed.to_dict()
         self.assertEqual(public_embed["fields"][2]["value"],
-                         f"[A Clan (#CLAN)]({request.start.clan.share_link})")
+                         f"[A Clan]({request.start.clan.share_link})")
 
     async def test_existing_message_edit_failure_marks_incomplete_without_removing_controls(self) -> None:
         from tests import _match_publication_fixture as publication_tests

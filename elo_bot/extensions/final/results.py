@@ -31,6 +31,7 @@ from elo_bot.features.finals.result_ui import (
     result_embed,
     result_form,
     score_embed,
+    stored_result_fields,
 )
 from elo_bot.features.finals.results import FinalResultSubmission
 
@@ -39,14 +40,17 @@ class Results:
     final = final
     match_group = match_group
 
-    async def open_result_form(self, ctx, edition, node_id, *, winner=None, outcome="Played", reason=None):
+    async def open_result_form(self, ctx, edition, node_id, *, winner=None, outcome="Played", reason=None,
+                               source: Match | None = None):
         node = edition.nodes.get(node_id)
         if node is None or node.bye or not all(node.contestants):
             raise FinalError("Choose a playable match from `/final bracket view`.")
         require_result_role(ctx, node.result_id is not None or winner is not None or outcome == "Forfeit")
         previous = await FinalMatchResult.get(node.result_id) if node.result_id else None
+        stored = stored_result_fields(source) if source is not None else None
         await ctx.send_modal(result_form(edition, node, str(ctx.author.id), previous,
-                                         winner=winner, outcome=outcome, reason=reason))
+                                         winner=winner, outcome=outcome, reason=reason, stored=stored,
+                                         replay_revision=source.final_replay_revision if source is not None else 0))
 
     @match_group.subcommand(sub_cmd_name="result", sub_cmd_description="Submit or correct all seven district scores")
     @slash_option(name="winner", description="Forfeit winner", opt_type=OptionType.USER)
@@ -60,7 +64,7 @@ class Results:
         edition = await self._ongoing_edition(ctx, source.final_id, access="manager")
         node = require_current_match(edition, source)
         await self.open_result_form(ctx, edition, node.id, winner=str(winner.id) if winner else None,
-                                    reason=reason)
+                                    reason=reason, source=source)
 
     @match_group.subcommand(sub_cmd_name="forfeit", sub_cmd_description="Forfeit a player's unfinished Final match")
     @slash_option(name="player", description="Player who is forfeiting", opt_type=OptionType.USER, required=True)
@@ -83,7 +87,7 @@ class Results:
     @ipy.modal_callback(re.compile(r"^finalres\|.+$"))
     @final_action
     async def final_result_modal(self, ctx: ipy.ModalContext, **response):
-        _, final_id, node_id, owner, version, revision, attempt, winner, forfeit = ctx.custom_id.split("|")
+        _, final_id, node_id, owner, version, revision, attempt, winner, forfeit, *replay = ctx.custom_id.split("|")
         await ctx.defer(ephemeral=True)
         try:
             edition = await self._ongoing_edition(ctx, final_id)
@@ -102,7 +106,7 @@ class Results:
                 expected_version=int(version), contestant_revision=int(revision), attempt=int(attempt),
                 scores=scores,
                 winner=None if winner == "-" else winner, outcome="Forfeit" if forfeit == "1" else "Played",
-                reason=response.get("reason"),
+                reason=response.get("reason"), replay_revision=int(replay[0]) if replay else None,
             )
             draft = await create_result_draft(edition, request)
             preview, controls = await self._result_preview(ctx, edition, draft)

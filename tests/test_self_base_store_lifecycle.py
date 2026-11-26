@@ -137,7 +137,7 @@ class TestSelfBaseStoreLifecycle(StoredStartFixture):
             [field["value"] for field in public_edit.kwargs["embed"]["fields"]],
             [f"**[Player {PLAYER_ID}](<https://discordapp.com/users/{PLAYER_ID}?tab=wishlist>)**",
              f"**[Player {self.bot.user.id}](<https://discordapp.com/users/{self.bot.user.id}?tab=wishlist>)**",
-             f"[{self.clans[SECOND_CLAN_TAG].name} ({SECOND_CLAN_TAG})]"
+             f"[{self.clans[SECOND_CLAN_TAG].name}]"
              f"({self.clans[SECOND_CLAN_TAG].share_link})", "Slot 1"],
         )
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])

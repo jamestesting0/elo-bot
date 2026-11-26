@@ -30,7 +30,7 @@ def build_store_embed(request: BaseStorePresentationRequest, names: dict[str, st
             ipy.EmbedField(name="**Helper**", value=names[request.helper_id]),
             ipy.EmbedField(
                 name="**Host Clan**",
-                value=f"[{request.clan.name} ({request.clan.tag})]({request.clan.share_link})",
+                value=f"[{request.clan.name}]({request.clan.share_link})",
             ),
             ipy.EmbedField(name="**Slot**", value=store.slot if store else "Unknown"),
         ],

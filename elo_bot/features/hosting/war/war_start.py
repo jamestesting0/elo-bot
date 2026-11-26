@@ -9,7 +9,7 @@ from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord.mentions import mention_user
 
 from elo_bot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
-from elo_bot.features.hosting.start_ui import start_components
+from elo_bot.features.hosting.start_ui import scheduled_start_message, start_components
 from elo_bot.features.matches.resources import ResourceClanReservation, ResourceMatchSideReservation
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.features.matches.messages import MatchMessageState, match_message_embeds, publish_match_message
@@ -152,7 +152,7 @@ async def complete_war_start(
             ipy.EmbedField(name="**Host**", value=mention_user(start.host)),
             ipy.EmbedField(
                 name="**Host Clan**",
-                value=f"[{start.clan.name} ({start.clan.tag})]({start.clan.share_link})",
+                value=f"[{start.clan.name}]({start.clan.share_link})",
             ),
         ],
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
@@ -160,9 +160,12 @@ async def complete_war_start(
     )
 
     token = match_doc.token
+    scheduled_message = scheduled_start_message(ctx)
     message = await publish_match_message(
         ctx, match_doc, expected_message_state, content=player_obj.mention, embed=embed,
-        components=start_components(match_doc, player, show_clan_select=isinstance(ctx, ipy.SlashContext)),
+        components=start_components(match_doc, player, show_clan_select=scheduled_message is not None
+                                    or isinstance(ctx, ipy.SlashContext)),
+        existing_message=scheduled_message, replace_thread_controls=scheduled_message is not None,
     )
 
     await attack_bases.assign_bases(bot, token, player, opponent)

@@ -6,6 +6,7 @@ from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.db import Match, Participant
+from elo_bot.db.publication_models import MatchMessagePublication
 from elo_bot.extensions.match import MatchCommands, hosting
 
 
@@ -60,8 +61,13 @@ class TestMatchScheduling(unittest.IsolatedAsyncioTestCase):
                            "<t:1800000200:S> or <t:1800000100>", message_author=999)
         with patch.object(hosting, "time", return_value=self.now):
             await self.cog.match_schedule_message.callback.func(self.cog, ctx)
-        self.save.assert_awaited_once_with({"is_war": False, "times.0": 1_800_000_200, "times.1": 1_800_000_200})
+        self.save.assert_awaited_once_with({"is_war": False, "times.0": 1_800_000_200, "times.1": 1_800_000_200,
+                                           "scheduled_times": [1_800_000_200, 1_800_000_200]})
         self.assertEqual(self.match.times, [1_800_000_200, 1_800_000_200])
+        thread_post = self.publications.await_args_list[0].kwargs
+        clan, actions = [row.components for row in thread_post["components"]]
+        self.assertEqual(clan[0].custom_id, "host_clan_select|TOKEN|0")
+        self.assertEqual([button.label for button in actions], ["Host", "Start Match", "Abort"])
         self.assertIn("<t:1800000200:F>", self.publications.await_args.kwargs["embed"].fields[1].value)
         ctx.send.assert_awaited_once_with(f"{SUCCESS_EMOJI} Match scheduled for <t:1800000200:F>.", ephemeral=True)
 
@@ -70,9 +76,13 @@ class TestMatchScheduling(unittest.IsolatedAsyncioTestCase):
         ctx = self.context("Can play <t:1800000200>.")
         with patch.object(hosting, "time", return_value=self.now):
             await self.cog.match_war_schedule_message.callback.func(self.cog, ctx)
-        self.save.assert_awaited_once_with({"is_war": True, "hosts.1": None, "times.1": 1_800_000_200})
+        self.save.assert_awaited_once_with({"is_war": True, "hosts.1": None, "times.1": 1_800_000_200,
+                                           "scheduled_times": [None, 1_800_000_200]})
         self.assertEqual(self.match.times, [1_800_003_600, 1_800_000_200])
         self.assertEqual(self.publications.await_args.kwargs["content"], "<@200>")
+        clan, actions = [row.components for row in self.publications.await_args.kwargs["components"]]
+        self.assertEqual(clan[0].custom_id, "host_clan_select|TOKEN|1")
+        self.assertEqual([button.label for button in actions], ["Host", "Start Match", "Abort"])
         ctx.send.assert_awaited_once_with(
             f"{SUCCESS_EMOJI} Match scheduled for <@200> at <t:1800000200:F>.", ephemeral=True,
         )
@@ -102,3 +112,65 @@ class TestMatchScheduling(unittest.IsolatedAsyncioTestCase):
                     await command(ctx)
         ctx.defer.assert_not_awaited()
         self.save.assert_not_awaited()
+
+    def scheduled_control(self, action: str, player: int) -> ipy.ComponentContext:
+        match = self.match
+        match.times[player] = match.scheduled_times[player] = self.now + 100
+        match.old_msgs[player] = 55
+        embed = ipy.Embed(title="**Match Scheduled**", fields=[
+            ipy.EmbedField(name="Time", value="Soon"), ipy.EmbedField(name="Host", value="Not assigned"),
+            ipy.EmbedField(name="Host Clan", value="Not assigned"),
+        ])
+        ctx = MagicMock(spec=ipy.ComponentContext)
+        ctx.channel.id = 777
+        ctx.author.id = 999
+        ctx.custom_id = f"{action}|TOKEN|{player}"
+        ctx.message = MagicMock(spec=ipy.Message, id=55, embeds=[embed])
+        ctx.defer = AsyncMock()
+        ctx.send = AsyncMock()
+        return ctx
+
+    async def test_selecting_a_scheduled_clan_saves_the_choice_without_claiming_the_resource(self) -> None:
+        self.match.is_war = False
+        ctx = self.scheduled_control("host_clan_select", 0)
+        ctx.values = ["#CLAN"]
+        published = ctx.message.embeds[0].to_dict()
+        published["fields"][1]["value"] = "Previously assigned host"
+        self.match.message_publications[0] = MatchMessagePublication(
+            message_id=55, is_war=False, participants=("100", "200"), times=tuple(self.match.times),
+            hosts=("999", None), host_clans=(None, None), embeds=[published], components=[],
+        )
+        self.bot.coc_client.get_clan = AsyncMock(return_value=MagicMock(
+            tag="#CLAN", name="Selected Clan", share_link="https://example.com/clan"))
+        with (
+            patch.object(hosting, "update_match_control", new=AsyncMock(return_value=True)) as update,
+            patch.object(hosting, "claim_resource_clan", new_callable=AsyncMock) as claim,
+        ):
+            await self.cog.host_clan_select.callback.func(self.cog, ctx)
+
+        self.assertEqual(update.await_args.args[2], {"scheduled_host_clans": ["#CLAN", None]})
+        claim.assert_not_awaited()
+        self.assertEqual(self.match.host_clans, [None, None])
+        self.assertIs(self.publications.await_args.kwargs["existing_message"], ctx.message)
+        fields = self.publications.await_args.kwargs["embed"].fields
+        self.assertEqual(fields[1].value, "Previously assigned host")
+        self.assertIn("Selected Clan", fields[2].value)
+
+    async def test_start_match_rejects_unauthorized_unconfigured_and_old_buttons(self) -> None:
+        for roles, clan, message_id, expected in (
+            (False, "#CLAN", 55, "permission"),
+            (True, None, 55, "Set the host clan"),
+            (True, "#CLAN", 56, "latest match message"),
+        ):
+            with self.subTest(expected=expected):
+                ctx = self.scheduled_control("scheduled_match_start", 0)
+                ctx.author.has_role.return_value = roles
+                ctx.message.id = message_id
+                self.match.scheduled_host_clans[0] = clan
+                with (
+                    patch.object(self.cog, "_start_war", new_callable=AsyncMock) as start,
+                    patch("elo_bot.features.matches.controls.edit_channel_message", new_callable=AsyncMock),
+                ):
+                    await self.cog.scheduled_match_start.callback.func(self.cog, ctx)
+                start.assert_not_awaited()
+                self.assertIn(expected, ctx.send.await_args.args[0])

@@ -22,7 +22,7 @@ import elo_bot.features.hosting.live.live_reservations as live_reservations
 from elo_bot.features.base_store.publication import BaseStoreMessageConflict, mark_store_reserved
 from elo_bot.features.base_store.live import live_pair_ready, live_stores
 from elo_bot.features.base_store.start import StoredStartState
-from elo_bot.features.hosting.start_ui import spectate_button, start_components
+from elo_bot.features.hosting.start_ui import scheduled_start_message, spectate_button, start_components
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.config.presentation import FOOTER_TEXT, GREEN_COLOR, RED_COLOR
 from elo_bot.discord.embeds import embed_color, footer_image
@@ -129,7 +129,8 @@ class LiveAbort:
     pause_scouting: bool = False
 
 
-async def reserve_live_start(match_token: str, clan_tag: str) -> live_reservations.LiveReservationOutcome:
+async def reserve_live_start(match_token: str, clan_tag: str,
+                             *fallback_clan_tags: str) -> live_reservations.LiveReservationOutcome:
     async def find_match(token: str) -> Match | None:
         return await Match.find_one({"token": token})
 
@@ -142,6 +143,7 @@ async def reserve_live_start(match_token: str, clan_tag: str) -> live_reservatio
         ),
         match_token,
         clan_tag,
+        *fallback_clan_tags,
     )
 
 
@@ -260,16 +262,18 @@ async def complete_live_start(
             ipy.EmbedField(name="**Host**", value=mention_user(start.host)),
             ipy.EmbedField(
                 name="**Host Clan**",
-                value=f"[{start.clan.name} ({start.clan.tag})]({start.clan.share_link})",
+                value=f"[{start.clan.name}]({start.clan.share_link})",
             ),
         ],
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=embed_color(),
     )
     spectate_controls = [ipy.ActionRow(spectate_button(f"live_spectate|{match_doc.token}|{timestamp}"))]
+    scheduled_message = scheduled_start_message(ctx)
     message = await publish_match_message(
         ctx, match_doc, expected_message_state, content=mentions, embed=embed,
         components=start_components(match_doc, 0, show_clan_select=True),
+        existing_message=scheduled_message, replace_thread_controls=scheduled_message is not None,
     )
 
     channel = await bot.fetch_channel(match_doc.routing_channel_id if is_final_match(match_doc)
@@ -285,7 +289,7 @@ async def complete_live_start(
             ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
             ipy.EmbedField(
                 name="**Host Clan**",
-                value=f"[{start.clan.name} ({start.clan.tag})]({start.clan.share_link})",
+                value=f"[{start.clan.name}]({start.clan.share_link})",
             ),
         ],
         footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),

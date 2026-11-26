@@ -234,6 +234,7 @@ hosting: show it with `LOADING_EMOJI` and its job ID until the job reports back.
   preview has Cancel and Confirm. Confirm rechecks role,
   ownership and the current match before saving. A played preview also has an Edit a score select (one option
   per player and district) that opens a one-score modal and redraws the preview; only its owner can edit.
+  The result form prefills saved scores and shows editable `0.00` values for missing scores.
 
 Check layouts at desktop and narrow widths: wrapping, readable numbers, action labels and disabled states.
 Preserve the bot's existing styling rather than adding decorative headings, icons or controls to fill space.
@@ -338,24 +339,38 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   and use the district dropdown to browse one image at a time in a private message. LVL1 managers can also select
   either player's attacking view. Each view follows that player's schedule and shows the other player's
   bases. Missing submissions are filled with Excellent Helper bases and scouted.
-  A manual abort pauses scouting for both live players or the aborted war side. Reschedule before hosting
-  again. Scouting reopens 30 minutes before the new time and uses any saved scout images. Helper rollbacks
+  A manual abort pauses scouting for both live players or the aborted war side. If you reschedule,
+  scouting reopens 30 minutes before the new time and uses any saved scout images. Helper rollbacks
   keep the scouting window.
 - `/final match forfeit` takes the forfeiting player and finds their unfinished pairing. The manager enters
   a reason and confirms that the opponent advances. Any bets on the forfeited match are refunded.
 - A Final match thread has only Submit Result. Players submit bases with `/match base submit` in the
   thread; an older Submit Bases button on a Final thread points there instead of opening a form.
+- Leave `clan` blank on `/match autostart` or `/match war autostart` to use an available Helper clan with
+  enough base slots. Autostart prefers an eligible scheduled host clan and uses the clan that holds ready
+  stored bases or already hosts a district rerun when applicable. Manual starts require a clan.
 - Final hosting: `/match autostart` and `/match war autostart` run one sequential Helper job for all seven
   districts unless `sequential:False` or `district:` is given. Live `attacks_first` posts that player's
   challenge first each cycle; blank posts both together. Unsubmitted districts get Excellent library bases.
-  Final hosting can start without a schedule. Open predictions and a conflicting live or war format
-  prevent a start before bases are drawn or Helper is asked. `/self` hosting is refused for Finals.
+  Final hosting can start without a schedule, including after a manual abort. Open predictions and a
+  conflicting live or war format prevent a start before bases are drawn or Helper is asked. `/self` hosting
+  is refused for Finals.
 - Schedule commands require a future time. In a match thread, **Match Schedule** and **Match War Schedule**
   under a message's Apps menu use its first future Discord timestamp. The war action schedules the
   author’s side and requires the author to be a player in the match.
+- Scheduled thread posts show **Set the host clan**, **Host**, **Start Match**, and **Abort**. **Start Match**
+  starts Helper hosting immediately in the selected clan and uses ready stored bases when available. Finals
+  start sequentially. The same post shows **Match Started** and **Store Result** after hosting starts.
 - The sequential progress message (`**QF4 · Sequential Hosting**`) has no fields: a status line with the
-  last check, then one row per district: ➖ waiting, loading icon for the current district, success icon
-  with `2⭐ 83%` scores once stored. Job ids and run details stay in `/match helper status`.
+  current phase and a relative timestamp, followed by one row per district. A row shows when a challenge
+  was sent, an attack finished, or scores were stored. Job IDs and run details stay in `/match helper status`.
+- Continue opens a private district picker with the first unfinished district selected. Starting later
+  leaves earlier unfinished districts available for another run.
+- Managers can select any districts with **Replay** on the latest closed Helper run before the Final
+  result is submitted. Replay uses the original layouts and preserves saved scores until Helper verifies
+  their replacements. Live scores are replaced together for each district. War replay updates only the
+  selected side. **Submit Result** confirmation waits for the replay to finish. Open a fresh preview after
+  scores change.
 - Cancel Final and End Final ask for confirmation. Cancellation offers optional match thread deletion;
   cancellation itself retains stored-base reservations. Confirmed Discord thread deletion releases them
   through the existing deletion listener. The public bracket (including its Predictions field) and markets reflect closure.

@@ -55,7 +55,12 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
         self.enterContext(patch_sites(('elo_bot.extensions.match.base_store.confirm_pending_opponent_bases', 'elo_bot.extensions.match.hosting.confirm_pending_opponent_bases'), new=AsyncMock(return_value=True)))
         self.enterContext(patch("elo_bot.extensions.self_service.confirm_pending_opponent_bases", new=AsyncMock(return_value=True)))
         clan_stub = SimpleNamespace(tag=CLAN, name="Helper Clan", availability_str="Available")
-        self.enterContext(patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan'), new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
+        clan_model = MagicMock(
+            find_one=AsyncMock(return_value=clan_stub),
+            find=MagicMock(return_value=MagicMock(to_list=AsyncMock(return_value=[clan_stub]))),
+        )
+        self.enterContext(patch_sites(('elo_bot.extensions.match.dashboards.Clan', 'elo_bot.features.matches.resources.Clan'),
+                                      new=clan_model))
         self.enterContext(patch("elo_bot.extensions.self_service.Clan", new=MagicMock(find_one=AsyncMock(return_value=clan_stub))))
         self.enterContext(patch('elo_bot.features.matches.resources.occupy_clan', new_callable=AsyncMock))
         self.enterContext(patch_sites(('elo_bot.extensions.match.result_store.free_clan', 'elo_bot.extensions.match.dashboards.free_clan', 'elo_bot.features.matches.resources.free_clan'), new_callable=AsyncMock))
@@ -239,7 +244,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
             return await self.f.send_public(*args, **kwargs)
         self.f.channel.send.side_effect = send_public
         await self.f.runtime._start_live(self.f.ctx, match_hosting_module.LivePreflight(
-            clan=CLAN, host=self.f.bot.user, automatic=True, requested_by="111",
+            clan=None, host=self.f.bot.user, automatic=True, requested_by="111",
         ))
         self.assertEqual(self.f.http.create_payloads, [{
             "type": "host_live_match_on_stored", "requested_by": "111", "payload": {
@@ -266,6 +271,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
             clan="#OTHER", host=self.f.bot.user, automatic=True, requested_by="111",
         ))
         self.assertIn("Start the match in that clan", self.replies())
+        self.assertIn("stored in **Helper Clan**", self.replies())
         self.assertFalse(self.f.http.create_payloads)
         self.assertFalse(any(self.f.document["times"]))
         self.assertTrue(all(p["base_store"] for p in self.f.document["participants"]))
@@ -307,7 +313,7 @@ class TestRaidWeekendStarts(unittest.IsolatedAsyncioTestCase):
 
     async def test_autostart_uses_stored_http_job_and_never_uploads_layouts(self) -> None:
         self.f.jobs(["succeeded"], "host_war_match_on_stored")
-        await self.war(automatic=True, player=1)
+        await self.f.runtime.match_war_autostart.callback.func(self.f.runtime, self.f.ctx, player=1)
         self.assertEqual(self.f.http.create_payloads, [{
             "type": "host_war_match_on_stored", "requested_by": "333", "payload": {
                 "host_clan_tag": CLAN, "player_tag": "#PLAYER", "districts": DISTRICTS,

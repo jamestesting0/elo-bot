@@ -232,7 +232,7 @@ class MatchResultCommands:
                     final_id=final.id, node_id=node.id, actor_id=str(self.bot.user.id),
                     operation_key=automatic_operation_key(mongo_match, scores), expected_version=node.result_version,
                     contestant_revision=mongo_match.final_contestant_revision, attempt=mongo_match.final_attempt,
-                    scores=scores,
+                    scores=scores, replay_revision=mongo_match.final_replay_revision,
                 ))
                 async def release_final(source):
                     await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")

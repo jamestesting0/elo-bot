@@ -13164,7 +13164,7 @@
    ],
    "parameters": {
     "attacks_first": "SlashCommandParameter(name='attacks_first', type=int | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
-    "clan": "SlashCommandParameter(name='clan', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "clan": "SlashCommandParameter(name='clan', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "district": "SlashCommandParameter(name='district', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "sequential": "SlashCommandParameter(name='sequential', type=bool | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
    },
@@ -14658,7 +14658,7 @@
     "SlashCommandOption()"
    ],
    "parameters": {
-    "clan": "SlashCommandParameter(name='clan', type=<class str>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
+    "clan": "SlashCommandParameter(name='clan', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "district": "SlashCommandParameter(name='district', type=str | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)",
     "player": "SlashCommandParameter(name='player', type=<class int>, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=Missing, converter=None, _option_name=None)",
     "sequential": "SlashCommandParameter(name='sequential', type=bool | None, kind=<_ParameterKind.POSITIONAL_OR_KEYWORD: 1>, default=None, converter=None, _option_name=None)"
@@ -18620,6 +18620,38 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "helper_sequential_replay"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "MatchCommands",
+    "flags": 32,
+    "integration_types": [],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^helper_seq_replay\\\\|[0-9a-f]{24}$')]",
+    "nsfw": false,
+    "pattern": "^helper_seq_replay\\|[0-9a-f]{24}$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "name": "helper_stored_start_button"
     },
     "checks": [],
@@ -18970,6 +19002,41 @@
     "name": "ComponentCallback::[re.compile('^reveal_opponent\\\\|\\\\w+$')]",
     "nsfw": false,
     "pattern": "^reveal_opponent\\|\\w+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
+      "scheduled_match_start"
+     ],
+     "name": "scheduled_match_start"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "MatchCommands",
+    "flags": 32,
+    "integration_types": [],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^scheduled_match_start\\\\|\\\\w+\\\\|[01]$')]",
+    "nsfw": false,
+    "pattern": "^scheduled_match_start\\|\\w+\\|[01]$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -22728,7 +22795,7 @@
             "value": "#2JYGQG9G0"
            }
           ],
-          "description": "The clan that will be used for the match",
+          "description": "Host clan; leave blank to let the bot choose",
           "description_localizations": null,
           "max_length": null,
           "max_value": null,
@@ -22736,7 +22803,7 @@
           "min_value": null,
           "name": "clan",
           "name_localizations": null,
-          "required": true,
+          "required": false,
           "type": 3
          },
          {
@@ -23140,7 +23207,7 @@
           "value": "#2JYGQG9G0"
          }
         ],
-        "description": "The clan that will be used for the match",
+        "description": "Host clan; leave blank to let the bot choose",
         "description_localizations": null,
         "max_length": null,
         "max_value": null,
@@ -23148,7 +23215,7 @@
         "min_value": null,
         "name": "clan",
         "name_localizations": null,
-        "required": true,
+        "required": false,
         "type": 3
        },
        {

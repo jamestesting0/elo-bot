@@ -110,7 +110,9 @@ async def clear_participant_base_store(
         await retire_stored_base_message(bot, StoredBaseMessageRetirement(match.thread, message_id, "releasing"))
         if releasing_messages is not None:
             releasing_messages.add(message_id)
-    if not await match.clear_base_store(index, reset_stored_flag=reset_stored_flag):
+    no_replay = reason == "undone" and is_final_match(match)
+    if not await match.clear_base_store(index, reset_stored_flag=reset_stored_flag,
+                                        **({"no_replay": True} if no_replay else {})):
         return False
     for message_id in message_ids:
         if defer_final_messages is not None and message_id in defer_final_messages:

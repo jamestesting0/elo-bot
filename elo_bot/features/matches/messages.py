@@ -122,6 +122,7 @@ async def _publish_match_message(
         content: str | None = None,
         components: Sequence[ipy.ActionRow] | None = None,
         existing_message: ipy.Message | None = None,
+        replace_thread_controls: bool = False,
         public_channel: ipy.GuildText | None = None,
 ) -> ipy.Message:
     """Persist the exact final payload before publishing a new or existing match message."""
@@ -131,7 +132,7 @@ async def _publish_match_message(
     public = public_channel is not None
     if public and is_final_match(match):
         embed.set_author(name=f"Elo Final · {match.final_node_id}")
-    replace_controls = components is not None
+    replace_controls = components is not None and (public or replace_thread_controls)
     channel = public_channel if public else ctx.channel
     old_message_id = match.msg if public else expected.old_messages[expected.player]
     field = "msg" if public else f"old_msgs.{expected.player}"
@@ -150,7 +151,7 @@ async def _publish_match_message(
         if (str(message.id) != str(old_message_id)
                 or int(message._channel_id) != int(public_channel.id if public else ctx.channel_id)):
             raise MatchMessagePublicationError(expected.match_id, expected.player)
-        if not public or components is None:
+        if not replace_controls:
             components = message.components
     components = components or ()
     final_embeds = embed_edit_payload(embed)
@@ -193,8 +194,9 @@ async def _publish_match_message(
         if result.matched_count != 1:
             raise MatchMessagePublicationError(expected.match_id, expected.player)
         remember_publication(publication)
-        if existing_message is None or (public and replace_controls):
-            await edit_channel_message(message, embed=final_embeds, components=list(components))
+        if existing_message is None or replace_controls:
+            updated_content = {"content": content} if existing_message is not None and content is not None else {}
+            await edit_channel_message(message, embed=final_embeds, components=list(components), **updated_content)
             if not public and existing_message is None:
                 await message.pin()
         else:
@@ -236,10 +238,12 @@ async def publish_match_message(
         content: str | None = None,
         components: Sequence[ipy.ActionRow] | None = None,
         existing_message: ipy.Message | None = None,
+        replace_thread_controls: bool = False,
         public_channel: ipy.GuildText | None = None,
 ) -> ipy.Message:
     async with match_message_lock(match.thread or ctx.channel_id):
         return await _publish_match_message(
             ctx, match, expected, embed=embed, content=content, components=components,
-            existing_message=existing_message, public_channel=public_channel,
+            existing_message=existing_message, replace_thread_controls=replace_thread_controls,
+            public_channel=public_channel,
         )

@@ -18,6 +18,7 @@ class FinalResultDraft(Document):
     contestant_revision: int
     attempt: int
     source_match_id: PydanticObjectId | None = None
+    replay_revision: int | None = None
     snapshot: FinalResultSnapshot
     explicit_winner: str | None = None
     reason: str | None = None

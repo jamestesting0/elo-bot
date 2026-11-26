@@ -66,5 +66,9 @@ async def update_match(
 
 async def update_match_control(
         match: Match, expected: MatchMessageState, updates: Mapping[str, JsonValue],
+        *, no_replay: bool = False,
 ) -> bool:
-    return await update_match(match, expected.binding_filter(), {"$set": dict(updates)})
+    condition = dict(expected.binding_filter())
+    if no_replay:
+        condition["final_replay_run_id"] = None
+    return await update_match(match, condition, {"$set": dict(updates)})

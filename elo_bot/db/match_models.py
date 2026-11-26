@@ -81,6 +81,9 @@ class Match(Document):
     routing_guild_id: int | None = None
     final_result_id: str | None = None
     final_result_operation: FinalResultOperation | None = None
+    final_replay_run_id: PydanticObjectId | None = None
+    final_replay_revision: int = 0
+    final_last_helper_run_id: PydanticObjectId | None = None
     final_superseded: bool = False
     final_start_claim: str | None = None
     final_started_at: int | None = None
@@ -88,6 +91,7 @@ class Match(Document):
     final_hosting_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
     final_legacy_hosting_evidence: list[bool] = Field(default_factory=lambda: [False, False], min_length=2, max_length=2)
     scheduled_times: list[int | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
+    scheduled_host_clans: list[str | None] = Field(default_factory=lambda: [None, None], min_length=2, max_length=2)
     final_scouting_paused_sides: list[int] = Field(default_factory=list)
     final_thread_creation_claimed: bool = False
     final_base_page_revision: int = 0
@@ -183,11 +187,14 @@ class Match(Document):
             query.update({f"{prefix}.{key}": value for key, value in participant.base_store.model_dump().items()})
         return query
 
-    async def clear_base_store(self, player: int, reset_stored_flag: bool = False) -> bool:
+    async def clear_base_store(self, player: int, reset_stored_flag: bool = False, *, no_replay: bool = False) -> bool:
         updates: dict[str, JsonValue] = {f"participants.{player}.base_store": None}
         if reset_stored_flag:
             updates[f"participants.{player}.opponent_bases_stored"] = False
-        result = await self.get_pymongo_collection().update_one(self.base_store_filter(player), {"$set": updates})
+        query = self.base_store_filter(player)
+        if no_replay:
+            query["final_replay_run_id"] = None
+        result = await self.get_pymongo_collection().update_one(query, {"$set": updates})
         if result.matched_count == 0:
             return False
         self.participants[player].base_store = None

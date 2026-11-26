@@ -6,6 +6,7 @@ import aiohttp
 import interactions as ipy
 
 from elo_bot.integrations.helper_api import (
+    HELPER_SEQUENTIAL_RESERVATION_PREFIX,
     HelperBaseImageResult, HelperGetBaseImagePayload, HelperJob, HelperJobCreateAcceptedInvalid,
     HelperJobCreateConflict, HelperJobCreated, HelperJobCreateRejected, HelperJobCreateRequest,
     HelperJobCreateUnavailable, HelperJobCreator, HelperJobPoller, HelperTrackingFailure, helper_job_notification,
@@ -18,13 +19,17 @@ from elo_bot.config.emojis import ERROR_EMOJI, LOADING_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.settings import HELPER_API_BASE_URL, HELPER_API_KEY
 
 
+class HelperScreenshotDeferred(Exception):
+    pass
+
+
 async def capture_base_screenshot(
         base_link: str, requested_by: str, filename: str, *, ctx: ipy.InteractionContext | None,
         keep_secret: bool = False, scout_view: bool = False,
 ) -> bool:
     """Capture and validate a Helper artifact; the caller owns a successful temporary file.
 
-    Without a context the capture runs in the background and failures are logged instead of shown.
+    Background captures raise HelperScreenshotDeferred when the batch should wait before trying again.
     """
     path = Path(filename)
     accepted = False
@@ -37,7 +42,7 @@ async def capture_base_screenshot(
             return
         if ctx is None:
             if content.startswith(str(ERROR_EMOJI)):
-                logging.warning("Helper screenshot for %s failed: %s", base_link, content)
+                logging.warning("Helper screenshot failed: %s", content)
             last_content = content
             return
         try:
@@ -46,6 +51,12 @@ async def capture_base_screenshot(
             logging.exception("Unable to update Helper screenshot progress for %s", requested_by)
         else:
             last_content = content
+
+    async def defer_background(content: str) -> bool:
+        await report(content)
+        if ctx is None:
+            raise HelperScreenshotDeferred
+        return False
 
     try:
         if not HELPER_API_BASE_URL or not HELPER_API_KEY:
@@ -64,17 +75,19 @@ async def capture_base_screenshot(
                 case HelperJobCreateConflict(existing_job_id=job_id, existing_job_status=status):
                     pass
                 case HelperJobCreateAcceptedInvalid():
-                    await report(f"{ERROR_EMOJI} Helper accepted the screenshot request, but its job ID "
-                                 "could not be confirmed. Contact a helper before retrying.")
-                    return False
+                    return await defer_background(f"{ERROR_EMOJI} Helper accepted the screenshot request, but its job ID "
+                                                  "could not be confirmed. Contact a helper before retrying.")
+                case HelperJobCreateRejected(error=str() as error) if error.startswith(
+                        HELPER_SEQUENTIAL_RESERVATION_PREFIX):
+                    return await defer_background(f"{ERROR_EMOJI} Helper is busy with sequential hosting. "
+                                                  "Try again after the run ends.")
                 case HelperJobCreateRejected(error=error):
                     detail = f": {error}" if error else "."
                     await report(f"{ERROR_EMOJI} Helper rejected the screenshot request{detail}")
                     return False
                 case HelperJobCreateUnavailable():
-                    await report(f"{ERROR_EMOJI} Could not confirm that Helper queued the screenshot. "
-                                 "Try again later.")
-                    return False
+                    return await defer_background(f"{ERROR_EMOJI} Could not confirm that Helper queued the screenshot. "
+                                                  "Try again later.")
                 case unexpected:
                     assert_never(unexpected)
 
@@ -94,9 +107,8 @@ async def capture_base_screenshot(
                                result=HelperBaseImageResult()) if returned_id == job_id:
                     pass
                 case HelperTrackingFailure(job_id=job_id, reason=reason):
-                    await report(f"{ERROR_EMOJI} Could not check Helper job `{job_id}`: {reason} "
-                                 "The screenshot is not confirmed. Contact a helper before retrying.")
-                    return False
+                    return await defer_background(f"{ERROR_EMOJI} Could not check Helper job `{job_id}`: {reason} "
+                                                  "The screenshot is not confirmed. Contact a helper before retrying.")
                 case HelperJob(id=returned_id, job_type="get_base_image", status="failed" | "cancelled") \
                         if returned_id == job_id:
                     await report(f"{ERROR_EMOJI} {helper_job_notification(terminal)}")

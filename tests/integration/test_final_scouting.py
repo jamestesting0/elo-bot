@@ -6,15 +6,18 @@ import interactions as ipy
 
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.game import DISTRICT_CODES_REVERSED
-from elo_bot.core.finals import FinalError
 from elo_bot.db import BaseLayout, BaseLink, Match
 from elo_bot.discord import runtime
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.features.finals.hosting import accept_final_start, check_final_start
 from elo_bot.features.finals.lifecycle import confirm_bracket
 from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule_final_match
+from elo_bot.features.finals import scout_images
 from elo_bot.features.finals.scouting import FINAL_BASES_LOCKED, prepare_open_scouting
 from elo_bot.features.matches.attack_bases import choose_bases
+from elo_bot.integrations.helper_api import (
+    HelperJobCreateRejected, HelperJobCreateUnavailable, HelperJobCreated, HelperTrackingFailure,
+)
 from tests.integration._final_ui_fixture import FinalUICase
 
 SCOUT = "elo_bot.extensions.match.bases.store_scout_image"
@@ -101,8 +104,7 @@ class TestFinalScouting(FinalUICase):
         self.assertEqual(saved.scheduled_times, [at, at])
         self.assertEqual([p.bases[0] for p in saved.participants], [base, base])
         self.assertEqual(saved.times, [None, at] if war else [None, None])
-        with self.assertRaisesRegex(FinalError, "Reschedule it"):
-            await check_final_start(saved, 0 if war else None)
+        await check_final_start(saved, 0 if war else None)
         if war:
             await check_final_start(saved, 1)
 
@@ -305,6 +307,40 @@ class TestFinalScouting(FinalUICase):
         revoked = await self.select(district_panel, 1, 1, user=manager.author.id)
         self.assertEqual(revoked.edit_origin.await_args.kwargs["embeds"], [])
         self.assertEqual(revoked.edit_origin.await_args.kwargs["components"], [])
+
+    async def test_helper_reservation_or_unconfirmed_capture_defers_both_sides(self):
+        base = BaseLink(link="pending-layout", image="existing-layout")
+        await self.source.set({f"participants.{side}.bases.{index}": base.model_dump()
+                               for side in (0, 1) for index in (0, 1)})
+        job_id = "a" * 32
+        for outcome, tracking_failure in (
+            (HelperJobCreateRejected(error=f"reserved_by_sequential_job:{job_id}"), None),
+            (HelperJobCreateUnavailable(), None),
+            (HelperJobCreated(id=job_id), HelperTrackingFailure(job_id=job_id, reason="Helper could not be reached.")),
+        ):
+            with (
+                self.subTest(outcome=type(outcome).__name__),
+                patch.object(scout_images, "_capture_retry_at", 0.0),
+                patch.object(scout_images, "monotonic", return_value=100.0) as clock,
+                patch.multiple("elo_bot.features.bases.screenshots",
+                               HELPER_API_BASE_URL="http://127.0.0.1:1", HELPER_API_KEY="test-key"),
+                patch("elo_bot.features.bases.screenshots.HelperJobCreator.create",
+                      new_callable=AsyncMock, return_value=outcome) as create,
+                patch("elo_bot.features.bases.screenshots.HelperJobPoller.wait",
+                      new_callable=AsyncMock, return_value=tracking_failure),
+                self.assertLogs(level="WARNING") as captured,
+            ):
+                await scout_images._capture_scout_views(self.bot, self.source.id, 0)
+                await scout_images._capture_scout_views(self.bot, self.source.id, 1)
+                create.assert_awaited_once()
+                self.assertNotIn("pending-layout", "\n".join(captured.output))
+                clock.return_value = 161.0
+                await scout_images._capture_scout_views(self.bot, self.source.id, 1)
+                self.assertEqual(create.await_count, 2)
+        saved = await Match.get(self.source.id)
+        for participant in saved.participants:
+            self.assertEqual([(saved_base.image, saved_base.scout_view) for saved_base in participant.bases[:2]],
+                             [("existing-layout", False)] * 2)
 
     async def test_scouting_retries_pending_capture_and_fills_missing_bases_at_opening(self):
         scouted = BaseLink(link="scouted", image="https://cdn.example/kept.webp", scout_view=True)

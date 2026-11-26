@@ -2,7 +2,7 @@ import interactions as ipy
 
 from elo_bot.features.base_store.messages import StoredBaseMessageRetirement, retire_stored_base_message
 from elo_bot.features.base_store.legacy import resolve_stored_base_message_ids
-from elo_bot.config.game import BASE_STORE_SLOTS
+from elo_bot.config.game import BASE_STORE_SLOTS, REPLAY_CLAN_SUFFIX
 from elo_bot.features.base_store.slots import (
     collect_base_store_slot_owners, get_participant_base_store, is_unmapped_base_store_reservation,
 )
@@ -85,7 +85,7 @@ async def sync_base_store_slots(clan_tag: str | None = None, *, bot: ipy.Client 
         available_slots = [] if blocks_all_slots else [
             slot for slot in BASE_STORE_SLOTS if slot not in occupied_slots.get(clan.tag, set())
         ]
-        available_by_clan[clan.tag] = available_slots
+        available_by_clan[clan.tag] = [] if str(clan.availability_str).endswith(REPLAY_CLAN_SUFFIX) else available_slots
         if list(clan.available_slots or []) != available_slots:
             clan.available_slots = available_slots
             await clan.save_changes()

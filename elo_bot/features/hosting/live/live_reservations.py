@@ -59,6 +59,7 @@ async def reserve_live_start(
         operations: LiveReservationOperations,
         match_token: str,
         clan_tag: str,
+        *fallback_clan_tags: str,
 ) -> LiveReservationOutcome:
     side0 = await operations.reserve_match_side(match_token, 0)
     if not side0:
@@ -70,7 +71,10 @@ async def reserve_live_start(
         side1 = await operations.reserve_match_side(match_token, 1)
         if not side1:
             return LiveReservationsBusy()
-        clan = await operations.reserve_clan(clan_tag)
+        for tag in (clan_tag, *fallback_clan_tags):
+            clan = await operations.reserve_clan(tag)
+            if clan:
+                break
         if not clan:
             return LiveReservationsClanUnavailable()
         reservations = LiveStartReservations(side0=side0, side1=side1, clan=clan)

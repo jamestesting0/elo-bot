@@ -2,6 +2,7 @@ import asyncio
 import logging
 import secrets
 from pathlib import Path
+from time import monotonic
 
 import anyio
 import interactions as ipy
@@ -9,11 +10,13 @@ from beanie import PydanticObjectId
 
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.db import Match
-from elo_bot.features.bases.screenshots import capture_base_screenshot
+from elo_bot.features.bases.screenshots import HelperScreenshotDeferred, capture_base_screenshot
 from elo_bot.features.matches.controls import update_match
 
 _CAPTURES: dict[tuple[PydanticObjectId, int], asyncio.Task[None]] = {}
 _CAPTURE_LOCK = anyio.Lock()
+_CAPTURE_RETRY_SECONDS = 60
+_capture_retry_at = 0.0
 
 
 async def store_scout_image(bot: ipy.Client, base_link: str, requested_by: str, *,
@@ -30,8 +33,11 @@ async def store_scout_image(bot: ipy.Client, base_link: str, requested_by: str, 
 
 
 async def _capture_scout_views(bot: ipy.Client, match_id: PydanticObjectId, defender: int) -> None:
+    global _capture_retry_at
     # Keep one background Helper capture active while other sides wait their turn.
     async with _CAPTURE_LOCK:
+        if monotonic() < _capture_retry_at:
+            return
         for index in range(len(FINAL_DISTRICTS)):
             match = await Match.find_one({"_id": match_id, "final_superseded": False, "final_result_id": None,
                                           "final_result_operation": None})
@@ -42,6 +48,9 @@ async def _capture_scout_views(bot: ipy.Client, match_id: PydanticObjectId, defe
                 continue
             try:
                 image = await store_scout_image(bot, base.link, str(bot.user.id))
+            except HelperScreenshotDeferred:
+                _capture_retry_at = monotonic() + _CAPTURE_RETRY_SECONDS
+                return
             except ipy.errors.HTTPException:
                 logging.exception("Could not upload the Final scout image for match %s district %s", match.token, index)
                 continue

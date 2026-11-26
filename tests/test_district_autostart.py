@@ -1,6 +1,7 @@
 # noqa: SIZE_OK - command, payload, and lifecycle cases share the district-host fixture
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
@@ -124,12 +125,12 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
                 self.match_cog,
                 ctx,
                 player=0,
-                clan="#CLAN",
                 district=DISTRICTS[1],
             )
 
         reserve_clan.assert_not_awaited()
         confirm_bases.assert_not_awaited()
+        self.bot.coc_client.get_clan.assert_awaited_once_with("#CLAN")
         host_district.assert_awaited_once()
         request = host_district.await_args.args[2]
         self.assertIs(request.match, match)
@@ -180,6 +181,7 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("not one of this match's districts", ctx.send.await_args.args[0].lower())
 
     async def test_match_district_requires_recorded_host_clan(self) -> None:
+        clans = MagicMock(to_list=AsyncMock(return_value=[SimpleNamespace(tag="#CLAN", name="Host Clan")]))
         for command_name, is_war, kwargs in (
                 (
                     "war",
@@ -196,6 +198,7 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
                 ctx = self.context()
                 match = self.match(is_war=is_war)
                 with (
+                        patch("elo_bot.features.matches.resources.Clan.find", return_value=clans),
                         patch_sites(('elo_bot.features.hosting.live.live_start.Match', 'elo_bot.features.hosting.war.war_start.Match', 'elo_bot.features.base_store.match_adapters.Match', 'elo_bot.extensions.match.lifecycle.Match', 'elo_bot.extensions.match.bases.Match', 'elo_bot.extensions.match.base_store.Match', 'elo_bot.extensions.match.results.Match', 'elo_bot.extensions.match.result_store.Match', 'elo_bot.extensions.match.hosting.Match', 'elo_bot.extensions.match.settings.Match', 'elo_bot.extensions.match.dashboards.Match', 'elo_bot.features.queue.state.Match', 'elo_bot.features.matches.occupancy.Match', 'elo_bot.features.matches.resources.Match', 'elo_bot.features.matches.lifecycle.Match', 'elo_bot.features.matches.attack_bases.Match', 'elo_bot.features.results.recording.Match')) as match_model,
                         patch_sites(('elo_bot.features.hosting.live.helper_live.is_match_finished', 'elo_bot.features.hosting.live.live_start.is_match_finished', 'elo_bot.features.hosting.war.helper_host.is_match_finished', 'elo_bot.extensions.match.bases.is_match_finished', 'elo_bot.extensions.match.base_store.is_match_finished', 'elo_bot.extensions.match.hosting.is_match_finished', 'elo_bot.extensions.match.settings.is_match_finished', 'elo_bot.features.matches.occupancy.is_match_finished'), return_value=False),
                 ):
@@ -213,7 +216,10 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
                             **kwargs,
                         )
 
-                self.assertIn("select that clan", ctx.send.await_args.args[0].lower())
+                reply = ctx.send.await_args.args[0]
+                self.assertIn("select that clan", reply.lower())
+                self.assertIn("**Host Clan**", reply)
+                self.assertNotIn("#CLAN", reply)
                 self.bot.coc_client.get_clan.assert_not_awaited()
 
     async def test_match_live_district_routes_registered_players_without_restarting(self) -> None:
@@ -242,13 +248,13 @@ class TestDistrictAutostartCommands(unittest.IsolatedAsyncioTestCase):
             await self.match_cog.match_autostart.callback.func(
                 self.match_cog,
                 ctx,
-                clan="#CLAN",
                 district=DISTRICTS[2],
             )
 
         reserve_clan.assert_not_awaited()
         start_live.assert_not_awaited()
         self.bot.coc_client.get_player.assert_not_awaited()
+        self.bot.coc_client.get_clan.assert_awaited_once_with("#CLAN")
         host_district.assert_awaited_once()
         request = host_district.await_args.args[2]
         self.assertIs(request.match, match)

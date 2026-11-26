@@ -78,7 +78,7 @@ async def publish_live_storage(
                 fields=[
                     ipy.EmbedField(name="**Players**", value="\n".join(names[user_id] for user_id in user_ids)),
                     ipy.EmbedField(name="**Helper**", value=mention_user(runtime.bot.user)),
-                    ipy.EmbedField(name="**Host Clan**", value=f"[{clan.name} ({clan.tag})]({clan.share_link})"),
+                    ipy.EmbedField(name="**Host Clan**", value=f"[{clan.name}]({clan.share_link})"),
                     ipy.EmbedField(name="**Slots**", value="\n".join(statuses)),
                 ],
                 footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()), color=embed_color(),

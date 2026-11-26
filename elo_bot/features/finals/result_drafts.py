@@ -21,7 +21,7 @@ async def create_result_draft(final: EloFinal, request: FinalResultSubmission) -
     return await FinalResultDraft(final_id=final.id, guild_id=final.guild_id, owner_id=request.actor_id,
         node_id=request.node_id, expected_version=request.expected_version, contestant_revision=request.contestant_revision,
         attempt=request.attempt, source_match_id=final.nodes[request.node_id].match_id, snapshot=snapshot,
-        explicit_winner=request.winner, reason=request.reason,
+        explicit_winner=request.winner, reason=request.reason, replay_revision=request.replay_revision,
         expires_at=datetime.now(timezone.utc) + timedelta(minutes=15)).insert()
 
 
@@ -41,7 +41,8 @@ def _draft_submission(draft: FinalResultDraft, scores: dict[str, list[str]]) -> 
     return FinalResultSubmission(final_id=draft.final_id, node_id=draft.node_id,
         actor_id=draft.owner_id, operation_key=f"final-draft:{draft.id}", expected_version=draft.expected_version,
         contestant_revision=draft.contestant_revision, attempt=draft.attempt, scores=scores,
-        winner=draft.explicit_winner, outcome=draft.snapshot.outcome, reason=draft.reason)
+        winner=draft.explicit_winner, outcome=draft.snapshot.outcome, reason=draft.reason,
+        replay_revision=(draft.replay_revision or 0) if draft.snapshot.outcome == "Played" else None)
 
 
 async def edit_result_draft(draft: FinalResultDraft, contestant: str, district: int, score: str) -> FinalResultDraft:

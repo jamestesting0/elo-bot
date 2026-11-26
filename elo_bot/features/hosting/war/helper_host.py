@@ -58,7 +58,7 @@ class HelperHostRuntime(Protocol):
 
 async def host_war_automatically(
         runtime: HelperHostRuntime,
-        ctx: ipy.SlashContext,
+        ctx: ipy.SlashContext | ipy.ComponentContext,
         request: AutomaticWarHost,
 ) -> None:
     slot = None
@@ -205,7 +205,7 @@ async def host_war_district_automatically(
         return
     if request.clan.tag != host_clan_tag:
         await ctx.send(
-            f"{ERROR_EMOJI} This side of the match is hosted in **{host_clan_tag}**. "
+            f"{ERROR_EMOJI} This side of the match is hosted in **{await resources.resource_clan_name(host_clan_tag)}**. "
             "Select that clan for a district rerun.",
             ephemeral=True,
         )

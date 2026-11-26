@@ -45,6 +45,12 @@ class HelperSequentialRun(Document):
     create_request: dict
     requested_by: str
     previous_run_id: PydanticObjectId | None = None
+    layout_storage_ids: list[str | None] | None = None
+    replay_baseline: dict[str, list[str | None]] | None = None
+    replay_replacements: dict[str, list[str]] = Field(default_factory=dict)
+    replay_conflicts: list[str] = Field(default_factory=list)
+    replay_clan_claim: str | None = None
+    replay_previous_clan_availability: str | None = None
     start_message_id: int | None = None
     state: SequentialRunState
     open: bool = True

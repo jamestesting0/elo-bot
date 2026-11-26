@@ -1,5 +1,6 @@
 import coc
 import interactions as ipy
+from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import (
     ERROR_EMOJI,
@@ -123,7 +124,7 @@ class MatchSettingsCommands:
                 ipy.EmbedField(name="**Host**", value=mention_user(user, mention_type="Helper")),
                 ipy.EmbedField(
                     name="**Host Clan**",
-                    value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"
+                    value=f"[{clan.name}]({clan.share_link})" if clan else "Not assigned"
                 ),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
@@ -176,7 +177,7 @@ class MatchSettingsCommands:
                     ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                     ipy.EmbedField(
                         name="**Host Clan**",
-                        value=f"[{clan.name} ({clan.tag})]({clan.share_link})" if clan else "Not assigned"
+                        value=f"[{clan.name}]({clan.share_link})" if clan else "Not assigned"
                     ),
                 ],
                 footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
@@ -214,6 +215,10 @@ class MatchSettingsCommands:
             return
 
         if not await check_current_match(ctx, match):
+            return
+        if isinstance(match.final_replay_run_id, PydanticObjectId):
+            await ctx.send(f"{ERROR_EMOJI} Wait for the district replay to finish before changing the host clan.",
+                           ephemeral=True)
             return
         if is_match_finished(match):
             await ctx.send(f"{ERROR_EMOJI} The match has already finished.", ephemeral=True)
@@ -269,7 +274,7 @@ class MatchSettingsCommands:
                                value=mention_user(host, mention_type="Helper") if host else "Not assigned"),
                 ipy.EmbedField(
                     name="**Host Clan**",
-                    value=f"[{coc_clan.name} ({coc_clan.tag})]({coc_clan.share_link})"
+                    value=f"[{coc_clan.name}]({coc_clan.share_link})"
                 ),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
@@ -302,7 +307,7 @@ class MatchSettingsCommands:
             # update Host Clan field (index 2) in existing embed
             public_msg.embeds[0].fields[2] = ipy.EmbedField(
                 name="**Host Clan**",
-                value=f"[{coc_clan.name} ({coc_clan.tag})]({coc_clan.share_link})"
+                value=f"[{coc_clan.name}]({coc_clan.share_link})"
             )
             await publish_match_message(
                 ctx, match, MatchMessageState.capture(match, 0), embed=public_msg.embeds[0],

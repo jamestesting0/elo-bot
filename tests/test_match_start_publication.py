@@ -6,6 +6,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 from elo_bot.features.hosting.live import live_start
+from elo_bot.features.hosting.start_ui import start_components
 from elo_bot.features.base_store import storage as base_store_storage
 from elo_bot.features.hosting.war import war_start
 from elo_bot.features.matches.messages import MatchMessagePublicationError, mark_match_message_ended
@@ -21,6 +22,27 @@ import elo_bot.features.base_store.match_adapters as match_adapters_module
 import elo_bot.extensions.match.bases as match_bases_module
 
 class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsyncioTestCase):
+    async def test_scheduled_start_replaces_the_controls_on_the_bound_war_post(self) -> None:
+        self.match.old_msgs[0] = 43
+        self.persisted["old_msgs.0"] = 43
+        self.message_data["components"] = [
+            row.to_dict() for row in start_components(self.match, 0, show_clan_select=True, scheduled=True)
+        ]
+        original = self.bot.cache.place_message_data(deepcopy(self.message_data))
+        ctx = ipy.ComponentContext(self.bot)
+        ctx.channel_id, ctx.guild_id, ctx.message_id = 42, 50, 43
+        ctx.custom_id = "scheduled_match_start|TOKEN|0"
+
+        started = await war_start.complete_war_start(self.bot, ctx, self.war_request())
+
+        self.assertIs(started, original)
+        self.bot.http.create_message.assert_not_awaited()
+        post = self.bot.http.edit_message.await_args.args[0]
+        self.assertEqual(post["embeds"][0]["title"], "**Match Started**")
+        self.assertEqual([button["label"] for button in post["components"][1]["components"]],
+                         ["Host", "Store Result", "Spectate", "Abort"])
+        self.assertEqual(self.persisted["message_publications.0"]["components"], post["components"])
+
     async def test_war_binding_failure_never_publishes_started_controls(self) -> None:
         # Given: the committed war start cannot bind its Discord message in MongoDB.
         request = self.war_request()

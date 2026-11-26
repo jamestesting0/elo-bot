@@ -27,5 +27,13 @@ def hosting_started(match: Match, player: int | None = None) -> bool:
                 return True
         return False
     if player is None:
-        return bool(any(match.times or []) or any(match.hosts or []))
-    return bool(match.hosts[player] or match.times[player])
+        if not any(match.scheduled_times or []):
+            return bool(any(match.times or []) or any(match.hosts or []))
+        return any(hosting_started(match, side) for side in sides)
+    return bool(match.hosts[player] or match.times[player]) and not awaiting_scheduled_start(match, player)
+
+
+def awaiting_scheduled_start(match: Match, player: int) -> bool:
+    scheduled = match.scheduled_times[player]
+    return (scheduled is not None and scheduled == match.times[player]
+            and (not is_final_match(match) or not hosting_started(match, player)))

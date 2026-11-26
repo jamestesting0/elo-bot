@@ -594,10 +594,10 @@ class TestMatchCommands(MatchCommandsCase):
         self.assertEqual(command.resolved_name, "match autostart")
         self.assertEqual([str(option.name) for option in command.options],
                          ["clan", "district", "sequential", "attacks_first"])
-        self.assertTrue(command.options[0].required)
-        self.assertFalse(any(option.required for option in command.options[1:]))
+        self.assertFalse(any(option.required for option in command.options))
         self.assertEqual([choice.value for choice in command.options[3].choices], [0, 1])
         self.assertEqual([str(option.name) for option in self.cog.match_start.options], ["clan"])
+        self.assertTrue(self.cog.match_start.options[0].required)
         self.assertEqual(len(command.checks), 1)
         self.assertIs(command.max_concurrency.bucket, match_base_store_module.CHANNEL_USER_CONCURRENCY_BUCKET)
         self.assertEqual(command.max_concurrency.concurrent, 1)
@@ -837,6 +837,7 @@ class TestMatchCommands(MatchCommandsCase):
                     match_model.find_one = AsyncMock(return_value=match)
                     await self.cog.match_autostart.callback(ctx, clan="#CLAN")
 
+                self.assertNotIn("available clans", ctx.send.await_args.args[0].lower())
                 player_model.find_one.assert_not_called()
                 choose.assert_not_awaited()
                 eta.assert_not_awaited()

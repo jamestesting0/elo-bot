@@ -345,7 +345,7 @@ class MatchResultStoreCommands:
         else:
             await ctx.send("No scores changed.", ephemeral=True)
 
-    async def _finish_stored_result_side(self, match: Match, player: int) -> None:
+    async def _finish_stored_result_side(self, match: Match, player: int, *, release_clan: bool = True) -> None:
         old_message_id = match.old_msgs[player]
         if old_message_id:
             try:
@@ -364,7 +364,8 @@ class MatchResultStoreCommands:
                 logging.exception(
                     "Stored result message %s remains pending recovery for match %s", old_message_id, match.token,
                 )
-        await free_clan(match.host_clans[player], expected_thread=str(match.thread))
+        if release_clan:
+            await free_clan(match.host_clans[player], expected_thread=str(match.thread))
         await remove_helper_task(match.thread, match.participants[player].user_id)
         await autoqueue_completed_match_participants(self.bot, match.token, (match.participants[player].user_id,))
 

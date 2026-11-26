@@ -141,8 +141,8 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         for ctx in (select_ctx, set_ctx):
             response = ctx.send.await_args.args[0]
             self.assertIn("Available clans:", response)
-            self.assertIn("- Bravo (#B)", response)
-            self.assertNotIn("- Alpha (#A)", response)
+            self.assertIn("- Bravo", response)
+            self.assertNotIn("- Alpha", response)
 
     async def test_locked_explicit_war_start_rejects_with_unlocked_alternatives(self) -> None:
         # Given an explicit automatic start targeting locked clan A with unlocked clan B available.
@@ -189,8 +189,8 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         host.assert_not_awaited()
         response = ctx.send.await_args.args[0]
         self.assertIn("Available clans:", response)
-        self.assertIn("- Bravo (#B)", response)
-        self.assertNotIn("- Alpha (#A)", response)
+        self.assertIn("- Bravo", response)
+        self.assertNotIn("- Alpha", response)
 
     async def test_locked_explicit_live_start_rejects_before_base_slot_checks(self) -> None:
         # Given a valid live start targeting locked clan A with unlocked clan B available.
@@ -235,8 +235,8 @@ class TestResourceClanConcurrency(unittest.IsolatedAsyncioTestCase):
         slots.assert_not_awaited()
         response = ctx.send.await_args.args[0]
         self.assertIn("Available clans:", response)
-        self.assertIn("- Bravo (#B)", response)
-        self.assertNotIn("- Alpha (#A)", response)
+        self.assertIn("- Bravo", response)
+        self.assertNotIn("- Alpha", response)
 
 
 if __name__ == "__main__":

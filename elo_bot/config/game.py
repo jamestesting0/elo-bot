@@ -96,3 +96,4 @@ HOST_CLAN_OPTIONS = [ipy.StringSelectOption(label=str(c.name), value=str(c.value
 
 # Stored bases
 BASE_STORE_SLOTS = ("Slot 1", "Slot 2")
+REPLAY_CLAN_SUFFIX = " · Replay"

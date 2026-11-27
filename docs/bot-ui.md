@@ -90,8 +90,10 @@ embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
 
 ## Text formatting
 
-- **Users:** `mention_user(member, user_id, mention_type)` renders a bold, non-pinging link to the profile,
-  with "❌Invalid Player", "❓Unknown Builder" or "❌Invalid Helper" when the member cannot be fetched. Use
+- **Users:** Reuse `mention_user(member, user_id, mention_type)` for bold, non-pinging profile links. For a
+  saved display name, use `mention_user(None, user_id, display_name=name)`. This escapes Markdown in the
+  supplied name and keeps `|` literal. Without a member or saved name, the helper uses "❌Invalid Player",
+  "❓Unknown Builder" or "❌Invalid Helper". Use
   `member.mention` or `<@id>` only when the person must be notified: DM fallbacks, the players pinged on
   their match messages, auto-win and penalty notices. Send bulk announcements with
   `allowed_mentions=ipy.AllowedMentions.none()`, or `AllowedMentions(users=[user_id])` to ping one person.
@@ -131,6 +133,9 @@ arrow (`` `30` → `2.10⭐ 81.50%` ``), predictions show `` `correct/eligible` 
 ## Components
 
 ### Buttons
+
+Hide unavailable buttons when they offer no useful information. Keep disabled buttons when they clarify
+what is required or provide a useful layout, such as the left and right arrows on a pager.
 
 | Purpose | Label | Style | Emoji |
 |---|---|---|---|
@@ -243,7 +248,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 
 - Bracket names (images, selects) are the player's Discord display name, refreshed before the bracket,
   a round's threads or a scoreboard is published. A nickname set with `/final add nickname:` or `/final nick`
-  overrides it. Final thread names use Discord usernames like normal match threads (`🟡 QF1 · user1 vs. user8`). Quarterfinals follow seeds: QF1 1v8, QF2 2v7, QF3 3v6, QF4 4v5.
+  overrides it. Final thread names use Discord usernames like normal match threads (`🟡 QF1 · user1 vs. user8`).
+  Opponent picks keep the top four seeds in their quarterfinal slots. The default pairings are 1v8, 2v7, 3v6 and 4v5.
 - `/embed Elo Information` has a 📖 README button opening a private guide with a section select.
   Sections live in `assets/embeds/readme/`; navigation edits the same private message.
   Rewards and Base Building keep their own buttons. Elo Information embed images omit attachment descriptions.
@@ -266,7 +272,9 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   actions. Players see Matches, Predictions and Betting without thread links or manager controls.
   During setup, managers see entrants in Elo seeding order, one linked name per line. Dashboard action
   feedback goes above the updated embed.
-- Until the bracket is created, the manager dashboard shows Add and Invite (disabled at 8 entrants).
+  **Announcements** lists the **Lineup** and **Bracket** links as each post becomes available.
+  Betting rows show the match, market status and pool total.
+- During setup, the manager dashboard shows **Add** and **Invite** while seats are open.
   Each opens a modal with one user select capped at the open seats; every picked player is checked on their own
   and the outcome goes above the refreshed dashboard (`✅ Invited A, B`, then one `❌ Name: reason` line each).
   Pending invitations are listed with their expiry and can be withdrawn from a select.
@@ -274,6 +282,15 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   first players to accept take the seats; everything is re-checked on Accept. A closed invitation keeps its title,
   loses its buttons and states the outcome. Accepts and declines post one line, without pings, in the staff
   channel. Creating the bracket, cancelling or ending the Final withdraws pending invitations.
+- **Confirm Lineup** appears with five to eight entrants. The bot then posts the lineup in `#elo-final`,
+  with bold seed numbers and bold display names linked to Discord profiles. The dashboard links to the post and
+  shows **Create Bracket**. Roster changes during setup require confirmation again and reuse the same post.
+  A confirmed lineup with fewer than eight entrants uses byes and skips opponent picks.
+- Seeds #1, #2 and #3 take turns choosing from the remaining seeds #5–#8. Each has 16 hours. The DM
+  shows the deadline, one dropdown and **Confirm**. On timeout the bot randomly assigns an eligible
+  opponent. Seed #4 gets the remaining player.
+  Managers can use **Create Bracket** during or after the picks. The editor prefills confirmed choices and
+  fills the open slots by seed. Confirming the bracket closes any remaining picks.
 - After the bracket is created, Replace Player swaps a quarterfinal entrant whose first match has not started
   (for a bye, their semifinal). The replacement keeps the slot, inherits predictions on that player and is seeded
   by their current Elo. A pairing whose round started keeps its thread: it is renamed, its opening message mentions
@@ -303,7 +320,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   Use `put 500 {TOKEN_EMOJI} at stake`, `matches the stake with 500 {TOKEN_EMOJI}`, or `went all in (500 {TOKEN_EMOJI})`.
   Edit the offer's existing line when it changes. Show the actual held amount if a short all-in reduces the offer.
   Wallet balance lists locked match stakes separately from spectator bets.
-- `/final bracket create` opens one seeded draft owned by the manager. The select swaps exactly two
+- `/final bracket create` opens one seeded draft owned by the manager after lineup confirmation. The select swaps exactly two
   slots. Reset restores Elo seeding; Confirm publishes and pins the saved bracket; Cancel discards the
   draft. Confirm uses `SUCCESS` and `TICK_EMOJI`; Cancel uses `DANGER` and `CROSS_EMOJI`.
 - Starting a round lists each thread or its error, opens the round's betting markets and offers Close

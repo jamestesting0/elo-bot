@@ -1143,6 +1143,128 @@
       "title": "EloFinalMatch",
       "type": "object"
      },
+     "FinalOpponentPicks": {
+      "properties": {
+       "closed": {
+        "default": false,
+        "title": "Closed",
+        "type": "boolean"
+       },
+       "confirmed": {
+        "anyOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Confirmed"
+       },
+       "generation": {
+        "default": 0,
+        "title": "Generation",
+        "type": "integer"
+       },
+       "seeds": {
+        "items": {
+         "type": "string"
+        },
+        "title": "Seeds",
+        "type": "array"
+       },
+       "turns": {
+        "items": {
+         "$ref": "#/$defs/FinalPickTurn"
+        },
+        "title": "Turns",
+        "type": "array"
+       }
+      },
+      "title": "FinalOpponentPicks",
+      "type": "object"
+     },
+     "FinalPickPrompt": {
+      "properties": {
+       "dm_attempted": {
+        "default": false,
+        "title": "Dm Attempted",
+        "type": "boolean"
+       },
+       "dm_channel_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Dm Channel Id"
+       },
+       "dm_message_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Dm Message Id"
+       },
+       "dm_retired": {
+        "default": false,
+        "title": "Dm Retired",
+        "type": "boolean"
+       },
+       "dm_unavailable": {
+        "default": false,
+        "title": "Dm Unavailable",
+        "type": "boolean"
+       }
+      },
+      "title": "FinalPickPrompt",
+      "type": "object"
+     },
+     "FinalPickTurn": {
+      "properties": {
+       "deadline": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Deadline"
+       },
+       "opponent": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Opponent"
+       },
+       "random": {
+        "default": false,
+        "title": "Random",
+        "type": "boolean"
+       }
+      },
+      "title": "FinalPickTurn",
+      "type": "object"
+     },
      "FinalResultProgress": {
       "properties": {
        "channel_id": {
@@ -1620,6 +1742,35 @@
       "default": null,
       "title": "Guild Id"
      },
+     "lineup_attempted": {
+      "default": false,
+      "title": "Lineup Attempted",
+      "type": "boolean"
+     },
+     "lineup_message_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Lineup Message Id"
+     },
+     "lineup_signature": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Lineup Signature"
+     },
      "manual_draft": {
       "additionalProperties": {
        "items": {
@@ -1650,6 +1801,24 @@
       },
       "title": "Nodes",
       "type": "object"
+     },
+     "opponent_pick_prompts": {
+      "additionalProperties": {
+       "$ref": "#/$defs/FinalPickPrompt"
+      },
+      "title": "Opponent Pick Prompts",
+      "type": "object"
+     },
+     "opponent_picks": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/FinalOpponentPicks"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null
      },
      "player_nicknames": {
       "additionalProperties": {

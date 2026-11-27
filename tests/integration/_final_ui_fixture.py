@@ -17,6 +17,8 @@ class FinalUICase(FinalScenarioCase):
             message = MagicMock(id=100 + len(self.posts), edit=AsyncMock(), pin=AsyncMock())
             message.author.id = 42
             message.nonce = payload.get("nonce")
+            message.embeds = [payload["embed"]] if payload.get("embed") else []
+            message.components = payload.get("components") or []
             message.jump_url = f"https://discord.com/channels/1/2/{message.id}"
             message.payload = payload
             self.posts[str(message.id)] = message

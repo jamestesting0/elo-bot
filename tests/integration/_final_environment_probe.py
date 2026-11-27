@@ -8,7 +8,7 @@ from pymongo import AsyncMongoClient
 
 from elo_bot.config.settings import DATA_BASES
 from elo_bot.config.ids import FINAL_CHANNEL, MAIN_GUILD
-from elo_bot.features.finals.lifecycle import add_entrant, confirm_bracket, final_for_view, start_final
+from elo_bot.features.finals.lifecycle import add_entrant, confirm_bracket, confirm_lineup, final_for_view, start_final
 from elo_bot.features.finals.matches import prepare_match, schedule_final_match
 from elo_bot.features.finals.persistence import FINAL_DOCUMENT_MODELS, register_final_indexes
 from elo_bot.features.finals.recovery import recover_final
@@ -38,7 +38,7 @@ async def run():
             final = await start_final(MAIN_GUILD, FINAL_CHANNEL)
             for user in range(1, 6):
                 final = await add_entrant(final, str(user), f"Player {user}")
-            await confirm_bracket(final, "manager")
+            await confirm_bracket(await confirm_lineup(final), "manager")
             await ensure_wallet("9")
         elif action == "exercise":
             final = await final_for_view()

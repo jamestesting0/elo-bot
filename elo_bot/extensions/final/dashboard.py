@@ -9,13 +9,14 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db.final_models import FinalPrediction
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.discord.mentions import fetch_members, member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.features.finals.dashboard import (
     FINAL_CHANGED, DashboardState, available_actions, dashboard_controls, dashboard_embed,
 )
 from elo_bot.features.finals.invitations import pending_invitations
-from elo_bot.features.finals.lifecycle import reload_final
+from elo_bot.features.finals.lifecycle import confirm_lineup, refresh_display_names, reload_final
+from elo_bot.features.finals.registration_posts import sync_registration_posts
 
 
 class Dashboard:
@@ -41,11 +42,30 @@ class Dashboard:
         else:
             await ctx.send(content=outcome, embed=embed, components=controls, ephemeral=True)
 
-    @ipy.component_callback(re.compile(r"^finaldash\|(bracket|open|close|round|recover|end|refresh)\|[a-f0-9]{24}\|\d+$"))
+    async def _confirm_lineup(self, ctx, edition):
+        members = await fetch_members(await member_guild(ctx), edition.entrant_ids)
+        refreshed = await refresh_display_names(edition, members)
+        if refreshed.setup_revision != edition.setup_revision:
+            await self._show_dashboard(ctx, refreshed, outcome=FINAL_CHANGED, edit=True)
+            return
+        confirmed = await confirm_lineup(refreshed)
+        pending = await sync_registration_posts(self.bot, confirmed)
+        current = await reload_final(confirmed)
+        if (not current.active or current.state == "CANCELLING" or current.opponent_picks is None
+                or current.opponent_picks.generation != refreshed.setup_revision + 1):
+            outcome = FINAL_CHANGED
+        elif pending:
+            outcome = f"{IMPORTANT_EMOJI} Lineup confirmed. " + " ".join(pending)
+        else:
+            outcome = f"{SUCCESS_EMOJI} Lineup confirmed."
+        await self._show_dashboard(ctx, current, outcome=outcome, edit=True)
+
+    @ipy.component_callback(re.compile(
+        r"^finaldash\|(lineup|bracket|open|close|round|recover|end|refresh)\|[a-f0-9]{24}\|\d+(?:\|\d+)?$"))
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     @final_action
     async def final_dashboard_action(self, ctx: ipy.ComponentContext):
-        _, action, final_id, owner = ctx.custom_id.split("|")
+        _, action, final_id, owner, *revision = ctx.custom_id.split("|")
         if owner != str(ctx.author.id):
             raise FinalError("You cannot interact with another user's components.")
         await ctx.defer(edit_origin=True)
@@ -54,12 +74,15 @@ class Dashboard:
             await self._show_dashboard(ctx, edition, edit=True)
             return
         state = await self._dashboard_state(edition)
-        if action not in dict(available_actions(state)):
+        if action not in dict(available_actions(state)) or (action == "lineup" and revision != [str(edition.setup_revision)]):
             # Another action or the background recovery already moved the Final on; show where it stands now.
             await self._show_dashboard(ctx, edition, edit=True, outcome=FINAL_CHANGED)
             return
         try:
             match action:
+                case "lineup":
+                    await self._confirm_lineup(ctx, edition)
+                    return
                 case "bracket":
                     await self._open_bracket_editor(ctx, edition, edit=True)
                     return

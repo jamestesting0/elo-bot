@@ -1,4 +1,4 @@
-from elo_bot.core.finals import FinalError, NODE_IDS, ROUND_NODES
+from elo_bot.core.finals import FINAL_PICK_COUNT, FINAL_SEATS, FinalError, NODE_IDS, ROUND_NODES
 from elo_bot.db.season_models import EloFinal, EloFinalMatch
 
 
@@ -8,7 +8,36 @@ def seeded_players(final: EloFinal) -> list[str]:
     ))
 
 
+def lineup_confirmed(final: EloFinal) -> bool:
+    picks = final.opponent_picks
+    if picks is None or not picks.seeds or picks.seeds != seeded_players(final):
+        return False
+    if picks.confirmed is not None:
+        return picks.confirmed
+    already_started = final.lineup_attempted or final.lineup_message_id or final.opponent_pick_prompts
+    return bool(already_started or picks.closed)
+
+
+def require_lineup_confirmation(final: EloFinal) -> None:
+    if final.opponent_picks is not None and not lineup_confirmed(final):
+        raise FinalError("Confirm the lineup in `/final dashboard` first.")
+
+
+def opponent_picks_pending(final: EloFinal) -> bool:
+    picks = final.opponent_picks
+    return (final.active and final.state == "REGISTRATION" and len(final.entrant_ids) == FINAL_SEATS
+            and picks is not None and not picks.closed and lineup_confirmed(final)
+            and sum(turn.opponent is not None for turn in picks.turns) < FINAL_PICK_COUNT)
+
+
 def automatic_pairs(final: EloFinal) -> dict[str, list[str | None]]:
+    picks = final.opponent_picks
+    if picks and picks.turns and lineup_confirmed(final):
+        chosen = {turn.opponent for turn in picks.turns}
+        remaining = iter(user for user in reversed(picks.seeds[4:]) if user not in chosen)
+        opponents = [turn.opponent or next(remaining) for turn in picks.turns]
+        return {node: [seed, opponent] for node, seed, opponent in zip(
+            NODE_IDS[:4], picks.seeds[:4], [*opponents, next(remaining)], strict=True)}
     ordered = seeded_players(final)
     if not 5 <= len(ordered) <= 8:
         raise FinalError("Bracket creation requires 5 to 8 entrants.")

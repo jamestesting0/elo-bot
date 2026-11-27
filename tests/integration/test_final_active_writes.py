@@ -9,7 +9,7 @@ from elo_bot.db.final_models import FinalPrediction
 from elo_bot.extensions.final import FinalCommands
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.features.finals.lifecycle import (
-    add_entrant, confirm_bracket, final_for_view, ongoing_final, request_cancellation,
+    add_entrant, confirm_bracket, confirm_lineup, final_for_view, ongoing_final, request_cancellation,
     save_pairing_draft, set_nickname, start_final,
 )
 from elo_bot.features.finals.matches import prepare_match
@@ -152,7 +152,7 @@ class TestFinalActiveWrites(FinalScenarioCase):
         next_final = await start_final(final.guild_id, final.channel_id)
         for user in range(1, 6):
             next_final = await add_entrant(next_final, str(user), str(user))
-        next_final = await confirm_bracket(next_final, "manager")
+        next_final = await confirm_bracket(await confirm_lineup(next_final), "manager")
         new_match = await prepare_match(next_final, "QF4")
         self.assertNotEqual(new_match.id, source.id)
         self.assertEqual((await Match.get(source.id)).participants[0].base_store, store)

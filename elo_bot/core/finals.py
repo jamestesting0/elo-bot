@@ -12,6 +12,8 @@ NODE_IDS: Final = ("QF1", "QF2", "QF3", "QF4", "SF1", "SF2", "F1")
 ROUND_NODES: Final = {"Quarterfinals": NODE_IDS[:4], "Semifinals": NODE_IDS[4:6], "Final": NODE_IDS[6:]}
 type MatchFormat = Literal["ordinary_three", "elo_final_seven"]
 FINAL_SEATS = 8
+FINAL_PICK_COUNT: Final = 3
+FINAL_PICK_WINDOW: Final = 16 * 60 * 60
 # A Final player may scout the opponent's bases this long before their scheduled time; those bases lock then.
 FINAL_SCOUT_WINDOW = 30 * 60
 # Match threads of an ended or cancelled Final are archived, then deleted after this long.

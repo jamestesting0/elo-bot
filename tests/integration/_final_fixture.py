@@ -48,7 +48,7 @@ class FinalScenarioCase(FinalMongoCase):
     async def roster(self, count):
         from elo_bot.features.finals.lifecycle import add_entrant, start_final
         from elo_bot.config.ids import MAIN_GUILD, FINAL_CHANNEL
-        final = await start_final(MAIN_GUILD, FINAL_CHANNEL)
+        final = await start_final(MAIN_GUILD, FINAL_CHANNEL, opponent_picks=False)
         for user in range(1, count + 1):
             final = await add_entrant(final, str(user), f"Player {user}")
         return final

@@ -2,6 +2,8 @@ import json
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import interactions as ipy
+
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.db import BaseStore, Match, Season
 from elo_bot.db.final_models import FinalPrediction
@@ -18,9 +20,19 @@ class TestFinalGateJourney(FinalUICase):
         start = self.context()
         await self.cog.final_start.callback.func(self.cog, start)
         self.final = await final_for_view()
+        self.channel.__class__ = ipy.GuildText
+        dm = MagicMock(spec=ipy.DM, id=78, send=self.channel.send, fetch_message=self.channel.fetch_message,
+                       fetch_messages=self.channel.fetch_messages)
+        self.bot.cache.fetch_dm_channel = AsyncMock(return_value=dm)
+        self.bot.fetch_channel.side_effect = lambda channel_id: dm if channel_id == dm.id else self.channel
         for user in range(1, 9):
             await self.cog.final_player_add.callback.func(self.cog, self.context(),
                 player=MagicMock(id=user), nickname=f"Player {user}")
+        dashboard = self.context()
+        await self.cog.final_dashboard.callback.func(self.cog, dashboard)
+        lineup = self.context(component=True)
+        lineup.custom_id = dashboard.send.await_args.kwargs["components"][0].components[0].custom_id
+        await self.cog.final_dashboard_action.callback.func(self.cog, lineup)
         editor = self.context()
         await self.cog.final_bracket_create.callback.func(self.cog, editor)
         swap = self.context(component=True)

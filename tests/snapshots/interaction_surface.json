@@ -17590,9 +17590,9 @@
     "flags": 32,
     "integration_types": [],
     "max_concurrency": "Missing",
-    "name": "ComponentCallback::[re.compile('^finaldash\\\\|(bracket|open|close|round|recover|end|refresh)\\\\|[a-f0-9]{24}\\\\|\\\\d+$')]",
+    "name": "ComponentCallback::[re.compile('^finaldash\\\\|(lineup|bracket|open|close|round|recover|end|refresh)\\\\|[a-f0-9]{24}\\\\|\\\\d+(?:\\\\|\\\\d+)?$')]",
     "nsfw": false,
-    "pattern": "^finaldash\\|(bracket|open|close|round|recover|end|refresh)\\|[a-f0-9]{24}\\|\\d+$",
+    "pattern": "^finaldash\\|(lineup|bracket|open|close|round|recover|end|refresh)\\|[a-f0-9]{24}\\|\\d+(?:\\|\\d+)?$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [
@@ -17842,6 +17842,41 @@
     "name": "ComponentCallback::[re.compile('^finalmanage\\\\|(cancel|end|back)\\\\|[a-f0-9]{24}\\\\|\\\\d+\\\\|\\\\d+$')]",
     "nsfw": false,
     "pattern": "^finalmanage\\|(cancel|end|back)\\|[a-f0-9]{24}\\|\\d+\\|\\d+$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
+      "final_opponent_pick"
+     ],
+     "name": "final_opponent_pick"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^finalpick\\\\|[a-f0-9]{24}\\\\|\\\\d+\\\\|[0-2]\\\\|(select|none|\\\\d{1,20})$')]",
+    "nsfw": false,
+    "pattern": "^finalpick\\|[a-f0-9]{24}\\|\\d+\\|[0-2]\\|(select|none|\\d{1,20})$",
     "post_run_callback": null,
     "pre_run_callback": null,
     "scopes": [

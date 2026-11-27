@@ -6,12 +6,13 @@ import interactions as ipy
 from elo_bot.config.emojis import IMPORTANT_EMOJI, REFRESH_EMOJI, TOKEN_EMOJI
 from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import embed_color, footer_image
-from elo_bot.core.finals import FINAL_SEATS, NODE_IDS, ROUND_NODES
+from elo_bot.core.finals import FINAL_PICK_COUNT, FINAL_SEATS, NODE_IDS, ROUND_NODES
 from elo_bot.db import EloFinal
 from elo_bot.db.final_invitation_models import FinalInvitation
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.discord.mentions import mention_user
-from elo_bot.features.finals.bracket import seeded_players
+from elo_bot.features.finals.bracket import lineup_confirmed, seeded_players
+from elo_bot.features.finals.opponent_picks import pick_prompt_key, pick_turn
 from elo_bot.features.finals.replacement import replaceable_entrants
 from elo_bot.features.finals.labels import market_label, match_line, phase_label, prediction_label
 from elo_bot.features.tokens.presentation import market_signature
@@ -62,6 +63,9 @@ def next_round(state: DashboardState) -> str | None:
 def attention(state: DashboardState) -> list[str]:
     final = state.final
     items = []
+    if (final.active and final.state not in {"CANCELLING", "CANCELLED"}
+            and lineup_confirmed(final) and not final.lineup_message_id):
+        items.append(f"{IMPORTANT_EMOJI} Lineup publication pending.")
     for node in final.nodes.values():
         if node.state == "NEEDS_MANAGER":
             items.append(f"{IMPORTANT_EMOJI} {node.id}: Pairing changed after play started. "
@@ -89,8 +93,11 @@ def available_actions(state: DashboardState) -> list[tuple[str, str]]:
     if recovery_pending(state):
         actions.append(("recover", "Retry Now"))
     if final.state == "REGISTRATION":
-        if 5 <= len(final.entrant_ids) <= 8:
-            actions.append(("bracket", "Create Bracket"))
+        if 5 <= len(final.entrant_ids) <= FINAL_SEATS:
+            if final.opponent_picks is not None and not lineup_confirmed(final):
+                actions.append(("lineup", "Confirm Lineup"))
+            else:
+                actions.append(("bracket", "Create Bracket"))
         return actions
     if final.prediction_state == "OPEN":
         actions.append(("close", "Close Predictions"))
@@ -112,17 +119,20 @@ def registering(final: EloFinal) -> bool:
 
 def dashboard_controls(state: DashboardState, owner: str) -> list[ipy.ActionRow]:
     final = state.final
-    buttons = [ipy.Button(label=label, style=ipy.ButtonStyle.SECONDARY, custom_id=f"finaldash|{action}|{final.id}|{owner}")
-               for action, label in available_actions(state)]
-    if registering(final):
-        full = len(final.entrant_ids) >= FINAL_SEATS
-        buttons += [ipy.Button(label=label, style=ipy.ButtonStyle.SECONDARY, disabled=full,
+    buttons = []
+    for action, label in available_actions(state):
+        custom_id = f"finaldash|{action}|{final.id}|{owner}"
+        if action == "lineup":
+            custom_id += f"|{final.setup_revision}"
+        buttons.append(ipy.Button(label=label, style=ipy.ButtonStyle.SECONDARY, custom_id=custom_id))
+    if registering(final) and len(final.entrant_ids) < FINAL_SEATS:
+        buttons += [ipy.Button(label=label, style=ipy.ButtonStyle.SECONDARY,
                                custom_id=f"finalroster|{action}|{final.id}|{owner}")
                     for action, label in (("add", "Add"), ("invite", "Invite"))]
     elif replaceable_entrants(final):
         buttons.append(ipy.Button(label="Replace Player", style=ipy.ButtonStyle.SECONDARY,
                                   custom_id=f"finalroster|replace|{final.id}|{owner}"))
-    if buttons and not buttons[0].disabled:
+    if buttons:
         buttons[0].style = ipy.ButtonStyle.PRIMARY
     if final.active:
         buttons.append(ipy.Button(emoji=REFRESH_EMOJI, style=ipy.ButtonStyle.SECONDARY,
@@ -163,9 +173,27 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
         fields.append(("Pending Invitations", [f"{names.get(invitation.user_id, mention_user(None, invitation.user_id))}"
                                                f" · expires <t:{invitation.expires_at}:R>"
                                                for invitation in state.invitations]))
+    if manager and final.guild_id and final.channel_id:
+        channel_url = f"https://discord.com/channels/{final.guild_id}/{final.channel_id}"
+        fields.append(("Announcements", [f"[{label}]({channel_url}/{message_id})"
+            for label, message_id in (("Lineup", final.lineup_message_id), ("Bracket", final.bracket_message_id))
+            if message_id]))
+    if (manager and registering(final) and (picks := final.opponent_picks)
+            and picks.turns and lineup_confirmed(final)):
+        count = sum(turn.opponent is not None for turn in picks.turns)
+        progress = f"{count} of {FINAL_PICK_COUNT} complete"
+        if (index := pick_turn(final)) is not None:
+            turn = picks.turns[index]
+            progress += f" · #{index + 1} · <t:{turn.deadline}:R>"
+            prompt = final.opponent_pick_prompts.get(pick_prompt_key(picks.generation, index))
+            if prompt and prompt.dm_unavailable:
+                progress += " · DM unavailable"
+        elif picks.closed and count < FINAL_PICK_COUNT:
+            progress = f"Closed · {progress}"
+        fields.append(("Opponent Picks", [progress]))
     fields.append(("Predictions", [f"{prediction_label(final.prediction_state)} · {state.submitted:,} submitted"]))
     if state.markets:
-        fields.append(("Betting", [f"{market.node_id} · {market_label(market, names)} · "
+        fields.append(("Betting", [f"{market.node_id} · {market_label(market)} · "
                                    f"{sum(market.pools.values()):,} {TOKEN_EMOJI}" for market in state.markets]))
     if manager:
         fields.append(("Needs attention", attention(state)))
@@ -173,7 +201,8 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
         if registering(final) and len(final.entrant_ids) < 5:
             missing = 5 - len(final.entrant_ids)
             fields.append(("Next step", [f"Add or invite at least {missing} more player{'s' if missing > 1 else ''}."]))
-        elif registering(final) and len(final.entrant_ids) < FINAL_SEATS:
+        elif registering(final) and len(final.entrant_ids) < FINAL_SEATS and (final.opponent_picks is None
+                                                                              or lineup_confirmed(final)):
             fields.append(("Next step", ["Create Bracket, or add or invite more players."]))
         elif actions:
             fields.append(("Next step", [actions[0][1] + "."]))

@@ -1,5 +1,6 @@
 import asyncio  # Preserve concurrent Discord lookup exception behavior.
 from collections.abc import Iterable
+import re
 from typing import Literal
 
 from interactions import Guild, Member, User
@@ -23,16 +24,20 @@ def member_usernames(members: dict[str, Member | None]) -> dict[str, str]:
 
 def mention_user(user: User | Member | None, user_id: int | str = 0,
                  mention_type: Literal["Player", "Builder", "Unknown Builder", "Helper"] = "Player",
-                 *, include_wishlist_tab: bool = True) -> str:
-    query = "?tab=wishlist" if include_wishlist_tab else ""
+                 *, include_wishlist_tab: bool = True, display_name: str | None = None) -> str:
+    if display_name is not None:
+        display_name = re.sub(r"([\\`*_~\[\]<>])", r"\\\1", display_name)
     if user:
-        return f"**[{user.display_name}](<https://discordapp.com/users/{user.id}{query}>)**"
+        user_id = user.id
+        if display_name is None:
+            display_name = str(user.display_name)
+    if display_name is None:
+        if mention_type == "Player":
+            display_name = "❌Invalid Player"
+        elif mention_type == "Builder":
+            display_name = "❓Unknown Builder"
+        else:
+            display_name = "❌Invalid Helper"
 
-    if mention_type == "Player":
-        name_filler = "❌Invalid Player"
-    elif mention_type == "Builder":
-        name_filler = "❓Unknown Builder"
-    else:
-        name_filler = "❌Invalid Helper"
-
-    return f"**[{name_filler}](<https://discordapp.com/users/{user_id}{query}>)**"
+    query = "?tab=wishlist" if include_wishlist_tab else ""
+    return f"**[{display_name}](<https://discordapp.com/users/{user_id}{query}>)**"

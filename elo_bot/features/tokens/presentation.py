@@ -32,7 +32,7 @@ def market_embed(final: EloFinal, market: FinalBettingMarket, names: dict[str, s
         multiplier = f"×{total / pool:.2f}" if pool else "×—"
         won = f" {WIN_EMOJI}" if market.state == "PAID" and user == market.desired_winner else ""
         lines.append(f"{names.get(user, mention_user(None, user))}{won} — {pool:,} {TOKEN_EMOJI} · {multiplier}")
-    status = {"OPEN": "Open", "PAID": "Paid"}.get(market.state) or market_label(market, names)
+    status = market_label(market)
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Betting**", color=embed_color(),
         description="\n".join(lines))
     embed.set_author(name=status)

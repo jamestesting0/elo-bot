@@ -30,7 +30,10 @@ async def publish_bracket(bot: ipy.Client, final: EloFinal) -> ipy.Message:
         collection = EloFinal.get_pymongo_collection()
         try:
             channel = await bot.fetch_channel(final.channel_id)
-            members = await fetch_members(channel.guild, final.entrant_ids)
+            guild = getattr(channel, "guild", None)
+            if guild is None:
+                raise FinalError("The Final channel is unavailable.")
+            members = await fetch_members(guild, final.entrant_ids)
             final = await refresh_display_names(final, members)
             signature = await bracket_signature(final)
             submitted = await submitted_predictions(final)

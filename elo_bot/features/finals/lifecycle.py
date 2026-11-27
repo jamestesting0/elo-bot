@@ -5,11 +5,14 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from beanie import PydanticObjectId
 from interactions import Member
 
-from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
-from elo_bot.core.finals import FINAL_SEATS, FINAL_THREAD_RETENTION, FinalError
+from elo_bot.features.finals.bracket import (
+    automatic_pairs, build_bracket, lineup_confirmed, require_lineup_confirmation, seeded_players,
+)
+from elo_bot.core.finals import FINAL_PICK_COUNT, FINAL_PICK_WINDOW, FINAL_SEATS, FINAL_THREAD_RETENTION, FinalError
 from elo_bot.features.finals.persistence import transaction
 from elo_bot.features.finals.invitation_store import withdraw_pending
 from elo_bot.db import EloFinal, Player
+from elo_bot.db.season_models import FinalOpponentPicks, FinalPickTurn
 from elo_bot.db.token_models import FinalBettingMarket, ParticipantStake
 from elo_bot.db.match_models import Match
 from elo_bot.features.players.data_boundary import PLAYER_DATA_BOUNDARY, PlayerDataReset
@@ -52,21 +55,22 @@ async def reload_final(final: EloFinal) -> EloFinal:
     return current
 
 
-async def start_final(guild_id: int, channel_id: int) -> EloFinal:
+async def start_final(guild_id: int, channel_id: int, *, opponent_picks: bool = True) -> EloFinal:
     try:
         async with PLAYER_DATA_BOUNDARY.write(PLAYER_DATA_BOUNDARY.generation):
-            return await _start_final(guild_id, channel_id)
+            return await _start_final(guild_id, channel_id, opponent_picks=opponent_picks)
     except PlayerDataReset as error:
         raise FinalError("Player data is being reset. Start the Final after it finishes.") from error
 
 
-async def _start_final(guild_id: int, channel_id: int) -> EloFinal:
+async def _start_final(guild_id: int, channel_id: int, *, opponent_picks: bool) -> EloFinal:
     season = await ongoing_season_number()
     if await season_final(season):
         raise FinalError(f"Season {season} already has a Final. Cancel it to start again.")
     if running := await EloFinal.find_one({"active": True}):
         raise FinalError(f"The Season {running.season_number} Final is still running. Finish or cancel it first.")
-    final = EloFinal(season_number=season, schema_version=2, guild_id=guild_id, channel_id=channel_id, active=True)
+    final = EloFinal(season_number=season, schema_version=2, guild_id=guild_id, channel_id=channel_id, active=True,
+                     opponent_picks=FinalOpponentPicks(confirmed=False) if opponent_picks else None)
     try:
         await final.insert()
     except DuplicateKeyError as error:
@@ -95,12 +99,14 @@ async def add_entrant(final: EloFinal, user_id: str, nickname: str, *, override:
     player = await Player.find_one({"user_id": user_id}, session=session)
     if player is None:
         raise FinalError("This player is not registered.")
+    fields = {f"player_nicknames.{user_id}": nickname.strip()[:80] or user_id, f"seed_elo.{user_id}": player.elo}
+    if final.opponent_picks and final.opponent_picks.seeds:
+        fields["opponent_picks"] = FinalOpponentPicks(confirmed=False).model_dump()
     saved = await EloFinal.get_pymongo_collection().update_one({
         "_id": final.id, "setup_revision": final.setup_revision, "state": "REGISTRATION", "active": True,
         "entrant_ids": {"$ne": user_id}, "$expr": {"$lt": [{"$size": "$entrant_ids"}, FINAL_SEATS]},
-    }, {"$push": {"entrant_ids": user_id, **({"nickname_overrides": user_id} if override else {})}, "$set": {
-        f"player_nicknames.{user_id}": nickname.strip()[:80] or user_id, f"seed_elo.{user_id}": player.elo,
-    }, "$inc": {"revision": 1, "setup_revision": 1}}, session=session)
+    }, {"$push": {"entrant_ids": user_id, **({"nickname_overrides": user_id} if override else {})},
+        "$set": fields, "$inc": {"revision": 1, "setup_revision": 1}}, session=session)
     if not saved.matched_count:
         raise FinalError("The Final is full, this player already joined, or the setup changed. Refresh first.")
     await withdraw_pending(final.id, session, user_id=user_id)
@@ -125,11 +131,15 @@ async def remove_entrant(final: EloFinal, user_id: str) -> None:
     await ongoing_final(final.id)
     if user_id not in final.entrant_ids:
         raise FinalError("This player is not an entrant.")
+    update = {"$unset": {f"player_nicknames.{user_id}": "", f"seed_elo.{user_id}": ""},
+              "$pull": {"entrant_ids": user_id, "nickname_overrides": user_id},
+              "$inc": {"revision": 1, "setup_revision": 1}}
+    if final.opponent_picks is not None:
+        update["$set"] = {"opponent_picks": FinalOpponentPicks(confirmed=False).model_dump()}
     result = await EloFinal.get_pymongo_collection().update_one({
         "_id": final.id, "setup_revision": final.setup_revision, "state": "REGISTRATION", "active": True,
         "entrant_ids": user_id,
-    }, {"$unset": {f"player_nicknames.{user_id}": "", f"seed_elo.{user_id}": ""},
-        "$pull": {"entrant_ids": user_id, "nickname_overrides": user_id}, "$inc": {"revision": 1, "setup_revision": 1}})
+    }, update)
     if result.matched_count != 1:
         raise FinalError("The roster changed or setup is frozen. Refresh the Final.")
 
@@ -140,10 +150,12 @@ async def set_nickname(final: EloFinal, user_id: str, nickname: str) -> None:
         if current.state in {"CANCELLING", "CANCELLED"}:
             raise FinalError("This Final was cancelled.")
         field = f"player_nicknames.{user_id}"
+        changes = {field: nickname.strip()[:80]}
+        if current.nodes or current.bracket_send_attempted:
+            changes["publication_pending"] = True
         result = await EloFinal.get_pymongo_collection().update_one(
             {"_id": current.id, "active": True, field: {"$exists": True}},
-            {"$set": {field: nickname.strip()[:80], "publication_pending": True},
-             "$addToSet": {"nickname_overrides": user_id}, "$inc": {"revision": 1}},
+            {"$set": changes, "$addToSet": {"nickname_overrides": user_id}, "$inc": {"revision": 1}},
             session=session,
         )
         if result.matched_count != 1:
@@ -151,12 +163,29 @@ async def set_nickname(final: EloFinal, user_id: str, nickname: str) -> None:
     await transaction(rename)
 
 
+async def confirm_lineup(final: EloFinal) -> EloFinal:
+    if final.opponent_picks is None or lineup_confirmed(final) or not 5 <= len(final.entrant_ids) <= FINAL_SEATS:
+        raise FinalError("The lineup is no longer ready to confirm. Refresh the dashboard.")
+    turns = []
+    if len(final.entrant_ids) == FINAL_SEATS:
+        turns = [FinalPickTurn(deadline=int(time.time()) + FINAL_PICK_WINDOW),
+                 *(FinalPickTurn() for _ in range(FINAL_PICK_COUNT - 1))]
+    picks = FinalOpponentPicks(generation=final.setup_revision + 1, seeds=seeded_players(final),
+                              turns=turns, confirmed=True)
+    return await update_setup(final, {"opponent_picks": picks.model_dump()})
+
+
+def current_pairing_draft_owner(final: EloFinal) -> str | None:
+    return final.draft_owner if final.draft_setup_revision == final.setup_revision else None
+
+
 async def save_pairing_draft(final: EloFinal, owner: str, pairs: dict[str, list[str | None]]) -> EloFinal:
     await ongoing_final(final.id)
+    require_lineup_confirmation(final)
     used = [user for pair in pairs.values() for user in pair if user is not None]
     if len(used) != len(set(used)) or not set(used) <= set(final.entrant_ids):
         raise FinalError("Draft opponents must be distinct unused entrants.")
-    if final.draft_owner not in {None, owner}:
+    if current_pairing_draft_owner(final) not in {None, owner}:
         raise FinalError("Another manager owns this pairing draft.")
     return await update_setup(final, {
         "manual_draft": pairs, "draft_owner": owner, "draft_revision": final.draft_revision + 1,
@@ -166,15 +195,19 @@ async def save_pairing_draft(final: EloFinal, owner: str, pairs: dict[str, list[
 
 async def confirm_bracket(final: EloFinal, owner: str, *, manual: bool = False) -> EloFinal:
     await ongoing_final(final.id)
+    require_lineup_confirmation(final)
     if manual and (final.draft_owner != owner or final.draft_setup_revision != final.setup_revision):
         raise FinalError("This draft belongs to another manager or an earlier roster. Rebuild it first.")
     pairs = final.manual_draft if manual else automatic_pairs(final)
     nodes = build_bracket(final, pairs)
     async def confirm(session):
-        saved = await update_setup(final, {
+        changes = {
             "nodes": {key: node.model_dump() for key, node in nodes.items()}, "state": "BRACKET_READY",
             "publication_pending": True,
-        }, session=session)
+        }
+        if final.opponent_picks is not None:
+            changes["opponent_picks.closed"] = True
+        saved = await update_setup(final, changes, session=session)
         await withdraw_pending(final.id, session)
         await rebuild_profiles(saved, session)
         return saved

@@ -2,6 +2,7 @@ import unittest
 
 from beanie import PydanticObjectId
 
+from elo_bot.config.emojis import TOKEN_EMOJI
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBettingMarket
@@ -67,12 +68,19 @@ class TestFinalDashboard(unittest.TestCase):
         final.state = "RUNNING"
         final.nodes = build_bracket(final, automatic_pairs(final))
         final.nodes["QF2"].thread_id = "777"
-        market = FinalBettingMarket.model_construct(id="market", node_id="QF2", state="CLOSED", pools={"3": 1000})
-        state = DashboardState(final, [market], 42)
+        final.guild_id, final.channel_id = 123, 456
+        final.lineup_message_id, final.bracket_message_id = "10", "11"
+        market = FinalBettingMarket.model_construct(id="market", node_id="QF2", state="OPEN", pools={"3": 1000})
+        paid = FinalBettingMarket.model_construct(id="paid", node_id="QF1", state="PAID", desired_winner="0")
+        state = DashboardState(final, [market, paid], 42)
         manager = dashboard_embed(state, {}, manager=True)
         player = dashboard_embed(state, {}, manager=False)
         text = "\n".join(field.value for field in manager.fields)
         self.assertIn("<#777>", text)
+        fields = {field.name: field.value for field in manager.fields}
+        self.assertEqual(fields["**Announcements**"], "[Lineup](https://discord.com/channels/123/456/10)\n"
+                         "[Bracket](https://discord.com/channels/123/456/11)")
+        self.assertEqual(fields["**Betting**"], f"QF2 · Open · 1,000 {TOKEN_EMOJI}\nQF1 · Paid · 0 {TOKEN_EMOJI}")
         self.assertNotIn("<#", "\n".join(field.value for field in player.fields))
         self.assertEqual([field.name for field in player.fields], ["**Matches**", "**Predictions**", "**Betting**"])
         self.assertTrue(all(len(field.value) <= 1024 for field in manager.fields + player.fields))

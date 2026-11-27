@@ -95,19 +95,16 @@ def match_line(node: EloFinalMatch, names: dict[str, str]) -> str:
     return f"`{node.id}` {players}" + (f" · {status}" if status else "")
 
 
-def market_label(market: FinalBettingMarket, names: dict[str, str]) -> str:
+def market_label(market: FinalBettingMarket) -> str:
     match market.state:
         case "OPEN":
-            return "Open · closes when the match starts"
+            return "Open"
         case "CLOSED":
             return "Closed"
         case "SETTLING" | "CORRECTING":
             return "Paying out"
         case "PAID":
-            winner = market.desired_winner
-            if winner is None:
-                return "Paid"
-            return f"Paid · {names.get(winner, mention_user(None, winner))} won"
+            return "Paid"
         case "REFUNDED":
             return "Refunded"
         case unreachable:

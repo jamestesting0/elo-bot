@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import anyio
@@ -16,6 +17,7 @@ class PostReference:
     author_id: int
     message_id: str | None = None
     attempted: bool = False
+    match_history: Callable[[ipy.Message], bool] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,9 +27,8 @@ class PostContent:
     file: ipy.File | None = None
 
 
-async def publish_post(channel: ipy.GuildText | ipy.ThreadChannel, reference: PostReference,
-                       content: PostContent) -> ipy.Message:
-    """Reuse a known post, recover a send by nonce, or replace an unlocatable post."""
+async def locate_post(channel: ipy.GuildText | ipy.GuildNews | ipy.ThreadChannel | ipy.DM,
+                      reference: PostReference) -> ipy.Message | None:
     message = None
     if reference.message_id:
         try:
@@ -36,8 +37,16 @@ async def publish_post(channel: ipy.GuildText | ipy.ThreadChannel, reference: Po
             message = None
     if message is None and reference.attempted:
         messages = await channel.fetch_messages(limit=100)
-        message = next((item for item in messages if str(item.nonce) == reference.nonce
-                        and item.author.id == reference.author_id), None)
+        message = next((item for item in messages if item.author.id == reference.author_id
+                        and (str(item.nonce) == reference.nonce
+                             or (reference.match_history and reference.match_history(item)))), None)
+    return message
+
+
+async def publish_post(channel: ipy.GuildText | ipy.GuildNews | ipy.ThreadChannel | ipy.DM, reference: PostReference,
+                       content: PostContent) -> ipy.Message:
+    """Reuse a known post, recover a send by nonce, or replace an unlocatable post."""
+    message = await locate_post(channel, reference)
     if message is None:
         return await channel.send(embed=content.embed, components=content.components, file=content.file,
                                   nonce=reference.nonce, enforce_nonce=True, allowed_mentions=ipy.AllowedMentions.none())

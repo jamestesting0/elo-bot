@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from copy import copy
 
 import interactions as ipy
@@ -26,7 +27,9 @@ from elo_bot.features.finals.invitations import (
 from elo_bot.features.finals.labels import thread_label
 from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_FILENAME
 from elo_bot.features.finals.lifecycle import reload_final
+from elo_bot.features.finals.opponent_picks import available_opponents, pick_prompt, pick_receipt, pick_turn, save_pick
 from elo_bot.features.finals.posts import staff_notice
+from elo_bot.features.finals.registration_posts import sync_registration_posts
 from elo_bot.features.finals.replacement import replace_entrant, replaceable_entrants
 
 ROSTER_TITLES = {"add": "Add Players", "invite": "Invite Players", "replace": "Replace Player"}
@@ -106,6 +109,8 @@ class Roster:
         if action == "add":
             outcome = (await add_players(edition, members)).line("Added")
             await retire_outdated_invitations(self.bot)
+            edition = await reload_final(edition)
+            await sync_registration_posts(self.bot, edition)
         else:
             outcome = (await invite_players(edition, members, str(ctx.author.id))).line("Invited")
         await self._show_dashboard(ctx, await reload_final(edition), outcome=outcome, edit=True)
@@ -142,6 +147,47 @@ class Roster:
         await ctx.edit_origin(embed=invitation_embed(await FinalInvitation.get(invitation_id)), components=[])
         if answer.closed_now:
             await notify(self.bot, answer.state, invitation.user_id, member, answer.entrants)
+            if answer.state == "accepted":
+                edition = await EloFinal.get(invitation.final_id)
+                if edition is not None:
+                    await sync_registration_posts(self.bot, edition)
+
+    @ipy.component_callback(re.compile(r"^finalpick\|[a-f0-9]{24}\|\d+\|[0-2]\|(select|none|\d{1,20})$"))
+    @ignore_repeated_clicks
+    async def final_opponent_pick(self, ctx: ipy.ComponentContext) -> None:
+        _, final_id, generation, turn_index, action = ctx.custom_id.split("|")
+        index = int(turn_index)
+        final = await EloFinal.get(PydanticObjectId(final_id))
+        picks = final.opponent_picks if final else None
+        if (final is None or picks is None or picks.generation != int(generation) or pick_turn(final) != index
+                or (ctx.guild_id and ctx.guild_id != final.guild_id)):
+            await ctx.send(f"{ERROR_EMOJI} This pick is closed.", ephemeral=True)
+            return
+        if picks.seeds[index] != str(ctx.author.id):
+            await ctx.send(f"{ERROR_EMOJI} This pick belongs to another player.", ephemeral=True)
+            return
+        now = int(time.time())
+        deadline = picks.turns[index].deadline
+        if deadline is None or now >= deadline:
+            await ctx.send(f"{ERROR_EMOJI} This pick has expired.", ephemeral=True)
+            return
+        opponent = ctx.values[0] if action == "select" and ctx.values else action
+        if opponent not in available_opponents(picks):
+            await ctx.send(f"{ERROR_EMOJI} Choose an available opponent.", ephemeral=True)
+            return
+        if action == "select":
+            embed, controls = pick_prompt(final, index, selected=opponent)
+            await ctx.edit_origin(embed=embed, components=controls)
+            return
+
+        await ctx.defer(edit_origin=True)
+        if not await save_pick(final, index, int(time.time()), opponent):
+            await ctx.send(f"{ERROR_EMOJI} This pick is closed.", ephemeral=True)
+            return
+        try:
+            await ctx.edit_origin(embed=pick_receipt(final, opponent, timed_out=False), components=[])
+        finally:
+            await sync_registration_posts(self.bot, final)
 
     async def _replace(self, edition: EloFinal, guild: ipy.Guild, leaving: str, joining: str) -> str:
         members = await fetch_members(guild, [leaving, joining])

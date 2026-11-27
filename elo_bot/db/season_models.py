@@ -75,6 +75,28 @@ class FinalResultProgress(BaseModel):
     error: str | None = None
 
 
+class FinalPickTurn(BaseModel):
+    deadline: int | None = None
+    opponent: str | None = None
+    random: bool = False
+
+
+class FinalPickPrompt(BaseModel):
+    dm_channel_id: str | None = None
+    dm_message_id: str | None = None
+    dm_attempted: bool = False
+    dm_unavailable: bool = False
+    dm_retired: bool = False
+
+
+class FinalOpponentPicks(BaseModel):
+    generation: int = 0
+    seeds: list[str] = Field(default_factory=list)
+    turns: list[FinalPickTurn] = Field(default_factory=list)
+    closed: bool = False
+    confirmed: bool | None = None
+
+
 class EloFinal(Document):
     season_number: int
     schema_version: int = 1
@@ -88,6 +110,11 @@ class EloFinal(Document):
     entrant_ids: list[str] = Field(default_factory=list)
     # Each entrant's Elo when they were added; it seeds the bracket.
     seed_elo: dict[str, int | None] = Field(default_factory=dict)
+    opponent_picks: FinalOpponentPicks | None = None
+    opponent_pick_prompts: dict[str, FinalPickPrompt] = Field(default_factory=dict)
+    lineup_message_id: str | None = None
+    lineup_attempted: bool = False
+    lineup_signature: str | None = None
     nodes: dict[str, EloFinalMatch] = Field(default_factory=dict)
     manual_draft: dict[str, list[str | None]] = Field(default_factory=dict)
     draft_owner: str | None = None

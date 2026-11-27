@@ -14,6 +14,7 @@ from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final
 from elo_bot.features.base_store.match_adapters import clear_match_base_stores
 from elo_bot.features.finals.recovery import recover_final
+from elo_bot.features.finals.registration_posts import registration_posts_pending
 from elo_bot.features.finals.scouting import prepare_open_scouting
 from elo_bot.features.matches.resources import free_match_clans, remove_helper_task
 from elo_bot.features.tokens.wallets import backfill_wallets
@@ -79,6 +80,7 @@ class Status:
     async def recover_pending_finals(self):
         for edition in await EloFinal.find({"schema_version": 2}).to_list():
             if (edition.active or edition.repair_pending or edition.publication_pending
+                    or registration_posts_pending(edition)
                     or any(progress.error for progress in edition.result_progress.values())
                     or await FinalBettingMarket.find_one({"final_id": str(edition.id), "publication_error": {"$ne": None}})):
                 try:

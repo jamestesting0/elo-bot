@@ -12,9 +12,10 @@ from elo_bot.discord.mentions import member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import bracket_group, final
 from elo_bot.features.finals import lifecycle
-from elo_bot.features.finals.bracket import automatic_pairs
+from elo_bot.features.finals.bracket import automatic_pairs, require_lineup_confirmation
 from elo_bot.features.finals.bracket_editor import editor_view, swapped_pairs
 from elo_bot.features.finals.publication import publish_bracket
+from elo_bot.features.finals.registration_posts import sync_registration_posts
 
 
 class Bracket:
@@ -38,11 +39,13 @@ class Bracket:
 
     async def _open_bracket_editor(self, ctx, edition, *, edit=False):
         owner = str(ctx.author.id)
-        if edition.draft_owner not in {None, owner}:
-            names = await member_names(await member_guild(ctx), [edition.draft_owner])
-            raise FinalError(f"{names[edition.draft_owner]} is editing the bracket.")
         if edition.state != "REGISTRATION":
             raise FinalError("This view is outdated. Run `/final bracket create` again.")
+        require_lineup_confirmation(edition)
+        draft_owner = lifecycle.current_pairing_draft_owner(edition)
+        if draft_owner not in {None, owner}:
+            names = await member_names(await member_guild(ctx), [draft_owner])
+            raise FinalError(f"{names[draft_owner]} is editing the bracket.")
         pairs = edition.manual_draft if edition.draft_setup_revision == edition.setup_revision else automatic_pairs(edition)
         edition = await lifecycle.save_pairing_draft(edition, owner, pairs)
         names = await member_names(await member_guild(ctx), edition.entrant_ids)
@@ -86,6 +89,7 @@ class Bracket:
                 except (FinalError, PyMongoError) as error:
                     content = f"{IMPORTANT_EMOJI} Bracket confirmed. Publishing failed and will retry: {error}"
                 await self._show_dashboard(ctx, await lifecycle.reload_final(edition), outcome=content, edit=True)
+                await sync_registration_posts(self.bot, edition)
                 return
             case _:
                 raise FinalError("This view is outdated. Run `/final bracket create` again.")

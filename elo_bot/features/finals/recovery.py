@@ -20,6 +20,7 @@ from elo_bot.features.base_store.storage import BaseStoreReleaseConflict, BaseSt
 from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.result_publication import publish_result
+from elo_bot.features.finals.registration_posts import sync_registration_posts
 from elo_bot.features.tokens.stakes import reconcile_stake
 
 
@@ -190,4 +191,6 @@ async def recover_final(final: EloFinal, *, bot=None,
             await publish_bracket(bot, final)
         except FinalError as error:
             pending.append(str(error))
+    if bot is not None:
+        pending.extend(await sync_registration_posts(bot, final))
     return pending

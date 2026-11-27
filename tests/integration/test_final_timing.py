@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import anyio
 import interactions as ipy
 
+from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE
 from elo_bot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.features.finals.hosting import accept_final_start
@@ -279,6 +280,41 @@ class TestFinalTiming(FinalScenarioCase):
                         else:
                             await cog.match_war_schedule_message.callback.func(cog, ctx)
                 ctx.send.assert_not_awaited()
+
+    async def test_live_schedule_pings_the_final_role_when_creating_its_public_announcement(self):
+        await self.source.set({"thread": "777"})
+        thread_message = MagicMock(id=51, edit=AsyncMock(), pin=AsyncMock())
+        thread = MagicMock(id=777, send=AsyncMock(return_value=thread_message))
+        announcement = MagicMock(id=52, _channel_id=FINAL_CHANNEL, components=[], edit=AsyncMock())
+        channel = MagicMock(id=FINAL_CHANNEL, send=AsyncMock(return_value=announcement),
+                            fetch_message=AsyncMock(return_value=announcement))
+        bot = MagicMock(ext={}, fetch_channel=AsyncMock(return_value=channel))
+        cog = MatchCommands(bot)
+        ctx = MagicMock(spec=ipy.SlashContext, channel=thread, send=AsyncMock(), defer=AsyncMock())
+        ctx.guild.fetch_member = AsyncMock(return_value=None)
+
+        with (
+            patch("elo_bot.extensions.match.hosting.time", return_value=1_699_999_000),
+            patch("elo_bot.extensions.match.hosting.append_helper_task", new_callable=AsyncMock),
+            patch("elo_bot.extensions.match.hosting.choose_tip", new=AsyncMock(return_value="Tip")),
+            patch("elo_bot.extensions.match.hosting.schedule_channel_name_edit"),
+        ):
+            await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")
+            first = await Match.get(self.source.id)
+            self.assertEqual(first.public_message_publication.embeds[0]["title"], "**Match Scheduled**")
+            await cog.match_schedule.callback.func(cog, ctx, timestamp="1700003600")
+
+        bot.fetch_channel.assert_awaited_with(FINAL_CHANNEL)
+        channel.send.assert_awaited_once()
+        role_mention = f"<@&{FINAL_NOTIFICATION_ROLE}>"
+        self.assertEqual(channel.send.await_args.args[0], f"{role_mention}\nTip")
+        self.assertEqual(channel.send.await_args.kwargs["allowed_mentions"].roles, [FINAL_NOTIFICATION_ROLE])
+        self.assertNotIn(role_mention, thread.send.await_args_list[0].args[0])
+        self.assertNotIn("content", announcement.edit.await_args.kwargs)
+        rescheduled = await Match.get(self.source.id)
+        self.assertEqual(rescheduled.msg, first.msg)
+        self.assertEqual(rescheduled.scheduled_times, [1_700_003_600] * 2)
+        self.assertEqual(rescheduled.public_message_publication.embeds[0]["title"], "**Match Rescheduled**")
 
     async def test_foreign_source_identity_cannot_schedule_start_or_record_scores(self):
         source = await schedule_final_match(self.source, 1700000000)

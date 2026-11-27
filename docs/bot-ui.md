@@ -255,7 +255,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   Rewards and Base Building keep their own buttons. Elo Information embed images omit attachment descriptions.
 - `/embed Elo Final` posts a short description with a 📅 Details button opening the guide's Elo Final page.
   The 🔔 Get Notified button adds or removes the Elo Final notification role for the member who clicks it.
-  The bot confirms the new setting privately.
+  The bot confirms the setting privately. A new public live match announcement in `#elo-final` mentions
+  the role, whether the match is scheduled or starts immediately. Later updates reuse that post.
   Only Seasons shows dates computed on click (Elo Final selection, queue close, season end, each as
   `<t:…:D> · <t:…:R>`). The Elo Final page mentions the Final channel. The ongoing season ends on the first Monday of Feb,
   Apr, Jun, Aug, Oct or Dec at 07:00 UTC after its `/season reset`; selection is 10 days earlier and the queue

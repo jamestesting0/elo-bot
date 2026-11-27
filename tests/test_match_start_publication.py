@@ -5,11 +5,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
+from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE
 from elo_bot.features.hosting.live import live_start
 from elo_bot.features.hosting.start_ui import start_components
 from elo_bot.features.base_store import storage as base_store_storage
 from elo_bot.features.hosting.war import war_start
-from elo_bot.features.matches.messages import MatchMessagePublicationError, mark_match_message_ended
+from elo_bot.features.matches.messages import (
+    MatchMessagePublicationError, MatchMessageState, mark_match_message_ended, publish_match_message,
+)
 from elo_bot.discord.embeds import embed_edit_payload
 from interactions.models.discord.message import process_message_payload
 from elo_bot.db import Match
@@ -192,11 +195,47 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
             await live_start.complete_live_start(self.bot, self.ctx, request)
         self.assertEqual(self.match.msg, "80")
         self.assertEqual(channel.send.await_args.kwargs["components"], [])
+        self.assertEqual(channel.send.await_args.args[0], "Tip")
         thread_custom_ids = {component["custom_id"] for row in self.message_data["components"]
                              for component in row["components"]}
         self.assertNotIn("live_spectate|TOKEN|1000", thread_custom_ids)
         self.assertEqual(public.edit.await_args.kwargs["components"][0].components[0].custom_id,
                          "live_spectate|TOKEN|1000")
+
+    async def test_final_match_announces_to_notification_role_on_the_new_public_message(self) -> None:
+        self.live_request()
+        self.match.format = "elo_final_seven"
+        self.match.final_id = "0123456789abcdef01234567"
+        self.match.final_node_id = "QF1"
+        self.match.final_attempt = 1
+        self.match.final_contestant_revision = 0
+        self.match.routing_channel_id = FINAL_CHANNEL
+        self.persisted.update({"final_id": self.match.final_id, "final_node_id": "QF1", "final_attempt": 1,
+                               "final_contestant_revision": 0, "final_superseded": False})
+        channel = self.bot.cache.place_channel_data({"id": str(FINAL_CHANNEL), "type": 0, "guild_id": "50",
+                                                     "name": "elo-final"})
+        self.message_data["channel_id"] = str(FINAL_CHANNEL)
+        expected = MatchMessageState.capture(self.match, 0)
+        embed = ipy.Embed(title="**Match Started**")
+
+        message = await publish_match_message(self.ctx, self.match, expected, embed=embed, content="Tip",
+                                              public_channel=channel)
+
+        sent, sent_channel = self.bot.http.create_message.await_args.args[:2]
+        self.assertEqual(sent_channel, FINAL_CHANNEL)
+        self.assertEqual(sent["content"], f"<@&{FINAL_NOTIFICATION_ROLE}>\nTip")
+        self.assertEqual(sent["allowed_mentions"]["roles"], [FINAL_NOTIFICATION_ROLE])
+        self.assertFalse(sent["allowed_mentions"].get("parse"))
+        self.assertFalse(sent["allowed_mentions"].get("users"))
+        self.assertTrue(sent["enforce_nonce"])
+        self.assertEqual(self.persisted["msg"], str(message.id))
+        self.assertEqual(self.message_data["embeds"][0]["title"], "**Match Started**")
+
+        await publish_match_message(self.ctx, self.match, expected, embed=embed, existing_message=message,
+                                    public_channel=channel)
+
+        self.bot.http.create_message.assert_awaited_once()
+        self.assertNotIn("content", self.bot.http.edit_message.await_args.args[0])
 
     async def test_failed_public_binding_does_not_enable_spectate(self) -> None:
         request = self.live_request()
@@ -384,7 +423,6 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
 
     async def test_replay_rejects_other_live_side_change(self) -> None:
         # Given: a live payload was bound with both participants' original run details.
-        from elo_bot.features.matches.messages import MatchMessageState, publish_match_message
         self.live_request()
         message = await publish_match_message(
             self.ctx, self.match, MatchMessageState.capture(self.match, 0), embed=ipy.Embed(title="**Match Started**"),

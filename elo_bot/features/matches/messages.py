@@ -10,6 +10,7 @@ from beanie import PydanticObjectId
 from pydantic import JsonValue
 from pymongo.errors import PyMongoError
 
+from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE
 from elo_bot.config.presentation import RED_COLOR
 from elo_bot.discord.embeds import embed_edit_payload
 from elo_bot.discord.message_edits import edit_channel_message
@@ -130,7 +131,8 @@ async def _publish_match_message(
     if embed.description in _PUBLICATION_PLACEHOLDERS:
         embed.description = ""
     public = public_channel is not None
-    if public and is_final_match(match):
+    public_final = public and is_final_match(match)
+    if public_final:
         embed.set_author(name=f"Elo Final · {match.final_node_id}")
     replace_controls = components is not None and (public or replace_thread_controls)
     channel = public_channel if public else ctx.channel
@@ -146,7 +148,14 @@ async def _publish_match_message(
     message = existing_message
     if message is None:
         with anyio.CancelScope(shield=True):
-            message = await channel.send(content, embed=pending, components=[])
+            if public_final and channel.id == FINAL_CHANNEL:
+                role = f"<@&{FINAL_NOTIFICATION_ROLE}>"
+                content = f"{role}\n{content}" if content else role
+                message = await channel.send(content, embed=pending, components=[],
+                    allowed_mentions=ipy.AllowedMentions(roles=[FINAL_NOTIFICATION_ROLE]),
+                    nonce=f"f{match.id}", enforce_nonce=True)
+            else:
+                message = await channel.send(content, embed=pending, components=[])
     else:
         if (str(message.id) != str(old_message_id)
                 or int(message._channel_id) != int(public_channel.id if public else ctx.channel_id)):

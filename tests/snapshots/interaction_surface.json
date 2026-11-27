@@ -16277,6 +16277,37 @@
     "_application_id": null,
     "auto_defer": "Missing",
     "callback": {
+     "name": "elo_final_notify"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "EmbedCommands",
+    "id": "elo_final_notify",
+    "integration_types": [],
+    "max_concurrency": "<MaxConcurrency object>",
+    "name": "ComponentCallback::['elo_final_notify']",
+    "nsfw": false,
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
      "name": "free_clan_select"
     },
     "checks": [],

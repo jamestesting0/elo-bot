@@ -57,9 +57,7 @@ async def elo_information(bot: ipy.Client) -> tuple[ipy.Embed, list[ipy.ActionRo
         except (OSError, FinalError):
             logging.exception("Could not render the Elo Kings leaderboard")
         else:
-            file = ipy.File(BytesIO(rendered), file_name="elo-kings.png",
-                            description="Elo Kings by highest Elo. " +
-                            ", ".join(f"{row.label} {row.highest_elo}" for row in rows))
+            file = ipy.File(BytesIO(rendered), file_name="elo-kings.png")
             embed.set_image(url="attachment://elo-kings.png")
 
     participate_button = ipy.Button(
@@ -120,4 +118,6 @@ def elo_final() -> tuple[ipy.Embed, list[ipy.ActionRow]]:
     )
     details_button = ipy.Button(style=ipy.ButtonStyle.GRAY, label="Details", emoji="📅",
                                 custom_id="elo_final_details")
-    return embed, [ipy.ActionRow(details_button)]
+    notify_button = ipy.Button(style=ipy.ButtonStyle.GRAY, label="Get Notified", emoji="🔔",
+                               custom_id="elo_final_notify")
+    return embed, [ipy.ActionRow(details_button, notify_button)]

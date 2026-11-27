@@ -246,8 +246,10 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   overrides it. Final thread names use Discord usernames like normal match threads (`🟡 QF1 · user1 vs. user8`). Quarterfinals follow seeds: QF1 1v8, QF2 2v7, QF3 3v6, QF4 4v5.
 - `/embed Elo Information` has a 📖 README button opening a private guide with a section select.
   Sections live in `assets/embeds/readme/`; navigation edits the same private message.
-  Rewards and Base Building keep their own buttons.
+  Rewards and Base Building keep their own buttons. Elo Information embed images omit attachment descriptions.
 - `/embed Elo Final` posts a short description with a 📅 Details button opening the guide's Elo Final page.
+  The 🔔 Get Notified button adds or removes the Elo Final notification role for the member who clicks it.
+  The bot confirms the new setting privately.
   Only Seasons shows dates computed on click (Elo Final selection, queue close, season end, each as
   `<t:…:D> · <t:…:R>`). The Elo Final page mentions the Final channel. The ongoing season ends on the first Monday of Feb,
   Apr, Jun, Aug, Oct or Dec at 07:00 UTC after its `/season reset`; selection is 10 days earlier and the queue

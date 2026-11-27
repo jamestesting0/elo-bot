@@ -596,7 +596,8 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
                 await sticky_commands.on_sticky_message.callback(message_event(channel, "20"))
         webhook.assert_not_awaited()
         posted = channel.send.await_args.kwargs
-        self.assertEqual(posted["components"][0].components[0].custom_id, "elo_final_details")
+        self.assertEqual([button.custom_id for button in posted["components"][0].components],
+                         ["elo_final_details", "elo_final_notify"])
         collection.update_one.assert_awaited_once_with(
             {"_id": "10", "message_id": "11"}, {"$set": {"message_id": "60", "webhook_id": None}},
         )

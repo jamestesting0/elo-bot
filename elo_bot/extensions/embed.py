@@ -10,7 +10,9 @@ import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, application_emoji
 from elo_bot.config.presentation import REWARDS_IMAGE
-from elo_bot.config.ids import CHAT_CHANNEL, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE
+from elo_bot.config.ids import (
+    CHAT_CHANNEL, FINAL_NOTIFICATION_ROLE, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE,
+)
 from elo_bot.config.game import HOST_CLAN_OPTIONS
 from elo_bot.discord.embeds import embed_color, embed_edit_payload, footer_image
 from elo_bot.db import Clan, Match, Player, ServerState
@@ -163,6 +165,30 @@ class EmbedCommands(ipy.Extension):
         await ctx.defer(ephemeral=True)
         embed, components = readme_page("elo_final", int(ctx.author.id))
         await ctx.send(embed=embed, components=components, ephemeral=True)
+
+    @ipy.component_callback("elo_final_notify")
+    @ipy.max_concurrency(ipy.Buckets.USER, 1)
+    async def elo_final_notify(self, ctx: ipy.ComponentContext) -> None:
+        member = ctx.member
+        if member is None:
+            await ctx.send(f"{ERROR_EMOJI} Use this button in the server to change your Elo Final notifications.",
+                           ephemeral=True)
+            return
+
+        await ctx.defer(ephemeral=True)
+        enable = not member.has_role(FINAL_NOTIFICATION_ROLE)
+        try:
+            if enable:
+                await member.add_role(FINAL_NOTIFICATION_ROLE)
+            else:
+                await member.remove_role(FINAL_NOTIFICATION_ROLE)
+        except (ipy.errors.Forbidden, ipy.errors.NotFound):
+            await ctx.send(f"{ERROR_EMOJI} Could not change your Elo Final notifications. Ask an Elo Manager for help.",
+                           ephemeral=True)
+            return
+
+        state = "on" if enable else "off"
+        await ctx.send(f"{SUCCESS_EMOJI} Elo Final notifications are {state}.", ephemeral=True)
 
     @ipy.component_callback("readme_button")
     async def readme_button(self, ctx: ipy.ComponentContext):

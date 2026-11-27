@@ -14,7 +14,8 @@ import elo_bot.extensions.match.base_store as match_base_store_module
 import elo_bot.extensions.match.dashboards as match_dashboards_module
 import elo_bot.features.matches.resources as resources_module
 from elo_bot.config.game import HOST_CLAN_CHOICES
-from elo_bot.config.ids import GUILD_IDS
+from elo_bot.config.ids import GUILD_IDS, MAIN_GUILD
+from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
 from elo_bot.core.season_calendar import season_calendar
 from elo_bot.db import BaseStore, ServerState
 from elo_bot.discord import runtime
@@ -61,8 +62,10 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         ctx.channel.send = AsyncMock()
         await cog.embed.callback.func(cog, ctx, "Elo Final")
         posted = ctx.channel.send.await_args.kwargs
-        button = posted["components"][0].components[0]
-        self.assertEqual(button.custom_id, "elo_final_details")
+        details_button, notify_button = posted["components"][0].components
+        self.assertEqual(details_button.custom_id, "elo_final_details")
+        self.assertEqual(notify_button.label, "Get Notified")
+        self.assertEqual(notify_button.emoji.name, "🔔")
         details = MagicMock(spec=ipy.ComponentContext, send=AsyncMock(), defer=AsyncMock())
         details.author.id = 123
         await cog.elo_final_details.callback.func(cog, details)
@@ -73,6 +76,35 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         menu = reply["components"][0].components[0]
         self.assertEqual([option.value for option in menu.options if option.default], ["elo_final"])
         self.assertEqual(menu.custom_id, "readme_section|123")
+
+    async def test_final_notification_button_toggles_the_clicking_members_role(self):
+        role = 1531685536769507379
+        member_id = 123
+        client = ipy.Client()
+        client.http.add_guild_member_role = AsyncMock()
+        client.http.remove_guild_member_role = AsyncMock()
+        member = ipy.Member.from_dict({"id": member_id, "guild_id": MAIN_GUILD, "roles": [456]}, client)
+        cog = EmbedCommands(MagicMock())
+        ctx = MagicMock(spec=ipy.ComponentContext, member=member, defer=AsyncMock(), send=AsyncMock())
+
+        for enabled in (True, False):
+            with self.subTest(enabled=enabled):
+                await cog.elo_final_notify.callback.func(cog, ctx)
+                self.assertEqual(member.has_role(role), enabled)
+                self.assertTrue(ctx.send.await_args.args[0].startswith(str(SUCCESS_EMOJI)))
+                self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+
+        self.assertTrue(member.has_role(456))
+        for write in (client.http.add_guild_member_role, client.http.remove_guild_member_role):
+            write.assert_awaited_once()
+            self.assertEqual(write.await_args.args, (MAIN_GUILD, member_id, role))
+        ctx.edit_origin.assert_not_awaited()
+
+        client.http.add_guild_member_role.side_effect = ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
+        await cog.elo_final_notify.callback.func(cog, ctx)
+        self.assertFalse(member.has_role(role))
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
+        self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
 
     async def test_information_shows_season_dates_and_opens_private_guide(self):
         cog = EmbedCommands(MagicMock())
@@ -102,8 +134,7 @@ class TestEmbedCommands(unittest.IsolatedAsyncioTestCase):
         posted = ctx.channel.send.await_args.kwargs
         file = posted["file"]
         self.assertEqual(posted["embed"].images[0].url, f"attachment://{file.file_name}")
-        self.assertIn("Sen | S14 King 1702", file.description)
-        self.assertIn("Star | S3 & S6 & S10 King 1569", file.description)
+        self.assertIsNone(file.description)
         with Image.open(file.file) as image, Image.open("assets/finals/elo_kings_leaderboard.png") as artwork:
             self.assertEqual(image.size, (1672, 941))
             first_slot = (475, 728, 507, 760)

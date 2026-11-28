@@ -15,7 +15,6 @@ from elo_bot.features.finals.lifecycle import refresh_display_names, reload_fina
 from elo_bot.features.finals.matches import bind_thread, prepare_match
 from elo_bot.features.matches import lifecycle as lifecycle_module
 from elo_bot.features.matches.thread_messages import ThreadMessageBindingError
-from elo_bot.features.queue import policy
 from elo_bot.features.tokens.bets import open_market
 from elo_bot.features.tokens.presentation import market_signature, publish_market
 
@@ -43,8 +42,7 @@ class Rounds:
         thread = node.thread_id
         if not thread:
             try:
-                async with policy.QUEUE_OPERATION_LOCK:
-                    source = await prepare_match(edition, node_id)
+                source = await prepare_match(edition, node_id)
                 if source is not None:
                     thread = await lifecycle_module.confirm_match(self.bot, source.token)
                     await bind_thread(edition, source, thread)

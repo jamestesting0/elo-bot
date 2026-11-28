@@ -270,6 +270,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - `/final start` always opens the Final of the ongoing season (the season after the last `/season reset`).
   A season has one Final; cancelling it frees the season, so it can be started again before the reset.
   Entrants are seeded by their Elo when they are added.
+- Players can have a Final match open alongside a ranked match or challenge. Each can start while the other is open.
+  If they have two active host clans, run `/self re-invite` in the match thread they want to rejoin.
 - Final commands take `final_season`, an autocomplete of seasons that have a Final (newest first). A season
   restarted after a cancellation shows its latest Final. The ranked `season` autocomplete is separate.
 - `/final dashboard` is private. Its controls end with an emoji-only 🔄 refresh button. Managers see thread links, attention items, the next step and the available

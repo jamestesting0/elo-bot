@@ -232,8 +232,10 @@ class SelfCommands(ipy.Extension):
 
         caller_id = str(ctx.author.id)
         matches = await Match.find({"participants.user_id": caller_id}).to_list()
-        match_clan_tag = None
-        for match in matches:
+        current_thread = str(ctx.channel.id)
+        thread_matches = [match for match in matches if match.thread == current_thread]
+        match_clans = set()
+        for match in thread_matches or matches:
             player = next(
                 (index for index, participant in enumerate(match.participants[:2]) if participant.user_id == caller_id),
                 None,
@@ -244,14 +246,16 @@ class SelfCommands(ipy.Extension):
             shared_index = player if match.is_war else 0
             clan_tag = match.host_clans[shared_index]
             if match.times[shared_index] and clan_tag and not is_match_finished(match, player=match_player):
-                match_clan_tag = clan_tag
-                break
+                match_clans.add(clan_tag)
 
-        if match_clan_tag is None:
+        if not match_clans:
             await ctx.send(
                 f"{ERROR_EMOJI} You do not have a started war or live match that is still active.",
                 ephemeral=True,
             )
+            return
+        if len(match_clans) > 1:
+            await ctx.send(f"{ERROR_EMOJI} Run `/self re-invite` in the match thread you want to rejoin.", ephemeral=True)
             return
 
         player_doc = await Player.find_one(Player.user_id == caller_id)
@@ -264,7 +268,7 @@ class SelfCommands(ipy.Extension):
             ctx,
             helper_reinvite.HelperReinviteRequest(
                 requested_by=caller_id,
-                host_clan_tag=match_clan_tag,
+                host_clan_tag=next(iter(match_clans)),
                 player_tag=player_doc.tag,
             ),
         )

@@ -274,8 +274,8 @@ class ChallengeCommands(ipy.Extension):
 
             return
 
-        # find any match where both players are present
         candidates = await Match.find({
+            "format": {"$ne": "elo_final_seven"},
             "thread": {"$ne": None, "$exists": True},
             "participants": {
                 "$all": [
@@ -350,14 +350,6 @@ class ChallengeCommands(ipy.Extension):
         )
 
         async with QUEUE_OPERATION_LOCK:
-            occupied = await Match.find_one({
-                "format": "elo_final_seven", "participants.user_id": {"$in": [challenger.user_id, opponent_participant.user_id]},
-                "final_result_id": None, "final_superseded": {"$ne": True},
-            })
-            if occupied and occupied.format == "elo_final_seven":
-                await ctx.send(f"{ERROR_EMOJI} An entrant has an unfinished Final match. Finish it before challenging.",
-                               ephemeral=True)
-                return
             matched_time = datetime.now().timestamp()
             challenger.confirmed_at = matched_time
             match = Match(

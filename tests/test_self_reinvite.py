@@ -125,6 +125,27 @@ class TestSelfReinvite(unittest.IsolatedAsyncioTestCase):
         assert isinstance(payload, dict)
         self.assertEqual(payload["host_clan_tag"], "#LIVE")
 
+    async def test_concurrent_ranked_and_final_matches_use_the_current_threads_clan(self) -> None:
+        ranked = self.make_match()
+        ranked.thread = "901"
+        final = self.make_match(is_war=False)
+        final.format = "elo_final_seven"
+        final.thread = "902"
+        final.host_clans = ["#FINAL", None]
+
+        for thread, clan in ((901, "#WAR"), (902, "#FINAL")):
+            with self.subTest(thread=thread):
+                ctx = self.make_context()
+                ctx.channel.id = thread
+                await self.invoke(ctx, [ranked, final])
+                self.assertEqual(self.request_payload["payload"]["host_clan_tag"], clan)
+
+        self.request_payload = None
+        ctx = self.make_context()
+        await self.invoke(ctx, [ranked, final])
+        self.assertIsNone(self.request_payload)
+        self.assertIn("match thread", ctx.send.await_args.args[0])
+
     async def test_ineligible_matches_are_rejected_before_helper_request(self) -> None:
         cases: list[tuple[str, list[MagicMock]]] = []
 

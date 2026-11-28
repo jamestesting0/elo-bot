@@ -14,7 +14,7 @@ class PlayerOccupied:
 
 async def is_player_occupied(player_id: str) -> PlayerOccupied | None:
     matches = await Match.find(
-        {"participants.user_id": str(player_id)}
+        {"participants.user_id": str(player_id), "format": {"$ne": "elo_final_seven"}}
     ).to_list()
 
     for match in matches:

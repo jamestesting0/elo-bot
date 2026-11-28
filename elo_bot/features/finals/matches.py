@@ -151,12 +151,6 @@ async def prepare_match(final: EloFinal, node_id: str) -> Match | None:
             return Match.model_validate(existing)
         if not all(node.contestants):
             raise FinalError("Both players must be decided before creating their match thread.")
-        occupied = await Match.get_pymongo_collection().find_one({
-            "participants.user_id": {"$in": node.contestants}, "recorded_match_id": None,
-            "final_result_id": None, "is_autowin": {"$ne": True}, "final_superseded": {"$ne": True},
-        }, session=session)
-        if occupied:
-            raise FinalError("An entrant has another unfinished match. Finish it before creating this match thread.")
         for user in node.contestants:
             if await Player.get_pymongo_collection().find_one({"user_id": user}, session=session) is None:
                 raise FinalError("An entrant is no longer registered.")

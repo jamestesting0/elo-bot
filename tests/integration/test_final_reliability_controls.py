@@ -5,12 +5,14 @@ import interactions as ipy
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.core.finals import FinalError
-from elo_bot.db import Match, Participant
+from elo_bot.db import Match, Participant, Player, ServerState
 from elo_bot.features.finals.matches import prepare_match
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenWallet
+from elo_bot.extensions.challenge import ChallengeCommands
 from elo_bot.extensions.final import FinalCommands
 from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.recovery import recover_final
+from elo_bot.features.matches.occupancy import is_player_occupied
 from elo_bot.features.tokens.bets import open_market
 from elo_bot.features.tokens.presentation import market_signature
 from tests.integration._final_fixture import FinalScenarioCase
@@ -79,9 +81,10 @@ class TestFinalReliabilityControls(FinalScenarioCase):
         self.assertNotEqual((await final_for_view()).bracket_message_id, saved.announcement_id)
 
     async def test_round_attempts_later_matches_after_domain_and_discord_failures(self):
-        await Match(token="occupied", matched_time=1,
-                    participants=[Participant(user_id="4"), Participant(user_id="9")]).insert()
-        with self.assertRaises(FinalError) as occupied:
+        await (await Player.get("4")).delete()
+        ordinary = await Match(token="ordinary", matched_time=1, thread="790",
+                               participants=[Participant(user_id="2"), Participant(user_id="9")]).insert()
+        with self.assertRaises(FinalError) as missing_player:
             await prepare_match(self.final, "QF2")
         denied = ipy.errors.Forbidden(MagicMock(status=403, reason="Fixture refusal"))
         attempted = []
@@ -106,9 +109,37 @@ class TestFinalReliabilityControls(FinalScenarioCase):
         self.assertEqual(current.nodes["QF4"].thread_id, "778")
         response = ctx.send.await_args.args[0]
         self.assertIn(str(denied), response)
-        self.assertIn(str(occupied.exception), response)
+        self.assertIn(str(missing_player.exception), response)
         self.assertIn(f"`QF1` {ERROR_EMOJI}", response)
         self.assertIn(f"`QF2` {ERROR_EMOJI}", response)
         self.assertIn("`QF3` <#777>", response)
         self.assertIn("`QF4` <#778>", response)
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
+        self.assertEqual((await Match.get(ordinary.id)).model_dump(), ordinary.model_dump())
+
+    async def test_final_pairing_does_not_block_ranked_queue_or_challenges(self):
+        source = await prepare_match(self.final, "QF1")
+        await source.set({"thread": "777"})
+        first, second = source.participants
+        ctx = self.context()
+        ctx.author.id = int(first.user_id)
+        ctx.author.send = AsyncMock()
+        opponent = MagicMock(id=int(second.user_id), send=AsyncMock())
+        opponent.has_role.return_value = False
+        self.channel.name = "🟡 QF1"
+        challenge = ChallengeCommands(self.bot)
+        occupation = await is_player_occupied(first.user_id)
+        with (
+            patch.object(ServerState, "current", new=AsyncMock(return_value=ServerState.model_construct())),
+            patch("elo_bot.extensions.challenge.available_challenges", new=AsyncMock(return_value=1)),
+        ):
+            await challenge.challenge_send.callback.func(challenge, ctx, opponent,
+                                                         "Barbarian Camp", "Balloon Lagoon", "Dragon Cliffs")
+
+        self.assertIsNone(occupation)
+        pending = await Match.find_one({"is_challenge": True})
+        self.assertEqual([player.user_id for player in pending.participants], [first.user_id, second.user_id])
+        opponent.send.assert_awaited_once()
+        self.assertTrue(ctx.send.await_args.args[0].startswith(str(SUCCESS_EMOJI)))
+        self.assertIsNotNone(await is_player_occupied(first.user_id))
+        self.assertEqual((await Match.get(source.id)).model_dump(), source.model_dump())

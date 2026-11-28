@@ -12,7 +12,7 @@ from pymongo.errors import PyMongoError
 
 from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE
 from elo_bot.config.presentation import RED_COLOR
-from elo_bot.discord.embeds import embed_edit_payload
+from elo_bot.discord.embeds import embed_color, embed_edit_payload
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.matches.message_lock import match_message_lock
 from elo_bot.core.finals import NODE_IDS, is_final_match
@@ -147,6 +147,8 @@ async def _publish_match_message(
     if embed.description in _PUBLICATION_PLACEHOLDERS:
         embed.description = ""
     code, status = match_title_parts(embed.title)
+    if status in ("**Match Scheduled**", "**Match Rescheduled**"):
+        embed.color = embed_color()
     public = public_channel is not None
     public_final = public and is_final_match(match)
     if public_final and match.final_id:
@@ -157,6 +159,7 @@ async def _publish_match_message(
             embed.title = match_title(status, code)
     replace_controls = components is not None and (public or replace_thread_controls)
     channel = public_channel if public else ctx.channel
+    final_role = f"<@&{FINAL_NOTIFICATION_ROLE}>" if public_final and channel.id == FINAL_CHANNEL else None
     old_message_id = match.msg if public else expected.old_messages[expected.player]
     field = "msg" if public else f"old_msgs.{expected.player}"
     publication_field = "public_message_publication" if public else f"message_publications.{expected.player}"
@@ -169,10 +172,8 @@ async def _publish_match_message(
     message = existing_message
     if message is None:
         with anyio.CancelScope(shield=True):
-            if public_final and channel.id == FINAL_CHANNEL:
-                role = f"<@&{FINAL_NOTIFICATION_ROLE}>"
-                content = f"{role}\n{content}" if content else role
-                message = await channel.send(content, embed=pending, components=[],
+            if final_role:
+                message = await channel.send(final_role, embed=pending, components=[],
                     allowed_mentions=ipy.AllowedMentions(roles=[FINAL_NOTIFICATION_ROLE]),
                     nonce=f"f{match.id}", enforce_nonce=True)
             else:
@@ -224,13 +225,18 @@ async def _publish_match_message(
         if result.matched_count != 1:
             raise MatchMessagePublicationError(expected.match_id, expected.player)
         remember_publication(publication)
+        updated_content = {}
+        if final_role:
+            if message.content != final_role:
+                updated_content = {"content": final_role, "allowed_mentions": {"parse": []}}
+        elif existing_message is not None and replace_controls and content is not None:
+            updated_content = {"content": content}
         if existing_message is None or replace_controls:
-            updated_content = {"content": content} if existing_message is not None and content is not None else {}
             await edit_channel_message(message, embed=final_embeds, components=list(components), **updated_content)
             if not public and existing_message is None:
                 await message.pin()
         else:
-            await edit_channel_message(message, embed=final_embeds)
+            await edit_channel_message(message, embed=final_embeds, **updated_content)
         published = publication.model_copy(update={"pending": False})
         result = await collection.update_one(
             {**query, field: message_id, publication_field: publication_payload},

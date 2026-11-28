@@ -225,7 +225,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
 
         sent, sent_channel = self.bot.http.create_message.await_args.args[:2]
         self.assertEqual(sent_channel, FINAL_CHANNEL)
-        self.assertEqual(sent["content"], f"<@&{FINAL_NOTIFICATION_ROLE}>\nTip")
+        self.assertEqual(sent["content"], f"<@&{FINAL_NOTIFICATION_ROLE}>")
         self.assertEqual(sent["allowed_mentions"]["roles"], [FINAL_NOTIFICATION_ROLE])
         self.assertFalse(sent["allowed_mentions"].get("parse"))
         self.assertFalse(sent["allowed_mentions"].get("users"))
@@ -233,7 +233,8 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.assertEqual(self.persisted["msg"], str(message.id))
         self.assertEqual(self.message_data["embeds"][0]["title"], "**QF1 · Match Started**")
 
-        await publish_match_message(self.ctx, self.match, expected, embed=embed, existing_message=message,
+        await publish_match_message(self.ctx, self.match, expected, embed=embed, content="Tip", components=[],
+                                    existing_message=message,
                                     public_channel=channel)
 
         self.bot.http.create_message.assert_awaited_once()

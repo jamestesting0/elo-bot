@@ -5,6 +5,7 @@ import anyio
 import interactions as ipy
 
 from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE
+from elo_bot.discord.embeds import embed_color
 from elo_bot.features.hosting.live.live_start import LiveStart, ManualLiveStartReply, start_live_match
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.features.finals.hosting import accept_final_start
@@ -293,31 +294,42 @@ class TestFinalTiming(FinalScenarioCase):
         cog = MatchCommands(bot)
         ctx = MagicMock(spec=ipy.SlashContext, channel=thread, send=AsyncMock(), defer=AsyncMock())
         ctx.guild.fetch_member = AsyncMock(return_value=None)
+        role_mention = f"<@&{FINAL_NOTIFICATION_ROLE}>"
 
         with (
             patch("elo_bot.extensions.match.hosting.time", return_value=1_699_999_000),
             patch("elo_bot.extensions.match.hosting.append_helper_task", new_callable=AsyncMock),
-            patch("elo_bot.extensions.match.hosting.choose_tip", new=AsyncMock(return_value="Tip")),
+            patch("elo_bot.extensions.match.hosting.choose_tip", new=AsyncMock(return_value="Tip")) as choose_tip,
             patch("elo_bot.extensions.match.hosting.schedule_channel_name_edit"),
         ):
             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")
             first = await Match.get(self.source.id)
             self.assertEqual(first.public_message_publication.embeds[0]["title"], "**QF1 · Match Scheduled**")
             self.assertEqual(first.public_message_publication.embeds[0]["author"]["name"], "Season 7 Final")
+            self.assertEqual(first.public_message_publication.embeds[0]["color"], embed_color())
+            scout = MagicMock(spec=ipy.SlashContext, channel=thread, send=AsyncMock(), defer=AsyncMock())
+            scout.author.id = int(first.participants[0].user_id)
+            scout.author.has_role.return_value = False
+            with patch("elo_bot.extensions.match.bases.time.time", return_value=1_699_997_000):
+                await cog.match_base_scout.callback.func(cog, scout)
+            self.assertIn("<t:1699998200:R>", scout.send.await_args.args[0])
+            announcement.content = f'{role_mention}\n💡 **TIP:** "An old tip."'
             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700003600")
 
         bot.fetch_channel.assert_awaited_with(FINAL_CHANNEL)
         channel.send.assert_awaited_once()
-        role_mention = f"<@&{FINAL_NOTIFICATION_ROLE}>"
-        self.assertEqual(channel.send.await_args.args[0], f"{role_mention}\nTip")
+        choose_tip.assert_not_awaited()
+        self.assertEqual(channel.send.await_args.args[0], role_mention)
         self.assertEqual(channel.send.await_args.kwargs["allowed_mentions"].roles, [FINAL_NOTIFICATION_ROLE])
         self.assertNotIn(role_mention, thread.send.await_args_list[0].args[0])
-        self.assertNotIn("content", announcement.edit.await_args.kwargs)
+        self.assertEqual(announcement.edit.await_args.kwargs["content"], role_mention)
+        self.assertEqual(announcement.edit.await_args.kwargs["allowed_mentions"], {"parse": []})
         rescheduled = await Match.get(self.source.id)
         self.assertEqual(rescheduled.msg, first.msg)
         self.assertEqual(rescheduled.scheduled_times, [1_700_003_600] * 2)
         self.assertEqual(rescheduled.public_message_publication.embeds[0]["title"], "**QF1 · Match Rescheduled**")
         self.assertEqual(rescheduled.public_message_publication.embeds[0]["author"]["name"], "Season 7 Final")
+        self.assertEqual(rescheduled.public_message_publication.embeds[0]["color"], embed_color())
 
     async def test_live_final_announcement_keeps_match_code_through_recovery_and_end(self):
         await self.source.set({"thread": "777"})

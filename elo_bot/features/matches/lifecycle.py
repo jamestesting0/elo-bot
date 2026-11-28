@@ -18,7 +18,7 @@ from elo_bot.db import BaseLink, Match, Participant, Player, EloFinal
 from elo_bot.db.player_models import QueueDistrictSelection
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.modals import ModalSelectLabel
-from elo_bot.core.finals import is_final_match
+from elo_bot.core.finals import FINAL_SCOUT_WINDOW, is_final_match
 from elo_bot.features.hosting.self_hosted.invitations import schedule_pairing_grants
 from elo_bot.features.matches.base_selection import get_base_quality
 from elo_bot.features.matches.cleanup import delete_unreserved_match
@@ -405,18 +405,34 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
             await match.save_changes()
         await finish_district_items(match, consume=True)
 
-        timestamp_command = bot.interactions_by_scope.get(ipy.GLOBAL_SCOPE, {}).get("timestamp")
-        timestamp_mention = "`/timestamp`"
-        if timestamp_command is not None and timestamp_command.cmd_id.get(ipy.GLOBAL_SCOPE):
-            timestamp_mention = bot.mention_command("timestamp")
+        commands = bot.interactions_by_scope.get(ipy.GLOBAL_SCOPE, {})
 
-        embed = ipy.Embed(
-            title=f"**{player1} vs. {player2}**",
-            description=(
+        def command_mention(name: str) -> str:
+            command = commands.get(name)
+            if command is not None and command.cmd_id.get(ipy.GLOBAL_SCOPE):
+                return bot.mention_command(name)
+            return f"`/{name}`"
+
+        if final_title:
+            minutes = FINAL_SCOUT_WINDOW // 60
+            description = (
+                f"- Submit bases with {command_mention('match base submit')} at least **{minutes} minutes** before your match.\n"
+                f"- Scout your opponent’s bases with {command_mention('match base scout')}."
+            )
+            live_match_guidance = ("Agree on a live match time with your opponent. If you can’t find a time that works, "
+                                   "you can play a war-style match in the quarterfinals and semifinals.")
+        else:
+            description = (
                 f"- Ping <@&{STAFF_ROLE}> to start the match, and keep an eye on the chat for the next 10 minutes."
                 + ("\n- Submit bases (</match base submit:1288780187042971700>) 10 minutes prior to the match."
                    if match.base_submission else "")
-            ),
+            )
+            live_match_guidance = ("By default the players attack independently. To attack together, "
+                                   "please inform each other and the staff!")
+
+        embed = ipy.Embed(
+            title=f"**{player1} vs. {player2}**",
+            description=description,
             fields=[
                 ipy.EmbedField(
                     name="**Assigned Districts**",
@@ -426,14 +442,13 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
                 ),
                 ipy.EmbedField(
                     name="**Scheduling**",
-                    value=f"Post a timestamp with {timestamp_mention} or paste one from "
+                    value=f"Post a timestamp with {command_mention('timestamp')} or paste one from "
                           "[HammerTime](https://old.hammertime.cyou/en-GB).",
                     inline=False,
                 ),
                 ipy.EmbedField(
                     name="**Live Matches**",
-                    value="By default the players attack independently. To attack together, "
-                          "please inform each other and the staff!",
+                    value=live_match_guidance,
                     inline=False,
                 ),
                 ipy.EmbedField(

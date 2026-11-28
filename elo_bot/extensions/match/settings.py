@@ -186,10 +186,9 @@ class MatchSettingsCommands:
                 color=GREEN_COLOR,
             )
 
-            tip = await choose_tip()
             await publish_match_message(
                 ctx, match, MatchMessageState.capture(match, 0), embed=public_embed,
-                content=tip, public_channel=channel,
+                content=None if is_final_match(match) else await choose_tip(), public_channel=channel,
             )
 
         await ctx.send(f"{SUCCESS_EMOJI} Successfully set the host of the match!", ephemeral=True)

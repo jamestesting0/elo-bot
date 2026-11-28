@@ -36,10 +36,7 @@ from elo_bot.config.ids import (
     SEN_ROLE,
     STAFF_ROLE,
 )
-from elo_bot.config.presentation import (
-    FOOTER_TEXT,
-    GREEN_COLOR,
-)
+from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.core.parsing import future_schedule_timestamp
 from elo_bot.core.raid_weekend import is_raid_weekend
@@ -1405,7 +1402,7 @@ class MatchHostingCommands:
                                value=f"[{clan.name}]({clan.share_link})" if clan else "Not assigned"),
             ],
             footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
-            color=GREEN_COLOR,
+            color=embed_color(),
         )
         if match.msg:
             pub = await channel.fetch_message(int(match.msg))
@@ -1414,10 +1411,9 @@ class MatchHostingCommands:
                 existing_message=pub, public_channel=channel,
             )
         else:
-            tip = await choose_tip()
             await publish_match_message(
                 ctx, match, MatchMessageState.capture(match, 0), embed=public_embed,
-                content=tip, public_channel=channel,
+                content=None if is_final_match(match) else await choose_tip(), public_channel=channel,
             )
 
         await ctx.send(f"{SUCCESS_EMOJI} Match scheduled for {long_ts}.", ephemeral=True)

@@ -55,7 +55,7 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   For season-level Final views, put the season above the title as described in [Final screens](#final-screens).
 - **Author:** player and helper views show the selected person's Discord display name and avatar in the author row.
   The display name links to their Discord profile.
-- **Color:** `embed_color()` selects the default accent for the running bot. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
+- **Color:** `embed_color()` selects the default accent for the running bot, including scheduled and rescheduled matches. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
 - **Footer:** Use `FOOTER_TEXT` with `footer_image()` for the signed-in bot's Discord avatar. Before login, the helper
   uses the version's logo from `ASSETS_URL`.
@@ -266,6 +266,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   The 🔔 Get Notified button adds or removes the Elo Final notification role for the member who clicks it.
   The bot confirms the setting privately. A new public live match announcement in `#elo-final` mentions
   the role, whether the match is scheduled or starts immediately. Later updates reuse that post.
+  The public Final match announcement leaves out tips and Elo facts.
   Only Seasons shows dates computed on click (Elo Final selection, queue close, season end, each as
   `<t:…:D> · <t:…:R>`). The Elo Final page mentions the Final channel. The ongoing season ends on the first Monday of Feb,
   Apr, Jun, Aug, Oct or Dec at 07:00 UTC after its `/season reset`; selection is 10 days earlier and the queue
@@ -367,7 +368,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Helper captures scout images for submitted Final bases and queues captures for assigned Helper bases as
   soon as they are saved. Pending captures retry automatically. Scouting opens 30 minutes before the
   attacker's scheduled time. The opponent's bases lock when scouting opens or the start is accepted,
-  whichever comes first. During scouting, attackers can run `/match base scout` in the Final match thread
+  whichever comes first. Before scouting opens, `/match base scout` shows a relative countdown when the
+  player's attack is scheduled. During scouting, attackers can run `/match base scout` in the Final match thread
   and use the district dropdown to browse one image at a time in a private message. LVL1 managers can also select
   either player's attacking view. Each view follows that player's schedule and shows the other player's
   bases. Missing submissions are filled with Excellent Helper bases and scouted.
@@ -376,8 +378,10 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   keep the scouting window.
 - `/final match forfeit` takes the forfeiting player and finds their unfinished pairing. The manager enters
   a reason and confirms that the opponent advances. Any bets on the forfeited match are refunded.
-- A Final match thread has only Submit Result. Players submit bases with `/match base submit` in the
-  thread; an older Submit Bases button on a Final thread points there instead of opening a form.
+- A Final match thread has only Submit Result. Its opening embed links to `/match base submit` and
+  `/match base scout`, and asks players to submit bases at least 30 minutes before their match. Players
+  agree on a live match time, with war-style matches available in the quarterfinals and semifinals if
+  needed. An older Submit Bases button on a Final thread points players to `/match base submit`.
   A player who mentions the staff role in their match thread adds it to the hosting queue.
 - Leave `clan` blank on `/match autostart` or `/match war autostart` to use an available Helper clan with
   enough base slots. Autostart prefers an eligible scheduled host clan and uses the clan that holds ready

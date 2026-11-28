@@ -304,7 +304,8 @@ async def complete_live_start(
     else:
         await publish_match_message(
             ctx, match_doc, MatchMessageState.capture(match_doc, 0), embed=public_embed,
-            content=await tips.choose_tip(), components=spectate_controls, public_channel=channel,
+            content=None if is_final_match(match_doc) else await tips.choose_tip(),
+            components=spectate_controls, public_channel=channel,
         )
 
     await attack_bases.assign_bases(bot, match_doc.token, 1, 0)

@@ -39,6 +39,12 @@ class TestFinalThreadControls(FinalScenarioCase):
         bot = MagicMock(fetch_channel=AsyncMock(return_value=thread if existing else channel),
                         fetch_user=AsyncMock(side_effect=lambda user: users[int(user)]))
         bot.user.id = 999
+        bot.interactions_by_scope = {ipy.GLOBAL_SCOPE: {
+            f"match base {name}": ipy.SlashCommand(name="match", group_name="base", sub_cmd_name=name,
+                                                  cmd_id={ipy.GLOBAL_SCOPE: 123456789012345678})
+            for name in ("submit", "scout")
+        }}
+        bot.mention_command.side_effect = lambda name: ipy.Client.mention_command(bot, name)
         if existing:
             await source.set({"thread": "777", "thread_message_id": 888})
         return source, bot, thread, message
@@ -62,7 +68,13 @@ class TestFinalThreadControls(FinalScenarioCase):
         self.assertEqual(embed.images, [])
         self.assertIsNone(thread.send.await_args.kwargs.get("file"))
         self.assertNotIn(" vs. ", embed.description)
+        submit, scout = embed.description.splitlines()
+        self.assertIn("</match base submit:123456789012345678>", submit)
+        self.assertIn("**30 minutes**", submit)
+        self.assertIn("</match base scout:123456789012345678>", scout)
+        self.assertNotIn(f"<@&{STAFF_ROLE}>", embed.description)
         self.assertEqual(len(embed.fields[0].value.splitlines()), 7)
+        self.assertIn("quarterfinals and semifinals", embed.fields[2].value)
         self.assertNotIn("**Notes**", [field.name for field in embed.fields])
         thread.name, thread.edit = name, AsyncMock()
         await schedule_channel_name_edit(thread, "🟢")

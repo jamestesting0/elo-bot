@@ -12,6 +12,7 @@ class StickyMessage(Document):
     # Older records use the channel ID as _id and have no channel_id field.
     channel_id: DiscordId | None = None
     message_id: DiscordId
+    retired_message_id: DiscordId | None = None
     # Text stickies are reposted through a webhook; embed stickies are reposted by the bot itself.
     webhook_id: DiscordId | None = None
     content: str | None = Field(default=None, min_length=1, max_length=2000)
@@ -28,17 +29,32 @@ class StickyMessage(Document):
         return sorted(messages, key=lambda message: int(message.id))
 
     async def move(self, message_id: str, webhook_id: str | None) -> bool:
+        changes = {"message_id": message_id, "webhook_id": webhook_id, "retired_message_id": self.message_id}
         result = await self.get_pymongo_collection().update_one(
             {"_id": self.id, "message_id": self.message_id},
-            {"$set": {"message_id": message_id, "webhook_id": webhook_id}},
+            {"$set": changes},
         )
         if result.matched_count == 0:
             return False
+        self.retired_message_id = self.message_id
         self.message_id = message_id
         self.webhook_id = webhook_id
         saved_state = self.get_saved_state()
         if saved_state is not None:
-            saved_state.update({"message_id": message_id, "webhook_id": webhook_id})
+            saved_state.update(changes)
+        return True
+
+    async def clear_retired(self) -> bool:
+        result = await self.get_pymongo_collection().update_one(
+            {"_id": self.id, "message_id": self.message_id, "retired_message_id": self.retired_message_id},
+            {"$set": {"retired_message_id": None}},
+        )
+        if result.matched_count == 0:
+            return False
+        self.retired_message_id = None
+        saved_state = self.get_saved_state()
+        if saved_state is not None:
+            saved_state["retired_message_id"] = None
         return True
 
     async def release(self) -> bool:

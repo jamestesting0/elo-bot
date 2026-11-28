@@ -273,6 +273,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   its selection date, the season is extended and all dates move to the next boundary.
 - `/embed sticky:True` keeps Elo Information or Elo Final at the bottom of the channel like `/sticky`. The bot
   reposts it itself so its buttons keep working; the live dashboards cannot be sticky.
+  A repost saves the replacement before removing the previous copy. Deleting the current sticky unsticks it.
 - `/final start` always opens the Final of the ongoing season (the season after the last `/season reset`).
   A season has one Final; cancelling it frees the season, so it can be started again before the reset.
   Entrants are seeded by their Elo when they are added.

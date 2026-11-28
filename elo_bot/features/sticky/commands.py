@@ -1,6 +1,8 @@
 import asyncio
+import logging
 
 import interactions as ipy
+from pymongo.errors import WriteError
 
 from elo_bot.discord import runtime
 from elo_bot.config.emojis import ERROR_EMOJI, SUCCESS_EMOJI
@@ -14,11 +16,6 @@ STICKY_WEBHOOK_NAME = "Elo Sticky"
 _sticky_locks: dict[str, asyncio.Lock] = {}
 
 
-# Message ids this process is deleting while it resticks. The gateway reports those
-# deletes too, and they must not clear the stored sticky.
-_bot_sticky_deletes: set[tuple[str, str]] = set()
-
-
 # Messages this process posted as stickies. A burst of messages can replace a sticky again before the gateway
 # reports the previous repost, which would otherwise look like a new message and repost forever.
 _bot_sticky_posts: set[tuple[str, str]] = set()
@@ -28,16 +25,22 @@ def sticky_channel_lock(channel_id: str) -> asyncio.Lock:
     return _sticky_locks.setdefault(channel_id, asyncio.Lock())
 
 
-def note_bot_sticky_delete(channel_id: str, message_id: str) -> None:
-    _bot_sticky_deletes.add((channel_id, message_id))
-
-
-def take_bot_sticky_delete(channel_id: str, message_id: str) -> bool:
-    key = (channel_id, message_id)
-    if key not in _bot_sticky_deletes:
+async def delete_retired_post(channel, message_id: str) -> bool:
+    try:
+        await channel.delete_message(message_id)
+    except ipy.errors.NotFound:
+        pass
+    except ipy.errors.HTTPException:
+        logging.getLogger(__name__).warning("Could not remove old sticky %s in channel %s", message_id, channel.id,
+                                            exc_info=True)
         return False
-    _bot_sticky_deletes.remove(key)
     return True
+
+
+async def finish_retirement(channel, sticky: StickyMessage) -> bool:
+    if sticky.retired_message_id is None:
+        return True
+    return await delete_retired_post(channel, sticky.retired_message_id) and await sticky.clear_retired()
 
 
 async def sticky_webhook(channel, webhook_id: str | None):
@@ -145,12 +148,13 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
         return
 
     channel_id = str(channel.id)
-    if not await StickyMessage.for_channel(channel_id):
+    post_key = (channel_id, str(event.message.id))
+    if post_key not in _bot_sticky_posts and not await StickyMessage.for_channel(channel_id):
         return
 
     async with sticky_channel_lock(channel_id):
-        if (channel_id, str(event.message.id)) in _bot_sticky_posts:
-            _bot_sticky_posts.discard((channel_id, str(event.message.id)))
+        if post_key in _bot_sticky_posts:
+            _bot_sticky_posts.discard(post_key)
             return
         stickies = await StickyMessage.for_channel(channel_id)
         if not stickies or any(
@@ -162,56 +166,42 @@ async def on_sticky_message(event: ipy.events.MessageCreate) -> None:
 
         webhook = thread_id = None
         for sticky in stickies:
-            old_message_id = sticky.message_id
-            embed_post = await static_embed(sticky.embed_type, event.bot) if sticky.embed_type else None
-            note_bot_sticky_delete(channel_id, old_message_id)
-            try:
-                await channel.delete_message(old_message_id)
-            except ipy.errors.NotFound:
-                take_bot_sticky_delete(channel_id, old_message_id)
+            if not await finish_retirement(channel, sticky):
+                continue
+            if await channel.fetch_message(sticky.message_id, force=True) is None:
                 await sticky.release()
                 continue
-            except ipy.errors.HTTPException:
-                take_bot_sticky_delete(channel_id, old_message_id)
-                raise
 
+            if sticky.embed_type:
+                embed, components, file = await static_embed(sticky.embed_type, event.bot)
+                sent = await channel.send(embed=embed, components=components, file=file)
+                webhook_id = None
+            else:
+                if webhook is None:
+                    known = next((item.webhook_id for item in stickies if item.webhook_id), None)
+                    webhook, thread_id = await sticky_webhook(channel, known)
+                sent = await send_sticky(webhook, sticky.content, sticky.author_name, sticky.avatar_url, thread_id)
+                webhook_id = str(webhook.id)
+            _bot_sticky_posts.add((channel_id, str(sent.id)))
             try:
-                if embed_post is not None:
-                    embed, components, file = embed_post
-                    sent = await channel.send(embed=embed, components=components, file=file)
-                    webhook_id = None
-                else:
-                    if webhook is None:
-                        known = next((item.webhook_id for item in stickies if item.webhook_id), None)
-                        webhook, thread_id = await sticky_webhook(channel, known)
-                    sent = await send_sticky(webhook, sticky.content, sticky.author_name, sticky.avatar_url, thread_id)
-                    webhook_id = str(webhook.id)
-                _bot_sticky_posts.add((channel_id, str(sent.id)))
-                try:
-                    moved = await sticky.move(str(sent.id), webhook_id)
-                except Exception:
-                    await sent.delete()
-                    raise
-                if not moved:
-                    await sent.delete()
-            finally:
-                take_bot_sticky_delete(channel_id, old_message_id)
+                moved = await sticky.move(str(sent.id), webhook_id)
+            except WriteError:
+                await sent.delete()
+                raise
+            if moved:
+                await finish_retirement(channel, sticky)
+            else:
+                await sent.delete()
 
 
-async def release_deleted_sticky(channel_id: str, message_id: str) -> None:
-    if take_bot_sticky_delete(channel_id, message_id):
-        return
-    stickies = await StickyMessage.for_channel(channel_id)
-    if not any(sticky.message_id == message_id for sticky in stickies):
-        return
-
-    async with sticky_channel_lock(channel_id):
-        if take_bot_sticky_delete(channel_id, message_id):
+async def release_deleted_sticky(channel_id: str, message_id: str, bot: ipy.Client) -> None:
+    for sticky in await StickyMessage.for_channel(channel_id):
+        if sticky.message_id == message_id:
+            if await sticky.release() and sticky.retired_message_id is not None:
+                channel = await bot.fetch_channel(channel_id)
+                if channel is not None:
+                    await delete_retired_post(channel, sticky.retired_message_id)
             return
-        for sticky in await StickyMessage.for_channel(channel_id):
-            if sticky.message_id == message_id:
-                await sticky.release()
-                return
 
 
 @ipy.listen(ipy.events.MessageDelete)
@@ -220,11 +210,11 @@ async def on_sticky_deleted(event: ipy.events.MessageDelete) -> None:
     message_id = getattr(event.message, "id", None)
     if channel_id in (None, ipy.MISSING) or message_id in (None, ipy.MISSING):
         return
-    await release_deleted_sticky(str(channel_id), str(message_id))
+    await release_deleted_sticky(str(channel_id), str(message_id), event.bot)
 
 
 @ipy.listen(ipy.events.MessageDeleteBulk)
 async def on_sticky_bulk_deleted(event: ipy.events.MessageDeleteBulk) -> None:
     channel_id = str(event.channel_id)
     for message_id in event.ids:
-        await release_deleted_sticky(channel_id, str(message_id))
+        await release_deleted_sticky(channel_id, str(message_id), event.bot)

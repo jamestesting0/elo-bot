@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import interactions as ipy
 from beanie.odm.settings.document import DocumentSettings
 from pydantic import ValidationError
+from pymongo.errors import AutoReconnect, WriteError
 
 from elo_bot.discord import runtime
 from elo_bot.features.sticky import commands as sticky_commands
@@ -17,6 +18,7 @@ def guild_text(channel_id="10"):
     channel = MagicMock()
     channel.__class__ = ipy.GuildText
     channel.id = channel_id
+    channel.fetch_message = AsyncMock(return_value=MagicMock())
     channel.delete_message = AsyncMock()
     return channel
 
@@ -79,9 +81,10 @@ class TestStickyMessageMove(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(moved)
         self.assertEqual(stored.message_id, "12")
         self.assertEqual(stored.webhook_id, "13")
+        self.assertEqual(stored.retired_message_id, "11")
         collection.update_one.assert_awaited_once_with(
             {"_id": "10", "message_id": "11"},
-            {"$set": {"message_id": "12", "webhook_id": "13"}},
+            {"$set": {"message_id": "12", "webhook_id": "13", "retired_message_id": "11"}},
         )
 
     async def test_move_leaves_the_document_when_the_message_changed(self):
@@ -174,6 +177,7 @@ class TestStickyCommand(unittest.IsolatedAsyncioTestCase):
                     "_id": "60",
                     "channel_id": "10",
                     "message_id": "60",
+                    "retired_message_id": None,
                     "webhook_id": "50",
                     "content": "hello",
                     "author_name": "A" * 80,
@@ -290,7 +294,6 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.modules = (sticky_commands,)
         for module in self.modules:
-            module._bot_sticky_deletes.clear()
             module._bot_sticky_posts.clear()
 
     async def test_a_burst_of_messages_reposts_once_each_and_never_chases_its_own_reposts(self):
@@ -312,14 +315,20 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(stored.message_id, "61")
         self.assertEqual(sticky_commands._bot_sticky_posts, set())
 
-    async def test_new_message_deletes_and_resends_the_sticky(self):
+    async def test_new_message_saves_the_repost_before_deleting_the_original(self):
         for module in self.modules:
             channel = guild_text()
             sent = MagicMock(id="60", delete=AsyncMock())
             webhook = MagicMock(id="50", send=AsyncMock(return_value=sent))
             collection = MagicMock()
-            collection.update_one = AsyncMock(return_value=MagicMock(matched_count=1))
             order = []
+
+            async def update_one(query, update):
+                if "message_id" in update["$set"]:
+                    order.append("save")
+                return MagicMock(matched_count=1)
+
+            collection.update_one = AsyncMock(side_effect=update_one)
             channel.delete_message = AsyncMock(side_effect=lambda message_id: order.append(("delete", str(message_id))))
             webhook.send.side_effect = lambda *args, **kwargs: order.append("send") or sent
             with (
@@ -330,14 +339,14 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
                 with patch.object(module.StickyMessage, "for_channel", new_callable=AsyncMock, return_value=[stored]):
                     await module.on_sticky_message.callback(message_event(channel, "20"))
 
-            self.assertEqual(order, [("delete", "11"), "send"])
+            self.assertEqual(order, ["send", "save", ("delete", "11")])
             webhook.send.assert_awaited_once_with(
                 "hello", username="James", avatar_url="https://cdn/a.png", wait=True, thread=77,
             )
-            collection.update_one.assert_awaited_once_with(
+            self.assertEqual(collection.update_one.await_args_list[0].args, (
                 {"_id": "10", "message_id": "11"},
-                {"$set": {"message_id": "60", "webhook_id": "50"}},
-            )
+                {"$set": {"message_id": "60", "webhook_id": "50", "retired_message_id": "11"}},
+            ))
             sent.delete.assert_not_awaited()
 
     async def test_ephemeral_replies_do_not_move_the_sticky(self):
@@ -382,6 +391,7 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
     async def test_missing_sticky_message_is_removed_and_not_resent(self):
         for module in self.modules:
             channel = guild_text()
+            channel.fetch_message.return_value = None
             channel.delete_message = AsyncMock(side_effect=ipy.errors.NotFound(MagicMock(status=404, reason="Missing")))
             webhook = MagicMock(id="50", send=AsyncMock())
             collection = MagicMock()
@@ -450,7 +460,6 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
 
             webhook.send.assert_awaited_once()
             collection.delete_one.assert_not_awaited()
-            self.assertEqual(module._bot_sticky_deletes, set())
 
     async def test_delete_of_another_message_keeps_the_sticky(self):
         for module in self.modules:
@@ -475,31 +484,19 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
 
             collection.delete_one.assert_awaited_once_with({"_id": "10", "message_id": "11"})
 
-    async def test_failed_bot_delete_still_allows_a_human_to_unstick(self):
+    async def test_manually_deleting_current_sticky_also_cleans_up_the_retired_post(self):
         for module in self.modules:
             channel = guild_text()
-            channel.delete_message = AsyncMock(
-                side_effect=ipy.errors.HTTPException(MagicMock(status=403, reason="Forbidden")),
-            )
-            webhook = MagicMock(id="50", send=AsyncMock())
-            collection = MagicMock()
-            collection.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
-            collection.update_one = AsyncMock()
+            collection = MagicMock(delete_one=AsyncMock(return_value=MagicMock(deleted_count=1)))
             with patch.object(module.StickyMessage, "get_pymongo_collection", return_value=collection):
-                stored = sticky_document()
-            with (
-                patch.object(module.StickyMessage, "get_pymongo_collection", return_value=collection),
-                patch.object(module, "sticky_webhook", new_callable=AsyncMock, return_value=(webhook, None)),
-                patch.object(module.StickyMessage, "for_channel", new_callable=AsyncMock, return_value=[stored]),
-            ):
-                with self.assertRaises(ipy.errors.HTTPException):
-                    await module.on_sticky_message.callback(message_event(channel, "20"))
-                self.assertEqual(module._bot_sticky_deletes, set())
-                await module.on_sticky_deleted.callback(delete_event("10", "11"))
+                stored = sticky_document(message_id="60", retired_message_id="11")
+                event = delete_event("10", "60")
+                event.bot.fetch_channel = AsyncMock(return_value=channel)
+                with patch.object(module.StickyMessage, "for_channel", new=AsyncMock(return_value=[stored])):
+                    await module.on_sticky_deleted.callback(event)
 
-            webhook.send.assert_not_awaited()
-            collection.update_one.assert_not_awaited()
-            collection.delete_one.assert_awaited_once_with({"_id": "10", "message_id": "11"})
+            collection.delete_one.assert_awaited_once_with({"_id": "10", "message_id": "60"})
+            channel.delete_message.assert_awaited_once_with("11")
 
     async def test_lost_update_deletes_the_resent_message(self):
         for module in self.modules:
@@ -524,17 +521,18 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
             sent = MagicMock(id="60", delete=AsyncMock())
             webhook = MagicMock(id="50", send=AsyncMock(return_value=sent))
             collection = MagicMock()
-            collection.update_one = AsyncMock(side_effect=RuntimeError("db down"))
+            collection.update_one = AsyncMock(side_effect=WriteError("write rejected"))
             with (
                 patch.object(module.StickyMessage, "get_pymongo_collection", return_value=collection),
                 patch.object(module, "sticky_webhook", new_callable=AsyncMock, return_value=(webhook, None)),
-                self.assertRaisesRegex(RuntimeError, "db down"),
+                self.assertRaisesRegex(WriteError, "write rejected"),
             ):
                 stored = sticky_document()
                 with patch.object(module.StickyMessage, "for_channel", new_callable=AsyncMock, return_value=[stored]):
                     await module.on_sticky_message.callback(message_event(channel, "20"))
 
             sent.delete.assert_awaited_once()
+            channel.delete_message.assert_not_awaited()
 
     async def test_concurrent_messages_leave_the_later_repost(self):
         for module in self.modules:
@@ -555,7 +553,7 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
             async def update_one(query, update):
                 if query["message_id"] != state["message_id"]:
                     return MagicMock(matched_count=0)
-                state["message_id"] = update["$set"]["message_id"]
+                state.update(update["$set"])
                 return MagicMock(matched_count=1)
 
             async def get(channel_id):
@@ -598,9 +596,8 @@ class TestStickyListener(unittest.IsolatedAsyncioTestCase):
         posted = channel.send.await_args.kwargs
         self.assertEqual([button.custom_id for button in posted["components"][0].components],
                          ["elo_final_details", "elo_final_notify"])
-        collection.update_one.assert_awaited_once_with(
-            {"_id": "10", "message_id": "11"}, {"$set": {"message_id": "60", "webhook_id": None}},
-        )
+        self.assertEqual(stored.message_id, "60")
+        self.assertIsNone(stored.webhook_id)
 
 
 class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
@@ -646,6 +643,9 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
             if visible.pop(str(message_id), None) is None:
                 raise ipy.errors.NotFound(MagicMock(status=404, reason="Missing"))
 
+        async def fetch_message(message_id, *, force=False):
+            return MagicMock(id=message_id) if str(message_id) in visible else None
+
         async def send(content, **kwargs):
             nonlocal next_id
             next_id += 1
@@ -658,10 +658,11 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
             insert_one=AsyncMock(side_effect=insert_one), update_one=AsyncMock(side_effect=update_one),
             delete_one=AsyncMock(side_effect=delete_one),
         )
+        channel.fetch_message = AsyncMock(side_effect=fetch_message)
         channel.delete_message = AsyncMock(side_effect=delete_message)
         webhook = MagicMock(id="50", send=AsyncMock(side_effect=send))
         module._sticky_locks.clear()
-        module._bot_sticky_deletes.clear()
+        module._bot_sticky_posts.clear()
         with (
             patch.object(StickyMessage, "get_pymongo_collection", return_value=collection),
             patch.object(StickyMessage, "get_settings", return_value=DocumentSettings(use_state_management=True)),
@@ -674,6 +675,79 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
             yield SimpleNamespace(
                 rows=rows, visible=visible, channel=channel, ctx=ctx, webhook=webhook, collection=collection,
             )
+
+    async def test_interrupted_embed_repost_leaves_the_registered_copy_visible(self):
+        with self.runtime(sticky_commands) as state:
+            async def send_embed(**kwargs):
+                return await state.webhook.send("Elo Final")
+
+            state.channel.send = AsyncMock(side_effect=send_embed)
+            await sticky_commands.post_embed_sticky(state.channel, "Elo Final", MagicMock())
+            original_id = next(iter(state.visible))
+            state.channel.send.side_effect = asyncio.CancelledError
+
+            with self.assertRaises(asyncio.CancelledError):
+                await sticky_commands.on_sticky_message.callback(message_event(state.channel, "200"))
+
+            self.assertEqual(state.visible, {original_id: "Elo Final"})
+            self.assertEqual(state.rows[original_id]["message_id"], original_id)
+            state.channel.send.side_effect = send_embed
+            await sticky_commands.on_sticky_message.callback(message_event(state.channel, "201"))
+            await sticky_commands.on_sticky_deleted.callback(delete_event("10", original_id))
+            current_id = state.rows[original_id]["message_id"]
+            self.assertNotEqual(current_id, original_id)
+            self.assertEqual(state.visible, {current_id: "Elo Final"})
+
+    async def test_unknown_save_outcome_preserves_a_replacement_that_was_committed(self):
+        with self.runtime(sticky_commands, legacy=True) as state:
+            update = state.collection.update_one.side_effect
+
+            async def lose_acknowledgment(query, change):
+                await update(query, change)
+                raise AutoReconnect("write response lost")
+
+            state.collection.update_one.side_effect = lose_acknowledgment
+            with self.assertRaises(AutoReconnect):
+                await sticky_commands.on_sticky_message.callback(message_event(state.channel, "200"))
+
+            committed_id = state.rows["10"]["message_id"]
+            self.assertEqual(state.visible, {"11": "hello", committed_id: "hello"})
+            state.collection.update_one.side_effect = update
+            await sticky_commands.on_sticky_message.callback(message_event(state.channel, "201"))
+            current_id = state.rows["10"]["message_id"]
+            self.assertNotEqual(current_id, committed_id)
+            self.assertEqual(state.visible, {current_id: "hello"})
+
+    async def test_retirement_failure_preserves_the_replacement_and_retries_old_copy_cleanup(self):
+        with self.runtime(sticky_commands, legacy=True) as state:
+            delete = state.channel.delete_message.side_effect
+            state.channel.delete_message.side_effect = ipy.errors.Forbidden(MagicMock(status=403, reason="Forbidden"))
+            with self.assertLogs(sticky_commands.__name__, level="WARNING"):
+                await sticky_commands.on_sticky_message.callback(message_event(state.channel, "200"))
+
+            replacement_id = state.rows["10"]["message_id"]
+            self.assertNotEqual(replacement_id, "11")
+            self.assertEqual(state.visible, {"11": "hello", replacement_id: "hello"})
+            state.channel.delete_message.side_effect = delete
+            sticky_commands._bot_sticky_posts.clear()
+            await sticky_commands.on_sticky_message.callback(message_event(state.channel, "201"))
+            self.assertEqual(state.visible, {state.rows["10"]["message_id"]: "hello"})
+
+    async def test_manual_delete_during_send_unsticks_without_leaving_a_replacement(self):
+        with self.runtime(sticky_commands, legacy=True) as state:
+            send = state.webhook.send.side_effect
+
+            async def delete_during_send(*args, **kwargs):
+                state.visible.pop("11", None)
+                await sticky_commands.on_sticky_deleted.callback(delete_event("10", "11"))
+                return await send(*args, **kwargs)
+
+            state.webhook.send.side_effect = delete_during_send
+            async with asyncio.timeout(5):
+                await sticky_commands.on_sticky_message.callback(message_event(state.channel, "200"))
+
+            self.assertEqual(state.rows, {})
+            self.assertEqual(state.visible, {})
 
     async def test_two_commands_keep_both_messages_and_records(self):
         for module in (sticky_commands,):
@@ -831,7 +905,6 @@ class TestMultipleStickies(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(state.visible, {"104": "hello", "105": "second"})
                 self.assertEqual(set(state.rows), {"10", "101"})
                 self.assertEqual({row["message_id"] for row in state.rows.values()}, set(state.visible))
-                self.assertEqual(module._bot_sticky_deletes, set())
 
 
 class TestStickyWebhook(unittest.IsolatedAsyncioTestCase):

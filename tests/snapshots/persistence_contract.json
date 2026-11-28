@@ -6669,6 +6669,19 @@
       "title": "Message Id",
       "type": "string"
      },
+     "retired_message_id": {
+      "anyOf": [
+       {
+        "pattern": "^[0-9]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Retired Message Id"
+     },
      "webhook_id": {
       "anyOf": [
        {

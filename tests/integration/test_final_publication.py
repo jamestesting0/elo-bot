@@ -13,7 +13,7 @@ from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.publication import bracket_signature, publish_bracket
 from elo_bot.core.finals import FinalError
 from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE, LVL1_ROLES
-from elo_bot.config.presentation import GREEN_COLOR
+from elo_bot.config.presentation import FOOTER_TEXT, GREEN_COLOR
 from elo_bot.discord.embeds import embed_color
 from elo_bot.db import EloFinal, Match
 from elo_bot.extensions.final import FinalCommands
@@ -391,10 +391,12 @@ class TestFinalPublication(FinalScenarioCase):
         self.assertEqual(len(self.channel.send.await_args.kwargs["files"]), 4)
         card = self.channel.send.await_args.kwargs["components"][0]
         self.assertEqual(len(card[2].items), 4)
-        discord_payload = process_message_payload(components=[card])
+        discord_payload = process_message_payload(components=self.channel.send.await_args.kwargs["components"])
         self.assertTrue(discord_payload["flags"] & ipy.MessageFlags.IS_COMPONENTS_V2)
         self.assertNotIn("embeds", discord_payload)
+        self.assertEqual([component["type"] for component in discord_payload["components"]], [17, 1])
         self.assertEqual(discord_payload["components"][0]["components"][2]["type"], 12)
+        self.assertEqual(discord_payload["components"][0]["components"][-1]["content"], f"-# {FOOTER_TEXT}")
         self.assertIn("750", card[1].content)
         self.assertEqual([option.value for option in round_select(self.channel.send.await_args.kwargs).options],
                          [market.id for market in markets])
@@ -418,6 +420,7 @@ class TestFinalPublication(FinalScenarioCase):
         async def lose_response(**payload):
             board = await self.send(**payload)
             board.nonce = None
+            board.attachments = []
             raise ipy.errors.HTTPException(MagicMock(status=502, reason="Response lost"))
 
         self.channel.send.side_effect = lose_response
@@ -468,7 +471,7 @@ class TestFinalPublication(FinalScenarioCase):
         orphan.edit.assert_awaited_once()
         other.edit.assert_not_awaited()
         payload = board.edit.await_args.kwargs
-        self.assertEqual(payload["components"][0][0].content, "**Season 7 Final**\n## Quarterfinal Betting")
+        self.assertEqual(payload["components"][0][0].content, "**Season 7 Final**\n**Quarterfinal Betting**")
         self.assertEqual(payload["attachments"], [])
         self.assertIsNone(payload["files"][0].description)
         gallery = payload["components"][0][2]

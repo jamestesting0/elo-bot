@@ -22,7 +22,7 @@ from elo_bot.features.finals.results import FinalResultSubmission, submit_result
 from elo_bot.features.finals.leaderboards import FinalBoardRow, final_board_text
 from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market, void_market
 from elo_bot.features.tokens.presentation import bet_review
-from elo_bot.features.tokens.round_betting import publish_betting_round, round_betting_card
+from elo_bot.features.tokens.round_betting import publish_betting_round, round_betting_components
 from elo_bot.features.tokens.wallets import adjust_balance
 from elo_bot.db import EloFinal, Match, Player
 from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile
@@ -255,8 +255,8 @@ class TestFinalUIConsistency(FinalScenarioCase):
         await void_market(market.id, "manager", "Internal QA refund note")
         await self.cog._recover(await final_for_view())
         saved = await FinalBettingMarket.get(market.id)
-        board = round_betting_card(self.final, "Quarterfinals", [saved],
-                                   dict.fromkeys(saved.contestants), [])
+        [board] = round_betting_components(self.final, "Quarterfinals", [saved],
+                                           dict.fromkeys(saved.contestants), [])
         self.assertNotIn("REFUNDED", board[1].content)
         self.assertEqual(saved.state, "REFUNDED")
         self.assertNotIn("Internal QA", board[1].content)
@@ -497,9 +497,9 @@ class TestFinalUIConsistency(FinalScenarioCase):
         self.bot.fetch_channel = AsyncMock(return_value=channel)
         await publish_betting_round(self.bot, self.final, "Quarterfinals")
         self.bot.fetch_channel.assert_awaited_once_with(FINAL_CHANNEL)
-        card = channel.send.await_args.kwargs["components"][0]
-        self.assertEqual(card[-1].components[0].placeholder, "Choose a match")
-        self.assertEqual(card[-1].components[0].options[0].value, market.id)
+        card, row = channel.send.await_args.kwargs["components"]
+        self.assertEqual(row.components[0].placeholder, "⚔️ Choose a match")
+        self.assertEqual(row.components[0].options[0].value, market.id)
         self.assertIn(f"· Open · 0 {TOKEN_EMOJI}", card[1].content)
         stored = (await final_for_view()).betting_posts["Quarterfinals"]
         self.assertEqual(stored.channel_id, FINAL_CHANNEL)

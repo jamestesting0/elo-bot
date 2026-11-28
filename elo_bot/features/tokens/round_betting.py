@@ -9,6 +9,7 @@ from pymongo.errors import PyMongoError
 
 from elo_bot.config.emojis import TOKEN_EMOJI, WIN_EMOJI
 from elo_bot.config.ids import FINAL_CHANNEL
+from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.core.finals import FinalError, ROUND_NODES
 from elo_bot.db import EloFinal
 from elo_bot.db.season_models import FinalBettingPost
@@ -56,11 +57,11 @@ def _allows_bets(final: EloFinal) -> bool:
 
 
 def _board_header(final: EloFinal, round_name: str) -> str:
-    return f"**{final_season_label(final.season_number)}**\n## {BETTING_TITLES[round_name]}"
+    return f"**{final_season_label(final.season_number)}**\n**{BETTING_TITLES[round_name]}**"
 
 
 def _signature(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket]) -> str:
-    return _fingerprint([2, _board_header(final, round_name), _allows_bets(final), [
+    return _fingerprint([3, _board_header(final, round_name), FOOTER_TEXT, _allows_bets(final), [
         [market.id, market.contestants, market.state, market.pools, market.desired_winner,
          [final_nickname(final, user) for user in market.contestants], _artwork_name(final, round_name, market)]
         for market in markets
@@ -82,8 +83,10 @@ def round_post_pending(final: EloFinal, round_name: str, markets: Sequence[Final
             or any(_legacy_pending(market, post.message_id) for market in round_markets))
 
 
-def round_betting_card(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket],
-                       members: dict[str, ipy.Member | None], gallery: list[ipy.MediaGalleryItem]) -> ipy.ContainerComponent:
+def round_betting_components(
+        final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket],
+        members: dict[str, ipy.Member | None], gallery: list[ipy.MediaGalleryItem],
+) -> list[ipy.ContainerComponent | ipy.ActionRow]:
     lines = []
     options = []
     for market in markets:
@@ -101,10 +104,12 @@ def round_betting_card(final: EloFinal, round_name: str, markets: Sequence[Final
                                   accent_color=embed_color())
     if gallery:
         card.append(ipy.MediaGalleryComponent(gallery))
+    card.append(ipy.TextDisplayComponent(f"-# {FOOTER_TEXT}"))
+    components: list[ipy.ContainerComponent | ipy.ActionRow] = [card]
     if options:
-        card.append(ipy.ActionRow(ipy.StringSelectMenu(*options, placeholder="Choose a match",
-                                                        custom_id=f"betround|{final.id}|{round_name}")))
-    return card
+        components.append(ipy.ActionRow(ipy.StringSelectMenu(*options, placeholder="⚔️ Choose a match",
+                                                            custom_id=f"betround|{final.id}|{round_name}")))
+    return components
 
 
 def _legacy_button_ids(message: ipy.Message) -> set[str]:
@@ -197,8 +202,9 @@ async def publish_betting_round(bot: ipy.Client, final: EloFinal, round_name: st
             def matches_board(message: ipy.Message) -> bool:
                 return (any(attachment.filename.startswith(prefix) for attachment in message.attachments)
                         or any(getattr(control, "custom_id", None) == selector_id
-                               for container in message.components if isinstance(container, ipy.ContainerComponent)
-                               for row in container.components if isinstance(row, ipy.ActionRow)
+                               for part in message.components
+                               for row in (part.components if isinstance(part, ipy.ContainerComponent) else (part,))
+                               if isinstance(row, ipy.ActionRow)
                                for control in row.components))
 
             board = await locate_post(channel, PostReference(nonce, bot.user.id, post.message_id, post.attempted, matches_board))
@@ -252,12 +258,12 @@ async def _write_board(channel, board, final, round_name, markets, nonce) -> tup
                     artwork.file_name = filename
                     files.append(artwork)
                     gallery.append(ipy.MediaGalleryItem(f"attachment://{filename}"))
-        card = round_betting_card(final, round_name, markets, members, gallery)
+        components = round_betting_components(final, round_name, markets, members, gallery)
         mentions = ipy.AllowedMentions.none()
         if board is None:
-            board = await channel.send(components=[card], files=files or None, nonce=nonce, enforce_nonce=True,
+            board = await channel.send(components=components, files=files or None, nonce=nonce, enforce_nonce=True,
                                        allowed_mentions=mentions)
         else:
-            await edit_channel_message(board, components=[card], attachments=retained, files=files or None,
+            await edit_channel_message(board, components=components, attachments=retained, files=files or None,
                                        allowed_mentions=mentions, require_confirmation=True)
     return board, len(gallery) == len(markets)

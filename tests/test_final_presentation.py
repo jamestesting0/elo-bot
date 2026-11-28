@@ -5,6 +5,7 @@ import interactions as ipy
 from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import LOSS_EMOJI, STAR_EMOJI, WIN_EMOJI
+from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.core.finals import FINAL_DISTRICTS
 from elo_bot.db import EloFinal, EloFinalMatch
 from elo_bot.db.final_models import FinalMatchResult, FinalResultSnapshot
@@ -13,7 +14,7 @@ from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
 from elo_bot.features.finals.bracket_ui import bracket_controls, bracket_embed
 from elo_bot.features.finals.result_ui import score_embed
 from elo_bot.features.tokens.presentation import market_pool_lines
-from elo_bot.features.tokens.round_betting import round_betting_card
+from elo_bot.features.tokens.round_betting import round_betting_components
 
 
 class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
@@ -89,9 +90,13 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
                 pool = market_pool_lines(market, {"3": "Left", "4": "Right"})
                 self.assertIn("×2.50", pool)
                 self.assertIn("×1.67", pool)
-                card = round_betting_card(final, "Quarterfinals", [market], {"3": None, "4": None}, [])
+                card, *controls = round_betting_components(
+                    final, "Quarterfinals", [market], {"3": None, "4": None}, [],
+                )
                 self.assertIn(f"· {label} · 10,000", card[1].content)
                 self.assertEqual(str(WIN_EMOJI) in card[1].content, state == "PAID")
-                self.assertEqual(any(isinstance(item, ipy.ActionRow) for item in card), state == "OPEN")
+                self.assertFalse(any(isinstance(item, ipy.ActionRow) for item in card))
+                self.assertEqual(card[-1].content, f"-# {FOOTER_TEXT}")
+                self.assertEqual(bool(controls), state == "OPEN")
         market.pools = {}
         self.assertEqual(market_pool_lines(market, {"3": "Left", "4": "Right"}).count("×—"), 2)

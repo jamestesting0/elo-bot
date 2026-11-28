@@ -9,8 +9,7 @@ from tests.integration._final_fixture import FinalScenarioCase
 
 
 def round_select(payload):
-    card = payload["components"][0]
-    return next((part.components[0] for part in card if isinstance(part, ipy.ActionRow)), None)
+    return next((part.components[0] for part in payload["components"] if isinstance(part, ipy.ActionRow)), None)
 
 
 class FinalUICase(FinalScenarioCase):

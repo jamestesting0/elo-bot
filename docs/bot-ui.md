@@ -59,6 +59,7 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
 - **Footer:** Use `FOOTER_TEXT` for **Clan Capital Elo System** and `footer_image()` for the signed-in bot's Discord
   avatar. Before login, the helper uses the version's logo from `ASSETS_URL`.
+  Components V2 cards put the shared footer in a final text display using `-#` subtext.
 - **Field layout:** fields are full width. Leave `inline` at its default `False`; use `inline=True` only
   when side-by-side fields were specifically asked for.
 - **Field names:** bold, `name="**Available Tokens**"`. Section headings inside profiles and the match
@@ -363,7 +364,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   receipt. Modal submission defers with `edit_origin=True`. Back edits the chooser. A closed market
   retires the panel's controls.
 - Each round has one public betting post with a match list, token pools and a Media Gallery of H2H posters.
-  **Choose a match** lists open markets and opens that match's private betting panel. The bot edits the board
+  The season and round title use adjacent text lines. **⚔️ Choose a match** sits below the card, lists open
+  markets and opens that match's private betting panel. The bot edits the board
   in place as bets and market statuses change. The first successful board publication turns earlier per-match
   cards into links to the round board. Existing bets and private bet panels keep their market IDs.
 - Result previews last 15 minutes and survive a restart. Persistent Confirm and Cancel callbacks

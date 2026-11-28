@@ -24,7 +24,7 @@ from elo_bot.features.tokens.wallets import backfill_wallets
 class Status:
     final = final
 
-    async def _recover(self, edition):
+    async def _recover(self, edition, *, audit_betting_posts=False):
         async def release(source):
             await clear_match_base_stores(source, reset_stored_flags=True, bot=self.bot, reason="finished")
             await free_match_clans(source)
@@ -33,7 +33,8 @@ class Status:
             await free_match_clans(source)
             for participant in source.participants:
                 await remove_helper_task(source.thread, participant.user_id)
-        return await recover_final(edition, bot=self.bot, release_completed=release, release_deleted=deleted)
+        return await recover_final(edition, bot=self.bot, release_completed=release, release_deleted=deleted,
+                                   audit_betting_posts=audit_betting_posts)
 
     async def _delete_expired_threads(self):
         due = await EloFinal.find({"thread_cleanup_at": {"$lte": int(time.time())}}).to_list()
@@ -57,7 +58,7 @@ class Status:
     async def final_recover(self, ctx: SlashContext):
         await ctx.defer(ephemeral=True)
         edition = await self._ongoing_edition(ctx, access="manager")
-        pending = await self._recover(edition)
+        pending = await self._recover(edition, audit_betting_posts=True)
         pending.extend(await refresh_final_headers(ctx, self.bot, await reload_final(edition)))
         await ctx.send(f"{IMPORTANT_EMOJI} " + "\n".join(pending) if pending else
                        f"{SUCCESS_EMOJI} Final updates are complete.", ephemeral=True)

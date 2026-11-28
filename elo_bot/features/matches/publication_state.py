@@ -3,14 +3,16 @@ from beanie import PydanticObjectId
 from pydantic import JsonValue
 
 from elo_bot.discord.message_edits import edit_channel_message
-from elo_bot.config.ids import MATCH_CHANNEL
+from elo_bot.config.ids import FINAL_CHANNEL, MATCH_CHANNEL
 from elo_bot.core.finals import is_final_match
 from elo_bot.db import Match
+from elo_bot.features.matches.messages import final_match_content_edit
 
 
 async def restore_match_publication(message: ipy.Message, match: Match, player: int | None) -> bool:
     """Replay a bound final payload; caller holds the match message lock."""
     public = player is None
+    public_final = public and is_final_match(match)
     publication = match.public_message_publication if public else match.message_publications[player]
     message_id = match.msg if public else match.old_msgs[player]
     channel_id = (match.routing_channel_id if is_final_match(match) else MATCH_CHANNEL) if public else match.thread
@@ -40,7 +42,9 @@ async def restore_match_publication(message: ipy.Message, match: Match, player: 
     collection = match.get_pymongo_collection()
     if await collection.find_one(query, {"_id": 1}) is None:
         return False
-    await edit_channel_message(message, embeds=publication.embeds, components=publication.components)
+    content = final_match_content_edit(message) if public_final and channel_id == FINAL_CHANNEL else {}
+    await edit_channel_message(message, embeds=publication.embeds, components=publication.components,
+                               require_confirmation=public_final, **content)
     if publication.pending:
         published = publication.model_copy(update={"pending": False})
         payload = published.model_dump(mode="json", exclude_defaults=True)

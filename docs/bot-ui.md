@@ -68,6 +68,8 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
 - **Images:** `set_image(base.image_url)` for bases, `UNAVAILABLE_IMAGE` when the image is missing, and a
   clan badge for clan views. Generated images are attached as files
   and referenced with `url="attachment://bracket.png"`. Static art is served from `ASSETS_URL`.
+  Leave image descriptions unset on Discord attachments and Media Gallery items. Put any needed context
+  in the surrounding text or embed fields so the images display without an ALT badge.
 - **Empty states:** a short sentence or placeholder value: "No recent matches.", "No defenses so far",
   "Not assigned", "Unknown builder". Omit optional statistics with no recorded samples and avoid repeating
   empty-state text; keep meaningful zeroes, coverage context and failure or recovery information.
@@ -75,7 +77,8 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   names 100, 25 autocomplete choices. Check before rendering; `stats_embed` raises an error instead of
   silently truncating data the user needs.
 - **Editing:** every edit of a channel message goes through `edit_channel_message`, which queues all edits in
-  a channel under Discord's per-channel rate; never call `message.edit(...)` directly (only `context=` edits and
+  a channel with room under Discord's per-channel rate. Use `require_confirmation=True` when a Final edit
+  must be confirmed before marking it complete. Never call `message.edit(...)` directly (only `context=` edits and
   `ctx.edit_origin`, which use the interaction route, bypass it). A component or modal callback that has not
   answered yet edits the clicked message with `ctx.edit_origin(...)`, or answers first and then edits, so a busy
   channel queue cannot outlast Discord's 3-second response window. Callbacks that wait on a lock use
@@ -249,11 +252,13 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 
 - Season-level Final cards show `Season N Final` on a smaller line above the bold view title, such as
   **Lineup**, **Bracket**, **Dashboard**, **Predictions** or **QF1 · Result**. Use `final_embed()` for embeds
-  and a `-#` season line in the Components V2 betting board. Public match announcements put the match
+  and a bold season line above the round heading in the Components V2 betting board. Public match announcements put the match
   code before the current status, such as **QF4 · Match Scheduled** or **QF4 · Match Started**.
   Player cards use the linked player name and avatar in the author row.
-- `/final recover` refreshes the ongoing Final's existing lineup, bracket, result and public match headers
-  in place. Deleted posts stay deleted during a header refresh. An unfinished publication for an active
+- `/final recover` refreshes the ongoing Final's existing lineup, bracket, result and public match announcements
+  in place. It removes old announcement tips without pinging the role again and finds legacy betting cards
+  by their original buttons so they can point to the round board. Deleted posts stay deleted during a header
+  refresh. An unfinished publication for an active
   bracket can still retry. Recovery edits a cancelled bracket only if it can find the original post.
 - A nickname set with `/final add nickname:` or `/final nick` belongs to that Final. It survives bracket
   resets and appears in the lineup, bracket, dashboard, match, prediction, betting and result views. The
@@ -264,7 +269,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   Bracket images leave unresolved slots blank and label actual byes **BYE**.
 - `/embed Elo Information` has a 📖 README button opening a private guide with a section select.
   Sections live in `assets/embeds/readme/`; navigation edits the same private message.
-  Rewards and Base Building keep their own buttons. Elo Information embed images omit attachment descriptions.
+  Rewards and Base Building keep their own buttons.
 - `/embed Elo Final` posts a short description with a 📅 Details button opening the guide's Elo Final page.
   The 🔔 Get Notified button adds or removes the Elo Final notification role for the member who clicks it.
   The bot confirms the setting privately. A new public live match announcement in `#elo-final` mentions

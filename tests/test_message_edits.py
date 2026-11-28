@@ -6,7 +6,7 @@ import anyio
 import interactions as ipy
 
 from elo_bot.discord import message_edits
-from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.discord.message_edits import MessageEditUnconfirmed, edit_channel_message
 from elo_bot.extensions.match import MatchCommands
 from elo_bot.features.base_store.publication import mark_store_status
 from elo_bot.features.matches.messages import mark_match_message_ended
@@ -33,35 +33,42 @@ class TestChannelMessageEdits(unittest.IsolatedAsyncioTestCase):
         message.edit = AsyncMock()
         return message
 
-    async def test_five_edits_in_the_same_channel_do_not_wait(self) -> None:
+    async def test_four_edits_in_the_same_channel_do_not_wait(self) -> None:
         message = self._message(123)
-        for index in range(5):
+        for index in range(4):
             await edit_channel_message(message, content=str(index))
             self.clock += 0.01
 
         self.assertEqual(self.slept, [])
-        self.assertEqual(message.edit.await_count, 5)
+        self.assertEqual(message.edit.await_count, 4)
 
-    async def test_sixth_edit_in_the_same_channel_waits_for_the_bucket(self) -> None:
+    async def test_fifth_edit_in_the_same_channel_waits_for_the_bucket(self) -> None:
         message = self._message(123)
-        for index in range(6):
+        for index in range(5):
             await edit_channel_message(message, content=str(index))
             self.clock += 0.01
 
         self.assertEqual(len(self.slept), 1)
         self.assertGreater(self.slept[0], 1.0)
-        self.assertEqual(message.edit.await_count, 6)
+        self.assertEqual(message.edit.await_count, 5)
 
     async def test_other_channels_do_not_share_the_bucket(self) -> None:
         first = self._message(123)
         second = self._message(456)
-        for index in range(5):
+        for index in range(4):
             await edit_channel_message(first, content=str(index))
             self.clock += 0.01
         await edit_channel_message(second, content="other")
 
         self.assertEqual(self.slept, [])
         second.edit.assert_awaited_once_with(content="other")
+
+    async def test_edit_with_no_rest_response_surfaces_as_a_failure(self) -> None:
+        message = self._message(123)
+        message.edit.return_value = None
+
+        with self.assertRaises(MessageEditUnconfirmed):
+            await edit_channel_message(message, content="new", require_confirmation=True)
 
     async def test_same_channel_edits_never_overlap(self) -> None:
         message = self._message(123)

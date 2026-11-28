@@ -53,7 +53,8 @@ async def publish_post(channel: ipy.GuildText | ipy.GuildNews | ipy.ThreadChanne
         return await channel.send(embed=content.embed, components=content.components, file=content.file,
                                   nonce=reference.nonce, enforce_nonce=True, allowed_mentions=ipy.AllowedMentions.none())
     await edit_channel_message(message, embed=content.embed, components=content.components,
-                               attachments=[], file=content.file, allowed_mentions=ipy.AllowedMentions.none())
+                               attachments=[], file=content.file, allowed_mentions=ipy.AllowedMentions.none(),
+                               require_confirmation=True)
     return message
 
 

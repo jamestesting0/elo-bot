@@ -12,6 +12,7 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.discord.mentions import member_usernames
+from elo_bot.discord.message_edits import MessageEditUnconfirmed
 from elo_bot.features.finals.labels import final_nickname, final_player_link
 from elo_bot.features.finals.lifecycle import refresh_display_names, reload_final
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostReference, publish_post
@@ -166,7 +167,7 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
                         f"{path}.public_send_attempted": True, f"{path}.public_send_nonce": nonce,
                         f"{path}.public_published_repair_pending": final.repair_pending})
                 await collection.update_one({"_id": final.id}, {"$set": updates})
-            except (ipy.errors.HTTPException, FinalError, PyMongoError) as error:
+            except (ipy.errors.HTTPException, FinalError, PyMongoError, MessageEditUnconfirmed) as error:
                 failures.append(str(error))
         await collection.update_one({"_id": final.id}, {"$set": {
             f"{path}.published": not failures, f"{path}.image_error": render_error,

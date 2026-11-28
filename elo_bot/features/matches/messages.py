@@ -22,6 +22,14 @@ from elo_bot.features.finals.embeds import final_season_label
 
 
 _PUBLICATION_PLACEHOLDERS: Final = frozenset(("Updating…", "Updating...", "Loading…", "Loading..."))
+FINAL_MATCH_PING: Final = f"<@&{FINAL_NOTIFICATION_ROLE}>"
+SCHEDULED_MATCH_TITLES: Final = frozenset(("**Match Scheduled**", "**Match Rescheduled**"))
+
+
+def final_match_content_edit(message: ipy.Message) -> dict[str, JsonValue]:
+    if message.content == FINAL_MATCH_PING:
+        return {}
+    return {"content": FINAL_MATCH_PING, "allowed_mentions": {"parse": []}}
 
 
 def match_title_parts(title: str | None) -> tuple[str | None, str | None]:
@@ -147,7 +155,7 @@ async def _publish_match_message(
     if embed.description in _PUBLICATION_PLACEHOLDERS:
         embed.description = ""
     code, status = match_title_parts(embed.title)
-    if status in ("**Match Scheduled**", "**Match Rescheduled**"):
+    if status in SCHEDULED_MATCH_TITLES:
         embed.color = embed_color()
     public = public_channel is not None
     public_final = public and is_final_match(match)
@@ -159,7 +167,7 @@ async def _publish_match_message(
             embed.title = match_title(status, code)
     replace_controls = components is not None and (public or replace_thread_controls)
     channel = public_channel if public else ctx.channel
-    final_role = f"<@&{FINAL_NOTIFICATION_ROLE}>" if public_final and channel.id == FINAL_CHANNEL else None
+    final_role = FINAL_MATCH_PING if public_final and channel.id == FINAL_CHANNEL else None
     old_message_id = match.msg if public else expected.old_messages[expected.player]
     field = "msg" if public else f"old_msgs.{expected.player}"
     publication_field = "public_message_publication" if public else f"message_publications.{expected.player}"
@@ -227,16 +235,16 @@ async def _publish_match_message(
         remember_publication(publication)
         updated_content = {}
         if final_role:
-            if message.content != final_role:
-                updated_content = {"content": final_role, "allowed_mentions": {"parse": []}}
+            updated_content = final_match_content_edit(message)
         elif existing_message is not None and replace_controls and content is not None:
             updated_content = {"content": content}
         if existing_message is None or replace_controls:
-            await edit_channel_message(message, embed=final_embeds, components=list(components), **updated_content)
+            await edit_channel_message(message, embed=final_embeds, components=list(components),
+                                       require_confirmation=public_final, **updated_content)
             if not public and existing_message is None:
                 await message.pin()
         else:
-            await edit_channel_message(message, embed=final_embeds, **updated_content)
+            await edit_channel_message(message, embed=final_embeds, require_confirmation=public_final, **updated_content)
         published = publication.model_copy(update={"pending": False})
         result = await collection.update_one(
             {**query, field: message_id, publication_field: publication_payload},

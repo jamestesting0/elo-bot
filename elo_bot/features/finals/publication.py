@@ -8,6 +8,7 @@ import json
 from elo_bot.features.finals.rendering import render_bracket
 from elo_bot.core.finals import FinalError
 from elo_bot.discord.mentions import fetch_members, member_usernames
+from elo_bot.discord.message_edits import MessageEditUnconfirmed
 from elo_bot.db import EloFinal
 from elo_bot.features.finals.bracket_ui import bracket_controls, bracket_embed
 from elo_bot.features.finals.lifecycle import refresh_display_names, reload_final
@@ -88,7 +89,7 @@ async def publish_bracket(bot: ipy.Client, final: EloFinal, *, allow_create: boo
             if not published.matched_count:
                 raise FinalError("The bracket changed during publication. Its update remains pending.")
             return message
-        except (ipy.errors.HTTPException, FinalError) as error:
+        except (ipy.errors.HTTPException, FinalError, MessageEditUnconfirmed) as error:
             await collection.update_one({"_id": final.id}, {"$set": {
                 "publication_pending": True, "publication_error": str(error),
             }})

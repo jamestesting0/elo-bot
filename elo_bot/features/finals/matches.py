@@ -7,6 +7,7 @@ import interactions as ipy
 from pymongo.errors import PyMongoError
 
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
+from elo_bot.discord.message_edits import MessageEditUnconfirmed
 from elo_bot.features.finals.bracket import require_round_ready
 from elo_bot.features.finals.labels import final_member_names, thread_label
 from elo_bot.features.finals.persistence import transaction
@@ -82,7 +83,8 @@ async def refresh_match_names(ctx: ipy.InteractionContext, final: EloFinal, user
                         field.value = matchup
                         await publish_match_message(ctx, source, MatchMessageState.capture(source, 0), embed=embed,
                                                     existing_message=message, public_channel=channel)
-        except (ipy.errors.HTTPException, PyMongoError, FinalError, MatchMessagePublicationError):
+        except (ipy.errors.HTTPException, PyMongoError, FinalError, MatchMessagePublicationError,
+                MessageEditUnconfirmed):
             failed.append(node.id)
     return failed
 

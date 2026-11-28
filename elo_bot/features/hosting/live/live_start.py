@@ -1,4 +1,4 @@
-from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.discord.message_edits import MessageEditUnconfirmed, edit_channel_message
 from elo_bot.core.finals import is_final_match
 from copy import deepcopy
 import asyncio
@@ -367,7 +367,7 @@ async def publish_live_host_details(ctx: ipy.ComponentContext, match: Match, thr
             ctx, match, MatchMessageState.capture(match, 0), embed=embed, existing_message=message,
             public_channel=channel,
         )
-    except (ipy.errors.HTTPException, MatchMessagePublicationError, PyMongoError):
+    except (ipy.errors.HTTPException, MatchMessagePublicationError, PyMongoError, MessageEditUnconfirmed):
         logging.exception("Failed to update live match %s announcement %s", match.token, match.msg)
         await ctx.send(f"{IMPORTANT_EMOJI} Hosting details saved. The public announcement could not be updated.",
                        ephemeral=True)

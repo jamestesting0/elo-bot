@@ -83,7 +83,4 @@ async def final_matchup_attachment(final: EloFinal, contestants: tuple[str, str]
     except (OSError, FinalError):
         logging.exception("Could not render the Final matchup graphic")
         return None
-    labels = [f"{name} (seed #{rank})" if rank is not None else name
-              for name, rank in zip(names, ranks, strict=True)]
-    return ipy.File(BytesIO(artwork), file_name="final-matchup.webp",
-                    description=f"{labels[0]} vs. {labels[1]}")
+    return ipy.File(BytesIO(artwork), file_name="final-matchup.webp")

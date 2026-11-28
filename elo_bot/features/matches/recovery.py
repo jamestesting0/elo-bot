@@ -1,4 +1,4 @@
-from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.discord.message_edits import MessageEditUnconfirmed, edit_channel_message
 from elo_bot.core.finals import is_final_match
 from copy import deepcopy
 import logging
@@ -83,7 +83,7 @@ async def _attempt_repair_message(message: ipy.Message, *, bound: bool, ended: b
             logging.info("Restored match publication for message %s, side %s", message.id, player)
             return
         await _repair_message(message, bound=bound, ended=ended, active=active, clear_controls=clear_controls)
-    except (ipy.errors.HTTPException, PyMongoError):
+    except (ipy.errors.HTTPException, PyMongoError, MessageEditUnconfirmed):
         logging.exception("Unable to repair match message %s; retrying on the next sweep", message.id)
 
 

@@ -11,7 +11,7 @@ from elo_bot.db import EloFinal
 from elo_bot.db.season_models import FinalPickPrompt
 from elo_bot.discord.embeds import footer_image
 from elo_bot.discord.mentions import mention_user
-from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.discord.message_edits import MessageEditUnconfirmed, edit_channel_message
 from elo_bot.features.finals.bracket import lineup_confirmed, seeded_players
 from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.lifecycle import reload_final
@@ -91,7 +91,8 @@ async def _publish_lineup(bot: ipy.Client, final: EloFinal) -> None:
             await collection.update_one({"_id": final.id}, {"$set": {"lineup_attempted": False,
                                                                     "lineup_message_id": None}})
             return
-        await edit_channel_message(message, embed=embed, allowed_mentions=ipy.AllowedMentions.none())
+        await edit_channel_message(message, embed=embed, allowed_mentions=ipy.AllowedMentions.none(),
+                                   require_confirmation=True)
     else:
         message = await publish_post(channel, reference, PostContent(embed, []))
     await collection.update_one({"_id": final.id}, {"$set": {
@@ -159,13 +160,14 @@ async def _close_pick_prompts(bot: ipy.Client, final: EloFinal) -> bool:
             if channel is not None and (message := await locate_post(channel, _prompt_reference(bot, final, key, prompt))):
                 turn = picks.turns[index] if current else None
                 if turn is None or turn.opponent is None:
-                    await edit_channel_message(message, content="Opponent picks closed.", embeds=[], components=[])
+                    await edit_channel_message(message, content="Opponent picks closed.", embeds=[], components=[],
+                                               require_confirmation=True)
                 else:
                     embed = pick_receipt(final, turn.opponent, timed_out=turn.random)
-                    await edit_channel_message(message, embed=embed, components=[])
+                    await edit_channel_message(message, embed=embed, components=[], require_confirmation=True)
         except ipy.errors.NotFound:
             pass
-        except (ipy.errors.HTTPException, FinalError):
+        except (ipy.errors.HTTPException, FinalError, MessageEditUnconfirmed):
             pending = True
             continue
         field = f"opponent_pick_prompts.{key}"
@@ -192,13 +194,13 @@ async def sync_registration_posts(bot: ipy.Client, final: EloFinal) -> list[str]
                 index = pick_turn(final)
         try:
             await _publish_lineup(bot, final)
-        except (ipy.errors.HTTPException, FinalError):
+        except (ipy.errors.HTTPException, FinalError, MessageEditUnconfirmed):
             pending.append("Lineup update pending.")
         dm_pending = False
         try:
             if index is not None:
                 await _publish_turn(bot, final, index)
-        except (ipy.errors.HTTPException, FinalError):
+        except (ipy.errors.HTTPException, FinalError, MessageEditUnconfirmed):
             dm_pending = True
         if await _close_pick_prompts(bot, final) or dm_pending:
             pending.append("Opponent pick message update pending.")

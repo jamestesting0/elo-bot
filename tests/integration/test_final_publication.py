@@ -12,7 +12,9 @@ from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view, r
 from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.publication import bracket_signature, publish_bracket
 from elo_bot.core.finals import FinalError
-from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES
+from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE, LVL1_ROLES
+from elo_bot.config.presentation import GREEN_COLOR
+from elo_bot.discord.embeds import embed_color
 from elo_bot.db import EloFinal, Match
 from elo_bot.extensions.final import FinalCommands
 from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, open_market
@@ -20,6 +22,7 @@ from elo_bot.features.tokens.round_betting import publish_betting_round
 from elo_bot.features.finals.recovery import recover_final
 from elo_bot.features.finals.replacement import replace_entrant
 from elo_bot.features.finals.result_publication import publish_result
+from elo_bot.features.matches.publication_state import restore_match_publication
 from elo_bot.features.finals.predictions import PredictionAction, begin_prediction, change_prediction_state, apply_prediction_action
 from elo_bot.db.final_models import FinalPrediction
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
@@ -54,7 +57,7 @@ class TestFinalPublication(FinalScenarioCase):
         self.send = send
         self.channel.send.side_effect = send
         self.channel.id = FINAL_CHANNEL
-        self.channel.fetch_message.side_effect = lambda message_id: self.messages[str(message_id)]
+        self.channel.fetch_message.side_effect = lambda message_id, **_: self.messages[str(message_id)]
         self.channel.fetch_messages = AsyncMock(side_effect=lambda **kwargs: list(self.messages.values()))
         self.channel.guild.fetch_member = AsyncMock(return_value=None)
         self.bot = MagicMock(fetch_channel=AsyncMock(return_value=self.channel))
@@ -205,11 +208,39 @@ class TestFinalPublication(FinalScenarioCase):
             self.assertEqual(embed.author.name, "Season 7 Final")
             self.assertEqual(embed.description, "Original description")
             self.assertEqual(embed.to_dict()["image"]["url"], "attachment://original.png")
+            post.embeds = [embed]
         published = (await Match.get(source.id)).public_message_publication
         self.assertFalse(published.pending)
         self.assertEqual(published.embeds[0]["title"], "**QF2 · Match Scheduled**")
         self.assertEqual(published.embeds[0]["author"]["name"], "Season 7 Final")
         self.assertEqual(published.embeds[0]["description"], "Original announcement")
+
+        current_header = ipy.Embed.from_dict(published.embeds[0])
+        current_header.color = GREEN_COLOR
+        announcement.embeds = [current_header]
+        ping = f"<@&{FINAL_NOTIFICATION_ROLE}>"
+        announcement.content = f'{ping}\n💡 **TIP:** "An old tip."'
+        announcement.edit.reset_mock()
+        announcement.edit.return_value = None
+        await cog.final_recover.callback.func(cog, ctx)
+
+        announcement.edit.assert_awaited_once()
+        edit = announcement.edit.await_args.kwargs
+        self.assertEqual(edit["content"], ping)
+        self.assertEqual(edit["allowed_mentions"], {"parse": []})
+        self.assertEqual(edit["embed"]["color"], embed_color())
+        source = await Match.get(source.id)
+        self.assertTrue(source.public_message_publication.pending)
+        self.assertIn("QF2 match announcement", ctx.send.await_args.args[0])
+
+        announcement.edit.return_value = announcement
+        self.assertTrue(await restore_match_publication(announcement, source, None))
+        replay = announcement.edit.await_args.kwargs
+        self.assertEqual(replay["content"], ping)
+        self.assertEqual(replay["allowed_mentions"], {"parse": []})
+        self.assertEqual(replay["embeds"][0]["color"], embed_color())
+        self.assertFalse((await Match.get(source.id)).public_message_publication.pending)
+        self.assertEqual(self.channel.send.await_count, sends)
 
     async def test_bracket_reset_and_recreation_preserve_the_saved_nickname_on_the_same_post(self):
         self.channel.guild.fetch_member.side_effect = lambda user: SimpleNamespace(
@@ -315,7 +346,8 @@ class TestFinalPublication(FinalScenarioCase):
         self.assertEqual([option.value for option in round_select(payload).options], [market.id])
         gallery = payload["components"][0][2]
         self.assertEqual(gallery.items[0].media.url, f"attachment://{payload['files'][0].file_name}")
-        self.assertEqual(payload["files"][0].description, "Player 1 (seed #1) vs. Player 8 (seed #8)")
+        self.assertIsNone(payload["files"][0].description)
+        self.assertIsNone(gallery.items[0].to_dict().get("description"))
         await close_market(market.id)
         await recover_final(self.final, bot=self.bot)
         edit = self.message.edit.await_args.kwargs
@@ -401,6 +433,56 @@ class TestFinalPublication(FinalScenarioCase):
         self.assertEqual((await final_for_view()).betting_posts["Quarterfinals"].message_id, str(self.message.id))
         self.assertEqual(round_select(self.message.edit.await_args.kwargs).options[0].value, market.id)
 
+    async def test_recover_repairs_a_detached_legacy_card_and_refreshes_the_same_board(self):
+        market = await open_market(self.final, "QF4")
+        await publish_bracket(self.bot, self.final)
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        current = await final_for_view()
+        board_id = current.betting_posts["Quarterfinals"].message_id
+        board = self.messages[board_id]
+        board.attachments[0].description = "Old matchup description"
+        await current.set({"betting_posts.Quarterfinals.signature": "old-presentation"})
+        await market.set({"announcement_signature": f"round:{board_id}"})
+        orphan = MagicMock(id=300, edit=AsyncMock(), nonce=None, components=[
+            ipy.ActionRow(ipy.Button(label="Place / Edit Bet", style=ipy.ButtonStyle.PRIMARY,
+                                     custom_id=f"betopen|{market.id}"))
+        ])
+        other = MagicMock(id=301, edit=AsyncMock(), components=orphan.components)
+        orphan.author.id, other.author.id = self.bot.user.id, 900
+        history = MagicMock()
+        history.__aiter__.return_value = [orphan, other]
+        self.channel.history.return_value = history
+        self.bot.ext = {}
+        cog = FinalCommands(self.bot)
+        ctx = MagicMock(spec=ipy.SlashContext, bot=self.bot, guild_id=current.guild_id,
+                        defer=AsyncMock(), send=AsyncMock())
+        ctx.author.has_role.side_effect = lambda role: role in LVL1_ROLES
+        sends = self.channel.send.await_count
+
+        orphan.edit.return_value = None
+        await cog.final_recover.callback.func(cog, ctx)
+
+        self.assertEqual(self.channel.send.await_count, sends)
+        self.assertIn("QF Betting update pending", ctx.send.await_args.args[0])
+        self.assertEqual((await final_for_view()).betting_posts["Quarterfinals"].message_id, board_id)
+        orphan.edit.assert_awaited_once()
+        other.edit.assert_not_awaited()
+        payload = board.edit.await_args.kwargs
+        self.assertEqual(payload["components"][0][0].content, "**Season 7 Final**\n## Quarterfinal Betting")
+        self.assertEqual(payload["attachments"], [])
+        self.assertIsNone(payload["files"][0].description)
+        gallery = payload["components"][0][2]
+        self.assertIsNone(gallery.items[0].to_dict().get("description"))
+
+        orphan.edit.return_value = orphan
+        current = await final_for_view()
+        self.assertIsNotNone(current.betting_posts["Quarterfinals"].error)
+        self.assertEqual(await recover_final(current, bot=self.bot), [])
+        self.assertEqual(orphan.edit.await_count, 2)
+        self.assertIn(f"/{board_id}>)", orphan.edit.await_args.kwargs["content"])
+        self.assertIsNone((await final_for_view()).betting_posts["Quarterfinals"].error)
+        self.assertEqual(self.channel.send.await_count, sends)
+
     async def test_market_poster_uses_current_nicknames_and_seeds_and_refreshes_the_same_post(self):
         images = []
 
@@ -425,13 +507,14 @@ class TestFinalPublication(FinalScenarioCase):
 
         async def edit(**payload):
             self.assertEqual(payload["files"][0].file.getvalue(), expected)
+            return self.messages[stored.message_id]
 
         self.messages[stored.message_id].edit.side_effect = edit
         with patch("elo_bot.features.finals.graphic_labels.FALLBACK_FONTS", ()):
             self.assertEqual(await recover_final(await final_for_view(), bot=self.bot), [])
         updated = (await final_for_view()).betting_posts["Quarterfinals"]
         payload = self.messages[stored.message_id].edit.await_args.kwargs
-        self.assertEqual(payload["files"][0].description, f"{nickname} (seed #2) vs. Player 8 (seed #1)")
+        self.assertIsNone(payload["files"][0].description)
         self.assertEqual(updated.message_id, stored.message_id)
         self.assertEqual(payload["attachments"], [])
         self.assertIsNone(updated.error)
@@ -466,7 +549,7 @@ class TestFinalPublication(FinalScenarioCase):
         current = await open_market(replaced.final, "QF1")
         await publish_betting_round(self.bot, replaced.final, "Quarterfinals")
         payload = self.messages[stored.message_id].edit.await_args.kwargs
-        self.assertEqual(payload["files"][0].description, "Player 1 (seed #1) vs. Replacement (seed #8)")
+        self.assertIsNone(payload["files"][0].description)
         self.assertEqual(round_select(payload).options[0].value, current.id)
 
     async def test_market_changed_during_send_remains_pending_then_recovers_latest_state(self):

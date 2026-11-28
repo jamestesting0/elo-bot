@@ -79,7 +79,8 @@ async def mark_deleted_attempt(final, node, source) -> None:
 
 async def recover_final(final: EloFinal, *, bot=None,
                         release_completed: Callable[[Match], Awaitable[None]] | None = None,
-                        release_deleted: Callable[[Match], Awaitable[None]] | None = None) -> list[str]:
+                        release_deleted: Callable[[Match], Awaitable[None]] | None = None,
+                        audit_betting_posts: bool = False) -> list[str]:
     final, markets = await select_financial_work(final.id)
     pending = []
     for market_id in markets:
@@ -158,9 +159,11 @@ async def recover_final(final: EloFinal, *, bot=None,
     if bot is not None:
         round_markets = await FinalBettingMarket.find({"final_id": str(final.id)}).to_list()
         for round_name in ROUND_NODES:
-            if round_post_pending(final, round_name, round_markets):
+            post = final.betting_posts.get(round_name)
+            audit = audit_betting_posts and bool(post and post.message_id)
+            if audit or round_post_pending(final, round_name, round_markets):
                 try:
-                    await publish_betting_round(bot, final, round_name)
+                    await publish_betting_round(bot, final, round_name, audit=audit_betting_posts)
                 except FinalError as error:
                     pending.append(str(error))
     for node in final.nodes.values():

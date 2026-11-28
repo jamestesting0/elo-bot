@@ -39,8 +39,8 @@ class TestStoredMessageEditThrottling(unittest.IsolatedAsyncioTestCase):
             self.f.bot, StoredBaseMessageRetirement("900", self.message.id, "releasing"),
         )
 
-        self.assertEqual(self.edit_times[:5], [0.0] * 5)
-        self.assertGreaterEqual(self.edit_times[5], message_edits._EDIT_WINDOW)
+        self.assertEqual(self.edit_times[:4], [0.0] * 4)
+        self.assertGreaterEqual(self.edit_times[4], message_edits._EDIT_WINDOW)
         self.assertEqual(self.message.embeds[0].title, "**Releasing Base Storage**")
         self.assertEqual(self.message.components, [])
         self.assertTrue(all(p["base_store"] for p in self.f.document["participants"]))

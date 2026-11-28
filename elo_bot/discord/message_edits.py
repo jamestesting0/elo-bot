@@ -10,12 +10,16 @@ import interactions as ipy
 
 # Discord reports PATCH /channels/{channel_id}/messages/{message_id} as limit 5 with
 # x-ratelimit-reset-after of 1 second. Stay slightly under that shared channel bucket.
-_EDIT_LIMIT: Final = 5
+_EDIT_LIMIT: Final = 4
 _EDIT_WINDOW: Final = 1.1
 
 _CHANNEL_MESSAGE_EDIT_STATE: WeakKeyDictionary[
     asyncio.AbstractEventLoop, dict[int, tuple[asyncio.Lock, deque[float]]]
 ] = WeakKeyDictionary()
+
+
+class MessageEditUnconfirmed(RuntimeError):
+    pass
 
 
 async def _sleep(delay: float) -> None:
@@ -50,7 +54,7 @@ def _message_channel_id(message: ipy.Message) -> int:
     return id(message)
 
 
-async def edit_channel_message(message: ipy.Message, **kwargs: Any) -> Any:
+async def edit_channel_message(message: ipy.Message, *, require_confirmation: bool = False, **kwargs: Any) -> Any:
     lock, times = _channel_edit_state(_message_channel_id(message))
     async with lock:
         now = _now()
@@ -62,6 +66,9 @@ async def edit_channel_message(message: ipy.Message, **kwargs: Any) -> Any:
             while times and now - times[0] >= _EDIT_WINDOW:
                 times.popleft()
         try:
-            return await message.edit(**kwargs)
+            edited = await message.edit(**kwargs)
+            if require_confirmation and edited is None:
+                raise MessageEditUnconfirmed(f"Discord did not confirm the edit of message {message.id}.")
+            return edited
         finally:
             times.append(_now())

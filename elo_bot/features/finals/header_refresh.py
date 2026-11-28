@@ -4,14 +4,17 @@ import anyio
 import interactions as ipy
 from pymongo.errors import PyMongoError
 
+from elo_bot.config.ids import FINAL_CHANNEL
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
-from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.discord.embeds import embed_color
+from elo_bot.discord.message_edits import MessageEditUnconfirmed, edit_channel_message
 from elo_bot.features.finals.embeds import final_season_label
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS
 from elo_bot.features.matches.message_lock import match_message_lock
 from elo_bot.features.matches.messages import (
-    MatchMessagePublicationError, MatchMessageState, match_title, match_title_parts, publish_match_message,
+    SCHEDULED_MATCH_TITLES, MatchMessagePublicationError, MatchMessageState,
+    final_match_content_edit, match_title, match_title_parts, publish_match_message,
 )
 from elo_bot.features.matches.publication_state import restore_match_publication
 
@@ -22,15 +25,15 @@ async def _refresh_post_header(bot: ipy.Client, channel_id: int, message_id: str
         channel = await bot.fetch_channel(channel_id)
         if channel is None:
             raise FinalError("The Final channel is unavailable.")
-        message = await channel.fetch_message(int(message_id))
+        message = await channel.fetch_message(int(message_id), force=True)
     except ipy.errors.NotFound:
         return
-    if message.author.id != bot.user.id or not message.embeds or message.embeds[0].title != legacy_title:
+    if message is None or message.author.id != bot.user.id or not message.embeds or message.embeds[0].title != legacy_title:
         return
     embeds = deepcopy(message.embeds)
     embeds[0].set_author(name=season)
     embeds[0].title = title
-    await edit_channel_message(message, embeds=embeds)
+    await edit_channel_message(message, embeds=embeds, require_confirmation=True)
 
 
 async def _refresh_match_header(ctx: ipy.InteractionContext, bot: ipy.Client, final: EloFinal,
@@ -44,15 +47,17 @@ async def _refresh_match_header(ctx: ipy.InteractionContext, bot: ipy.Client, fi
         channel = await bot.fetch_channel(source.routing_channel_id)
         if channel is None:
             raise FinalError("The Final channel is unavailable.")
-        message = await channel.fetch_message(int(source.msg))
-        if message.author.id != bot.user.id:
+        message = await channel.fetch_message(int(source.msg), force=True)
+        if message is None or message.author.id != bot.user.id:
             return
+        needs_content_refresh = channel.id == FINAL_CHANNEL and bool(final_match_content_edit(message))
         publication = source.public_message_publication
         if publication and publication.pending:
             if source.final_result_id:
                 return
             if not await restore_match_publication(message, source, None):
                 raise FinalError("The match announcement changed during recovery.")
+            needs_content_refresh = False
             embed = ipy.Embed.from_dict(publication.embeds[0])
         elif len(message.embeds) == 1:
             embed = message.embeds[0]
@@ -62,7 +67,9 @@ async def _refresh_match_header(ctx: ipy.InteractionContext, bot: ipy.Client, fi
         if status not in {"**Match Started**", "**Match Scheduled**", "**Match Rescheduled**",
                           "**Match Ended**", "**Match Aborted**"}:
             return
-        if embed.title != match_title(status, node_id) or not embed.author or embed.author.name != season:
+        if (embed.title != match_title(status, node_id) or not embed.author or embed.author.name != season
+                or (status in SCHEDULED_MATCH_TITLES and embed.color != embed_color())
+                or needs_content_refresh):
             await publish_match_message(ctx, source, MatchMessageState.capture(source, 0), embed=embed,
                                         existing_message=message, public_channel=channel)
 
@@ -80,7 +87,7 @@ async def refresh_final_headers(ctx: ipy.InteractionContext, bot: ipy.Client, fi
         try:
             async with PUBLICATION_LOCKS.setdefault(lock, anyio.Lock()):
                 await _refresh_post_header(bot, final.channel_id, message_id, legacy, season, f"**{title}**")
-        except (ipy.errors.HTTPException, FinalError):
+        except (ipy.errors.HTTPException, FinalError, MessageEditUnconfirmed):
             pending.append(f"{title} header update pending.")
     for node in final.nodes.values():
         if node.result_id:
@@ -94,7 +101,7 @@ async def refresh_final_headers(ctx: ipy.InteractionContext, bot: ipy.Client, fi
                     try:
                         await _refresh_post_header(bot, channel_id, message_id, f"**{season} · {node.id}**",
                                                    season, f"**{node.id} · Result**")
-                    except (ipy.errors.HTTPException, FinalError):
+                    except (ipy.errors.HTTPException, FinalError, MessageEditUnconfirmed):
                         warning = f"{node.id} result header update pending."
                         if warning not in pending:
                             pending.append(warning)
@@ -103,6 +110,7 @@ async def refresh_final_headers(ctx: ipy.InteractionContext, bot: ipy.Client, fi
                 await _refresh_match_header(ctx, bot, final, node.id, season)
             except ipy.errors.NotFound:
                 continue
-            except (ipy.errors.HTTPException, FinalError, PyMongoError, MatchMessagePublicationError):
+            except (ipy.errors.HTTPException, FinalError, PyMongoError, MatchMessagePublicationError,
+                    MessageEditUnconfirmed):
                 pending.append(f"{node.id} match announcement header update pending.")
     return pending

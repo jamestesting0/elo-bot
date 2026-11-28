@@ -17,7 +17,7 @@ from elo_bot.features.finals.predictions import submitted_predictions
 
 async def bracket_signature(final: EloFinal) -> str:
     """Fingerprint everything the public bracket post shows, including its predictions line."""
-    content = {"presentation": 3, "season": final.season_number, "state": final.state, "champion": final.champion,
+    content = {"presentation": 4, "season": final.season_number, "state": final.state, "champion": final.champion,
                "names": final.player_nicknames, "active": final.active,
                "predictions": [final.predictions_ever_opened, final.prediction_state, await submitted_predictions(final)],
                "nodes": {key: node.model_dump(mode="json") for key, node in final.nodes.items()}}

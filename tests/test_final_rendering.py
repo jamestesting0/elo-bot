@@ -33,7 +33,7 @@ class TestFinalRendering(unittest.TestCase):
         final.nodes = build_bracket(final, automatic_pairs(final))
         return final
 
-    def test_ink_is_centered_inside_every_plate_without_changing_the_artwork(self):
+    def test_occupied_plates_have_centered_text_and_empty_plates_keep_the_artwork(self):
         for count in (5, 8):
             with self.subTest(count=count):
                 final = self.edition(count)
@@ -54,10 +54,13 @@ class TestFinalRendering(unittest.TestCase):
                 self.assertEqual(rendered.size, (1312, 941))
                 difference = ImageChops.difference(template.crop((180, 0, 1492, 941)).convert("RGB"), rendered).convert("L")
                 remaining = difference.copy()
-                for plate, center_y in zip(NAME_PLATES, PLATE_MIDLINES, strict=True):
+                for index, (plate, center_y) in enumerate(zip(NAME_PLATES, PLATE_MIDLINES, strict=True)):
                     with self.subTest(plate=plate):
                         bounds = difference.crop(plate).getbbox()
-                        self.assertIsNotNone(bounds, "Every name plate must contain rendered text")
+                        if 8 <= index < 14:
+                            self.assertIsNone(bounds, "Unresolved advancement slots should be blank")
+                            continue
+                        self.assertIsNotNone(bounds, "Occupied name plates must contain rendered text")
                         left, top, right, bottom = bounds
                         self.assertLessEqual(abs((left + right) / 2 - (plate[2] - plate[0]) / 2), 1.5)
                         self.assertLessEqual(abs(plate[1] + (top + bottom) / 2 - center_y), 1)
@@ -187,14 +190,14 @@ class TestFinalRendering(unittest.TestCase):
         self.assertIn((255, 246, 229), winner_colors)
         self.assertIn((255, 230, 160), champion_colors)
 
-    def test_changed_pairings_render_short_advancement_labels(self):
+    def test_changed_pairing_leaves_the_advancement_label_blank(self):
         final = self.edition(8)
         final.nodes["SF1"].state = "NEEDS_MANAGER"
-        self.assertEqual(bracket_labels(final)[12], "TBD")
+        self.assertEqual(bracket_labels(final)[12], "")
 
     def test_removed_champion_is_not_rendered_after_correction(self):
         final = self.edition(8)
         final.champion = "3"
         self.assertEqual(bracket_labels(final)[-1], "Player 3")
         final.champion = None
-        self.assertEqual(bracket_labels(final)[-1], "TBD")
+        self.assertEqual(bracket_labels(final)[-1], "")

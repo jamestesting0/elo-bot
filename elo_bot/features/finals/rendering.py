@@ -38,16 +38,16 @@ def bracket_labels(final: EloFinal, picks: dict[str, str] | None = None) -> list
     if not final.nodes:
         raise FinalError("Create the bracket first.")
 
-    def name(user: str | None, empty: str = "TBD") -> str:
+    def name(user: str | None, empty: str = "") -> str:
         return final.player_nicknames.get(user, user) if user is not None else empty
 
     labels = []
     for node_id in NODE_IDS[:4]:
         node = final.nodes[node_id]
-        labels.extend(name(user, "BYE" if node.bye else "TBD") for user in node.contestants)
+        labels.extend(name(user, "BYE" if node.bye else "") for user in node.contestants)
     for node_id in NODE_IDS[:6]:
-        labels.append(name(final.nodes[node_id].winner if picks is None else picks.get(node_id), "TBD"))
-    labels.append(name(final.champion if picks is None else picks.get("F1"), "TBD"))
+        labels.append(name(final.nodes[node_id].winner if picks is None else picks.get(node_id)))
+    labels.append(name(final.champion if picks is None else picks.get("F1")))
     return labels
 
 
@@ -96,8 +96,10 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
     plates.append((final.champion if picks is None else picks.get("F1"), "F1"))
     usernames = usernames or {}
     for label, center, (user, node_id) in zip(bracket_labels(final, picks), centers, plates, strict=True):
+        if user is None and not label:
+            continue
         text, font = fitted_label(label, width=188 if center == CHAMPION_CENTER else 168,
-                                  username=usernames.get(user) if user else None, default=user or "TBD")
+                                  username=usernames.get(user) if user else None, default=user or label)
         left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
         position = (center[0] - (left + right) / 2, center[1] - (top + bottom) / 2)
         color = "#fff6e5"

@@ -17,28 +17,6 @@ def prediction_statuses(final: EloFinal, prediction: FinalPrediction) -> dict[st
     return statuses
 
 
-def prediction_alt_text(final: EloFinal, prediction: FinalPrediction, statuses: dict[str, str]) -> str:
-    lines = ["Submitted prediction bracket:"]
-    for node_id in NODE_IDS:
-        user = prediction.submitted.get(node_id)
-        if user is None:
-            continue
-        name = " ".join(final.player_nicknames.get(user, user).split())
-        # Limit each name to 110 UTF-16 units so all seven picks fit Discord's 1024-unit limit.
-        units = 0
-        length = 0
-        for char in name:
-            units += 2 if ord(char) > 0xFFFF else 1
-            if units > 109:
-                break
-            length += 1
-        if length < len(name):
-            name = name[:length] + "…"
-        status = statuses.get(node_id, "pending").capitalize()
-        lines.append(f"{node_id}: {name} - {status}")
-    return "\n".join(lines)
-
-
 def finished_results(final: EloFinal, results: list[FinalMatchResult],
                      names: dict[str, str], starts: dict[str, int]) -> str:
     by_id = {result.id: result for result in results}

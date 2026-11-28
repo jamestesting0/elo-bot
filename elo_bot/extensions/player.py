@@ -271,9 +271,7 @@ class PlayerCommands(ipy.Extension):
             await ctx.send(embed=embed, ephemeral=hidden)
         else:
             embed.set_image(url="attachment://head-to-head.png")
-            labels = [f"{name} (Yellow rank #{rank})" for name, rank in zip(names, ranks, strict=True)]
-            with ipy.File(BytesIO(rendered), file_name="head-to-head.png",
-                          description=f"{labels[0]} {wins}–{losses} {labels[1]}") as file:
+            with ipy.File(BytesIO(rendered), file_name="head-to-head.png") as file:
                 await ctx.send(embed=embed, file=file, ephemeral=hidden)
 
     @base.subcommand(sub_cmd_name="deregister", sub_cmd_description="Deregister a player from the elo system")

@@ -60,44 +60,31 @@ class TestFinalPredictionView(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(ctx.send.await_args.kwargs["ephemeral"])
         self.assertTrue(ctx.send.await_args.args[0].startswith(str(ERROR_EMOJI)))
 
-    async def test_prediction_attachment_describes_picks_and_statuses_within_discord_limit(self):
-        for long_names in (False, True):
-            with self.subTest(long_names=long_names):
-                final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13,
-                    entrant_ids=[str(i) for i in range(8)],
-                    player_nicknames={str(i): (f"Player {i}" + "😀" * 80 if long_names else f"Player {i}")
-                                      for i in range(8)})
-                final.nodes = build_bracket(final, automatic_pairs(final))
-                for node_id, winner, outcome in (("QF1", "0", "Played"), ("QF2", "3", "Played"),
-                                                 ("QF3", "1", "Forfeit")):
-                    node = final.nodes[node_id]
-                    node.result_id, node.winner, node.outcome = node_id, winner, outcome
-                final.nodes["QF4"].bye = True
-                picks = {"QF1": "0", "QF2": "4", "QF3": "1", "QF4": "2",
-                         "SF1": "0", "SF2": "1", "F1": "0"}
-                prediction = FinalPrediction.model_construct(submitted=picks)
-                self.cog._edition = AsyncMock(return_value=final)
-                ctx = MagicMock(guild_id=MAIN_GUILD, defer=AsyncMock(), send=AsyncMock())
-                ctx.author.has_role.return_value = False
-                ctx.guild.fetch_member = AsyncMock(return_value=None)
-                query = MagicMock(to_list=AsyncMock(return_value=[]))
-                with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
-                        patch.object(FinalMatchResult, "find", return_value=query), \
-                        patch('elo_bot.features.finals.prediction_board.render_bracket', return_value=b"image"):
-                    await self.cog.final_predict.callback.func(self.cog, ctx, 13)
-                payload = ctx.send.await_args.kwargs
-                description = payload["file"].description
-                self.assertTrue(payload["ephemeral"])
-                self.assertLessEqual(len(description.encode("utf-16-le")) // 2, 1024)
-                lines = description.splitlines()
-                for node, name, status in (("QF1", "Player 0", "Correct"), ("QF2", "Player 4", "Incorrect"),
-                                           ("QF3", "Player 1", "Excluded"), ("QF4", "Player 2", "Excluded"),
-                                           ("SF1", "Player 0", "Pending"), ("SF2", "Player 1", "Pending"),
-                                           ("F1", "Player 0", "Pending")):
-                    line = next(line for line in lines if line.startswith(f"{node}:"))
-                    self.assertIn(name, line)
-                    self.assertIn(status, line)
-                self.assertIsNone(payload["embed"].description)
+    async def test_prediction_attachment_has_no_description_and_still_marks_pick_statuses(self):
+        final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13,
+            entrant_ids=[str(i) for i in range(8)], player_nicknames={str(i): f"Player {i}" for i in range(8)})
+        final.nodes = build_bracket(final, automatic_pairs(final))
+        for node_id, winner, outcome in (("QF1", "0", "Played"), ("QF2", "3", "Played"), ("QF3", "1", "Forfeit")):
+            node = final.nodes[node_id]
+            node.result_id, node.winner, node.outcome = node_id, winner, outcome
+        final.nodes["QF4"].bye = True
+        picks = {"QF1": "0", "QF2": "4", "QF3": "1", "QF4": "2", "SF1": "0", "SF2": "1", "F1": "0"}
+        self.cog._edition = AsyncMock(return_value=final)
+        ctx = MagicMock(guild_id=MAIN_GUILD, defer=AsyncMock(), send=AsyncMock())
+        ctx.author.has_role.return_value = False
+        ctx.guild.fetch_member = AsyncMock(return_value=None)
+        query = MagicMock(to_list=AsyncMock(return_value=[]))
+        prediction = FinalPrediction.model_construct(submitted=picks)
+        with patch.object(FinalPrediction, "find_one", new=AsyncMock(return_value=prediction)), \
+                patch.object(FinalMatchResult, "find", return_value=query), \
+                patch("elo_bot.features.finals.prediction_board.render_bracket", return_value=b"image") as render:
+            await self.cog.final_predict.callback.func(self.cog, ctx, 13)
+        payload = ctx.send.await_args.kwargs
+        self.assertTrue(payload["ephemeral"])
+        self.assertIsNone(payload["file"].description)
+        self.assertEqual(render.call_args.args[1:3], (picks, {
+            "QF1": "correct", "QF2": "incorrect", "QF3": "excluded", "QF4": "excluded",
+        }))
 
     async def test_unavailable_graphic_preserves_private_prediction_and_score(self):
         final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13, entrant_ids=["1", "2"], nodes={

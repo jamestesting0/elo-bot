@@ -13,7 +13,6 @@ from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.labels import final_nickname, final_player_link, prediction_label
 from elo_bot.features.finals.prediction_display import (
     finished_results,
-    prediction_alt_text,
     prediction_statuses,
 )
 from elo_bot.features.finals.rendering import render_bracket
@@ -25,7 +24,6 @@ PAGE_SIZE = 25
 class PredictionCard:
     embed: ipy.Embed
     image: bytes | None
-    alt_text: str
 
 
 def predictions_visible(final: EloFinal, manager: bool) -> bool:
@@ -125,6 +123,6 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
         embed.add_field(name="**Picks**", value="\n".join(
             f"{node}: {final.player_nicknames.get(user, user)} · {statuses.get(node, 'pending')}"
             for node, user in prediction.submitted.items()))
-        return PredictionCard(embed, None, "")
+        return PredictionCard(embed, None)
     embed.set_image(url="attachment://prediction.png")
-    return PredictionCard(embed, image, prediction_alt_text(final, prediction, statuses))
+    return PredictionCard(embed, image)

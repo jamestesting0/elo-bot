@@ -275,7 +275,7 @@ class TestPlayerCommands(unittest.IsolatedAsyncioTestCase):
         self.assertIn("12 - 10", embed.description)
         self.assertEqual(embed.images[0].url, f"attachment://{filename}")
         self.assertFalse(ephemeral)
-        self.assertEqual(alt_text, "Player1 (Yellow rank #102) 12–10 Player2 (Yellow rank #7)")
+        self.assertIsNone(alt_text)
         with (Image.open("assets/finals/elo_head_to_head_record.png") as plain,
               Image.open(BytesIO(rendered)) as ranked):
             difference = ImageChops.difference(plain, ranked)

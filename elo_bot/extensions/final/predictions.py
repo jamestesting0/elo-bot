@@ -144,7 +144,7 @@ class Predictions:
             return
         with BytesIO(card.image) as image:
             await ctx.send(embed=card.embed, ephemeral=ephemeral,
-                           file=ipy.File(image, file_name="prediction.png", description=card.alt_text))
+                           file=ipy.File(image, file_name="prediction.png"))
 
     async def _visible_edition(self, ctx, season):
         edition = await self._edition(ctx, season)

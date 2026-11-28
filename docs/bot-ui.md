@@ -365,7 +365,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   receipt. Modal submission defers with `edit_origin=True`. Back edits the chooser. A closed market
   retires the panel's controls.
 - Each round has one public betting post with a match list, token pools and a Media Gallery of H2H posters.
-  The season uses bold subtext directly above the bold round title. **⚔️ Choose a match** sits below the card, lists open
+  The season uses bold subtext above the `##` round title. **⚔️ Choose a match** sits below the card, lists open
   markets and opens that match's private betting panel. The bot edits the board
   in place as bets and market statuses change. The first successful board publication turns earlier per-match
   cards into links to the round board. Existing bets and private bet panels keep their market IDs.

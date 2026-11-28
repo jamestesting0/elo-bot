@@ -99,7 +99,7 @@ class TestFinalConfirmations(FinalUICase):
         back.custom_id = prompt["components"][1].custom_id
         await self.cog.final_management_confirmation.callback.func(self.cog, back)
         self.assertEqual((await EloFinal.get(self.final.id)).model_dump(), before)
-        self.assertEqual(back.edit_origin.await_args.kwargs["embed"].title, "**Season 7 Final**")
+        self.assertEqual(back.edit_origin.await_args.kwargs["embed"].title, "**Dashboard**")
 
     async def test_a_prompt_drawn_before_a_result_changed_returns_to_the_current_dashboard(self):
         ctx = self.context()
@@ -112,7 +112,7 @@ class TestFinalConfirmations(FinalUICase):
                 click.custom_id = button.custom_id
                 await self.cog.final_management_confirmation.callback.func(self.cog, click)
                 shown = click.edit_origin.await_args.kwargs
-                self.assertEqual(shown["embed"].title, "**Season 7 Final**")
+                self.assertEqual(shown["embed"].title, "**Dashboard**")
                 self.assertEqual(shown["content"].startswith(str(IMPORTANT_EMOJI)), button.label == "Cancel Final")
         current = await EloFinal.get(self.final.id)
         self.assertEqual((current.active, current.state), (True, self.final.state))

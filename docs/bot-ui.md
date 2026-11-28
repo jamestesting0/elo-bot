@@ -51,7 +51,8 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
 ### Embed anatomy
 
 - **Title:** bold, `title="**Tokens**"`. Name the view and add scope after ` · ` when needed.
-  Examples include `**Player Profile**`, `**Season 14 Final · QF1 Betting**` and `**{district} Base**`.
+  Examples include `**Player Profile**`, `**Quarterfinal Betting**` and `**{district} Base**`.
+  For season-level Final views, put the season above the title as described in [Final screens](#final-screens).
 - **Author:** player and helper views show the selected person's Discord display name and avatar in the author row.
   The display name links to their Discord profile.
 - **Color:** `embed_color()` selects the default accent for the running bot. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
@@ -246,6 +247,11 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 
 ## Final screens
 
+- Season-level Final cards show `Season N Final` on a smaller line above the bold view title, such as
+  **Lineup**, **Bracket**, **Dashboard**, **Predictions** or **QF1 · Result**. Use `final_embed()` for embeds
+  and a `-#` season line in the Components V2 betting board. Public match announcements put the match
+  code before the current status, such as **QF4 · Match Scheduled** or **QF4 · Match Started**.
+  Player cards use the linked player name and avatar in the author row.
 - A nickname set with `/final add nickname:` or `/final nick` belongs to that Final. It survives bracket
   resets and appears in the lineup, bracket, dashboard, match, prediction, betting and result views. The
   bot refreshes the existing Final posts as names change. With no override, Final views use Discord
@@ -284,7 +290,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   Each opens a modal with one user select capped at the open seats; every picked player is checked on their own
   and the outcome goes above the refreshed dashboard (`✅ Invited A, B`, then one `❌ Name: reason` line each).
   Pending invitations are listed with their expiry and can be withdrawn from a select.
-- An invitation is a DM (`**Season N Final · Invitation**`, Accept and Decline) that expires after 24 hours. The
+- An **Invitation** is a DM with Accept and Decline buttons that expires after 24 hours. The
   first players to accept take the seats; everything is re-checked on Accept. A closed invitation keeps its title,
   loses its buttons and states the outcome. Accepts and declines post one line, without pings, in the staff
   channel. Creating the bracket, cancelling or ending the Final withdraws pending invitations.

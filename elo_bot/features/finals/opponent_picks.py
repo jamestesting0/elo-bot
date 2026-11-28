@@ -8,8 +8,9 @@ from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.core.finals import FINAL_PICK_COUNT, FINAL_PICK_WINDOW, FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.season_models import FinalOpponentPicks
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.features.finals.bracket import opponent_picks_pending
+from elo_bot.features.finals.embeds import final_embed
 
 
 def pick_turn(final: EloFinal) -> int | None:
@@ -64,8 +65,8 @@ def pick_prompt(final: EloFinal, index: int, selected: str | None = None) -> tup
         value=user, default=user == selected,
     ) for user in available_opponents(picks)]
     prefix = f"finalpick|{final.id}|{picks.generation}|{index}"
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Opponent Pick**", color=embed_color(),
-                      description=f"Seed #{index + 1} · Closes <t:{turn.deadline}:R>")
+    embed = final_embed(final.season_number, "Opponent Pick",
+                        description=f"Seed #{index + 1} · Closes <t:{turn.deadline}:R>")
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     select = ipy.StringSelectMenu(*options, placeholder="Choose opponent", custom_id=f"{prefix}|select")
     confirm = ipy.Button(label="Confirm", emoji=TICK_EMOJI, style=ipy.ButtonStyle.SUCCESS,
@@ -75,7 +76,7 @@ def pick_prompt(final: EloFinal, index: int, selected: str | None = None) -> tup
 
 def pick_receipt(final: EloFinal, opponent: str, *, timed_out: bool) -> ipy.Embed:
     action = "Assigned" if timed_out else "Opponent"
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Opponent Pick**", color=embed_color(),
-                      description=f"**{action}** · {pick_name(final, opponent)}")
+    embed = final_embed(final.season_number, "Opponent Pick",
+                        description=f"**{action}** · {pick_name(final, opponent)}")
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed

@@ -41,7 +41,8 @@ class TestFinalDashboardControls(FinalUICase):
         await self.cog.final_dashboard_action.callback.func(self.cog, stale)
         refreshed = stale.edit_origin.await_args.kwargs
         self.assertTrue(refreshed["content"].startswith(str(IMPORTANT_EMOJI)))
-        self.assertEqual(refreshed["embed"].title, f"**Season {self.final.season_number} Final**")
+        self.assertEqual(refreshed["embed"].title, "**Dashboard**")
+        self.assertEqual(refreshed["embed"].author.name, f"Season {self.final.season_number} Final")
         self.assertEqual({button.custom_id for row in refreshed["components"] for button in row.components}, actions)
         self.assertEqual((await final_for_view()).prediction_state, "OPEN")
 

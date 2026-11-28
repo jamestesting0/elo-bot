@@ -5,13 +5,14 @@ import interactions as ipy
 
 from elo_bot.config.emojis import IMPORTANT_EMOJI, REFRESH_EMOJI, TOKEN_EMOJI
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FINAL_PICK_COUNT, FINAL_SEATS, NODE_IDS, ROUND_NODES
 from elo_bot.db import EloFinal
 from elo_bot.db.final_invitation_models import FinalInvitation
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.discord.mentions import mention_user
 from elo_bot.features.finals.bracket import lineup_confirmed, seeded_players
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.opponent_picks import pick_prompt_key, pick_turn
 from elo_bot.features.finals.replacement import replaceable_entrants
 from elo_bot.features.finals.labels import market_label, match_line, phase_label, prediction_label
@@ -155,7 +156,7 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
     elif phase in ROUND_NODES:
         playable = [final.nodes[key] for key in ROUND_NODES[phase] if not final.nodes[key].bye]
         description += f" · {sum(bool(node.winner) for node in playable)} of {len(playable)} decided"
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final**", description=description, color=embed_color())
+    embed = final_embed(final.season_number, "Dashboard", description=description)
     fields = []
     if final.nodes:
         lines = [match_line(final.nodes[key], names)

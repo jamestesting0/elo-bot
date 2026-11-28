@@ -307,6 +307,9 @@ class TestFinalOpponentPicks(FinalUICase):
         old_lineup_id = saved.lineup_message_id
         old_dm.nonce = None
         self.posts[old_lineup_id].nonce = None
+        old_embed = self.posts[old_lineup_id].embeds[0]
+        old_embed.title = "**Season 7 Elo Final · Lineup**"
+        old_embed.author = None
         different_edition = lineup_embed(saved.model_copy(update={"id": PydanticObjectId()}))
         other_lineup = MagicMock(id=999, nonce=None, embeds=[different_edition], components=[], edit=AsyncMock())
         other_lineup.author.id = self.bot.user.id
@@ -319,8 +322,10 @@ class TestFinalOpponentPicks(FinalUICase):
         self.bot.cache.fetch_dm_channel.reset_mock()
         self.assertEqual(await sync_registration_posts(self.bot, refilled), [])
         self.bot.cache.fetch_dm_channel.assert_not_awaited()
-        self.assertEqual(self.posts[old_lineup_id].edit.await_args.kwargs["embed"].description,
-                         "Lineup pending confirmation.")
+        updated = self.posts[old_lineup_id].edit.await_args.kwargs["embed"]
+        self.assertEqual(updated.description, "Lineup pending confirmation.")
+        self.assertEqual(updated.title, "**Lineup**")
+        self.assertEqual(updated.author.name, "Season 7 Final")
         refilled = await confirm_lineup(await EloFinal.get(saved.id))
         self.bot.cache.fetch_dm_channel.side_effect = ipy.errors.HTTPException(MagicMock(status=503))
         self.assertEqual(await sync_registration_posts(self.bot, refilled), ["Opponent pick message update pending."])

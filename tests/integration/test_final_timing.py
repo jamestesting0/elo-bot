@@ -13,7 +13,8 @@ from elo_bot.features.finals.matches import bind_thread, prepare_match, schedule
 from elo_bot.features.finals.recovery import mark_deleted_attempt, recover_final
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
 from elo_bot.core.finals import FinalError
-from elo_bot.features.matches.messages import MatchMessageState
+from elo_bot.features.matches.messages import MatchMessageState, publish_match_message
+from elo_bot.features.matches.recovery import _repair_message
 from elo_bot.db import Clan, EloFinal, Match
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.db.token_models import FinalBettingMarket
@@ -301,7 +302,8 @@ class TestFinalTiming(FinalScenarioCase):
         ):
             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700000000")
             first = await Match.get(self.source.id)
-            self.assertEqual(first.public_message_publication.embeds[0]["title"], "**Match Scheduled**")
+            self.assertEqual(first.public_message_publication.embeds[0]["title"], "**QF1 · Match Scheduled**")
+            self.assertEqual(first.public_message_publication.embeds[0]["author"]["name"], "Season 7 Final")
             await cog.match_schedule.callback.func(cog, ctx, timestamp="1700003600")
 
         bot.fetch_channel.assert_awaited_with(FINAL_CHANNEL)
@@ -314,7 +316,31 @@ class TestFinalTiming(FinalScenarioCase):
         rescheduled = await Match.get(self.source.id)
         self.assertEqual(rescheduled.msg, first.msg)
         self.assertEqual(rescheduled.scheduled_times, [1_700_003_600] * 2)
-        self.assertEqual(rescheduled.public_message_publication.embeds[0]["title"], "**Match Rescheduled**")
+        self.assertEqual(rescheduled.public_message_publication.embeds[0]["title"], "**QF1 · Match Rescheduled**")
+        self.assertEqual(rescheduled.public_message_publication.embeds[0]["author"]["name"], "Season 7 Final")
+
+    async def test_live_final_announcement_keeps_match_code_through_recovery_and_end(self):
+        await self.source.set({"thread": "777"})
+        await accept_final_start(self.source, "9", player=None)
+        source = await Match.get(self.source.id)
+        announcement = MagicMock(id=52, _channel_id=FINAL_CHANNEL, edit=AsyncMock())
+        channel = MagicMock(id=FINAL_CHANNEL, send=AsyncMock(return_value=announcement))
+        await publish_match_message(MagicMock(), source, MatchMessageState.capture(source, 0),
+                                    embed=ipy.Embed(title="**Match Started**"), public_channel=channel)
+
+        saved = await Match.get(source.id)
+        publication = saved.public_message_publication
+        self.assertFalse(publication.pending)
+        announcement.embeds = [ipy.Embed.from_dict(publication.embeds[0])]
+        self.assertEqual(announcement.embeds[0].title, "**QF1 · Match Started**")
+        self.assertEqual(announcement.embeds[0].author.name, "Season 7 Final")
+        announcement.edit.reset_mock()
+        await _repair_message(announcement, bound=True, ended=False, active=True)
+        announcement.edit.assert_not_awaited()
+        await _repair_message(announcement, bound=True, ended=True, active=False)
+        ended = announcement.edit.await_args.kwargs["embeds"][0]
+        self.assertEqual(ended.title, "**QF1 · Match Ended**")
+        self.assertEqual(ended.author.name, "Season 7 Final")
 
     async def test_foreign_source_identity_cannot_schedule_start_or_record_scores(self):
         source = await schedule_final_match(self.source, 1700000000)

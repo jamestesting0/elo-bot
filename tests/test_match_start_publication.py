@@ -217,6 +217,8 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.message_data["channel_id"] = str(FINAL_CHANNEL)
         expected = MatchMessageState.capture(self.match, 0)
         embed = ipy.Embed(title="**Match Started**")
+        self.enterContext(patch("elo_bot.features.matches.messages.EloFinal.get",
+                                return_value=MagicMock(season_number=17)))
 
         message = await publish_match_message(self.ctx, self.match, expected, embed=embed, content="Tip",
                                               public_channel=channel)
@@ -229,7 +231,7 @@ class TestMatchStartPublication(MatchPublicationStateMixin, unittest.IsolatedAsy
         self.assertFalse(sent["allowed_mentions"].get("users"))
         self.assertTrue(sent["enforce_nonce"])
         self.assertEqual(self.persisted["msg"], str(message.id))
-        self.assertEqual(self.message_data["embeds"][0]["title"], "**Match Started**")
+        self.assertEqual(self.message_data["embeds"][0]["title"], "**QF1 · Match Started**")
 
         await publish_match_message(self.ctx, self.match, expected, embed=embed, existing_message=message,
                                     public_channel=channel)

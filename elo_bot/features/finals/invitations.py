@@ -10,12 +10,13 @@ from pymongo.errors import DuplicateKeyError
 from elo_bot.config.emojis import CROSS_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, TICK_EMOJI
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FINAL_SEATS, FinalError
 from elo_bot.db import EloFinal, Player
 from elo_bot.db.final_invitation_models import FinalInvitation, InvitationState
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.invitation_store import expire_invitations, withdraw_pending
 from elo_bot.features.finals.lifecycle import add_entrant
 from elo_bot.features.finals.persistence import transaction
@@ -85,11 +86,9 @@ async def add_players(final: EloFinal, members: Mapping[str, ipy.Member | None])
 
 
 def invitation_embed(invitation: FinalInvitation) -> ipy.Embed:
-    season = invitation.season_number
-    description = (f"You're invited to the Season {season} Elo Final.\n"
-                   f"Expires <t:{invitation.expires_at}:R>" if invitation.state == "pending"
+    description = (f"Expires <t:{invitation.expires_at}:R>" if invitation.state == "pending"
                    else CLOSED_TEXT[invitation.state])
-    embed = ipy.Embed(title=f"**Season {season} Final · Invitation**", description=description, color=embed_color())
+    embed = final_embed(invitation.season_number, "Invitation", description=description)
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     return embed
 

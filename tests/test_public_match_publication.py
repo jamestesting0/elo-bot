@@ -1,9 +1,10 @@
 from copy import deepcopy
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import anyio
 import interactions as ipy
+from beanie import PydanticObjectId
 from pymongo.errors import PyMongoError
 
 from elo_bot.config.ids import MATCH_CHANNEL
@@ -78,14 +79,17 @@ class TestPublicMatchPublication(unittest.IsolatedAsyncioTestCase):
     async def test_final_public_announcement_persists_its_bracket_slot(self) -> None:
         match = self.fixture.match
         match.format = "elo_final_seven"
-        match.final_id = "final"
+        match.final_id = str(PydanticObjectId())
         match.final_node_id = "QF4"
         match.routing_channel_id = self.channel.id
         self.fixture.persisted.update(MatchMessageState.capture(match, 0).binding_filter())
 
-        await self.publish()
+        with patch("elo_bot.features.matches.messages.EloFinal.get", return_value=MagicMock(season_number=17)):
+            await self.publish()
 
-        self.assertIn("QF4", self.fixture.message_data["embeds"][0].get("author", {}).get("name", ""))
+        embed = self.fixture.message_data["embeds"][0]
+        self.assertEqual(embed["author"]["name"], "Season 17 Final")
+        self.assertEqual(embed["title"], "**QF4 · Match Started**")
         publication = match.public_message_publication
         self.assertEqual(publication.embeds, self.fixture.message_data["embeds"])
         self.assertFalse(publication.pending)

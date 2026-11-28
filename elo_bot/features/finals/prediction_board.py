@@ -9,6 +9,7 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult, FinalPrediction
 from elo_bot.discord.mentions import fetch_members, member_usernames
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.labels import final_nickname, final_player_link, prediction_label
 from elo_bot.features.finals.prediction_display import (
     finished_results,
@@ -59,8 +60,8 @@ async def prediction_board(final: EloFinal, guild: ipy.Guild, owner: str,
     page = min(max(page, 0), pages - 1)
     shown = predictions[page * PAGE_SIZE:(page + 1) * PAGE_SIZE]
     members = await fetch_members(guild, [prediction.user_id for prediction in shown])
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Predictions**", color=embed_color(),
-                      description=f"{prediction_label(final.prediction_state)} · {len(predictions):,} submitted")
+    embed = final_embed(final.season_number, "Predictions",
+                        description=f"{prediction_label(final.prediction_state)} · {len(predictions):,} submitted")
     lines, options = [], []
     for rank, prediction in enumerate(shown, page * PAGE_SIZE + 1):
         user = prediction.user_id

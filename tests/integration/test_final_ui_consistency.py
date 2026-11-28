@@ -183,7 +183,8 @@ class TestFinalUIConsistency(FinalScenarioCase):
                          f"🥇 **[❌Invalid Player](<https://discordapp.com/users/9?tab=wishlist>)** `5,000` {TOKEN_EMOJI}")
         self.final.manual_draft = automatic_pairs(self.final)
         pairing, rows = editor_view(self.final, {})
-        self.assertEqual(pairing.title, "**Season 7 Final · Bracket**")
+        self.assertEqual(pairing.title, "**Bracket**")
+        self.assertEqual(pairing.author.name, "Season 7 Final")
         self.assertEqual(len(rows[0].components[0].options), 8)
 
     async def test_history_arrows_page_jump_boundaries_and_owner_preserve_results(self):

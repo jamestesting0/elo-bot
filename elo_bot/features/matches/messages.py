@@ -15,12 +15,26 @@ from elo_bot.config.presentation import RED_COLOR
 from elo_bot.discord.embeds import embed_edit_payload
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.matches.message_lock import match_message_lock
-from elo_bot.core.finals import is_final_match
-from elo_bot.db import Match
+from elo_bot.core.finals import NODE_IDS, is_final_match
+from elo_bot.db import EloFinal, Match
 from elo_bot.db.publication_models import MatchMessagePublication
+from elo_bot.features.finals.embeds import final_season_label
 
 
 _PUBLICATION_PLACEHOLDERS: Final = frozenset(("Updating…", "Updating...", "Loading…", "Loading..."))
+
+
+def match_title_parts(title: str | None) -> tuple[str | None, str | None]:
+    if title:
+        prefix, separator, status = title.partition(" · ")
+        code = prefix.removeprefix("**")
+        if separator and code in NODE_IDS:
+            return code, f"**{status}"
+    return None, title
+
+
+def match_title(status: str, code: str | None) -> str:
+    return f"**{code} · {status.removeprefix('**')}" if code else status
 
 
 def match_message_embeds(embeds: Sequence[ipy.Embed]) -> list[ipy.Embed | dict[str, JsonValue]]:
@@ -41,12 +55,13 @@ def match_message_embeds(embeds: Sequence[ipy.Embed]) -> list[ipy.Embed | dict[s
 async def mark_match_message_ended(message: ipy.Message, *, clear_controls: bool = False) -> None:
     if not message.embeds:
         return
-    if (message.embeds[0].title != "**Match Ended**"
+    code, status = match_title_parts(message.embeds[0].title)
+    if (status != "**Match Ended**"
             or message.embeds[0].color != RED_COLOR
             or any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)
             or (clear_controls and message.components)):
         embeds = deepcopy(message.embeds)
-        embeds[0].title = "**Match Ended**"
+        embeds[0].title = match_title("**Match Ended**", code)
         embeds[0].color = RED_COLOR
         if clear_controls:
             await edit_channel_message(message, embeds=match_message_embeds(embeds), components=[])
@@ -103,7 +118,8 @@ class MatchMessagePublicationError(RuntimeError):
 
 async def _mark_incomplete(message: ipy.Message, embed: ipy.Embed, *, preserve_controls: bool = False) -> None:
     incomplete = deepcopy(embed)
-    incomplete.title = "**Match Update Incomplete**"
+    code, _ = match_title_parts(embed.title)
+    incomplete.title = match_title("**Match Update Incomplete**", code)
     incomplete.description = "This match message could not be finalized. Ask a staff member to check the match status."
     try:
         if preserve_controls:
@@ -130,10 +146,15 @@ async def _publish_match_message(
     embed = deepcopy(embed)
     if embed.description in _PUBLICATION_PLACEHOLDERS:
         embed.description = ""
+    code, status = match_title_parts(embed.title)
     public = public_channel is not None
     public_final = public and is_final_match(match)
-    if public_final:
-        embed.set_author(name=f"Elo Final · {match.final_node_id}")
+    if public_final and match.final_id:
+        final = await EloFinal.get(PydanticObjectId(match.final_id))
+        embed.set_author(name=final_season_label(final.season_number) if final else "Elo Final")
+        code = match.final_node_id
+        if status:
+            embed.title = match_title(status, code)
     replace_controls = components is not None and (public or replace_thread_controls)
     channel = public_channel if public else ctx.channel
     old_message_id = match.msg if public else expected.old_messages[expected.player]
@@ -143,7 +164,7 @@ async def _publish_match_message(
     if public:
         query[field] = old_message_id
     pending = deepcopy(embed)
-    pending.title = "**Match**"
+    pending.title = match_title("**Match**", code)
     pending.description = "Updating…"
     message = existing_message
     if message is None:

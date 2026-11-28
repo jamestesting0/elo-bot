@@ -43,6 +43,9 @@ Reuse the existing text for recurring situations instead of writing a variant:
 
 ## Examples from Final
 
+Write `Season N Final` above the title on season-level cards. Keep the title short, such as **Bracket**
+or **Quarterfinal Betting**, and use the card body for details.
+
 | Remove or replace | Preferred treatment |
 |---|---|
 | Stars per district / Destruction per district | Avg. Stars / Avg. Destruction, with the existing score formatting |

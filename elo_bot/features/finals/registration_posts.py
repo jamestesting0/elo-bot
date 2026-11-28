@@ -9,10 +9,11 @@ from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.core.finals import FINAL_SEATS, FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.season_models import FinalPickPrompt
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.discord.mentions import mention_user
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.features.finals.bracket import lineup_confirmed, seeded_players
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.opponent_picks import pick_prompt, pick_prompt_key, pick_receipt, pick_turn, save_pick
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostReference, locate_post, publish_post
@@ -29,8 +30,7 @@ def lineup_embed(final: EloFinal) -> ipy.Embed:
         rows = ["Lineup pending confirmation."]
     elif len(rows) < FINAL_SEATS:
         rows[:0] = [f"{len(rows)} of {FINAL_SEATS} confirmed", ""]
-    embed = ipy.Embed(title=f"**Season {final.season_number} Elo Final · Lineup**",
-                      description="\n".join(rows), color=embed_color())
+    embed = final_embed(final.season_number, "Lineup", description="\n".join(rows))
     icon = footer_image()
     separator = "&" if "?" in icon else "?"
     embed.set_footer(text=FOOTER_TEXT, icon_url=f"{icon}{separator}elo_final={final.id}")
@@ -56,7 +56,7 @@ def registration_posts_pending(final: EloFinal) -> bool:
 
 
 def _lineup_signature(embed: ipy.Embed) -> str:
-    return sha256((embed.description or "").encode()).hexdigest()
+    return sha256(f"{embed.author.name}\n{embed.title}\n{embed.description or ''}".encode()).hexdigest()
 
 
 async def _publish_lineup(bot: ipy.Client, final: EloFinal) -> None:
@@ -80,7 +80,7 @@ async def _publish_lineup(bot: ipy.Client, final: EloFinal) -> None:
     nonce = sha256(f"final-lineup|{final.id}".encode()).hexdigest()[:24]
 
     def matches_lineup(message: ipy.Message) -> bool:
-        return any(item.title == embed.title and item.footer is not None and item.footer.icon_url
+        return any(item.footer is not None and item.footer.icon_url
                    and parse_qs(urlsplit(item.footer.icon_url).query).get("elo_final") == [str(final.id)]
                    for item in message.embeds)
 

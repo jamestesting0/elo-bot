@@ -8,7 +8,9 @@ from pymongo.errors import PyMongoError
 
 from elo_bot.config.ids import MATCH_CHANNEL
 from elo_bot.features.matches.message_lock import match_message_lock
-from elo_bot.features.matches.messages import _PUBLICATION_PLACEHOLDERS, mark_match_message_ended, match_message_embeds
+from elo_bot.features.matches.messages import (
+    _PUBLICATION_PLACEHOLDERS, mark_match_message_ended, match_message_embeds, match_title, match_title_parts,
+)
 from elo_bot.features.matches.publication_state import restore_match_publication
 from elo_bot.core.match_results import is_valid_match_result_entry
 from elo_bot.db import Match
@@ -22,7 +24,7 @@ _MATCH_TITLES = frozenset((
 def _is_match_message(message: ipy.Message, bot: ipy.Client) -> bool:
     return bool(
         message.author.id == bot.user.id and message.embeds
-        and message.embeds[0].title in _MATCH_TITLES
+        and match_title_parts(message.embeds[0].title)[1] in _MATCH_TITLES
         and (message.embeds[0].description in _PUBLICATION_PLACEHOLDERS
              or any(field.name in ("**Host Clan**", "**Players**") for field in message.embeds[0].fields))
     )
@@ -32,19 +34,20 @@ async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, act
                           clear_controls: bool = False) -> None:
     if not message.embeds:
         return
+    code, status = match_title_parts(message.embeds[0].title)
     pending = any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)
-    if message.embeds[0].title == "**Match has Ended**":
+    if status == "**Match has Ended**":
         if pending:
             await edit_channel_message(message, embeds=match_message_embeds(message.embeds))
-    elif ended or message.embeds[0].title == "**Match Ended**":
+    elif ended or status == "**Match Ended**":
         await mark_match_message_ended(message, clear_controls=clear_controls)
-    elif bound and active and message.embeds[0].title in (
+    elif bound and active and status in (
             "**Match Started**", "**Match Scheduled**", "**Match Rescheduled**",
     ):
         if pending:
             await edit_channel_message(message, embeds=match_message_embeds(message.embeds))
     elif pending or not bound or not active:
-        if message.embeds[0].title == "**Match Aborted**":
+        if status == "**Match Aborted**":
             if message.components:
                 await edit_channel_message(message, components=[])
             return
@@ -52,11 +55,11 @@ async def _repair_message(message: ipy.Message, *, bound: bool, ended: bool, act
             "This message could not be verified against the current match. "
             "Ask a staff member to check the match status."
         )
-        if (message.embeds[0].title == "**Match Update Incomplete**"
+        if (status == "**Match Update Incomplete**"
                 and message.embeds[0].description == description and not pending and not message.components):
             return
         embeds = deepcopy(message.embeds)
-        embeds[0].title = "**Match Update Incomplete**"
+        embeds[0].title = match_title("**Match Update Incomplete**", code)
         embeds[0].description = description
         logging.warning(
             "Match message recovery could not restore message %s: bound=%s active=%s title=%r placeholder=%s",
@@ -72,7 +75,7 @@ async def _attempt_repair_message(message: ipy.Message, *, bound: bool, ended: b
         publication = (match.public_message_publication if player is None else match.message_publications[player]) \
             if match is not None else None
         interrupted = bool(publication and publication.pending) or bool(message.embeds) and (
-            message.embeds[0].title in ("**Match**", "**Match Update Incomplete**")
+            match_title_parts(message.embeds[0].title)[1] in ("**Match**", "**Match Update Incomplete**")
             or any(embed.description in _PUBLICATION_PLACEHOLDERS for embed in message.embeds)
         )
         if (bound and active and not ended and interrupted and match is not None

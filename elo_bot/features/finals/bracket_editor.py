@@ -2,11 +2,12 @@ import interactions as ipy
 
 from elo_bot.config.emojis import CROSS_EMOJI, TICK_EMOJI
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import NODE_IDS, FinalError
 from elo_bot.db import EloFinal
 from elo_bot.discord.mentions import mention_user
 from elo_bot.features.finals.bracket import opponent_picks_pending, seeded_players
+from elo_bot.features.finals.embeds import final_embed
 
 
 def swapped_pairs(final: EloFinal, slots: list[str]) -> dict[str, list[str | None]]:
@@ -40,8 +41,7 @@ def editor_view(final: EloFinal, names: dict[str, str]) -> tuple[ipy.Embed, list
                                                   value=f"{node}:{side}", description=description))
     instruction = ("Confirm to close opponent picks." if opponent_picks_pending(final)
                    else "Seeded by Elo. Swap any two slots, then confirm.")
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Bracket**", color=embed_color(),
-                      description=f"{instruction}\n\n" + "\n".join(lines))
+    embed = final_embed(final.season_number, "Bracket", description=f"{instruction}\n\n" + "\n".join(lines))
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())
     controls = [
         ipy.ActionRow(ipy.StringSelectMenu(*options, min_values=2, max_values=2,

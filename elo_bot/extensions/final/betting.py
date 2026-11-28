@@ -6,11 +6,12 @@ from interactions import OptionType, SlashContext, slash_option
 from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, TOKEN_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenWallet
 from elo_bot.discord.members import member_guild
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.labels import final_member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import betting_group, final
@@ -100,8 +101,8 @@ class Betting:
         names = await final_member_names(edition, await member_guild(ctx), market.contestants)
         active = old is not None and old.active
         current_bet = f"\n{names[old.contestant]} · {old.amount:,} {TOKEN_EMOJI}" if active else ""
-        embed = ipy.Embed(title=f"**Season {edition.season_number} Final · {market.node_id} Bet**", color=embed_color(),
-            description=" vs. ".join(names[user] for user in market.contestants) + current_bet)
+        embed = final_embed(edition.season_number, f"{market.node_id} Bet",
+                            description=" vs. ".join(names[user] for user in market.contestants) + current_bet)
         if active:
             _, profit = projected_return(market, old, old.contestant, old.amount)
             embed.add_field(name="**Estimated Profit**", value=f"{profit:,} {TOKEN_EMOJI}")

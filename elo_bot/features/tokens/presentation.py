@@ -17,6 +17,7 @@ from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
 from elo_bot.discord.mentions import mention_user, fetch_members
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.labels import final_nickname, final_player_link, market_label
 from elo_bot.features.finals.bracket import seeded_players
 from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_URL, final_matchup_attachment
@@ -111,7 +112,7 @@ async def bet_review(market: FinalBettingMarket, user: str, contestant: str, amo
     previous = old.amount if old and old.active else 0
     _, profit = projected_return(market, old, contestant, amount)
     member = await guild.fetch_member(contestant) if amount else None
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Bet Review**", color=embed_color(),
+    embed = final_embed(final.season_number, f"{market.node_id} Bet Review",
         description=f"{final_player_link(final, contestant, member)} · {amount:,} {TOKEN_EMOJI}" if amount else
                     f"Cancel bet · Refund: {previous:,} {TOKEN_EMOJI}")
     if amount:

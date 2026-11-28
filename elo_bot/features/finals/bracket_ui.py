@@ -1,21 +1,21 @@
 import interactions as ipy
 
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.core.finals import ROUND_NODES
 from elo_bot.core.parsing import get_destruction, get_stars
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.discord.mentions import mention_user
 from elo_bot.features.finals.bracket import seeded_players
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.labels import match_line, pairing_label, prediction_label
 
 
 def bracket_embed(final: EloFinal, names: dict[str, str] | None = None, submitted: int = 0) -> ipy.Embed:
     names = names or {}
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · Bracket**", color=embed_color())
+    embed = final_embed(final.season_number, "Bracket" if final.nodes else "Entrants")
     if not final.nodes:
-        embed.title = f"**Season {final.season_number} Final · Entrants**"
         embed.description = (f"{len(final.entrant_ids)} of 8 entrants\nThe bracket hasn't been created yet.\n\n"
                              + "\n".join(f"{index}. {names.get(user, mention_user(None, user))}"
                                          for index, user in enumerate(seeded_players(final), 1)))

@@ -2,7 +2,7 @@ import interactions as ipy
 from typing import Final, assert_never
 
 from elo_bot.config.presentation import FOOTER_TEXT
-from elo_bot.discord.embeds import embed_color, footer_image
+from elo_bot.discord.embeds import footer_image
 from elo_bot.config.emojis import CROSS_EMOJI, STAR_EMOJI, TICK_EMOJI, WIN_EMOJI
 from elo_bot.config.ids import ELO_BLACKLIST_ROLE, LVL1_ROLES, LVL2_ROLES
 from elo_bot.core.finals import FinalError
@@ -13,6 +13,7 @@ from elo_bot.discord.mentions import mention_user
 from elo_bot.db import EloFinal, EloFinalMatch
 from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.db.final_models import FinalMatchResult, FinalResultSnapshot
+from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.labels import matchup
 from elo_bot.features.finals.matches import require_ongoing_match
 
@@ -96,8 +97,8 @@ def score_embed(final: EloFinal, node_id: str, snapshot: FinalResultSnapshot,
                      f"{get_stars(scores[1])}{STAR_EMOJI} {get_destruction(scores[1])}%")
     totals = [f"{sum(get_stars(score) for score in snapshot.scores[user])}{STAR_EMOJI} "
               f"{sum(get_destruction(score) for score in snapshot.scores[user])}%" for user in (left, right)]
-    embed = ipy.Embed(title=f"**Season {final.season_number} Final · {node_id}**", color=embed_color(),
-                      description=matchup(snapshot.contestants, snapshot.winner, names))
+    embed = final_embed(final.season_number, f"{node_id} · Result",
+                        description=matchup(snapshot.contestants, snapshot.winner, names))
     match snapshot.outcome:
         case "Forfeit":
             embed.description = " vs. ".join(names.get(user, mention_user(None, user))

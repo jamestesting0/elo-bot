@@ -471,7 +471,7 @@ class TestFinalPublication(FinalScenarioCase):
         orphan.edit.assert_awaited_once()
         other.edit.assert_not_awaited()
         payload = board.edit.await_args.kwargs
-        self.assertEqual(payload["components"][0][0].content, "**Season 7 Final**\n**Quarterfinal Betting**")
+        self.assertEqual(payload["components"][0][0].content, "-# **Season 7 Final**\n**Quarterfinal Betting**")
         self.assertEqual(payload["attachments"], [])
         self.assertIsNone(payload["files"][0].description)
         gallery = payload["components"][0][2]

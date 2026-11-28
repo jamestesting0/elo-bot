@@ -253,7 +253,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 
 - Season-level Final cards show `Season N Final` on a smaller line above the bold view title, such as
   **Lineup**, **Bracket**, **Dashboard**, **Predictions** or **QF1 · Result**. Use `final_embed()` for embeds
-  and a bold season line above the round heading in the Components V2 betting board. Public match announcements put the match
+  and bold subtext above the title in the Components V2 betting board. Public match announcements put the match
   code before the current status, such as **QF4 · Match Scheduled** or **QF4 · Match Started**.
   Player cards use the linked player name and avatar in the author row.
 - `/final recover` refreshes the ongoing Final's existing lineup, bracket, result and public match announcements
@@ -364,7 +364,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   receipt. Modal submission defers with `edit_origin=True`. Back edits the chooser. A closed market
   retires the panel's controls.
 - Each round has one public betting post with a match list, token pools and a Media Gallery of H2H posters.
-  The season and round title use adjacent text lines. **⚔️ Choose a match** sits below the card, lists open
+  The season uses bold subtext directly above the bold round title. **⚔️ Choose a match** sits below the card, lists open
   markets and opens that match's private betting panel. The bot edits the board
   in place as bets and market statuses change. The first successful board publication turns earlier per-match
   cards into links to the round board. Existing bets and private bet panels keep their market IDs.

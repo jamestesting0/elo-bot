@@ -57,7 +57,7 @@ def _allows_bets(final: EloFinal) -> bool:
 
 
 def _board_header(final: EloFinal, round_name: str) -> str:
-    return f"**{final_season_label(final.season_number)}**\n**{BETTING_TITLES[round_name]}**"
+    return f"-# **{final_season_label(final.season_number)}**\n**{BETTING_TITLES[round_name]}**"
 
 
 def _signature(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket]) -> str:

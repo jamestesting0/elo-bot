@@ -185,10 +185,12 @@ async def recover_final(final: EloFinal, *, bot=None,
             pending.append(f"{node.id}: manager-arranged play or a result decision is required.")
         if final.state not in {"CANCELLING", "CANCELLED"} and node.provisioning and not node.thread_id:
             pending.append(f"{node.id}: verify whether its thread was created before retrying.")
-    if bot is not None and (final.nodes or final.bracket_send_attempted) and (
-            final.publication_pending or final.publication_error or final.bracket_signature != await bracket_signature(final)):
+    bracket_pending = final.publication_pending or bool(final.publication_error)
+    if bot is not None and (bracket_pending or
+            (final.active and final.bracket_message_id and final.bracket_signature != await bracket_signature(final))):
         try:
-            await publish_bracket(bot, final)
+            await publish_bracket(bot, final, allow_create=bracket_pending and bool(final.nodes)
+                                  and not final.bracket_message_id)
         except FinalError as error:
             pending.append(str(error))
     if bot is not None:

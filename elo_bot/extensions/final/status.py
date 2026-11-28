@@ -13,6 +13,8 @@ from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final
 from elo_bot.features.base_store.match_adapters import clear_match_base_stores
+from elo_bot.features.finals.header_refresh import refresh_final_headers
+from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.recovery import recover_final
 from elo_bot.features.finals.registration_posts import registration_posts_pending
 from elo_bot.features.finals.scouting import prepare_open_scouting
@@ -55,7 +57,9 @@ class Status:
     @final_action
     async def final_recover(self, ctx: SlashContext):
         await ctx.defer(ephemeral=True)
-        pending = await self._recover(await self._ongoing_edition(ctx, access="manager"))
+        edition = await self._ongoing_edition(ctx, access="manager")
+        pending = await self._recover(edition)
+        pending.extend(await refresh_final_headers(ctx, self.bot, await reload_final(edition)))
         await ctx.send(f"{IMPORTANT_EMOJI} " + "\n".join(pending) if pending else
                        f"{SUCCESS_EMOJI} Final updates are complete.", ephemeral=True)
 

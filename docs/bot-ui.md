@@ -252,6 +252,9 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   and a `-#` season line in the Components V2 betting board. Public match announcements put the match
   code before the current status, such as **QF4 · Match Scheduled** or **QF4 · Match Started**.
   Player cards use the linked player name and avatar in the author row.
+- `/final recover` refreshes the ongoing Final's existing lineup, bracket, result and public match headers
+  in place. Deleted posts stay deleted during a header refresh. An unfinished publication for an active
+  bracket can still retry. Recovery edits a cancelled bracket only if it can find the original post.
 - A nickname set with `/final add nickname:` or `/final nick` belongs to that Final. It survives bracket
   resets and appears in the lineup, bracket, dashboard, match, prediction, betting and result views. The
   bot refreshes the existing Final posts as names change. With no override, Final views use Discord

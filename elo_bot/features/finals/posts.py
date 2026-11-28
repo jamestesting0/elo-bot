@@ -44,10 +44,12 @@ async def locate_post(channel: ipy.GuildText | ipy.GuildNews | ipy.ThreadChannel
 
 
 async def publish_post(channel: ipy.GuildText | ipy.GuildNews | ipy.ThreadChannel | ipy.DM, reference: PostReference,
-                       content: PostContent) -> ipy.Message:
+                       content: PostContent, *, allow_create: bool = True) -> ipy.Message | None:
     """Reuse a known post, recover a send by nonce, or replace an unlocatable post."""
     message = await locate_post(channel, reference)
     if message is None:
+        if not allow_create:
+            return None
         return await channel.send(embed=content.embed, components=content.components, file=content.file,
                                   nonce=reference.nonce, enforce_nonce=True, allowed_mentions=ipy.AllowedMentions.none())
     await edit_channel_message(message, embed=content.embed, components=content.components,

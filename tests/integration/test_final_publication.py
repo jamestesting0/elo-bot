@@ -47,7 +47,9 @@ class TestFinalPublication(FinalScenarioCase):
 
         self.send = send
         self.channel.send.side_effect = send
+        self.channel.id = FINAL_CHANNEL
         self.channel.fetch_message.side_effect = lambda message_id: self.messages[str(message_id)]
+        self.channel.fetch_messages = AsyncMock(side_effect=lambda **kwargs: list(self.messages.values()))
         self.channel.guild.fetch_member = AsyncMock(return_value=None)
         self.bot = MagicMock(fetch_channel=AsyncMock(return_value=self.channel))
         self.bot.user.id = 42
@@ -118,6 +120,90 @@ class TestFinalPublication(FinalScenarioCase):
         self.channel.send.assert_awaited_once()
         self.message.edit.assert_awaited_once()
         self.assertFalse((await final_for_view()).publication_pending)
+
+    async def test_recovery_does_not_repost_a_deleted_cancelled_bracket(self):
+        await self.final.set({"active": False, "state": "CANCELLED", "bracket_message_id": "999",
+                              "bracket_send_attempted": True, "publication_pending": True})
+        self.channel.fetch_message.side_effect = ipy.errors.NotFound(MagicMock(status=404))
+        self.channel.fetch_messages.return_value = []
+        self.channel.fetch_messages.side_effect = None
+
+        self.assertEqual(await recover_final(self.final, bot=self.bot), [])
+
+        self.channel.send.assert_not_awaited()
+        saved = await EloFinal.get(self.final.id)
+        self.assertIsNone(saved.bracket_message_id)
+        self.assertFalse(saved.publication_pending)
+
+    async def test_header_change_alone_does_not_recreate_a_deleted_active_bracket(self):
+        message = await publish_bracket(self.bot, self.final)
+        current = await final_for_view()
+        await current.set({"bracket_signature": "older-presentation"})
+        message.edit.side_effect = ipy.errors.Forbidden(MagicMock(status=403))
+        self.assertTrue(await recover_final(current, bot=self.bot))
+        self.channel.fetch_message.side_effect = ipy.errors.NotFound(MagicMock(status=404))
+        self.channel.fetch_messages.side_effect = None
+        self.channel.fetch_messages.return_value = []
+
+        self.assertEqual(await recover_final(current, bot=self.bot), [])
+
+        self.channel.send.assert_awaited_once()
+        message.pin.assert_awaited_once()
+        self.assertIsNone((await final_for_view()).bracket_message_id)
+
+    async def test_recover_refreshes_bound_legacy_headers_without_reposting(self):
+        result = await self.save_result()
+        await recover_final(self.final, bot=self.bot)
+        current = await final_for_view()
+        lineup = await self.channel.send()
+        await current.set({"lineup_message_id": str(lineup.id)})
+        source = await self.scheduled_pairing(current, "QF2", is_war=False)
+        announcement = await self.channel.send()
+        await source.set({"thread": "778", "msg": str(announcement.id)})
+        await bind_thread(current, source, "778")
+        current = await final_for_view()
+        await current.set({"bracket_signature": await bracket_signature(current)})
+        progress = current.result_progress[result.id]
+        legacy = (
+            (lineup, "**Season 7 Elo Final · Lineup**", "**Lineup**"),
+            (self.messages[current.bracket_message_id], "**Season 7 Final · Bracket**", "**Bracket**"),
+            (self.messages[progress.message_id], "**Season 7 Final · QF1**", "**QF1 · Result**"),
+            (self.messages[progress.public_message_id], "**Season 7 Final · QF1**", "**QF1 · Result**"),
+        )
+        for post, title, _ in legacy:
+            embed = ipy.Embed(title=title, description="Original description")
+            embed.set_image(url="attachment://original.png")
+            post.embeds = [embed]
+            post.edit.reset_mock()
+        announcement._channel_id = FINAL_CHANNEL
+        announcement.embeds = [ipy.Embed(title="**Match Scheduled**", author=ipy.EmbedAuthor(name="Elo Final · QF2"),
+                                       description="Original announcement")]
+        announcement.components = []
+        self.bot.ext = {}
+        cog = FinalCommands(self.bot)
+        ctx = MagicMock(spec=ipy.SlashContext, bot=self.bot, guild_id=current.guild_id,
+                        defer=AsyncMock(), send=AsyncMock())
+        ctx.author.has_role.side_effect = lambda role: role in LVL1_ROLES
+        sends = self.channel.send.await_count
+
+        await cog.final_recover.callback.func(cog, ctx)
+
+        self.assertIn("Final updates are complete.", ctx.send.await_args.args[0])
+        self.assertEqual(self.channel.send.await_count, sends)
+        for post, _, title in legacy:
+            post.edit.assert_awaited_once()
+            payload = post.edit.await_args.kwargs
+            self.assertEqual(set(payload), {"embeds"})
+            embed = payload["embeds"][0]
+            self.assertEqual(embed.title, title)
+            self.assertEqual(embed.author.name, "Season 7 Final")
+            self.assertEqual(embed.description, "Original description")
+            self.assertEqual(embed.to_dict()["image"]["url"], "attachment://original.png")
+        published = (await Match.get(source.id)).public_message_publication
+        self.assertFalse(published.pending)
+        self.assertEqual(published.embeds[0]["title"], "**QF2 · Match Scheduled**")
+        self.assertEqual(published.embeds[0]["author"]["name"], "Season 7 Final")
+        self.assertEqual(published.embeds[0]["description"], "Original announcement")
 
     async def test_bracket_reset_and_recreation_preserve_the_saved_nickname_on_the_same_post(self):
         self.channel.guild.fetch_member.side_effect = lambda user: SimpleNamespace(

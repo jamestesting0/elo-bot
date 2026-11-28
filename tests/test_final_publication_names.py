@@ -17,7 +17,7 @@ class TestFinalPublicationNames(unittest.IsolatedAsyncioTestCase):
     async def test_bracket_send_and_refresh_resolve_members_and_missing_players(self):
         for message_id in (None, "99"):
             with self.subTest(message_id=message_id):
-                final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13, channel_id=7,
+                final = EloFinal.model_construct(id=PydanticObjectId(), season_number=13, channel_id=7, active=True,
                     bracket_message_id=message_id, entrant_ids=["1", "2"], nodes={
                         "QF1": EloFinalMatch(id="QF1", contestants=["1", "2"], winner="1"),
                     })

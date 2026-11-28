@@ -25,10 +25,15 @@ async def bracket_signature(final: EloFinal) -> str:
     return sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
 
 
-async def publish_bracket(bot: ipy.Client, final: EloFinal) -> ipy.Message:
+async def publish_bracket(bot: ipy.Client, final: EloFinal, *, allow_create: bool = True) -> ipy.Message | None:
     async with PUBLICATION_LOCKS.setdefault(str(final.id), anyio.Lock()):
         final = await reload_final(final)
         collection = EloFinal.get_pymongo_collection()
+        allow_create = allow_create and final.active and final.state != "CANCELLING"
+        if not allow_create and not (final.bracket_message_id or final.bracket_send_attempted):
+            await collection.update_one({"_id": final.id, "revision": final.revision},
+                                        {"$set": {"publication_pending": False, "publication_error": None}})
+            return None
         try:
             channel = await bot.fetch_channel(final.channel_id)
             guild = getattr(channel, "guild", None)
@@ -64,9 +69,16 @@ async def publish_bracket(bot: ipy.Client, final: EloFinal) -> ipy.Message:
             reference = PostReference(nonce, bot.user.id, final.bracket_message_id, final.bracket_send_attempted)
             with BytesIO(rendered or b"") as image:
                 file = ipy.File(image, file_name="bracket.png") if rendered else None
-                message = await publish_post(channel, reference, PostContent(embed, await bracket_controls(final), file))
-            await collection.update_one({"_id": final.id}, {"$set": {"bracket_message_id": str(message.id)}})
-            await message.pin()
+                message = await publish_post(channel, reference, PostContent(embed, await bracket_controls(final), file),
+                                             allow_create=allow_create)
+            await collection.update_one({"_id": final.id}, {"$set": {
+                "bracket_message_id": str(message.id) if message is not None else None,
+                "bracket_send_attempted": message is not None,
+            }})
+            if message is None:
+                render_error = None
+            elif final.active and final.state != "CANCELLING" and (allow_create or final.publication_pending):
+                await message.pin()
             if await submitted_predictions(final) != submitted:
                 raise FinalError("Predictions changed during publication. Its update remains pending.")
             published = await collection.update_one(content_filter, {"$set": {

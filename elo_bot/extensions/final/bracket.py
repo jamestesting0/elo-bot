@@ -85,7 +85,8 @@ class Bracket:
                 edition = await lifecycle.confirm_bracket(edition, owner, manual=True)
                 try:
                     message = await publish_bracket(self.bot, edition)
-                    content = f"{SUCCESS_EMOJI} Bracket confirmed and published: {message.jump_url}"
+                    content = (f"{SUCCESS_EMOJI} Bracket confirmed and published: {message.jump_url}"
+                               if message else f"{IMPORTANT_EMOJI} The Final closed before the bracket was published.")
                 except (FinalError, PyMongoError) as error:
                     content = f"{IMPORTANT_EMOJI} Bracket confirmed. Publishing failed and will retry: {error}"
                 await self._show_dashboard(ctx, await lifecycle.reload_final(edition), outcome=content, edit=True)

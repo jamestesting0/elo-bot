@@ -29,7 +29,8 @@ from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.ids import MATCH_CHANNEL
 from elo_bot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.features.matches.messages import (
-    MatchMessagePublicationError, MatchMessageState, match_message_embeds, publish_match_message,
+    MatchMessagePublicationError, MatchMessageState, match_message_embeds, match_title, match_title_parts,
+    publish_match_message,
 )
 from elo_bot.features.matches.message_lock import coordinated_match_message, match_message_lock
 from elo_bot.db import Match
@@ -414,7 +415,8 @@ async def _abort_live_start_locked(
                 channel = await ctx.bot.fetch_channel(channel_id)
                 message = await channel.fetch_message(message_id)
             embeds = deepcopy(message.embeds) or [ipy.Embed()]
-            embeds[0].title = "**Match Aborted**"
+            code, _ = match_title_parts(embeds[0].title)
+            embeds[0].title = match_title("**Match Aborted**", code)
             embeds[0].description = None
             if is_public:
                 embeds[0].color = RED_COLOR

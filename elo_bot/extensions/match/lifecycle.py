@@ -769,15 +769,15 @@ class MatchLifecycleCommands:
         if not isinstance(event.message.channel, ipy.ThreadChannel):
             return
 
-        if int(event.message.channel.parent_channel.id) != MATCH_CHANNEL:
-            return
-
         if f"<@&{STAFF_ROLE}>" not in event.message.content:
             return
 
         # find the match whose thread is this channel
         match = await Match.find_one(Match.thread == str(event.message.channel.id))
-        if match is None:
+        if match is None or match.final_superseded or match.final_result_id:
+            return
+        parent_id = match.routing_channel_id if is_final_match(match) else MATCH_CHANNEL
+        if event.message.channel.parent_id != parent_id:
             return
 
         author_id = str(event.message.author.id)

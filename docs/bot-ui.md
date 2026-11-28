@@ -371,6 +371,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   a reason and confirms that the opponent advances. Any bets on the forfeited match are refunded.
 - A Final match thread has only Submit Result. Players submit bases with `/match base submit` in the
   thread; an older Submit Bases button on a Final thread points there instead of opening a form.
+  A player who mentions the staff role in their match thread adds it to the hosting queue.
 - Leave `clan` blank on `/match autostart` or `/match war autostart` to use an available Helper clan with
   enough base slots. Autostart prefers an eligible scheduled host clan and uses the clan that holds ready
   stored bases or already hosts a district rerun when applicable. Manual starts require a clan.

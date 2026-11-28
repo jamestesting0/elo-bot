@@ -1,7 +1,8 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import interactions as ipy
+from beanie import init_beanie
 
 from tests.integration._final_fixture import FinalScenarioCase
 from elo_bot.features.matches.lifecycle import confirm_match
@@ -9,7 +10,8 @@ from elo_bot.config.ids import STAFF_ROLE
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.features.finals.lifecycle import confirm_bracket
 from elo_bot.features.finals.matches import prepare_match
-from elo_bot.db import Match
+from elo_bot.db import HelperTask, Match, ServerState
+from elo_bot.extensions.match import MatchCommands
 
 
 class TestFinalThreadControls(FinalScenarioCase):
@@ -76,3 +78,33 @@ class TestFinalThreadControls(FinalScenarioCase):
         thread.send.assert_not_awaited()
         self.assertEqual((await Match.get(source.id)).thread_message_id, 888)
         self.assertEqual(await Match.count(), 1)
+
+    async def test_staff_ping_from_a_final_player_appears_in_the_hosting_queue_until_retired(self):
+        await init_beanie(database=self.database, document_models=[HelperTask], skip_indexes=True)
+        source, bot, _, _ = await self.setup_transport(existing=True)
+        commands = MatchCommands(bot)
+        author = source.participants[0].user_id
+        channel = MagicMock(spec=ipy.ThreadChannel, id=int(source.thread), parent_id=source.routing_channel_id)
+        message = MagicMock(channel=channel, content=f"<@&{STAFF_ROLE}>", author=SimpleNamespace(id=author))
+
+        await commands.on_message_create.callback(commands, ipy.events.MessageCreate(message=message))
+
+        task = await HelperTask.find_one({"thread": source.thread})
+        self.assertIsNotNone(task)
+        self.assertEqual(task.player_id, author)
+
+        queue_message = MagicMock(embeds=[ipy.Embed(title="Hosting Queue")], edit=AsyncMock())
+        queue = MagicMock(fetch_message=AsyncMock(return_value=queue_message))
+        queue.guild.fetch_member = AsyncMock(return_value=None)
+        bot.fetch_channel.side_effect = lambda channel_id: channel if str(channel_id) == source.thread else queue
+        state = SimpleNamespace(hosting_queue_embed=SimpleNamespace(channel=300, message=301))
+        with patch.object(ServerState, "current", new=AsyncMock(return_value=state)):
+            await commands.update_hosting_queue_embed.callback.func(commands)
+            self.assertIn(f"<#{source.thread}>", queue_message.embeds[0].description)
+            await source.set({"final_superseded": True})
+            await commands.update_hosting_queue_embed.callback.func(commands)
+
+        self.assertEqual(queue_message.embeds[0].description, "")
+        self.assertIsNone(await HelperTask.get(task.id))
+        await commands.on_message_create.callback(commands, ipy.events.MessageCreate(message=message))
+        self.assertEqual(await HelperTask.count(), 0)

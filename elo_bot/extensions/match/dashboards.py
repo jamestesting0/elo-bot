@@ -4,6 +4,7 @@ import re
 
 import interactions as ipy
 
+from elo_bot.config.ids import FINAL_CHANNEL
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.db import Clan, HelperTask, Match, ServerState
 from elo_bot.discord.embeds import embed_edit_payload
@@ -104,6 +105,11 @@ class MatchDashboardTasks:
                 if not thread:
                     await task.delete()
                     continue
+                if isinstance(thread, ipy.ThreadChannel) and thread.parent_id == FINAL_CHANNEL:
+                    match = await Match.find_one({"thread": task.thread})
+                    if match is None or match.final_superseded or match.final_result_id:
+                        await task.delete()
+                        continue
                 discord_timestamp = ipy.Timestamp.fromtimestamp(task.timestamp).format(ipy.TimestampStyles.RelativeTime)
                 member = await channel.guild.fetch_member(task.player_id)
                 tasks_description += f"<#{task.thread}> {mention_user(member, task.player_id)} {discord_timestamp}\n"

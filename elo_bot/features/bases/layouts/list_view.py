@@ -3,9 +3,8 @@ from typing import TypedDict
 
 import interactions as ipy
 
-from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.db import BaseLayout
-from elo_bot.discord.embeds import embed_color
+from elo_bot.discord.embeds import embed_color, v2_footer_text
 from elo_bot.features.bases.layouts.ui import _base_details_embed, _base_names, _defense_log_line
 
 
@@ -35,7 +34,7 @@ def base_list_card(
     header = ipy.TextDisplayComponent(f"{embed.title}\n{embed.description}")
     details = [ipy.TextDisplayComponent(f"{field.name}\n{field.value}") for field in embed.fields]
     image = ipy.MediaGalleryComponent([ipy.MediaGalleryItem(ipy.UnfurledMediaItem(url=image_url))])
-    footer = ipy.TextDisplayComponent(f"-# {FOOTER_TEXT}")
+    footer = ipy.TextDisplayComponent(v2_footer_text())
     return ipy.ContainerComponent(header, *details, *log_components, image, footer, accent_color=embed_color())
 
 

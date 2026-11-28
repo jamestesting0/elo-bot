@@ -1,7 +1,8 @@
 import interactions as ipy
 from pydantic import JsonValue
 
-from elo_bot.config.presentation import EMBED_COLORS, FOOTER_LOGOS
+from elo_bot.config.emojis import application_emoji
+from elo_bot.config.presentation import EMBED_COLORS, FOOTER_LOGOS, FOOTER_TEXT
 from elo_bot.discord import runtime
 
 
@@ -14,6 +15,12 @@ def footer_image() -> str:
     if isinstance(user, ipy.ClientUser):
         return user.display_avatar.as_url(size=64)
     return FOOTER_LOGOS[getattr(runtime, "VERSION", "main")]
+
+
+def v2_footer_text() -> str:
+    avatar = application_emoji("elo_footer")
+    icon = f"{avatar} " if avatar.id else ""
+    return f"-# {icon}{FOOTER_TEXT}"
 
 
 def profile_author(user: ipy.User | ipy.Member | None, *, display_name: str | None = None) -> ipy.EmbedAuthor:

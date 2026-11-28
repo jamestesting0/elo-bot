@@ -1,6 +1,7 @@
 import argparse
 import base64
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from io import BytesIO
 import json
 import os
@@ -11,7 +12,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from dotenv import load_dotenv
-from PIL import Image
+from PIL import Image, ImageChops, ImageDraw
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,10 +40,30 @@ def request(path: str, token: str, payload: dict | None = None) -> dict:
             raise RuntimeError(f"Discord returned HTTP {error.code} for {req.method} {path}") from None
 
 
-def source_image(entry: dict) -> str:
+def avatar_image(token: str) -> bytes:
+    bot = request("/users/@me", token)
+    if not bot.get("avatar"):
+        raise RuntimeError("The bot has no custom avatar to use in the footer.")
+    url = f"https://cdn.discordapp.com/avatars/{bot['id']}/{bot['avatar']}.png?size=128"
+    response = subprocess.run(["curl", "-fsS", "--max-time", "10", url], capture_output=True, check=True)
+    with Image.open(BytesIO(response.stdout)) as source:
+        image = source.convert("RGBA")
+    mask = Image.new("L", image.size)
+    ImageDraw.Draw(mask).ellipse((0, 0, image.width - 1, image.height - 1), fill=255)
+    image.putalpha(ImageChops.multiply(image.getchannel("A"), mask))
+    with BytesIO() as output:
+        image.save(output, format="PNG")
+        return output.getvalue()
+
+
+def source_image(entry: dict, *, avatar: bytes | None = None) -> str:
     animated = entry.get("animated", False)
     extension = "gif" if animated else "png"
-    if filename := entry.get("file"):
+    if entry.get("avatar"):
+        if avatar is None:
+            raise ValueError("The bot avatar was not supplied.")
+        data = avatar
+    elif filename := entry.get("file"):
         data = (EMOJI_DIR / filename).read_bytes()
     else:
         legacy = entry["legacy_id"]
@@ -77,8 +98,9 @@ def sync(version: str) -> None:
     sources = json.loads((EMOJI_DIR / "application_sources.json").read_text())
     existing = {emoji["name"]: emoji for emoji in request(endpoint, token)["items"]}
     missing = {name: entry for name, entry in sources.items() if name not in existing}
+    avatar = avatar_image(token) if any(entry.get("avatar") for entry in missing.values()) else None
     with ThreadPoolExecutor(max_workers=8) as executor:
-        images = dict(zip(missing, executor.map(source_image, missing.values()), strict=True))
+        images = dict(zip(missing, executor.map(partial(source_image, avatar=avatar), missing.values()), strict=True))
     for name, data in images.items():
         request(endpoint, token, {"name": name, "image": data})
         print(f"{version}: uploaded {name}", flush=True)

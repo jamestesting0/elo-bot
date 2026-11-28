@@ -13,8 +13,8 @@ from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.publication import bracket_signature, publish_bracket
 from elo_bot.core.finals import FinalError
 from elo_bot.config.ids import FINAL_CHANNEL, FINAL_NOTIFICATION_ROLE, LVL1_ROLES
-from elo_bot.config.presentation import FOOTER_TEXT, GREEN_COLOR
-from elo_bot.discord.embeds import embed_color
+from elo_bot.config.presentation import GREEN_COLOR
+from elo_bot.discord.embeds import embed_color, v2_footer_text
 from elo_bot.db import EloFinal, Match
 from elo_bot.extensions.final import FinalCommands
 from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, open_market
@@ -396,7 +396,7 @@ class TestFinalPublication(FinalScenarioCase):
         self.assertNotIn("embeds", discord_payload)
         self.assertEqual([component["type"] for component in discord_payload["components"]], [17, 1])
         self.assertEqual(discord_payload["components"][0]["components"][2]["type"], 12)
-        self.assertEqual(discord_payload["components"][0]["components"][-1]["content"], f"-# {FOOTER_TEXT}")
+        self.assertEqual(discord_payload["components"][0]["components"][-1]["content"], v2_footer_text())
         self.assertIn("750", card[1].content)
         self.assertEqual([option.value for option in round_select(self.channel.send.await_args.kwargs).options],
                          [market.id for market in markets])

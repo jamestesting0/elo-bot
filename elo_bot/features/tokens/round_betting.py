@@ -9,12 +9,11 @@ from pymongo.errors import PyMongoError
 
 from elo_bot.config.emojis import TOKEN_EMOJI, WIN_EMOJI
 from elo_bot.config.ids import FINAL_CHANNEL
-from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.core.finals import FinalError, ROUND_NODES
 from elo_bot.db import EloFinal
 from elo_bot.db.season_models import FinalBettingPost
 from elo_bot.db.token_models import FinalBettingMarket
-from elo_bot.discord.embeds import embed_color
+from elo_bot.discord.embeds import embed_color, v2_footer_text
 from elo_bot.discord.mentions import fetch_members
 from elo_bot.discord.message_edits import MessageEditUnconfirmed, edit_channel_message
 from elo_bot.features.finals.bracket import seeded_players
@@ -61,7 +60,7 @@ def _board_header(final: EloFinal, round_name: str) -> str:
 
 
 def _signature(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket]) -> str:
-    return _fingerprint([3, _board_header(final, round_name), FOOTER_TEXT, _allows_bets(final), [
+    return _fingerprint([3, _board_header(final, round_name), v2_footer_text(), _allows_bets(final), [
         [market.id, market.contestants, market.state, market.pools, market.desired_winner,
          [final_nickname(final, user) for user in market.contestants], _artwork_name(final, round_name, market)]
         for market in markets
@@ -104,7 +103,7 @@ def round_betting_components(
                                   accent_color=embed_color())
     if gallery:
         card.append(ipy.MediaGalleryComponent(gallery))
-    card.append(ipy.TextDisplayComponent(f"-# {FOOTER_TEXT}"))
+    card.append(ipy.TextDisplayComponent(v2_footer_text()))
     components: list[ipy.ContainerComponent | ipy.ActionRow] = [card]
     if options:
         components.append(ipy.ActionRow(ipy.StringSelectMenu(*options, placeholder="⚔️ Choose a match",

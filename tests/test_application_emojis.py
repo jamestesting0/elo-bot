@@ -3,13 +3,15 @@ from pathlib import Path
 import unittest
 
 from elo_bot.config.emojis import TOKEN_EMOJI, configure_application_emojis, render_emoji_markup
+from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.db.token_models import TokenWallet
+from elo_bot.discord.embeds import v2_footer_text
 from elo_bot.features.embeds.readme import readme_page
 from elo_bot.features.tokens.item_view import item_panel
 
 
 class TestApplicationEmojis(unittest.IsolatedAsyncioTestCase):
-    async def test_shop_and_readme_resolve_emojis_from_each_application(self):
+    async def test_shop_readme_and_footer_resolve_emojis_from_each_application(self):
         self.addCleanup(configure_application_emojis, "test-fallback")
         files = Path(__file__).resolve().parents[1] / "assets" / "emojis"
         versions = json.loads((files / "application_ids.json").read_text())
@@ -23,6 +25,7 @@ class TestApplicationEmojis(unittest.IsolatedAsyncioTestCase):
             with self.subTest(application=version):
                 configure_application_emojis(version)
                 self.assertEqual(str(TOKEN_EMOJI.id), ids["token"])
+                self.assertEqual(v2_footer_text(), f"-# <:elo_footer:{ids['elo_footer']}> {FOOTER_TEXT}")
                 for page in range(2):
                     embed, rows = await item_panel(wallet, "shop", page)
                     for option in rows[0].to_dict()["components"][0]["options"]:

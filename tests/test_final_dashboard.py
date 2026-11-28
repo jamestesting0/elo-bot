@@ -98,10 +98,10 @@ class TestFinalDashboard(unittest.TestCase):
         final.manual_draft = automatic_pairs(final)
         final.draft_owner = "9"
         original = {key: list(pair) for key, pair in final.manual_draft.items()}
-        self.assertEqual(original, {"QF1": ["0", None], "QF2": ["1", None], "QF3": ["2", None], "QF4": ["3", "4"]})
-        pairs = swapped_pairs(final, ["QF1:0", "QF4:0"])
+        self.assertEqual(original, {"QF1": ["0", None], "QF2": ["3", "4"], "QF3": ["1", None], "QF4": ["2", None]})
+        pairs = swapped_pairs(final, ["QF1:0", "QF2:0"])
         self.assertEqual(pairs["QF1"], ["3", None])
-        self.assertEqual(pairs["QF4"], ["0", "4"])
+        self.assertEqual(pairs["QF2"], ["0", "4"])
         with self.assertRaises(FinalError):
             swapped_pairs(final, ["QF1:0", "QF3:1"])
         self.assertEqual(final.manual_draft, original)

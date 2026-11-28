@@ -19,11 +19,12 @@ class TestFinalBracket(unittest.TestCase):
                 self.assertEqual(sum(node.bye for node in nodes.values()), 8 - count)
                 self.assertEqual([nodes[key].contestants for key in ("QF1", "QF2", "QF3", "QF4")], [
                     ["0", "7" if count == 8 else None],
+                    ["3", "4"],
                     ["1", "6" if count >= 7 else None],
                     ["2", "5" if count >= 6 else None],
-                    ["3", "4"],
                 ])
                 self.assertEqual(nodes["SF1"].feeders, ["QF1", "QF2"])
+                self.assertEqual(nodes["SF2"].feeders, ["QF3", "QF4"])
                 self.assertEqual(nodes["F1"].feeders, ["SF1", "SF2"])
 
     def test_automatic_byes_go_to_the_highest_seed_elo(self):

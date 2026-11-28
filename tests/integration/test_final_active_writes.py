@@ -99,7 +99,7 @@ class TestFinalActiveWrites(FinalScenarioCase):
 
     async def test_idle_financial_recovery_performs_no_database_writes(self):
         final = await confirm_bracket(await self.roster(5), "manager")
-        market = await open_market(final, "QF4")
+        market = await open_market(final, "QF2")
         await void_market(market.id, "manager", "Fixture refund")
         await recover_final(final)
         final = await final_for_view()
@@ -117,14 +117,14 @@ class TestFinalActiveWrites(FinalScenarioCase):
 
     async def test_cancellation_retires_matches_and_controls_but_retains_base_reservations(self):
         final = await confirm_bracket(await self.roster(5), "manager")
-        source = await prepare_match(final, "QF4")
+        source = await prepare_match(final, "QF2")
         store = BaseStore(clan_tag="#OWNED", slot="Slot 1", reservation_id="a" * 16, ready=True, message_id=555)
         await source.set({"participants.0.base_store": store.model_dump(),
                           "participants.0.opponent_bases_stored": True, "old_msgs": [888, None]})
         await request_cancellation(final, "Event cancelled")
         await final.set({"repair_pending": False})
         with self.assertRaises(FinalError):
-            await prepare_match(final, "QF4")
+            await prepare_match(final, "QF2")
         self.assertEqual(await Match.count(), 1)
         cancelled = await Match.get(source.id)
         self.assertTrue(cancelled.final_superseded)
@@ -153,6 +153,6 @@ class TestFinalActiveWrites(FinalScenarioCase):
         for user in range(1, 6):
             next_final = await add_entrant(next_final, str(user), str(user))
         next_final = await confirm_bracket(await confirm_lineup(next_final), "manager")
-        new_match = await prepare_match(next_final, "QF4")
+        new_match = await prepare_match(next_final, "QF2")
         self.assertNotEqual(new_match.id, source.id)
         self.assertEqual((await Match.get(source.id)).participants[0].base_store, store)

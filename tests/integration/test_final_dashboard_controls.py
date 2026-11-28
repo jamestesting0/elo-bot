@@ -67,8 +67,8 @@ class TestFinalDashboardControls(FinalUICase):
         swap.custom_id, swap.values = menu.custom_id, ["QF1:0", "QF2:0"]
         await self.cog.final_pairing_action.callback.func(self.cog, swap)
         saved = await final_for_view()
-        self.assertEqual(saved.manual_draft["QF1"], ["2", "8"])
-        self.assertEqual(saved.manual_draft["QF2"], ["1", "7"])
+        self.assertEqual(saved.manual_draft["QF1"], ["4", "8"])
+        self.assertEqual(saved.manual_draft["QF2"], ["1", "5"])
         self.assertEqual(saved.draft_revision, draft.draft_revision + 1)
         stale = self.context(component=True)
         stale.custom_id, stale.values = menu.custom_id, ["QF1:0", "QF2:0"]
@@ -79,7 +79,7 @@ class TestFinalDashboardControls(FinalUICase):
         confirm.custom_id = swap.edit_origin.await_args.kwargs["components"][1].components[1].custom_id
         await self.cog.final_pairing_action.callback.func(self.cog, confirm)
         current = await final_for_view()
-        self.assertEqual(current.nodes["QF1"].contestants, ["2", "8"])
+        self.assertEqual(current.nodes["QF1"].contestants, ["4", "8"])
         self.assertIsNotNone(current.bracket_message_id)
         self.posts[current.bracket_message_id].pin.assert_awaited_once()
         self.assertIn("Bracket confirmed and published", confirm.edit_origin.await_args.kwargs["content"])

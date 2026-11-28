@@ -80,7 +80,7 @@ class TestFinalReliabilityControls(FinalScenarioCase):
 
     async def test_round_attempts_later_matches_after_domain_and_discord_failures(self):
         await Match(token="occupied", matched_time=1,
-                    participants=[Participant(user_id="2"), Participant(user_id="9")]).insert()
+                    participants=[Participant(user_id="4"), Participant(user_id="9")]).insert()
         with self.assertRaises(FinalError) as occupied:
             await prepare_match(self.final, "QF2")
         denied = ipy.errors.Forbidden(MagicMock(status=403, reason="Fixture refusal"))

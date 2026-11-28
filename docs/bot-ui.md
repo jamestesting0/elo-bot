@@ -249,7 +249,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Bracket names (images, selects) are the player's Discord display name, refreshed before the bracket,
   a round's threads or a scoreboard is published. A nickname set with `/final add nickname:` or `/final nick`
   overrides it. Final thread names use Discord usernames like normal match threads (`🟡 QF1 · user1 vs. user8`).
-  Opponent picks keep the top four seeds in their quarterfinal slots. The default pairings are 1v8, 2v7, 3v6 and 4v5.
+  Seeds 1 and 4 are in the upper half, and seeds 2 and 3 are in the lower half. The default pairings from top to
+  bottom are 1v8, 4v5, 2v7 and 3v6. Opponent picks keep the top four seeds in those slots.
 - `/embed Elo Information` has a 📖 README button opening a private guide with a section select.
   Sections live in `assets/embeds/readme/`; navigation edits the same private message.
   Rewards and Base Building keep their own buttons. Elo Information embed images omit attachment descriptions.

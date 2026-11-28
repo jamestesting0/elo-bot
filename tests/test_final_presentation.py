@@ -39,7 +39,7 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
 
     async def test_result_selector_contains_only_current_decided_non_bye_nodes(self):
         final = self.edition()
-        node = final.nodes["QF4"]
+        node = final.nodes["QF2"]
         node.winner, node.result_id, node.state = "4", "saved", "DECIDED"
         final.nodes["SF2"] = EloFinalMatch(id="SF2", contestants=["1", "2"], state="READY")
         result = FinalMatchResult.model_construct(id="saved", snapshot=FinalResultSnapshot(
@@ -49,7 +49,7 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
             controls = await bracket_controls(final)
         menu = controls[0].components[0]
         self.assertEqual(menu.custom_id, f"finalresult|{final.id}")
-        self.assertEqual([option.value for option in menu.options], ["QF4"])
+        self.assertEqual([option.value for option in menu.options], ["QF2"])
         self.assertTrue(all(len(option.label) <= 100 and len(option.description) <= 100 for option in menu.options))
         self.assertIn("21⭐ 700%", menu.options[0].description)
         self.assertEqual(await bracket_controls(self.edition()), [])

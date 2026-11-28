@@ -213,8 +213,8 @@ class TestFinalOpponentPicks(FinalUICase):
         await self.choose(3, "6")
         completed = await EloFinal.get(self.final.id)
         self.assertIsNone(pick_turn(completed))
-        self.assertEqual(automatic_pairs(completed), {"QF1": ["1", "5"], "QF2": ["2", "7"],
-                                                      "QF3": ["3", "6"], "QF4": ["4", "8"]})
+        self.assertEqual(automatic_pairs(completed), {"QF1": ["1", "5"], "QF2": ["4", "8"],
+                                                      "QF3": ["2", "7"], "QF4": ["3", "6"]})
         await sync_registration_posts(self.bot, completed)
         self.assertEqual(self.channel.send.await_count, 4)
 

@@ -50,9 +50,9 @@ class TestFinalRedesignCommands(FinalScenarioCase):
         self.assertFalse(final.publication_pending)
         self.assertTrue(ctx.edit_origin.await_args.kwargs["content"].startswith(str(SUCCESS_EMOJI)))
         channel.send.return_value.pin.assert_awaited_once()
-        await self.scheduled_pairing(final, "QF4")
+        await self.scheduled_pairing(final, "QF2")
         final = await final_for_view()
-        node = final.nodes["QF4"]
+        node = final.nodes["QF2"]
         result = await submit_result(FinalResultSubmission(final_id=final.id, node_id=node.id,
             actor_id="9", operation_key="selector", expected_version=0,
             contestant_revision=node.contestant_revision, attempt=node.attempt,
@@ -139,7 +139,7 @@ class TestFinalRedesignCommands(FinalScenarioCase):
                 choices = ctx.send.await_args.kwargs["choices"]
                 self.assertEqual([choice.value for choice in choices], expected)
                 self.assertTrue(all("vs." in str(choice.name) and len(str(choice.name)) <= 100 for choice in choices))
-        ctx.input_text = "Player 3"
+        ctx.input_text = "Player 2"
         await cog.final_void_autocomplete(ctx)
         self.assertEqual([choice.value for choice in ctx.send.await_args.kwargs["choices"]], ["QF3"])
 
@@ -171,7 +171,7 @@ class TestFinalRedesignCommands(FinalScenarioCase):
     async def test_wallet_open_bets_and_dated_history_hide_identity_receipts(self):
         final = await confirm_bracket(await self.roster(8), "9")
         market = await open_market(final, "QF2")
-        await apply_bet(BetAction(market_id=market.id, user_id="9", contestant="2", amount=1000,
+        await apply_bet(BetAction(market_id=market.id, user_id="9", contestant="4", amount=1000,
                                  expected_version=0, action_key="open-bet"))
         await TokenLedgerEntry(id="identity", operation_key="identity", wallet_id="9", actor_id="9",
                                amount=0, kind="identity", created_at=2000000000).insert()
@@ -182,7 +182,7 @@ class TestFinalRedesignCommands(FinalScenarioCase):
         embed = ctx.send.await_args.kwargs["embed"]
         self.assertEqual([field.name for field in embed.fields], ["__**Bets**__", "__**Open Bets**__"])
         self.assertIn(f"S7 QF2 · 1,000 {TOKEN_EMOJI}", embed.fields[1].value)
-        self.assertIn("https://discordapp.com/users/2?tab=wishlist", embed.fields[1].value)
+        self.assertIn("https://discordapp.com/users/4?tab=wishlist", embed.fields[1].value)
         await cog.tokens_history.callback.func(cog, ctx)
         payload = ctx.send.await_args.kwargs
         lines = payload["embed"].description.splitlines()

@@ -32,18 +32,21 @@ def opponent_picks_pending(final: EloFinal) -> bool:
 
 def automatic_pairs(final: EloFinal) -> dict[str, list[str | None]]:
     picks = final.opponent_picks
+    opponents: list[str | None]
     if picks and picks.turns and lineup_confirmed(final):
+        seeds = picks.seeds[:4]
         chosen = {turn.opponent for turn in picks.turns}
         remaining = iter(user for user in reversed(picks.seeds[4:]) if user not in chosen)
         opponents = [turn.opponent or next(remaining) for turn in picks.turns]
-        return {node: [seed, opponent] for node, seed, opponent in zip(
-            NODE_IDS[:4], picks.seeds[:4], [*opponents, next(remaining)], strict=True)}
-    ordered = seeded_players(final)
-    if not 5 <= len(ordered) <= 8:
-        raise FinalError("Bracket creation requires 5 to 8 entrants.")
-    slots = ordered + [None] * (8 - len(ordered))
-    return {node: [slots[a - 1], slots[b - 1]]
-            for node, (a, b) in zip(NODE_IDS[:4], ((1, 8), (2, 7), (3, 6), (4, 5)))}
+        opponents.append(next(remaining))
+    else:
+        ordered = seeded_players(final)
+        if not 5 <= len(ordered) <= FINAL_SEATS:
+            raise FinalError("Bracket creation requires 5 to 8 entrants.")
+        seeds = ordered[:4]
+        opponents = [None] * (FINAL_SEATS - len(ordered)) + list(reversed(ordered[4:]))
+    return {node: [seeds[index], opponents[index]]
+            for node, index in zip(NODE_IDS[:4], (0, 3, 1, 2), strict=True)}
 
 
 def build_bracket(final: EloFinal, pairs: dict[str, list[str | None]]) -> dict[str, EloFinalMatch]:

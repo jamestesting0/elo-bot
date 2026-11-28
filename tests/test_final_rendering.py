@@ -115,9 +115,9 @@ class TestFinalRendering(unittest.TestCase):
 
     def test_prediction_markers_follow_submitted_picks_without_changing_official_image(self):
         final = self.edition(8)
-        picks = {"QF1": "0", "QF2": "1", "QF3": "2", "QF4": "3"}
+        picks = {"QF1": "0", "QF2": "3", "QF3": "1", "QF4": "2"}
         for node_id, winner, outcome in (("QF1", "0", "Played"), ("QF2", "4", "Played"),
-                                         ("QF3", "2", "Forfeit")):
+                                         ("QF3", "1", "Forfeit")):
             node = final.nodes[node_id]
             node.winner, node.outcome, node.result_id = winner, outcome, node_id
         prediction = FinalPrediction.model_construct(submitted=picks)
@@ -173,14 +173,14 @@ class TestFinalRendering(unittest.TestCase):
 
     def test_eliminated_bye_and_champion_text_use_distinct_plate_colors(self):
         final = self.edition(5)
-        node = final.nodes["QF4"]
+        node = final.nodes["QF2"]
         node.winner = node.contestants[1]
         node.state = "DECIDED"
         final.champion = node.winner
         with Image.open(BytesIO(render_bracket(final))) as image:
             bye_colors = set(image.crop(NAME_PLATES[1]).getdata())
-            loser_colors = set(image.crop(NAME_PLATES[6]).getdata())
-            winner_colors = set(image.crop(NAME_PLATES[7]).getdata())
+            loser_colors = set(image.crop(NAME_PLATES[2]).getdata())
+            winner_colors = set(image.crop(NAME_PLATES[3]).getdata())
             champion_colors = set(image.crop(NAME_PLATES[-1]).getdata())
         self.assertIn((224, 194, 157), bye_colors)
         self.assertIn((224, 194, 157), loser_colors)

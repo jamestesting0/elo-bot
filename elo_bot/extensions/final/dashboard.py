@@ -9,12 +9,13 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db.final_models import FinalPrediction
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import fetch_members, member_names
+from elo_bot.discord.mentions import fetch_members
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.features.finals.dashboard import (
     FINAL_CHANGED, DashboardState, available_actions, dashboard_controls, dashboard_embed,
 )
 from elo_bot.features.finals.invitations import pending_invitations
+from elo_bot.features.finals.labels import final_member_names
 from elo_bot.features.finals.lifecycle import confirm_lineup, refresh_display_names, reload_final
 from elo_bot.features.finals.registration_posts import sync_registration_posts
 
@@ -31,7 +32,7 @@ class Dashboard:
             outcome = render_emoji_markup(outcome)
         manager = any(ctx.author.has_role(role) for role in LVL1_ROLES)
         state = await self._dashboard_state(edition)
-        names = await member_names(await member_guild(ctx), [
+        names = await final_member_names(edition, await member_guild(ctx), [
             *edition.entrant_ids, *(invitation.user_id for invitation in state.invitations)])
         embed = dashboard_embed(state, names, manager=manager)
         controls = dashboard_controls(state, str(ctx.author.id)) if manager else []

@@ -13,7 +13,7 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.features.finals.labels import final_member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.features.finals import lifecycle
 from elo_bot.features.finals.dashboard import FINAL_CHANGED, available_actions
@@ -55,7 +55,7 @@ class Confirmations:
         if action == "end":
             if "end" not in dict(available_actions(await self._dashboard_state(edition))):
                 raise FinalError("Resolve every pairing and finish pending updates before ending the Final.")
-            names = await member_names(await member_guild(ctx), [edition.champion])
+            names = await final_member_names(edition, await member_guild(ctx), [edition.champion])
             embed = ipy.Embed(title=f"**End the Season {edition.season_number} Final?**", color=embed_color(),
                 description=f"Champion: {names[edition.champion]}. Results can't be changed afterwards.")
             button = ipy.Button(label="End Final", style=ipy.ButtonStyle.SUCCESS, emoji=TICK_EMOJI, custom_id=prefix)
@@ -97,7 +97,7 @@ class Confirmations:
             await self._recover(edition)
             await lifecycle.end_final(edition)
             current = await lifecycle.reload_final(edition)
-            names = await member_names(await member_guild(ctx), [current.champion])
+            names = await final_member_names(current, await member_guild(ctx), [current.champion])
             content = f"{SUCCESS_EMOJI} Season {current.season_number} Final ended. Champion: {names[current.champion]}."
             if not await recover_awards(final_id):
                 content += f" {IMPORTANT_EMOJI} Prediction rewards are pending and retry automatically."

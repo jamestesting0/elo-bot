@@ -38,7 +38,8 @@ def _center_text(draw: ImageDraw.ImageDraw, label: tuple[str, ImageFont.FreeType
 
 def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, bytes | None],
                         ranks: tuple[int | None, int | None], record: tuple[int, int] | None = None,
-                        fallback_names: tuple[str | None, str | None] = (None, None)) -> bytes:
+                        fallback_names: tuple[str | None, str | None] = (None, None),
+                        prefer_plain_names: bool = False) -> bytes:
     with (Image.open(VERSUS_TEMPLATE if record is None else RECORD_TEMPLATE) as artwork,
           artwork.convert("RGB") as image, BytesIO() as output):
         draw = ImageDraw.Draw(image)
@@ -47,7 +48,8 @@ def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, byt
         ):
             if avatar is not None:
                 paste_avatar(image, avatar, avatar_box)
-            _center_text(draw, fitted_label(name, 438, 42, username=fallback), name_center, "#3b2c2b")
+            label = fitted_label(name, 438, 42, username=fallback, prefer_plain_name=prefer_plain_names)
+            _center_text(draw, label, name_center, "#3b2c2b")
             if rank is not None:
                 _center_text(draw, fitted_label(f"#{rank}", 76, 22), rank_center, "#ffedc1")
         if record is not None:
@@ -78,7 +80,7 @@ async def final_matchup_attachment(final: EloFinal, contestants: tuple[str, str]
     ranks = (seeds.get(left), seeds.get(right))
     avatars = (await matchup_avatar(first) if first else None, await matchup_avatar(second) if second else None)
     try:
-        png = await anyio.to_thread.run_sync(render_head_to_head, names, avatars, ranks, None, fallbacks)
+        png = await anyio.to_thread.run_sync(render_head_to_head, names, avatars, ranks, None, fallbacks, True)
     except (OSError, FinalError):
         logging.exception("Could not render the Final matchup graphic")
         return None

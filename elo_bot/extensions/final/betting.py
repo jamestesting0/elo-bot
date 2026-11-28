@@ -11,7 +11,7 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenWallet
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.features.finals.labels import final_member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import betting_group, final
 from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, void_market, projected_return
@@ -97,7 +97,7 @@ class Betting:
         old = await FinalBet.find_one({"market_id": market.id, "wallet_id": wallet.id})
         version = old.version if old else 0
         available, _, debt = await wallet_summary(wallet)
-        names = await member_names(await member_guild(ctx), market.contestants)
+        names = await final_member_names(edition, await member_guild(ctx), market.contestants)
         active = old is not None and old.active
         current_bet = f"\n{names[old.contestant]} · {old.amount:,} {TOKEN_EMOJI}" if active else ""
         embed = ipy.Embed(title=f"**Season {edition.season_number} Final · {market.node_id} Bet**", color=embed_color(),
@@ -188,7 +188,7 @@ class Betting:
             except FinalError as error:
                 publication_pending = str(error)
             available, _, debt = await wallet_summary(await TokenWallet.get(bet.wallet_id))
-            names = await member_names(await member_guild(ctx), market.contestants)
+            names = await final_member_names(edition, await member_guild(ctx), market.contestants)
             copy = (f"{SUCCESS_EMOJI} Bet updated: {bet.amount:,} {TOKEN_EMOJI} on {names[bet.contestant]}." if bet.active else
                     f"{SUCCESS_EMOJI} Bet cancelled. {old.amount if old else 0:,} {TOKEN_EMOJI} returned.")
             await ctx.edit_origin(content=f"**Season {edition.season_number} Final · {market.node_id}**\n" + copy

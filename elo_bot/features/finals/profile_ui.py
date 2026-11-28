@@ -12,7 +12,7 @@ from elo_bot.features.tokens.wallets import ensure_wallet
 from elo_bot.db import EloFinal, Player
 from elo_bot.db.final_models import FinalEditionStats, FinalMatchResult, FinalPlayerProfile, FinalPrediction
 from elo_bot.db.token_models import TokenWallet
-from elo_bot.discord.mentions import member_names
+from elo_bot.features.finals.labels import final_member_names, final_nickname
 
 
 async def profile_view(final: EloFinal, user: ipy.User | ipy.Member, owner: str, *, guild: ipy.Guild):
@@ -28,7 +28,8 @@ async def profile_view(final: EloFinal, user: ipy.User | ipy.Member, owner: str,
             FinalEditionStats(season_number=final.season_number)
     claims = wallet.identity_claims if wallet else [user_id]
     prediction = await FinalPrediction.find_one({"final_id": str(final.id), "user_id": user_id})
-    embed = ipy.Embed(title="**Final Profile**", color=embed_color(), author=profile_author(user),
+    embed = ipy.Embed(title="**Final Profile**", color=embed_color(),
+        author=profile_author(user, display_name=final_nickname(final, user_id)),
         description=(f"[{player.tag}](https://link.clashofclans.com/en?action=OpenPlayerProfile&tag=%23{player.tag.lstrip('#')})\n" if player else "")
         + f"Season {final.season_number} Final\n"
         + (stats.placement or ("Entrant" if set(claims) & set(final.entrant_ids) else "No participation in this Final")))
@@ -49,7 +50,7 @@ async def profile_view(final: EloFinal, user: ipy.User | ipy.Member, owner: str,
         "snapshot.contestants": {"$in": claims}}).sort("-created_at").limit(4).to_list()
     opponents = {contestant for result in results for contestant in result.snapshot.contestants
                  if contestant not in claims}
-    names = await member_names(guild, opponents)
+    names = await final_member_names(final, guild, opponents)
     recent_matches = ""
     for result in results:
         snapshot = result.snapshot

@@ -1371,6 +1371,13 @@
         "title": "Published",
         "type": "boolean"
        },
+       "published_nicknames": {
+        "additionalProperties": {
+         "type": "string"
+        },
+        "title": "Published Nicknames",
+        "type": "object"
+       },
        "published_repair_pending": {
         "anyOf": [
          {

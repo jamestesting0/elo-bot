@@ -63,6 +63,7 @@ from elo_bot.features.base_store.slots import (
 )
 from elo_bot.features.base_store.start import StoredStartState, held_store, shared_store_clan
 from elo_bot.features.finals.matches import schedule_final_match
+from elo_bot.features.finals.labels import match_player_links
 from elo_bot.core.finals import FinalError, is_final_match
 from elo_bot.features.hosting.autostart_clans import available_autostart_clans
 from elo_bot.features.hosting.live import live_reservations
@@ -1391,13 +1392,14 @@ class MatchHostingCommands:
                                               else MATCH_CHANNEL)
         guild = await member_guild(ctx)
         members = await asyncio.gather(guild.fetch_member(p1_id), guild.fetch_member(p2_id))
+        player1_name, player2_name = await match_player_links(match, members)
         public_embed = ipy.Embed(
             title=title,
             description=("Spectate in the host clan with a TH5 or lower account."
                          + (f" Host: {mention_user(host_user, mention_type='Helper')}." if host_user else "")),
             fields=[
                 ipy.EmbedField(name="**Players**",
-                               value=f"{mention_user(members[0], p1_id)} vs. {mention_user(members[1], p2_id)}"),
+                               value=f"{player1_name} vs. {player2_name}"),
                 ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                 ipy.EmbedField(name="**Host Clan**",
                                value=f"[{clan.name}]({clan.share_link})" if clan else "Not assigned"),

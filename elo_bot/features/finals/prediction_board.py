@@ -8,8 +8,8 @@ from elo_bot.discord.embeds import embed_color, footer_image, profile_author
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult, FinalPrediction
-from elo_bot.discord.mentions import fetch_members, member_usernames, mention_user
-from elo_bot.features.finals.labels import prediction_label
+from elo_bot.discord.mentions import fetch_members, member_usernames
+from elo_bot.features.finals.labels import final_nickname, final_player_link, prediction_label
 from elo_bot.features.finals.prediction_display import (
     finished_results,
     prediction_alt_text,
@@ -67,13 +67,14 @@ async def prediction_board(final: EloFinal, guild: ipy.Guild, owner: str,
         points, eligible = scores[user]
         champion = prediction.submitted.get("F1")
         pick = final.player_nicknames.get(champion, champion) if champion else None
-        line = f"{rank}. {mention_user(members[user], user)}"
+        line = f"{rank}. {final_player_link(final, user, members[user])}"
         if pick:
             line += f" · 🏆 {pick}"
         if eligible:
             line += f" · `{points}/{eligible}`"
         lines.append(line)
-        label = members[user].display_name if members[user] else final.player_nicknames.get(user, user)
+        label = final_nickname(final, user) or (
+            members[user].display_name if members[user] else final.player_nicknames.get(user, user))
         options.append(ipy.StringSelectOption(label=label[:100], value=user,
                                               description=f"🏆 {pick}"[:100] if pick else None))
     if lines:
@@ -106,10 +107,12 @@ async def prediction_card(final: EloFinal, prediction: FinalPrediction, guild: i
               and (started := getattr(result.snapshot, "actual_started_at", None)) is not None}
     user_ids = {user for result in results for user in result.snapshot.contestants}
     members = await fetch_members(guild, user_ids)
-    names = {user: mention_user(member, user) for user, member in members.items()}
+    names = {user: final_player_link(final, user, member) for user, member in members.items()}
     result_text = finished_results(final, results, names, starts)
+    nickname = final_nickname(final, str(user.id)) if user is not None else None
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · Prediction**", color=embed_color(),
-                      author=profile_author(user), description=f"**Results**\n{result_text}" if result_text else None)
+                      author=profile_author(user, display_name=nickname),
+                      description=f"**Results**\n{result_text}" if result_text else None)
     if eligible:
         embed.add_field(name="**Predictions**", value=f"`{points}/{eligible}`")
     embed.set_footer(text=FOOTER_TEXT, icon_url=footer_image())

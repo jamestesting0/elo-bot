@@ -29,7 +29,7 @@ from elo_bot.features.matches.thread_messages import (
 )
 from elo_bot.features.queue.policy import QUEUE_OPERATION_LOCK
 from elo_bot.features.queue.state import remove_matched_queue_attempts
-from elo_bot.features.finals.labels import thread_label
+from elo_bot.features.finals.labels import final_player_link, thread_label
 from elo_bot.features.tokens.queue_items import finish_district_items, insert_queued_match
 
 
@@ -337,7 +337,7 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         final_title = None
         if is_final_match(match):
             final = await EloFinal.get(PydanticObjectId(match.final_id))
-            final_title = (thread_label(match.final_node_id, (player1, player2)),
+            final_title = (thread_label(final, match.final_node_id, (player1, player2)),
                            f"**Season {final.season_number} Final · {match.final_node_id}**")
 
         if not match.thread:
@@ -452,7 +452,8 @@ async def confirm_match(bot: ipy.Client, token: str) -> str:
         if not match.base_submission:
             notes = [f"- Base submission is disabled for matches between players under {BASE_SUBMISSION_THRESHOLD} Elo."]
         else:
-            names = {p.user_id: mention_user(player) for p, player in zip(match.participants, (player1, player2))}
+            names = {p.user_id: final_player_link(final, p.user_id, player) if final else mention_user(player)
+                     for p, player in zip(match.participants, (player1, player2), strict=True)}
             notes = [f"- {names[p.user_id]} has preset bases." for p in match.participants if any(p.bases)]
             if not is_final_match(match):
                 notes.extend(f"- {names[p.user_id]} wish to submit bases." for p in match.participants if p.submit_bases)

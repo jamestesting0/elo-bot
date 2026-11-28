@@ -10,7 +10,8 @@ from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.core.finals import FinalError
 from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
-from elo_bot.discord.mentions import fetch_members, member_names, member_usernames, mention_user
+from elo_bot.discord.mentions import fetch_members, member_usernames
+from elo_bot.features.finals.labels import final_member_names, final_player_link
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final, predictions_group
 from elo_bot.features.finals.prediction_board import (
@@ -72,7 +73,7 @@ class Predictions:
         edition = await self._ongoing_edition(ctx, str(edition.id), access="player")
         prediction = await begin_prediction(edition, str(ctx.author.id))
         guild = await member_guild(ctx)
-        names = await member_names(guild, edition.entrant_ids)
+        names = await final_member_names(edition, guild, edition.entrant_ids)
         embed, components = prediction_view(edition, prediction, names)
         await ctx.send(embed=embed, components=components)
 
@@ -82,7 +83,7 @@ class Predictions:
         await ctx.defer(ephemeral=True)
         edition = await self._ongoing_edition(ctx, ctx.custom_id.split("|")[1], access="player")
         prediction = await begin_prediction(edition, str(ctx.author.id))
-        names = await member_names(await member_guild(ctx), edition.entrant_ids)
+        names = await final_member_names(edition, await member_guild(ctx), edition.entrant_ids)
         embed, components = prediction_view(edition, prediction, names)
         await ctx.send(embed=embed, components=components)
 
@@ -102,7 +103,7 @@ class Predictions:
             ))
             guild = await member_guild(ctx)
             members = await fetch_members(guild, edition.entrant_ids)
-            names = {user: mention_user(member, user) for user, member in members.items()}
+            names = {user: final_player_link(edition, user, member) for user, member in members.items()}
             outcome = ""
             if action == "submit":
                 try:

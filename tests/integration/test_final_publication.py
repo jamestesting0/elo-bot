@@ -7,11 +7,13 @@ from PIL import Image
 
 from tests.integration._final_fixture import FinalScenarioCase
 from elo_bot.features.finals.head_to_head import render_head_to_head
-from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
+from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view, reset_bracket, set_nickname
 from elo_bot.features.finals.matches import bind_thread
 from elo_bot.features.finals.publication import bracket_signature, publish_bracket
 from elo_bot.core.finals import FinalError
-from elo_bot.db import EloFinal
+from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES
+from elo_bot.db import EloFinal, Match
+from elo_bot.extensions.final import FinalCommands
 from elo_bot.features.tokens.bets import close_market, open_market
 from elo_bot.features.tokens.presentation import publish_market, market_signature
 from elo_bot.features.finals.recovery import recover_final
@@ -117,6 +119,74 @@ class TestFinalPublication(FinalScenarioCase):
         self.message.edit.assert_awaited_once()
         self.assertFalse((await final_for_view()).publication_pending)
 
+    async def test_bracket_reset_and_recreation_preserve_the_saved_nickname_on_the_same_post(self):
+        self.channel.guild.fetch_member.side_effect = lambda user: SimpleNamespace(
+            id=user, display_name=f"Discord {user}", username=f"discord{user}")
+        await publish_bracket(self.bot, self.final)
+        await set_nickname(self.final, "1", "Captain | Finalist")
+        await reset_bracket(self.final)
+        await recover_final(self.final, bot=self.bot)
+        self.assertIn("Captain | Finalist", self.message.edit.await_args.kwargs["embed"].description)
+
+        recreated = await confirm_bracket(await final_for_view(), "manager")
+        await recover_final(recreated, bot=self.bot)
+        current = await final_for_view()
+        self.assertEqual(current.player_nicknames["1"], "Captain | Finalist")
+        self.assertIn("1", current.nickname_overrides)
+        self.assertEqual(current.bracket_message_id, str(self.message.id))
+        self.assertIn("**[Captain | Finalist](<https://discordapp.com/users/1?tab=wishlist>)**",
+                      self.message.edit.await_args.kwargs["embed"].fields[0].value)
+        self.channel.send.assert_awaited_once()
+
+    async def test_nickname_change_refreshes_both_published_result_cards_in_place(self):
+        result = await self.save_result()
+        await recover_final(self.final, bot=self.bot)
+        current = await final_for_view()
+        progress = current.result_progress[result.id]
+        post_ids = (progress.message_id, progress.public_message_id)
+        initial_sends = self.channel.send.await_count
+        await set_nickname(current, "1", "Captain")
+
+        await recover_final(current, bot=self.bot)
+
+        progress = (await final_for_view()).result_progress[result.id]
+        self.assertEqual((progress.message_id, progress.public_message_id), post_ids)
+        self.assertEqual(progress.published_nicknames, {"1": "Captain"})
+        self.assertEqual(self.channel.send.await_count, initial_sends)
+        for post_id in post_ids:
+            embed = self.messages[post_id].edit.await_args.kwargs["embed"]
+            self.assertIn("**[Captain](<https://discordapp.com/users/1?tab=wishlist>)**", str(embed.to_dict()))
+
+    async def test_nickname_command_updates_the_open_match_title_and_public_players_field(self):
+        source = await self.scheduled_pairing(self.final, "QF1")
+        await source.set({"thread": "777", "msg": "100"})
+        await bind_thread(self.final, source, "777")
+        self.message._channel_id = FINAL_CHANNEL
+        self.message.components = []
+        self.message.embeds = [ipy.Embed(title="**Match Scheduled**", fields=[ipy.EmbedField("**Players**", "Old names")])]
+        self.channel.__class__ = ipy.GuildText
+        self.channel.id = FINAL_CHANNEL
+        thread = MagicMock(spec=ipy.ThreadChannel, id=777, edit=AsyncMock())
+        thread.name = "🔵 QF1 · discord1 vs. discord8"
+        self.bot.fetch_channel.side_effect = lambda channel_id: thread if channel_id == 777 else self.channel
+        self.bot.fetch_user = AsyncMock(side_effect=lambda user: ipy.User(
+            id=user, client=self.bot, username=f"discord{user}", avatar=None))
+        self.bot.ext = {}
+        cog = FinalCommands(self.bot)
+        ctx = MagicMock(spec=ipy.SlashContext, bot=self.bot, guild_id=self.final.guild_id,
+                        defer=AsyncMock(), send=AsyncMock())
+        ctx.author.has_role.side_effect = lambda role: role in LVL1_ROLES
+        player = await self.bot.fetch_user(1)
+
+        await cog.final_player_nick.callback.func(cog, ctx, player=player, nickname="Captain")
+
+        thread.edit.assert_awaited_once_with(name="🔵 QF1 · Captain vs. discord8")
+        fields = self.message.edit.await_args.kwargs["embed"]["fields"]
+        self.assertIn("**[Captain](<https://discordapp.com/users/1?tab=wishlist>)**", fields[0]["value"])
+        published = (await Match.get(source.id)).public_message_publication
+        self.assertFalse(published.pending)
+        self.channel.send.assert_not_awaited()
+
     async def test_uncertain_send_is_recovered_by_nonce_without_second_post(self):
         async def uncertain(**kwargs):
             self.message.nonce = kwargs["nonce"]
@@ -186,7 +256,7 @@ class TestFinalPublication(FinalScenarioCase):
         self.channel.guild.fetch_member.side_effect = {"1": member}.get
         await self.final.set({"player_nicknames.1": nickname, "seed_elo.8": 2000})
 
-        expected = render_head_to_head(("al.pal", "Player 8"), (None, None), (2, 1))
+        expected = render_head_to_head(("Al Pal asmo", "Player 8"), (None, None), (2, 1))
 
         async def edit(**payload):
             self.assertEqual(payload["file"].file.getvalue(), expected)

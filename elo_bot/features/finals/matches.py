@@ -1,14 +1,20 @@
+from copy import deepcopy
 import time
 from secrets import token_hex
 
 from beanie import PydanticObjectId
+import interactions as ipy
+from pymongo.errors import PyMongoError
 
+from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.features.finals.bracket import require_round_ready
+from elo_bot.features.finals.labels import final_member_names, thread_label
 from elo_bot.features.finals.persistence import transaction
 from elo_bot.core.finals import FINAL_DISTRICTS, FinalError, ROUND_NODES
 from elo_bot.db import EloFinal, Match, Participant, Player
 from elo_bot.db.season_models import EloFinalMatch
-from elo_bot.features.matches.messages import MatchMessageState
+from elo_bot.features.matches.messages import MatchMessagePublicationError, MatchMessageState, publish_match_message
+from elo_bot.features.matches.message_lock import match_message_lock
 from elo_bot.features.matches.timing import final_hosting_format_is_set, hosting_started
 from elo_bot.features.finals.lifecycle import ongoing_final
 
@@ -33,6 +39,52 @@ async def require_ongoing_match(source: Match) -> EloFinal:
     require_current_match(final, source)
     await ongoing_final(final.id)
     return final
+
+
+async def refresh_match_names(ctx: ipy.InteractionContext, final: EloFinal, user_id: str) -> list[str]:
+    failed = []
+    for node in final.nodes.values():
+        if not node.thread_id or not node.match_id or node.winner or user_id not in node.contestants:
+            continue
+        try:
+            async with match_message_lock(node.thread_id):
+                source = await Match.get(node.match_id)
+                if source is None:
+                    continue
+                current = await require_ongoing_match(source)
+                if current.nodes[node.id].thread_id != node.thread_id:
+                    continue
+                players = [await ctx.bot.fetch_user(int(player.user_id)) for player in source.participants]
+                thread = await ctx.bot.fetch_channel(int(node.thread_id))
+                if not isinstance(thread, ipy.ThreadChannel) or any(player is None for player in players):
+                    failed.append(node.id)
+                    continue
+                status = thread.name.partition(" ")[0]
+                label = thread_label(current, node.id, players)
+                if thread.name != f"{status} {label}":
+                    await schedule_channel_name_edit(thread, status, label)
+                if source.msg:
+                    channel = await ctx.bot.fetch_channel(source.routing_channel_id)
+                    if not isinstance(channel, (ipy.GuildText, ipy.GuildNews)):
+                        failed.append(node.id)
+                        continue
+                    message = await channel.fetch_message(int(source.msg))
+                    if not message.embeds:
+                        continue
+                    embed = deepcopy(message.embeds[0])
+                    field = next((field for field in embed.fields if field.name == "**Players**"), None)
+                    if field is None:
+                        continue
+                    user_ids = [player.user_id for player in source.participants]
+                    names = await final_member_names(current, channel.guild, user_ids)
+                    matchup = " vs. ".join(names[user] for user in user_ids)
+                    if field.value != matchup:
+                        field.value = matchup
+                        await publish_match_message(ctx, source, MatchMessageState.capture(source, 0), embed=embed,
+                                                    existing_message=message, public_channel=channel)
+        except (ipy.errors.HTTPException, PyMongoError, FinalError, MatchMessagePublicationError):
+            failed.append(node.id)
+    return failed
 
 
 async def schedule_final_match(source: Match, timestamp: int, *, player: int | None = None) -> Match:

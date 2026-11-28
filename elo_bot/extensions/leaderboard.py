@@ -187,7 +187,7 @@ async def construct_leaderboard_string(guild: ipy.Guild, players_sorted: list[Pl
         page = players_sorted[starting_index:starting_index + LB_ENTRIES_PER_PAGE]
     if lb_type in {"Tokens", "Predictions", "Betting"}:
         members = await asyncio.gather(*(guild.fetch_member(row.user_id) for row in page))
-        return final_board_text(page, lb_type, {row.user_id: mention_user(member, row.user_id, mention_type="Player")
+        return final_board_text(page, lb_type, {row.user_id: mention_user(member, row.user_id, display_name=row.nickname)
             for row, member in zip(page, members)})
     members = await asyncio.gather(*(guild.fetch_member(player.user_id) for player in page))
     leaderboard = ""

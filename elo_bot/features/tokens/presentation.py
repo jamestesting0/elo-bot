@@ -17,7 +17,7 @@ from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
 from elo_bot.discord.mentions import mention_user, fetch_members
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket
-from elo_bot.features.finals.labels import market_label
+from elo_bot.features.finals.labels import final_nickname, final_player_link, market_label
 from elo_bot.features.finals.bracket import seeded_players
 from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_URL, final_matchup_attachment
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostReference, publish_post
@@ -53,7 +53,8 @@ def market_signature(market: FinalBettingMarket, final: EloFinal) -> str:
     )}
     state.update({"contestants": market.contestants, "seeding": seeded_players(final),
                   "names": {user: final.player_nicknames.get(user, user) for user in market.contestants}})
-    return sha256(json.dumps({"presentation": 5, **state}, sort_keys=True).encode()).hexdigest()
+    state["nicknames"] = [final_nickname(final, user) for user in market.contestants]
+    return sha256(json.dumps({"presentation": 6, **state}, sort_keys=True).encode()).hexdigest()
 
 
 async def publish_market(bot, final: EloFinal, market: FinalBettingMarket):
@@ -69,7 +70,7 @@ async def _publish_market(bot, final: EloFinal, market: FinalBettingMarket):
     try:
         channel = await bot.fetch_channel(channel_id)
         members = await fetch_members(channel.guild, market.contestants)
-        names = {user: mention_user(member, user) for user, member in members.items()}
+        names = {user: final_player_link(final, user, member) for user, member in members.items()}
         nonce = sha256(f"final-market:{market.id}".encode()).hexdigest()[:24]
         reference = PostReference(nonce, bot.user.id, market.announcement_id, market.announcement_attempted)
         await collection.update_one({"_id": market.id},
@@ -111,7 +112,7 @@ async def bet_review(market: FinalBettingMarket, user: str, contestant: str, amo
     _, profit = projected_return(market, old, contestant, amount)
     member = await guild.fetch_member(contestant) if amount else None
     embed = ipy.Embed(title=f"**Season {final.season_number} Final · {market.node_id} Bet Review**", color=embed_color(),
-        description=f"{mention_user(member, contestant)} · {amount:,} {TOKEN_EMOJI}" if amount else
+        description=f"{final_player_link(final, contestant, member)} · {amount:,} {TOKEN_EMOJI}" if amount else
                     f"Cancel bet · Refund: {previous:,} {TOKEN_EMOJI}")
     if amount:
         embed.add_field(name="**Estimated Profit**", value=f"{profit:,} {TOKEN_EMOJI}")

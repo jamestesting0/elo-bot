@@ -16,7 +16,7 @@ from elo_bot.db.match_models import Match
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.discord.decorators import ignore_repeated_clicks
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import fetch_members, member_names, mention_user
+from elo_bot.discord.mentions import fetch_members, member_names
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.discord.modals import ModalSelectLabel, modal_user_id
 from elo_bot.extensions.final.checks import final_action
@@ -24,7 +24,7 @@ from elo_bot.features.finals.invitations import (
     accept_invitation, add_players, decline_invitation, invitation_embed, invite_players, notify, open_seats,
     require_registration, retire_outdated_invitations, withdraw_invitation,
 )
-from elo_bot.features.finals.labels import thread_label
+from elo_bot.features.finals.labels import final_player_link, thread_label
 from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_FILENAME
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.opponent_picks import available_opponents, pick_prompt, pick_receipt, pick_turn, save_pick
@@ -195,7 +195,7 @@ class Roster:
             raise FinalError("The replacement is not in the server.")
         if members[joining].has_role(ELO_BLACKLIST_ROLE):
             raise FinalError("The replacement is banned from Elo.")
-        names = {user: mention_user(member, user) for user, member in members.items()}
+        names = {user: final_player_link(edition, user, member) for user, member in members.items()}
         replaced = await replace_entrant(edition, leaving, joining, members[joining].display_name)
         summary = f"🔁 {names[joining]} replaced {names[leaving]} in {replaced.node_id}"
         lines = [f"{SUCCESS_EMOJI} {names[joining]} replaced {names[leaving]} in {replaced.node_id}."]
@@ -217,7 +217,7 @@ class Roster:
         node = replaced.final.nodes[replaced.node_id]
         first, second = node.contestants
         players = (await self.bot.fetch_user(int(first)), await self.bot.fetch_user(int(second)))
-        schedule_channel_name_edit(thread, thread.name.partition(" ")[0], thread_label(node.id, players))
+        schedule_channel_name_edit(thread, thread.name.partition(" ")[0], thread_label(replaced.final, node.id, players))
         source = await Match.get(node.match_id)
         if source and source.thread_message_id:
             opening = await thread.fetch_message(source.thread_message_id)

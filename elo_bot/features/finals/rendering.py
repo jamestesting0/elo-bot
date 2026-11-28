@@ -99,7 +99,8 @@ def render_bracket(final: EloFinal, picks: dict[str, str] | None = None,
         if user is None and not label:
             continue
         text, font = fitted_label(label, width=188 if center == CHAMPION_CENTER else 168,
-                                  username=usernames.get(user) if user else None, default=user or label)
+                                  username=usernames.get(user) if user else None, default=user or label,
+                                  prefer_plain_name=True)
         left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
         position = (center[0] - (left + right) / 2, center[1] - (top + bottom) / 2)
         color = "#fff6e5"
@@ -159,7 +160,7 @@ def render_scoreboard(final: EloFinal, snapshot: FinalResultSnapshot, avatars: d
                                         center + 90, SCOREBOARD_TOTAL_CENTER + 28), color, 31, None))
         for label, box, color, size, user in centered_labels:
             text, font = fitted_label(label, box[2] - box[0], size, username=usernames.get(user) if user else None,
-                                      default=user or "Player")
+                                      default=user or "Player", prefer_plain_name=True)
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font, stroke_width=1)
             position = ((box[0] + box[2] - left - right) / 2, (box[1] + box[3] - top - bottom) / 2)
             draw.text(position, text, font=font, fill=color, stroke_width=1, stroke_fill="#3b2c2b")

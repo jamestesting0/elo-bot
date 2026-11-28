@@ -12,7 +12,7 @@ from elo_bot.core.match_results import is_valid_match_result_entry
 from elo_bot.db import Match
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.features.finals.labels import final_member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final, match_group
 from elo_bot.features.finals import lifecycle
@@ -120,7 +120,7 @@ class Results:
         await ctx.send("Confirm this result?", embed=preview, components=controls, ephemeral=True)
 
     async def _result_preview(self, ctx, edition, draft):
-        names = await member_names(await member_guild(ctx), draft.snapshot.contestants)
+        names = await final_member_names(edition, await member_guild(ctx), draft.snapshot.contestants)
         preview = score_embed(edition, draft.node_id, draft.snapshot, names)
         if draft.reason:
             preview.add_field(name="**Reason**", value=draft.reason)
@@ -198,7 +198,7 @@ class Results:
             edition.repair_pending = True
             pending = [str(error)]
         guild = await member_guild(ctx)
-        names = await member_names(guild, result.snapshot.contestants)
+        names = await final_member_names(edition, guild, result.snapshot.contestants)
         await ctx.edit_origin(content=result_receipt(edition, result, names, pending=bool(pending),
                                                     round_completed=round_completed),
                               embed=result_embed(edition, result, names), components=[])

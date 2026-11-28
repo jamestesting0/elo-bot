@@ -270,7 +270,7 @@ class TestFinalLeaderboardScopes(unittest.IsolatedAsyncioTestCase):
         ]
         self.finals = [
             SimpleNamespace(id=f"final-{number}", season_number=number, active=number == 7,
-                            schema_version=2)
+                            schema_version=2, player_nicknames={}, nickname_overrides=[])
             for number in (3, 7, 9)
         ]
         self.predictions = []

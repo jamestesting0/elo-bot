@@ -7,7 +7,8 @@ from elo_bot.config.emojis import TOKEN_EMOJI
 from elo_bot.core.token_items import ITEMS
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenLedgerEntry, TokenWallet
-from elo_bot.discord.mentions import member_names
+from elo_bot.discord.mentions import fetch_members
+from elo_bot.features.finals.labels import final_player_link
 
 
 def ledger_label(entry: TokenLedgerEntry) -> str:
@@ -53,24 +54,35 @@ def ledger_label(entry: TokenLedgerEntry) -> str:
             assert_never(unreachable)
 
 
+async def _market_editions(markets: list[FinalBettingMarket]) -> dict[str, EloFinal]:
+    if not markets:
+        return {}
+    finals = await EloFinal.find({"_id": {"$in": list({PydanticObjectId(market.final_id)
+                                                     for market in markets})}}).to_list()
+    return {str(final.id): final for final in finals}
+
+
 async def market_scopes(market_ids: set[str]) -> dict[str, str]:
     if not market_ids:
         return {}
     markets = await FinalBettingMarket.find({"_id": {"$in": list(market_ids)}}).to_list()
-    finals = await EloFinal.find({"_id": {"$in": list({PydanticObjectId(market.final_id)
-                                                     for market in markets})}}).to_list()
-    seasons = {str(final.id): final.season_number for final in finals}
-    return {market.id: f"S{seasons[market.final_id]} {market.node_id}"
-            for market in markets if market.final_id in seasons}
+    finals = await _market_editions(markets)
+    return {market.id: f"S{finals[market.final_id].season_number} {market.node_id}"
+            for market in markets if market.final_id in finals}
 
 
 async def open_bet_lines(wallet: TokenWallet, guild: ipy.Guild) -> list[str]:
     bets = await FinalBet.find({"wallet_id": wallet.id, "active": True}).to_list()
     markets = await FinalBettingMarket.find({"_id": {"$in": [bet.market_id for bet in bets]},
                                             "state": {"$in": ["OPEN", "CLOSED", "SETTLING", "CORRECTING"]}}).to_list()
-    active = {market.id for market in markets}
-    bets = [bet for bet in bets if bet.market_id in active]
-    names = await member_names(guild, {bet.contestant for bet in bets})
-    scopes = await market_scopes(active)
-    return [f"{scopes[bet.market_id]} · {bet.amount:,} {TOKEN_EMOJI} on {names[bet.contestant]}"
-            for bet in bets if bet.market_id in scopes]
+    finals = await _market_editions(markets)
+    by_id = {market.id: market for market in markets if market.final_id in finals}
+    bets = [bet for bet in bets if bet.market_id in by_id]
+    members = await fetch_members(guild, {bet.contestant for bet in bets})
+    lines = []
+    for bet in bets:
+        market = by_id[bet.market_id]
+        final = finals[market.final_id]
+        name = final_player_link(final, bet.contestant, members[bet.contestant])
+        lines.append(f"S{final.season_number} {market.node_id} · {bet.amount:,} {TOKEN_EMOJI} on {name}")
+    return lines

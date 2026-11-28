@@ -61,6 +61,7 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
                         if query.get("player_nicknames.100") == {"$exists": True} and not exists:
                             return SimpleNamespace(matched_count=0)
                         row["player_nicknames"]["100"] = change["$set"]["player_nicknames.100"]
+                        row["nickname_overrides"].append(change["$addToSet"]["nickname_overrides"])
                         return SimpleNamespace(matched_count=1)
 
                     async def commit(action):
@@ -71,6 +72,7 @@ class TestBackgroundStateConsistency(unittest.IsolatedAsyncioTestCase):
                     )
                     with (
                         patch.object(EloFinal, "get_pymongo_collection", return_value=collection),
+                        patch.object(EloFinal, "get", new=AsyncMock(side_effect=find)),
                         patch.object(cog, "_ongoing_edition", new=AsyncMock(side_effect=find)),
                         patch("elo_bot.features.finals.lifecycle.ongoing_final", new=AsyncMock(side_effect=find)),
                         patch("elo_bot.features.finals.lifecycle.transaction", new=AsyncMock(side_effect=commit)),

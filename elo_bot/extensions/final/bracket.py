@@ -8,7 +8,7 @@ from elo_bot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.core.finals import FinalError
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.features.finals.labels import final_member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import bracket_group, final
 from elo_bot.features.finals import lifecycle
@@ -44,11 +44,11 @@ class Bracket:
         require_lineup_confirmation(edition)
         draft_owner = lifecycle.current_pairing_draft_owner(edition)
         if draft_owner not in {None, owner}:
-            names = await member_names(await member_guild(ctx), [draft_owner])
+            names = await final_member_names(edition, await member_guild(ctx), [draft_owner])
             raise FinalError(f"{names[draft_owner]} is editing the bracket.")
         pairs = edition.manual_draft if edition.draft_setup_revision == edition.setup_revision else automatic_pairs(edition)
         edition = await lifecycle.save_pairing_draft(edition, owner, pairs)
-        names = await member_names(await member_guild(ctx), edition.entrant_ids)
+        names = await final_member_names(edition, await member_guild(ctx), edition.entrant_ids)
         embed, controls = editor_view(edition, names)
         if edit:
             await ctx.edit_origin(content="", embed=embed, components=controls)
@@ -94,6 +94,6 @@ class Bracket:
             case _:
                 raise FinalError("This view is outdated. Run `/final bracket create` again.")
         guild = await member_guild(ctx)
-        names = await member_names(guild, edition.entrant_ids)
+        names = await final_member_names(edition, guild, edition.entrant_ids)
         embed, controls = editor_view(edition, names)
         await ctx.edit_origin(embed=embed, components=controls)

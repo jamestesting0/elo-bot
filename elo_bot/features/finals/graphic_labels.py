@@ -45,9 +45,12 @@ def _fit(text: str, probe: ImageFont.FreeTypeFont, width: float, size: int,
 
 
 def fitted_label(text: str, width: float = 168, size: int = 24, *, username: str | None = None,
-                 default: str = "Player") -> tuple[str, ImageFont.FreeTypeFont]:
+                 default: str = "Player", prefer_plain_name: bool = False) -> tuple[str, ImageFont.FreeTypeFont]:
     text = _single_line(text)
-    candidates = (text, normalize("NFKC", text), _single_line(username or ""), _plain_name(text), default, "Player")
+    plain_name = _plain_name(text)
+    username = _single_line(username or "")
+    fallbacks = (plain_name, username) if prefer_plain_name else (username, plain_name)
+    candidates = (text, normalize("NFKC", text), *fallbacks, default, "Player")
 
     paths = tuple(path for path in (FONT, *FALLBACK_FONTS) if path.is_file())
     probes: dict[Path, tuple[ImageFont.FreeTypeFont, bytes]] = {}

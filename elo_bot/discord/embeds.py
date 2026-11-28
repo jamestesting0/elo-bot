@@ -16,10 +16,10 @@ def footer_image() -> str:
     return FOOTER_LOGOS[getattr(runtime, "VERSION", "main")]
 
 
-def profile_author(user: ipy.User | ipy.Member | None) -> ipy.EmbedAuthor:
+def profile_author(user: ipy.User | ipy.Member | None, *, display_name: str | None = None) -> ipy.EmbedAuthor:
     if user is None:
-        return ipy.EmbedAuthor(name="Unknown Player")
-    return ipy.EmbedAuthor(name=user.display_name, url=f"https://discord.com/users/{user.id}",
+        return ipy.EmbedAuthor(name=display_name or "Unknown Player")
+    return ipy.EmbedAuthor(name=display_name or user.display_name, url=f"https://discord.com/users/{user.id}",
                            icon_url=user.display_avatar.url)
 
 

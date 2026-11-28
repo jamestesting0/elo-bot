@@ -1,13 +1,33 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import assert_never
 
 import interactions as ipy
+from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import LOSS_EMOJI, WIN_EMOJI
-from elo_bot.core.finals import ROUND_NODES, PredictionState
-from elo_bot.db import EloFinal, EloFinalMatch
+from elo_bot.core.finals import ROUND_NODES, PredictionState, is_final_match
+from elo_bot.db import EloFinal, EloFinalMatch, Match
 from elo_bot.db.token_models import FinalBettingMarket
-from elo_bot.discord.mentions import mention_user
+from elo_bot.discord.mentions import fetch_members, mention_user
+
+
+def final_nickname(final: EloFinal, user_id: str) -> str | None:
+    return (final.player_nicknames.get(user_id) or None) if user_id in final.nickname_overrides else None
+
+
+def final_player_link(final: EloFinal, user_id: str, member: ipy.User | ipy.Member | None = None) -> str:
+    return mention_user(member, user_id, display_name=final_nickname(final, user_id))
+
+
+async def final_member_names(final: EloFinal, guild: ipy.Guild, user_ids: Iterable[str]) -> dict[str, str]:
+    members = await fetch_members(guild, user_ids)
+    return {user: final_player_link(final, user, member) for user, member in members.items()}
+
+
+async def match_player_links(match: Match, members: Sequence[ipy.User | ipy.Member | None]) -> list[str]:
+    final = await EloFinal.get(PydanticObjectId(match.final_id)) if is_final_match(match) and match.final_id else None
+    return [final_player_link(final, player.user_id, member) if final else mention_user(member, player.user_id)
+            for player, member in zip(match.participants, members, strict=True)]
 
 
 def phase_label(final: EloFinal) -> str:
@@ -68,9 +88,9 @@ def pairing_label(final: EloFinal, node: EloFinalMatch) -> str:
         final.player_nicknames.get(user, user) if user else "TBD" for user in node.contestants)
 
 
-def thread_label(node_id: str, players: Sequence[ipy.User]) -> str:
-    """Thread names use Discord usernames, like normal match threads."""
-    return f"{node_id} · " + " vs. ".join(str(player) for player in players)
+def thread_label(final: EloFinal, node_id: str, players: Sequence[ipy.User]) -> str:
+    names = " vs. ".join(final_nickname(final, str(player.id)) or str(player) for player in players)
+    return f"{node_id} · {names}".replace("@", "")[:98]
 
 
 def matchup(contestants: Sequence[str | None], winner: str | None,

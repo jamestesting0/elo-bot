@@ -24,6 +24,7 @@ from elo_bot.core.match_results import is_match_finished
 from elo_bot.db import Match
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.discord.mentions import mention_user
+from elo_bot.features.finals.labels import match_player_links
 from elo_bot.extensions.match.groups import set_group
 from elo_bot.features.matches.controls import check_current_match, update_match
 from elo_bot.features.matches.message_lock import coordinated_match_message
@@ -165,6 +166,7 @@ class MatchSettingsCommands:
         else:
             p1 = await self.bot.fetch_user(int(match.participants[0].user_id))
             p2 = await self.bot.fetch_user(int(match.participants[1].user_id))
+            player1_name, player2_name = await match_player_links(match, (p1, p2))
 
             public_embed = ipy.Embed(
                 title=thread_embed.title,
@@ -173,7 +175,7 @@ class MatchSettingsCommands:
                     f"Host: {mention_user(user, mention_type='Helper')}."
                 ),
                 fields=[
-                    ipy.EmbedField(name="**Players**", value=f"{mention_user(p1)} vs. {mention_user(p2)}"),
+                    ipy.EmbedField(name="**Players**", value=f"{player1_name} vs. {player2_name}"),
                     ipy.EmbedField(name="**Time**", value=f"{long_ts}\n{relative_ts}"),
                     ipy.EmbedField(
                         name="**Host Clan**",

@@ -1,13 +1,14 @@
 import interactions as ipy
 from interactions import OptionType, SlashContext, slash_option
 
-from elo_bot.config.emojis import SUCCESS_EMOJI
+from elo_bot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.features.finals.labels import final_member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final
 from elo_bot.features.finals import lifecycle
+from elo_bot.features.finals.matches import refresh_match_names
 from elo_bot.features.finals.registration_posts import sync_registration_posts
 
 
@@ -36,7 +37,7 @@ class Setup:
         edition = await self._ongoing_edition(ctx, access="manager")
         edition = await lifecycle.add_entrant(edition, str(player.id), nickname or player.display_name,
                                              override=bool(nickname and nickname.strip()))
-        names = await member_names(await member_guild(ctx), [str(player.id)])
+        names = await final_member_names(edition, await member_guild(ctx), [str(player.id)])
         await ctx.send(f"{SUCCESS_EMOJI} Added {names[str(player.id)]} ({len(edition.entrant_ids)} of 8).",
                        ephemeral=True)
         await sync_registration_posts(self.bot, edition)
@@ -52,7 +53,7 @@ class Setup:
         await ctx.defer(ephemeral=True)
         edition = await self._ongoing_edition(ctx, access="manager")
         await lifecycle.remove_entrant(edition, str(player.id))
-        names = await member_names(await member_guild(ctx), [str(player.id)])
+        names = await final_member_names(edition, await member_guild(ctx), [str(player.id)])
         await ctx.send(f"{SUCCESS_EMOJI} Removed {names[str(player.id)]} ({len(edition.entrant_ids) - 1} of 8).",
                        ephemeral=True)
         await sync_registration_posts(self.bot, edition)
@@ -66,8 +67,16 @@ class Setup:
     @ipy.check(ipy.has_any_role(*LVL1_ROLES))
     @final_action
     async def final_player_nick(self, ctx: SlashContext, player: ipy.User, nickname: str):
+        await ctx.defer(ephemeral=True)
         elo_final = await self._ongoing_edition(ctx, access="manager")
-        old_nick = elo_final.player_nicknames.get(str(player.id))
-        await lifecycle.set_nickname(elo_final, str(player.id), nickname)
-        await ctx.send(f"{SUCCESS_EMOJI} Nickname updated: **{old_nick}** → **{nickname}**.", ephemeral=True)
-        await sync_registration_posts(self.bot, elo_final)
+        user_id = str(player.id)
+        old_nick = elo_final.player_nicknames.get(user_id)
+        await lifecycle.set_nickname(elo_final, user_id, nickname)
+        current = await lifecycle.reload_final(elo_final)
+        failed = await refresh_match_names(ctx, current, user_id)
+        saved_nick = current.player_nicknames.get(user_id, nickname.strip()[:80])
+        content = f"{SUCCESS_EMOJI} Nickname updated: **{old_nick}** → **{saved_nick}**."
+        if failed:
+            content += f"\n{IMPORTANT_EMOJI} Could not refresh {', '.join(failed)}. Run `/final nick` again to retry."
+        await ctx.send(content, ephemeral=True)
+        await sync_registration_posts(self.bot, current)

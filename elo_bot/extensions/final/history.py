@@ -10,7 +10,7 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.db.token_models import TokenWallet
 from elo_bot.discord.members import member_guild
-from elo_bot.discord.mentions import member_names
+from elo_bot.features.finals.labels import final_member_names
 from elo_bot.discord.pagination import InvalidPageError, build_page_button, build_page_jump_modal, parse_page_number
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final
@@ -33,7 +33,7 @@ class History:
         if results:
             result = results[page - 1]
             guild = await member_guild(ctx)
-            names = await member_names(guild, result.snapshot.contestants)
+            names = await final_member_names(edition, guild, result.snapshot.contestants)
             embed = result_embed(edition, result, names)
             if edition.nodes[result.node_id].result_id != result.id:
                 embed.add_field(name="**History**", value="Replaced by a correction.")

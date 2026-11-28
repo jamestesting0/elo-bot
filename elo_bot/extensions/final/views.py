@@ -11,10 +11,11 @@ from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.discord.members import fetch_member_otherwise_user, member_guild
-from elo_bot.discord.mentions import fetch_members, member_names, member_usernames, mention_user
+from elo_bot.discord.mentions import fetch_members, member_usernames
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import bracket_group, final
 from elo_bot.features.finals.bracket_ui import bracket_controls, bracket_embed
+from elo_bot.features.finals.labels import final_member_names, final_player_link
 from elo_bot.features.finals.predictions import submitted_predictions
 from elo_bot.features.finals.profile_ui import profile_view
 from elo_bot.features.finals.rendering import render_bracket
@@ -63,7 +64,7 @@ class Views:
         user_ids = set(edition.entrant_ids)
         guild = await member_guild(ctx)
         members = await fetch_members(guild, user_ids)
-        names = {user: mention_user(member, user) for user, member in members.items()}
+        names = {user: final_player_link(edition, user, member) for user, member in members.items()}
         embed = bracket_embed(edition, names, await submitted_predictions(edition))
         controls = await bracket_controls(edition)
         if not edition.nodes:
@@ -98,5 +99,5 @@ class Views:
         if result is None:
             raise FinalError("This match result is unavailable.")
         guild = await member_guild(ctx)
-        names = await member_names(guild, result.snapshot.contestants)
+        names = await final_member_names(edition, guild, result.snapshot.contestants)
         await ctx.send(embed=result_embed(edition, result, names), ephemeral=True)

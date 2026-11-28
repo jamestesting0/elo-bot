@@ -11,11 +11,16 @@ from pymongo.errors import PyMongoError
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.final_models import FinalMatchResult
-from elo_bot.discord.mentions import member_usernames, mention_user
+from elo_bot.discord.mentions import member_usernames
+from elo_bot.features.finals.labels import final_nickname, final_player_link
 from elo_bot.features.finals.lifecycle import refresh_display_names, reload_final
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostReference, publish_post
 from elo_bot.features.finals.rendering import render_scoreboard
 from elo_bot.features.finals.result_ui import result_embed
+
+
+def _result_nicknames(final: EloFinal, result: FinalMatchResult) -> dict[str, str]:
+    return {user: name for user in result.snapshot.contestants if (name := final_nickname(final, user)) is not None}
 
 
 async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None:
@@ -26,7 +31,9 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
         if node is None or node.result_id != result.id:
             return
         progress = final.result_progress[key]
+        nicknames = _result_nicknames(final, result)
         if (progress.published and not progress.error
+                and progress.published_nicknames == nicknames
                 and progress.published_repair_pending == final.repair_pending
                 and progress.public_message_id
                 and progress.public_published_repair_pending == final.repair_pending):
@@ -92,7 +99,6 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
                 except (ipy.errors.HTTPException, ClientError, TimeoutError, OSError):
                     member = None
                 members[user] = member
-                names[user] = mention_user(member, user)
                 match result.snapshot.outcome:
                     case "Played":
                         if member and member.display_avatar:
@@ -106,6 +112,8 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
                     case unreachable:
                         assert_never(unreachable)
             final = await refresh_display_names(final, members)
+            nicknames = _result_nicknames(final, result)
+            names = {user: final_player_link(final, user, member) for user, member in members.items()}
             match result.snapshot.outcome:
                 case "Played":
                     try:
@@ -117,7 +125,7 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
                     rendered = None
                 case unreachable:
                     assert_never(unreachable)
-        refresh_image = bool(progress.image_error)
+        refresh_content = bool(progress.image_error) or progress.published_nicknames != nicknames
         for destination, channel in channels:
             public = destination == "public"
             message_id = progress.public_message_id if public else progress.message_id
@@ -127,7 +135,7 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
             if destination == "shared" and progress.public_message_id:
                 message_id, attempted, nonce = (progress.public_message_id, progress.public_send_attempted,
                                                 progress.public_send_nonce)
-            if message_id and published_repair == final.repair_pending and not refresh_image:
+            if message_id and published_repair == final.repair_pending and not refresh_content:
                 continue
             nonce_key = f"final-result:{result.id}" if attempted else f"final-result:{result.id}:{destination}"
             nonce = nonce or sha256(nonce_key.encode()).hexdigest()[:24]
@@ -162,6 +170,7 @@ async def publish_result(bot, final: EloFinal, result: FinalMatchResult) -> None
                 failures.append(str(error))
         await collection.update_one({"_id": final.id}, {"$set": {
             f"{path}.published": not failures, f"{path}.image_error": render_error,
+            f"{path}.published_nicknames": progress.published_nicknames if failures else nicknames,
             f"{path}.error": "; ".join(failures) if failures else render_error}})
         if failures:
             raise FinalError(f"{result.node_id} result saved; publication remains pending.")

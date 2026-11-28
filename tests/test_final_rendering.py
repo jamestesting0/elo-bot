@@ -145,7 +145,7 @@ class TestFinalRendering(unittest.TestCase):
         final = self.edition(8)
         final.player_nicknames.update({"0": "Al Pal | (っ◔ᴗ◔)っ ♥ asmo ♥", "1": "👾\u200d🎮"})
         with patch("elo_bot.features.finals.graphic_labels.FALLBACK_FONTS", ()):
-            actual = render_bracket(final)
+            actual = render_bracket(final, usernames={"0": "al.pall"})
 
         final.player_nicknames.update({"0": "Al Pal asmo", "1": "1"})
         self.assertEqual(actual, render_bracket(final))

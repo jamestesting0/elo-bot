@@ -10,6 +10,7 @@ from elo_bot.db.final_models import FinalPrediction
 from elo_bot.db.token_models import TokenLedgerEntry, TokenWallet
 from elo_bot.config.emojis import RANK_EMOJIS, TOKEN_EMOJI
 from elo_bot.features.finals.lifecycle import final_for_view
+from elo_bot.features.finals.labels import final_nickname
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,9 +22,11 @@ class FinalBoardRow:
     eligible: int = 0
     debt: int = 0
     staked: int = 0
+    nickname: str | None = None
 
 
 async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
+    final = None
     if lb_type == "Betting":
         stats = await betting_stats()
         users = {wallet.id: wallet.user_id for wallet in await TokenWallet.find({"_id": {"$in": list(stats)}}).to_list()}
@@ -68,7 +71,8 @@ async def final_board_rows(lb_type: str, season: str) -> list[FinalBoardRow]:
         values.sort(key=lambda item: (-(Fraction(item[1], item[2]) if item[2] else 0), -item[1], item[0]))
     rows = []
     for index, (user, value, eligible, debt) in enumerate(values):
-        rows.append(FinalBoardRow(user, value, index + 1, scope, eligible, debt))
+        rows.append(FinalBoardRow(user, value, index + 1, scope, eligible, debt,
+                                  nickname=final_nickname(final, user) if final else None))
     return rows
 
 

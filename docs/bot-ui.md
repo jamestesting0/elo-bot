@@ -246,9 +246,10 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 
 ## Final screens
 
-- Bracket names (images, selects) are the player's Discord display name, refreshed before the bracket,
-  a round's threads or a scoreboard is published. A nickname set with `/final add nickname:` or `/final nick`
-  overrides it. Final thread names use Discord usernames like normal match threads (`🟡 QF1 · user1 vs. user8`).
+- A nickname set with `/final add nickname:` or `/final nick` belongs to that Final. It survives bracket
+  resets and appears in the lineup, bracket, dashboard, match, prediction, betting and result views. The
+  bot refreshes the existing Final posts as names change. With no override, Final views use Discord
+  display names and match thread titles use usernames (`🟡 QF1 · user1 vs. user8`).
   Seeds 1 and 4 are in the upper half, and seeds 2 and 3 are in the lower half. The default pairings from top to
   bottom are 1v8, 4v5, 2v7 and 3v6. Opponent picks keep the top four seeds in those slots.
   Bracket images leave unresolved slots blank and label actual byes **BYE**.

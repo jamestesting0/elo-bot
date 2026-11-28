@@ -34,6 +34,7 @@ from elo_bot.features.matches.messages import (
 from elo_bot.features.matches.message_lock import coordinated_match_message, match_message_lock
 from elo_bot.db import Match
 from elo_bot.features.finals.hosting import accept_final_start
+from elo_bot.features.finals.labels import match_player_links
 from elo_bot.features.tokens.stake_publication import sync_stake_notes
 from elo_bot.core.finals import FinalError
 from elo_bot.config.emojis import ERROR_EMOJI
@@ -239,8 +240,7 @@ async def complete_live_start(
     members = await asyncio.gather(
         guild.fetch_member(player1_id), guild.fetch_member(player2_id),
     )
-    player1_name = mention_user(members[0], player1_id)
-    player2_name = mention_user(members[1], player2_id)
+    player1_name, player2_name = await match_player_links(match_doc, members)
     if start.player1_elo == start.player2_elo:
         chosen_player = random.choice([str(player1_id), str(player2_id)])
     elif start.player1_elo > start.player2_elo:

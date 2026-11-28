@@ -70,6 +70,7 @@ class FinalResultProgress(BaseModel):
     public_published_repair_pending: bool | None = None
     image_error: str | None = None
     published: bool = False
+    published_nicknames: dict[str, str] = Field(default_factory=dict)
     published_repair_pending: bool | None = None
     thread_deleted: bool = False
     error: str | None = None

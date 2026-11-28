@@ -7,18 +7,19 @@ import json
 
 from elo_bot.features.finals.rendering import render_bracket
 from elo_bot.core.finals import FinalError
-from elo_bot.discord.mentions import mention_user, fetch_members, member_usernames
+from elo_bot.discord.mentions import fetch_members, member_usernames
 from elo_bot.db import EloFinal
 from elo_bot.features.finals.bracket_ui import bracket_controls, bracket_embed
 from elo_bot.features.finals.lifecycle import refresh_display_names, reload_final
+from elo_bot.features.finals.labels import final_player_link
 from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostContent, PostReference, publish_post
 from elo_bot.features.finals.predictions import submitted_predictions
 
 
 async def bracket_signature(final: EloFinal) -> str:
     """Fingerprint everything the public bracket post shows, including its predictions line."""
-    content = {"presentation": 4, "season": final.season_number, "state": final.state, "champion": final.champion,
-               "names": final.player_nicknames, "active": final.active,
+    content = {"presentation": 5, "season": final.season_number, "state": final.state, "champion": final.champion,
+               "names": final.player_nicknames, "nickname_overrides": sorted(final.nickname_overrides), "active": final.active,
                "predictions": [final.predictions_ever_opened, final.prediction_state, await submitted_predictions(final)],
                "nodes": {key: node.model_dump(mode="json") for key, node in final.nodes.items()}}
     return sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
@@ -39,9 +40,10 @@ async def publish_bracket(bot: ipy.Client, final: EloFinal) -> ipy.Message:
             submitted = await submitted_predictions(final)
             content_filter = {"_id": final.id, "state": final.state, "champion": final.champion,
                               "player_nicknames": final.player_nicknames, "active": final.active,
+                              "nickname_overrides": final.nickname_overrides or {"$in": [[], None]},
                               "prediction_state": final.prediction_state,
                               "nodes": {key: node.model_dump() for key, node in final.nodes.items()}}
-            names = {user: mention_user(member, user) for user, member in members.items()}
+            names = {user: final_player_link(final, user, member) for user, member in members.items()}
             embed = bracket_embed(final, names, submitted)
             render_error = None
             rendered = None

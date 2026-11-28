@@ -1,0 +1,211 @@
+from collections.abc import Sequence
+from contextlib import ExitStack, suppress
+from hashlib import sha256
+import json
+
+import anyio
+import interactions as ipy
+from pymongo.errors import PyMongoError
+
+from elo_bot.config.emojis import TOKEN_EMOJI, WIN_EMOJI
+from elo_bot.config.ids import FINAL_CHANNEL
+from elo_bot.core.finals import FinalError, ROUND_NODES
+from elo_bot.db import EloFinal
+from elo_bot.db.season_models import FinalBettingPost
+from elo_bot.db.token_models import FinalBettingMarket
+from elo_bot.discord.embeds import embed_color
+from elo_bot.discord.mentions import fetch_members
+from elo_bot.discord.message_edits import edit_channel_message
+from elo_bot.features.finals.bracket import seeded_players
+from elo_bot.features.finals.embeds import final_season_label
+from elo_bot.features.finals.head_to_head import final_matchup_attachment
+from elo_bot.features.finals.labels import final_nickname, final_player_link, market_label
+from elo_bot.features.finals.lifecycle import reload_final
+from elo_bot.features.finals.posts import PUBLICATION_LOCKS, PostReference, locate_post
+
+
+BETTING_LINKS = {"Quarterfinals": "QF Betting", "Semifinals": "SF Betting", "Final": "Final Betting"}
+BETTING_TITLES = {"Quarterfinals": "Quarterfinal Betting", "Semifinals": "Semifinal Betting", "Final": "Final Betting"}
+
+
+def _fingerprint(value) -> str:
+    return sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+
+
+def _current_markets(final: EloFinal, round_name: str,
+                     markets: Sequence[FinalBettingMarket]) -> list[FinalBettingMarket]:
+    by_node = {market.node_id: market for market in markets
+               if (node := final.nodes.get(market.node_id)) is not None and not node.bye
+               and node.contestant_revision == market.contestant_revision}
+    return [by_node[node] for node in ROUND_NODES[round_name] if node in by_node]
+
+
+def _artwork_name(final: EloFinal, round_name: str, market: FinalBettingMarket) -> str:
+    seeds = seeded_players(final)
+    players = [(user, final.player_nicknames.get(user), seeds.index(user) + 1 if user in seeds else None)
+               for user in market.contestants]
+    return f"{_artwork_prefix(final, round_name)}{market.node_id}-{_fingerprint(players)[:16]}.webp"
+
+
+def _artwork_prefix(final: EloFinal, round_name: str) -> str:
+    return f"final-betting-{final.id}-{ROUND_NODES[round_name][0]}-"
+
+
+def _allows_bets(final: EloFinal) -> bool:
+    return final.active and not final.repair_pending and final.state not in {"CANCELLING", "CANCELLED"}
+
+
+def _signature(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket]) -> str:
+    return _fingerprint([1, _allows_bets(final), [
+        [market.id, market.contestants, market.state, market.pools, market.desired_winner,
+         [final_nickname(final, user) for user in market.contestants], _artwork_name(final, round_name, market)]
+        for market in markets
+    ]])
+
+
+def _legacy_pending(market: FinalBettingMarket, board_id: str | None) -> bool:
+    return bool((market.announcement_id or market.announcement_attempted)
+                and market.announcement_signature != f"round:{board_id}")
+
+
+def round_post_pending(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket]) -> bool:
+    round_markets = [market for market in markets if market.node_id in ROUND_NODES[round_name]]
+    post = final.betting_posts.get(round_name)
+    if post is None:
+        return final.active and bool(round_markets)
+    return (not post.message_id or bool(post.error)
+            or post.signature != _signature(final, round_name, _current_markets(final, round_name, round_markets))
+            or any(_legacy_pending(market, post.message_id) for market in round_markets))
+
+
+def round_betting_card(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket],
+                       members: dict[str, ipy.Member | None], gallery: list[ipy.MediaGalleryItem]) -> ipy.ContainerComponent:
+    lines = []
+    options = []
+    for market in markets:
+        players = [final_player_link(final, user, members[user])
+                   + (f" {WIN_EMOJI}" if market.state == "PAID" and user == market.desired_winner else "")
+                   for user in market.contestants]
+        lines.append(f"`{market.node_id}` {' vs. '.join(players)} · {market_label(market)} · "
+                     f"{sum(market.pools.values()):,} {TOKEN_EMOJI}")
+        if market.state == "OPEN" and _allows_bets(final):
+            names = [final.player_nicknames.get(user, user) for user in market.contestants]
+            detail = " vs. ".join(" ".join(name.split()) for name in names)
+            options.append(ipy.StringSelectOption(label=f"{market.node_id} · {detail}"[:100], value=market.id))
+    title = f"-# {final_season_label(final.season_number)}\n**{BETTING_TITLES[round_name]}**"
+    body = ipy.TextDisplayComponent("\n".join(lines) or "No markets available.")
+    card = ipy.ContainerComponent(ipy.TextDisplayComponent(title), body, accent_color=embed_color())
+    if gallery:
+        card.append(ipy.MediaGalleryComponent(gallery))
+    if options:
+        card.append(ipy.ActionRow(ipy.StringSelectMenu(*options, placeholder="Choose a match",
+                                                        custom_id=f"betround|{final.id}|{round_name}")))
+    return card
+
+
+async def _redirect_legacy_posts(bot: ipy.Client, final: EloFinal, board: ipy.Message,
+                                 markets: Sequence[FinalBettingMarket], board_channel: ipy.GuildText) -> None:
+    url = f"https://discord.com/channels/{final.guild_id}/{board_channel.id}/{board.id}"
+    for market in markets:
+        if not _legacy_pending(market, str(board.id)):
+            continue
+        channel_id = market.announcement_channel_id or final.channel_id or FINAL_CHANNEL
+        channel = board_channel if channel_id == board_channel.id else await bot.fetch_channel(channel_id)
+        nonce = sha256(f"final-market:{market.id}".encode()).hexdigest()[:24]
+        reference = PostReference(nonce, bot.user.id, market.announcement_id, market.announcement_attempted)
+        legacy = await locate_post(channel, reference) if channel is not None else None
+        if legacy is not None:
+            await edit_channel_message(legacy, content=f"`{market.node_id}` · [Betting board](<{url}>)",
+                                       embeds=[], components=[], attachments=[],
+                                       allowed_mentions=ipy.AllowedMentions.none())
+        await market.set({"announcement_signature": f"round:{board.id}", "publication_error": None})
+
+
+async def _load_round_markets(final: EloFinal, round_name: str) -> list[FinalBettingMarket]:
+    return await FinalBettingMarket.find({"final_id": str(final.id),
+        "node_id": {"$in": list(ROUND_NODES[round_name])}}).to_list()
+
+
+async def publish_betting_round(bot: ipy.Client, final: EloFinal, round_name: str) -> None:
+    lock = PUBLICATION_LOCKS.setdefault(f"round-betting:{final.id}:{round_name}", anyio.Lock())
+    async with lock:
+        path = f"betting_posts.{round_name}"
+        collection = EloFinal.get_pymongo_collection()
+        try:
+            final = await reload_final(final)
+            all_markets = await _load_round_markets(final, round_name)
+            if not round_post_pending(final, round_name, all_markets):
+                return
+            markets = _current_markets(final, round_name, all_markets)
+            signature = _signature(final, round_name, markets)
+            post = final.betting_posts.get(round_name, FinalBettingPost())
+            channel = await bot.fetch_channel(post.channel_id or FINAL_CHANNEL)
+            if channel is None:
+                raise FinalError("The Final channel is unavailable.")
+            nonce = sha256(f"final-round-betting:{final.id}:{round_name}".encode()).hexdigest()[:24]
+            prefix = _artwork_prefix(final, round_name)
+            selector_id = f"betround|{final.id}|{round_name}"
+
+            def matches_board(message: ipy.Message) -> bool:
+                return (any(attachment.filename.startswith(prefix) for attachment in message.attachments)
+                        or any(getattr(control, "custom_id", None) == selector_id
+                               for container in message.components if isinstance(container, ipy.ContainerComponent)
+                               for row in container.components if isinstance(row, ipy.ActionRow)
+                               for control in row.components))
+
+            board = await locate_post(channel, PostReference(nonce, bot.user.id, post.message_id, post.attempted, matches_board))
+            if board is None or post.signature != signature:
+                if board is None:
+                    claimed = await collection.update_one({"_id": final.id}, {"$set": {
+                        f"{path}.attempted": True, f"{path}.channel_id": int(channel.id),
+                    }})
+                    if not claimed.matched_count:
+                        raise FinalError("The Final changed before its betting board was published.")
+                board, complete = await _write_board(channel, board, final, round_name, markets, nonce)
+                saved = await collection.update_one({"_id": final.id}, {"$set": {
+                    f"{path}.message_id": str(board.id), f"{path}.signature": signature if complete else None,
+                }})
+                if not saved.matched_count:
+                    raise FinalError("Could not save the betting board link.")
+                if not complete:
+                    raise FinalError("Matchup artwork is pending.")
+                latest = await reload_final(final)
+                latest_markets = await _load_round_markets(latest, round_name)
+                if signature != _signature(latest, round_name, _current_markets(latest, round_name, latest_markets)):
+                    raise FinalError("Betting changed during publication.")
+            await _redirect_legacy_posts(bot, final, board, all_markets, channel)
+            await collection.update_one({"_id": final.id}, {"$set": {f"{path}.error": None}})
+        except (ipy.errors.HTTPException, FinalError, PyMongoError) as error:
+            with suppress(PyMongoError):
+                await collection.update_one({"_id": final.id}, {"$set": {f"{path}.error": str(error)}})
+            raise FinalError(f"{BETTING_LINKS[round_name]} update pending. Use `/final recover`.") from error
+
+
+async def _write_board(channel, board, final, round_name, markets, nonce) -> tuple[ipy.Message, bool]:
+    members = await fetch_members(channel.guild, {user for market in markets for user in market.contestants})
+    retained = []
+    files = []
+    gallery = []
+    attachments = {attachment.filename: attachment for attachment in board.attachments} if board is not None else {}
+    filenames = [_artwork_name(final, round_name, market) for market in markets]
+    with ExitStack() as stack:
+        if all(filename in attachments for filename in filenames):
+            retained = [attachments[filename] for filename in filenames]
+            gallery = [ipy.MediaGalleryItem(attachment.url.split("?", 1)[0], description=attachment.description)
+                       for attachment in retained]
+        else:
+            for market, filename in zip(markets, filenames, strict=True):
+                if artwork := await final_matchup_attachment(final, tuple(market.contestants), members):
+                    stack.enter_context(artwork)
+                    artwork.file_name = filename
+                    files.append(artwork)
+                    gallery.append(ipy.MediaGalleryItem(f"attachment://{filename}", description=artwork.description))
+        card = round_betting_card(final, round_name, markets, members, gallery)
+        mentions = ipy.AllowedMentions.none()
+        if board is None:
+            board = await channel.send(components=[card], files=files or None, nonce=nonce, enforce_nonce=True,
+                                       allowed_mentions=mentions)
+        else:
+            await edit_channel_message(board, components=[card], attachments=retained, files=files or None,
+                                       allowed_mentions=mentions)
+    return board, len(gallery) == len(markets)

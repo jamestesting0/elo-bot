@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import interactions as ipy
 from beanie import PydanticObjectId
 
 from elo_bot.config.emojis import LOSS_EMOJI, STAR_EMOJI, WIN_EMOJI
@@ -11,7 +12,8 @@ from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.features.finals.bracket import automatic_pairs, build_bracket
 from elo_bot.features.finals.bracket_ui import bracket_controls, bracket_embed
 from elo_bot.features.finals.result_ui import score_embed
-from elo_bot.features.tokens.presentation import market_embed, market_controls
+from elo_bot.features.tokens.presentation import market_pool_lines
+from elo_bot.features.tokens.round_betting import round_betting_card
 
 
 class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
@@ -75,25 +77,21 @@ class TestFinalPresentation(unittest.IsolatedAsyncioTestCase):
                     self.assertIn(f"Right {WIN_EMOJI}", embed.description)
                     self.assertEqual(len(embed.fields), 1)
 
-    async def test_market_pools_render_real_multipliers_and_disable_closed_controls(self):
+    async def test_market_pools_render_real_multipliers_and_omit_closed_controls(self):
         final = self.edition()
+        final.active = True
         market = FinalBettingMarket.model_construct(id="market", node_id="QF2", contestants=["3", "4"],
             pools={"3": 4000, "4": 6000}, desired_winner="4")
         for state, label in (("OPEN", "Open"), ("CLOSED", "Closed"), ("SETTLING", "Paying out"),
                              ("CORRECTING", "Paying out"), ("PAID", "Paid"), ("REFUNDED", "Refunded")):
             with self.subTest(state=state):
                 market.state = state
-                embed = market_embed(final, market, {"3": "Left", "4": "Right"})
-                self.assertEqual(embed.to_dict().get("author"), {"name": label})
-                self.assertIn("×2.50", embed.description)
-                self.assertIn("×1.67", embed.description)
-                self.assertNotIn(label, embed.description)
-                self.assertEqual("Winning bets split the whole pool." in embed.description, state == "OPEN")
-                self.assertEqual((embed.description.count("Left"), embed.description.count("Right")), (1, 1))
-                winner_rows = [line for line in embed.description.splitlines() if str(WIN_EMOJI) in line]
-                self.assertEqual(winner_rows, [line for line in embed.description.splitlines()
-                                               if line.startswith("Right")] if state == "PAID" else [])
-                self.assertTrue(embed.fields[0].value.startswith("10,000 "))
-                self.assertEqual(market_controls(market)[0].disabled, state != "OPEN")
+                pool = market_pool_lines(market, {"3": "Left", "4": "Right"})
+                self.assertIn("×2.50", pool)
+                self.assertIn("×1.67", pool)
+                card = round_betting_card(final, "Quarterfinals", [market], {"3": None, "4": None}, [])
+                self.assertIn(f"· {label} · 10,000", card[1].content)
+                self.assertEqual(str(WIN_EMOJI) in card[1].content, state == "PAID")
+                self.assertEqual(any(isinstance(item, ipy.ActionRow) for item in card), state == "OPEN")
         market.pools = {}
-        self.assertEqual(market_embed(final, market).description.count("×—"), 2)
+        self.assertEqual(market_pool_lines(market, {"3": "Left", "4": "Right"}).count("×—"), 2)

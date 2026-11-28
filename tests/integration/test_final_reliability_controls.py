@@ -14,7 +14,6 @@ from elo_bot.features.finals.lifecycle import confirm_bracket, final_for_view
 from elo_bot.features.finals.recovery import recover_final
 from elo_bot.features.matches.occupancy import is_player_occupied
 from elo_bot.features.tokens.bets import open_market
-from elo_bot.features.tokens.presentation import market_signature
 from tests.integration._final_fixture import FinalScenarioCase
 
 
@@ -53,8 +52,8 @@ class TestFinalReliabilityControls(FinalScenarioCase):
         await self.cog.bet_confirm.callback.func(self.cog, ctx)
         saved = await FinalBettingMarket.get(market.id)
         self.assertEqual(saved.pools["1"], 1000)
-        self.assertEqual(saved.announcement_signature, market_signature(saved, await final_for_view()))
-        self.assertEqual(self.channel.send.await_args.kwargs["embed"].fields[0].value, f"1,000 {TOKEN_EMOJI}")
+        self.assertIsNotNone((await final_for_view()).betting_posts["Quarterfinals"].signature)
+        self.assertIn(f"1,000 {TOKEN_EMOJI}", self.channel.send.await_args.kwargs["components"][0][1].content)
         self.assertEqual(ctx.edit_origin.await_args.kwargs["components"], [])
         bracket_message = MagicMock(id=801, pin=AsyncMock(), edit=AsyncMock())
         self.channel.send.side_effect = None
@@ -66,7 +65,7 @@ class TestFinalReliabilityControls(FinalScenarioCase):
         saved = await FinalBettingMarket.get(market.id)
         self.assertEqual((await TokenWallet.get("9")).balance, 3000)
         self.assertEqual(saved.pools["1"], 2000)
-        self.assertIsNotNone(saved.publication_error)
+        self.assertIsNotNone((await final_for_view()).betting_posts["Quarterfinals"].error)
         receipt = ctx.edit_origin.await_args.kwargs
         self.assertIn(str(SUCCESS_EMOJI), receipt["content"])
         self.assertIn(str(IMPORTANT_EMOJI), receipt["content"])
@@ -74,11 +73,11 @@ class TestFinalReliabilityControls(FinalScenarioCase):
         self.message.edit.side_effect = None
         await recover_final(await final_for_view(), bot=self.bot)
         saved = await FinalBettingMarket.get(market.id)
-        self.assertIsNone(saved.publication_error)
-        self.assertEqual(saved.announcement_signature, market_signature(saved, await final_for_view()))
-        self.assertEqual(self.message.edit.await_args.kwargs["embed"].fields[0].value, f"2,000 {TOKEN_EMOJI}")
+        current = await final_for_view()
+        self.assertIsNone(current.betting_posts["Quarterfinals"].error)
+        self.assertIn(f"2,000 {TOKEN_EMOJI}", self.message.edit.await_args.kwargs["components"][0][1].content)
         self.assertEqual(self.channel.send.await_count, 2)
-        self.assertNotEqual((await final_for_view()).bracket_message_id, saved.announcement_id)
+        self.assertNotEqual(current.bracket_message_id, current.betting_posts["Quarterfinals"].message_id)
 
     async def test_round_attempts_later_matches_after_domain_and_discord_failures(self):
         await (await Player.get("4")).delete()

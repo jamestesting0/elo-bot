@@ -12,7 +12,7 @@ from elo_bot.features.finals.hosting import accept_final_start
 from elo_bot.features.finals.lifecycle import final_for_view
 from elo_bot.features.finals.matches import schedule_final_match
 from elo_bot.features.tokens.bets import BetAction, apply_bet
-from tests.integration._final_ui_fixture import FinalUICase
+from tests.integration._final_ui_fixture import FinalUICase, round_select
 
 
 class TestFinalGateJourney(FinalUICase):
@@ -119,8 +119,12 @@ class TestFinalGateJourney(FinalUICase):
             await self.cog.final_round_start.callback.func(self.cog, self.context())
             market = await FinalBettingMarket.find_one({"final_id": str(self.final.id), "node_id": "QF1"})
             bet = self.context(component=True)
-            bet.custom_id = self.posts[market.announcement_id].payload["components"][0].custom_id
-            await self.cog.bet_open.callback.func(self.cog, bet)
+            menu = round_select((await self.betting_message()).payload)
+            bet.custom_id = menu.custom_id
+            bet.values = [market.id]
+            await self.cog.bet_round_open.callback.func(self.cog, bet)
+            self.assertTrue(bet.send.await_args.kwargs["ephemeral"])
+            self.assertEqual((await TokenWallet.get("9")).balance, 5000)
             choose = self.context(component=True)
             choose.custom_id = bet.send.await_args.kwargs["components"][0].custom_id
             await self.cog.bet_choose.callback.func(self.cog, choose)
@@ -130,7 +134,7 @@ class TestFinalGateJourney(FinalUICase):
             confirm.custom_id = client.http.edit_interaction_message.await_args.args[0]["components"][0]["components"][0]["custom_id"]
             await self.cog.bet_confirm.callback.func(self.cog, confirm)
             self.assertEqual((await TokenWallet.get("9")).balance, 4000)
-            print("GATE_JOURNEY round/bet/modal/review/receipt: four markets published, 1000 escrowed")
+            print("GATE_JOURNEY round/bet/modal/review/receipt: one round board, 1000 escrowed")
             await self.cog.final_predictions_close.callback.func(self.cog, self.context())
             source = await Match.get((await final_for_view()).nodes["QF1"].match_id)
             source = await schedule_final_match(source, int(time.time()) + 3600, player=0)

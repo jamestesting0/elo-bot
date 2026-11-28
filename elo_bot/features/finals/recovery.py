@@ -8,11 +8,11 @@ from elo_bot.features.finals.persistence import transaction
 from elo_bot.features.finals.predictions import rescore_predictions
 from elo_bot.features.finals.profiles import rebuild_profiles
 from elo_bot.features.finals.publication import publish_bracket, bracket_signature
-from elo_bot.core.finals import FinalError
+from elo_bot.core.finals import FinalError, ROUND_NODES
 from elo_bot.features.results.helper_credits import award_helper_once
 from elo_bot.features.hosting.self_hosted.invitations import invite_eligible_players
 from elo_bot.features.tokens.settlement import recover_market, set_settlement_intent
-from elo_bot.features.tokens.presentation import market_signature, publish_market
+from elo_bot.features.tokens.round_betting import publish_betting_round, round_post_pending
 from elo_bot.db import EloFinal, Match
 from elo_bot.db.final_models import FinalMatchResult
 from elo_bot.db.token_models import FinalBettingMarket
@@ -88,13 +88,6 @@ async def recover_final(final: EloFinal, *, bot=None,
                 pending.append(f"{market_id.split(':')[1]} payout correction is pending.")
         except (PyMongoError, FinalError) as error:
             pending.append(f"{market_id.split(':')[1]} payout correction is pending: {error}")
-    if bot is not None:
-        for market in await FinalBettingMarket.find({"final_id": str(final.id)}).to_list():
-            if market.announcement_signature != market_signature(market, final) or market.publication_error:
-                try:
-                    await publish_market(bot, final, market)
-                except FinalError as error:
-                    pending.append(str(error))
     collection = EloFinal.get_pymongo_collection()
     results = await FinalMatchResult.find({"_id": {"$in": [node.result_id for node in final.nodes.values() if node.result_id]}}).to_list()
     for result in results:
@@ -161,6 +154,15 @@ async def recover_final(final: EloFinal, *, bot=None,
         if unfinished is None:
             await collection.update_one({"_id": final.id, "state": "CANCELLING", "repair_pending": False},
                 {"$set": {"state": "CANCELLED", "active": False}, "$inc": {"revision": 1}})
+            final = await reload_final(final)
+    if bot is not None:
+        round_markets = await FinalBettingMarket.find({"final_id": str(final.id)}).to_list()
+        for round_name in ROUND_NODES:
+            if round_post_pending(final, round_name, round_markets):
+                try:
+                    await publish_betting_round(bot, final, round_name)
+                except FinalError as error:
+                    pending.append(str(error))
     for node in final.nodes.values():
         if bot is not None and node.match_id and node.thread_id and not node.result_id:
             try:

@@ -17,7 +17,6 @@ from elo_bot.features.finals.rendering import paste_avatar
 VERSUS_TEMPLATE: Final = Path("assets/finals/elo_head_to_head.png")
 RECORD_TEMPLATE: Final = Path("assets/finals/elo_head_to_head_record.png")
 FINAL_MATCHUP_FILENAME: Final = "final-matchup.png"
-FINAL_MATCHUP_URL: Final = f"attachment://{FINAL_MATCHUP_FILENAME}"
 NAME_FIELDS: Final = ((467, 840), (1205, 840))
 AVATAR_BOXES: Final = ((82, 768, 223, 909), (1450, 768, 1591, 909))
 RANK_CENTERS: Final = ((282, 782), (1390, 782))
@@ -39,7 +38,7 @@ def _center_text(draw: ImageDraw.ImageDraw, label: tuple[str, ImageFont.FreeType
 def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, bytes | None],
                         ranks: tuple[int | None, int | None], record: tuple[int, int] | None = None,
                         fallback_names: tuple[str | None, str | None] = (None, None),
-                        prefer_plain_names: bool = False) -> bytes:
+                        prefer_plain_names: bool = False, image_format: str = "PNG") -> bytes:
     with (Image.open(VERSUS_TEMPLATE if record is None else RECORD_TEMPLATE) as artwork,
           artwork.convert("RGB") as image, BytesIO() as output):
         draw = ImageDraw.Draw(image)
@@ -57,7 +56,7 @@ def render_head_to_head(names: tuple[str, str], avatars: tuple[bytes | None, byt
             score_font = min((font for _, font in scores), key=lambda font: font.size)
             for (score, _), center in zip(scores, SCORE_CENTERS, strict=True):
                 _center_text(draw, (score, score_font), center, "#ffedc1")
-        image.save(output, format="PNG")
+        image.save(output, format=image_format)
         return output.getvalue()
 
 
@@ -80,11 +79,11 @@ async def final_matchup_attachment(final: EloFinal, contestants: tuple[str, str]
     ranks = (seeds.get(left), seeds.get(right))
     avatars = (await matchup_avatar(first) if first else None, await matchup_avatar(second) if second else None)
     try:
-        png = await anyio.to_thread.run_sync(render_head_to_head, names, avatars, ranks, None, fallbacks, True)
+        artwork = await anyio.to_thread.run_sync(render_head_to_head, names, avatars, ranks, None, fallbacks, True, "WEBP")
     except (OSError, FinalError):
         logging.exception("Could not render the Final matchup graphic")
         return None
     labels = [f"{name} (seed #{rank})" if rank is not None else name
               for name, rank in zip(names, ranks, strict=True)]
-    return ipy.File(BytesIO(png), file_name=FINAL_MATCHUP_FILENAME,
+    return ipy.File(BytesIO(artwork), file_name="final-matchup.webp",
                     description=f"{labels[0]} vs. {labels[1]}")

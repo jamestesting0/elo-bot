@@ -98,6 +98,14 @@ class FinalOpponentPicks(BaseModel):
     confirmed: bool | None = None
 
 
+class FinalBettingPost(BaseModel):
+    channel_id: int | None = None
+    message_id: str | None = None
+    attempted: bool = False
+    signature: str | None = None
+    error: str | None = None
+
+
 class EloFinal(Document):
     season_number: int
     schema_version: int = 1
@@ -130,6 +138,7 @@ class EloFinal(Document):
     bracket_send_attempted: bool = False
     bracket_send_nonce: str | None = None
     bracket_signature: str | None = None
+    betting_posts: dict[str, FinalBettingPost] = Field(default_factory=dict)
     publication_pending: bool = False
     publication_error: str | None = None
     repair_pending: bool = False

@@ -12,9 +12,10 @@ class TestFinalBetPanel(FinalUICase):
         self.market = await open_market(self.final, "QF1")
 
     async def test_modal_review_back_and_receipt_edit_one_ephemeral_message(self):
-        opened, transport = self.library_context(f"betopen|{self.market.id}")
-        await self.cog.bet_open.callback.func(self.cog, opened)
+        opened, transport = self.library_context(f"betround|{self.final.id}|Quarterfinals", selection=self.market.id)
+        await self.cog.bet_round_open.callback.func(self.cog, opened)
         self.assertEqual(transport.http.post_initial_response.await_args.args[0]["type"], 5)
+        self.assertEqual(transport.http.post_initial_response.await_args.args[0]["data"]["flags"], 64)
         chooser = transport.http.edit_interaction_message.await_args.args[0]
         choose_id = chooser["components"][0]["components"][0]["custom_id"]
         choose, modal_transport = self.library_context(choose_id)
@@ -52,7 +53,9 @@ class TestFinalBetPanel(FinalUICase):
         panel.custom_id = f"betback|{self.market.id}|9"
         await self.cog.bet_back.callback.func(self.cog, panel)
         embed = panel.edit_origin.await_args.kwargs["embed"]
-        self.assertTrue(embed.description.splitlines()[1].endswith(f" · 500 {TOKEN_EMOJI}"))
+        self.assertIn(f"500 {TOKEN_EMOJI} · ×3.00", embed.description)
+        self.assertIn(f"1,000 {TOKEN_EMOJI} · ×1.50", embed.description)
+        self.assertTrue(embed.description.splitlines()[-1].endswith(f" · 500 {TOKEN_EMOJI}"))
         self.assertEqual([(field.name, field.value) for field in embed.fields][:2],
                          [("**Estimated Profit**", f"1,000 {TOKEN_EMOJI}"), ("**Available Tokens**", f"4,500 {TOKEN_EMOJI}")])
 

@@ -109,10 +109,10 @@ class TestFinalDashboardControls(FinalUICase):
         self.assertIsNone(current.nodes["QF2"].thread_id)
         self.assertTrue(all(current.nodes[key].thread_id for key in ("QF1", "QF3", "QF4")))
         self.assertEqual(await FinalBettingMarket.count(), 3)
-        self.assertTrue(all(market.announcement_id for market in await FinalBettingMarket.find_all().to_list()))
+        self.assertIsNotNone(current.betting_posts["Quarterfinals"].message_id)
         self.assertTrue(ctx.send.await_args.args[0].startswith(f"{IMPORTANT_EMOJI} Quarterfinals partly started."))
         self.assertIn("Fixture refusal", ctx.send.await_args.args[0])
-        self.assertEqual(len(self.posts), 3)
+        self.assertEqual(len(self.posts), 1)
         self.assertEqual((await EloFinal.get(current.id)).prediction_state, "NEVER_OPENED")
 
     async def test_double_bye_swap_keeps_the_draft_and_cancel_discards_it(self):

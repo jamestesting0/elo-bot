@@ -3,6 +3,7 @@ from io import BytesIO
 from types import SimpleNamespace
 
 import interactions as ipy
+from interactions.models.discord.message import process_message_payload
 from PIL import Image
 
 from tests.integration._final_fixture import FinalScenarioCase
@@ -14,15 +15,16 @@ from elo_bot.core.finals import FinalError
 from elo_bot.config.ids import FINAL_CHANNEL, LVL1_ROLES
 from elo_bot.db import EloFinal, Match
 from elo_bot.extensions.final import FinalCommands
-from elo_bot.features.tokens.bets import close_market, open_market
-from elo_bot.features.tokens.presentation import publish_market, market_signature
+from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, open_market
+from elo_bot.features.tokens.round_betting import publish_betting_round
 from elo_bot.features.finals.recovery import recover_final
 from elo_bot.features.finals.replacement import replace_entrant
 from elo_bot.features.finals.result_publication import publish_result
 from elo_bot.features.finals.predictions import PredictionAction, begin_prediction, change_prediction_state, apply_prediction_action
 from elo_bot.db.final_models import FinalPrediction
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
-from elo_bot.db.token_models import FinalBettingMarket
+from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenWallet
+from tests.integration._final_ui_fixture import round_select
 
 
 class TestFinalPublication(FinalScenarioCase):
@@ -42,6 +44,10 @@ class TestFinalPublication(FinalScenarioCase):
                 id=message_id, pin=AsyncMock(), edit=AsyncMock())
             message.author.id = 42
             message.nonce = payload.get("nonce")
+            message.components = payload.get("components") or []
+            message.attachments = [SimpleNamespace(filename=file.file_name, description=file.description,
+                url=f"https://cdn.discordapp.com/attachments/{FINAL_CHANNEL}/{message_id}/{file.file_name}?signed=1")
+                for file in payload.get("files") or []]
             self.messages[str(message.id)] = message
             return message
 
@@ -304,95 +310,164 @@ class TestFinalPublication(FinalScenarioCase):
 
     async def test_closed_market_recovery_disables_the_published_betting_control(self):
         market = await open_market(self.final, "QF1")
-        await publish_market(self.bot, self.final, market)
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
         payload = self.channel.send.await_args.kwargs
-        self.assertFalse(payload["components"][0].disabled)
-        self.assertEqual(payload["embed"].images[0].url, "attachment://final-matchup.png")
-        self.assertEqual(payload["file"].description, "Player 1 (seed #1) vs. Player 8 (seed #8)")
+        self.assertEqual([option.value for option in round_select(payload).options], [market.id])
+        gallery = payload["components"][0][2]
+        self.assertEqual(gallery.items[0].media.url, f"attachment://{payload['files'][0].file_name}")
+        self.assertEqual(payload["files"][0].description, "Player 1 (seed #1) vs. Player 8 (seed #8)")
         await close_market(market.id)
         await recover_final(self.final, bot=self.bot)
-        self.assertTrue(self.message.edit.await_args.kwargs["components"][0].disabled)
-        self.assertEqual(self.message.edit.await_args.kwargs["embed"].images[0].url,
-                         "attachment://final-matchup.png")
-        self.assertEqual(self.message.edit.await_args.kwargs["file"].description,
-                         "Player 1 (seed #1) vs. Player 8 (seed #8)")
-        self.assertNotIn("CLOSED", self.message.edit.await_args.kwargs["embed"].description)
-        current = await FinalBettingMarket.get(market.id)
-        self.assertEqual(current.announcement_signature, market_signature(current, await final_for_view()))
+        edit = self.message.edit.await_args.kwargs
+        self.assertIsNone(round_select(edit))
+        self.assertIn(" · Closed · ", edit["components"][0][1].content)
+        self.assertIsNone(edit["files"])
+        self.assertEqual(edit["attachments"], self.message.attachments)
+        self.assertEqual(edit["components"][0][2].items[0].media.url, self.message.attachments[0].url.split("?")[0])
+        current = await final_for_view()
         self.assertEqual(self.channel.send.await_count, 2)
-        self.assertNotEqual((await final_for_view()).bracket_message_id, current.announcement_id)
+        self.assertNotEqual(current.bracket_message_id, current.betting_posts["Quarterfinals"].message_id)
+
+    async def test_active_round_migrates_existing_cards_after_binding_one_board_without_touching_bets(self):
+        markets = []
+        for index in range(1, 5):
+            market = await open_market(self.final, f"QF{index}")
+            old_post = MagicMock(id=300 + index, edit=AsyncMock(), delete=AsyncMock())
+            self.messages[str(old_post.id)] = old_post
+            await market.set({"announcement_id": str(old_post.id), "announcement_channel_id": FINAL_CHANNEL,
+                              "announcement_attempted": True})
+            markets.append(market)
+        bet = await apply_bet(BetAction(market_id=markets[0].id, user_id="9", contestant="1",
+                                       amount=750, expected_version=0, action_key="before-round-board"))
+        bet_before = (await FinalBet.get(bet.id)).model_dump()
+        balance = (await TokenWallet.get(bet.wallet_id)).balance
+
+        self.channel.send.side_effect = ipy.errors.Forbidden(MagicMock(status=403, reason="Board send denied"))
+        with self.assertRaises(FinalError):
+            await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        self.assertIsNone((await final_for_view()).betting_posts["Quarterfinals"].message_id)
+        for market in markets:
+            self.messages[market.announcement_id].edit.assert_not_awaited()
+
+        self.channel.send.reset_mock(side_effect=True)
+        self.channel.send.side_effect = self.send
+        blocked = self.messages[markets[1].announcement_id]
+        blocked.edit.side_effect = ipy.errors.Forbidden(MagicMock(status=403, reason="Redirect denied"))
+        with self.assertRaises(FinalError):
+            await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        board_id = (await final_for_view()).betting_posts["Quarterfinals"].message_id
+        self.assertEqual(len(self.channel.send.await_args.kwargs["files"]), 4)
+        card = self.channel.send.await_args.kwargs["components"][0]
+        self.assertEqual(len(card[2].items), 4)
+        discord_payload = process_message_payload(components=[card])
+        self.assertTrue(discord_payload["flags"] & ipy.MessageFlags.IS_COMPONENTS_V2)
+        self.assertNotIn("embeds", discord_payload)
+        self.assertEqual(discord_payload["components"][0]["components"][2]["type"], 12)
+        self.assertIn("750", card[1].content)
+        self.assertEqual([option.value for option in round_select(self.channel.send.await_args.kwargs).options],
+                         [market.id for market in markets])
+
+        blocked.edit.side_effect = None
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        self.channel.send.assert_awaited_once()
+        self.assertEqual((await final_for_view()).betting_posts["Quarterfinals"].message_id, board_id)
+        for market in markets:
+            old_post = self.messages[market.announcement_id]
+            redirect = old_post.edit.await_args.kwargs
+            self.assertTrue(redirect["content"].endswith(f"/{board_id}>)"))
+            self.assertEqual((redirect["embeds"], redirect["components"], redirect["attachments"]), ([], [], []))
+            old_post.delete.assert_not_awaited()
+        self.assertEqual((await FinalBet.get(bet.id)).model_dump(), bet_before)
+        self.assertEqual((await TokenWallet.get(bet.wallet_id)).balance, balance)
+
+    async def test_board_send_with_lost_response_is_rebound_from_history(self):
+        market = await open_market(self.final, "QF1")
+
+        async def lose_response(**payload):
+            board = await self.send(**payload)
+            board.nonce = None
+            raise ipy.errors.HTTPException(MagicMock(status=502, reason="Response lost"))
+
+        self.channel.send.side_effect = lose_response
+        with self.assertRaises(FinalError):
+            await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        pending = (await final_for_view()).betting_posts["Quarterfinals"]
+        self.assertTrue(pending.attempted)
+        self.assertIsNone(pending.message_id)
+
+        self.channel.send.side_effect = self.send
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        self.channel.send.assert_awaited_once()
+        self.assertEqual((await final_for_view()).betting_posts["Quarterfinals"].message_id, str(self.message.id))
+        self.assertEqual(round_select(self.message.edit.await_args.kwargs).options[0].value, market.id)
 
     async def test_market_poster_uses_current_nicknames_and_seeds_and_refreshes_the_same_post(self):
         images = []
 
         async def send(**payload):
-            with Image.open(BytesIO(payload["file"].file.getvalue())) as image:
-                images.append(image.size)
+            with Image.open(BytesIO(payload["files"][0].file.getvalue())) as image:
+                images.append((image.size, image.format))
             return await self.send(**payload)
 
         self.channel.send.side_effect = send
-        market = await open_market(self.final, "QF1")
-        await publish_market(self.bot, self.final, market)
-        self.assertEqual(images, [(1672, 941)])
+        await open_market(self.final, "QF1")
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        self.assertEqual(images, [((1672, 941), "WEBP")])
         self.channel.send.side_effect = self.send
-        stored = await FinalBettingMarket.get(market.id)
+        stored = (await final_for_view()).betting_posts["Quarterfinals"]
         nickname = "Al Pal | (っ◔ᴗ◔)っ ♥ asmo ♥"
         member = SimpleNamespace(id=1, display_name=nickname, username="al.pal",
                                  display_avatar=SimpleNamespace(fetch=AsyncMock(return_value=b"")))
         self.channel.guild.fetch_member.side_effect = {"1": member}.get
         await self.final.set({"player_nicknames.1": nickname, "seed_elo.8": 2000})
 
-        expected = render_head_to_head(("Al Pal asmo", "Player 8"), (None, None), (2, 1))
+        expected = render_head_to_head(("Al Pal asmo", "Player 8"), (None, None), (2, 1), image_format="WEBP")
 
         async def edit(**payload):
-            self.assertEqual(payload["file"].file.getvalue(), expected)
+            self.assertEqual(payload["files"][0].file.getvalue(), expected)
 
-        self.messages[stored.announcement_id].edit.side_effect = edit
+        self.messages[stored.message_id].edit.side_effect = edit
         with patch("elo_bot.features.finals.graphic_labels.FALLBACK_FONTS", ()):
             self.assertEqual(await recover_final(await final_for_view(), bot=self.bot), [])
-        updated = await FinalBettingMarket.get(market.id)
-        payload = self.messages[stored.announcement_id].edit.await_args.kwargs
-        self.assertEqual(payload["file"].description, f"{nickname} (seed #2) vs. Player 8 (seed #1)")
-        self.assertEqual(updated.announcement_id, stored.announcement_id)
+        updated = (await final_for_view()).betting_posts["Quarterfinals"]
+        payload = self.messages[stored.message_id].edit.await_args.kwargs
+        self.assertEqual(payload["files"][0].description, f"{nickname} (seed #2) vs. Player 8 (seed #1)")
+        self.assertEqual(updated.message_id, stored.message_id)
         self.assertEqual(payload["attachments"], [])
-        self.assertIsNone(updated.publication_error)
+        self.assertIsNone(updated.error)
 
     async def test_failed_market_poster_keeps_betting_usable_and_retries_the_same_post(self):
         market = await open_market(self.final, "QF1")
-        with patch("elo_bot.features.tokens.presentation.final_matchup_attachment", new=AsyncMock(return_value=None)):
+        with patch("elo_bot.features.tokens.round_betting.final_matchup_attachment", new=AsyncMock(return_value=None)):
             with self.assertRaises(FinalError):
-                await publish_market(self.bot, self.final, market)
-        stored = await FinalBettingMarket.get(market.id)
-        self.assertEqual(stored.state, "OPEN")
-        self.assertIsNotNone(stored.publication_error)
+                await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        stored = (await final_for_view()).betting_posts["Quarterfinals"]
+        self.assertEqual((await FinalBettingMarket.get(market.id)).state, "OPEN")
+        self.assertIsNotNone(stored.error)
         payload = self.channel.send.await_args.kwargs
-        self.assertEqual(payload["embed"].images, [])
-        self.assertFalse(payload["components"][0].disabled)
-        self.assertIsNone(payload["file"])
-        await publish_market(self.bot, self.final, stored)
-        updated = await FinalBettingMarket.get(market.id)
-        self.assertEqual(updated.announcement_id, stored.announcement_id)
-        self.assertIsNone(updated.publication_error)
-        self.assertEqual(self.message.edit.await_args.kwargs["embed"].images[0].url,
-                         "attachment://final-matchup.png")
+        self.assertEqual(round_select(payload).options[0].value, market.id)
+        self.assertIsNone(payload["files"])
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        updated = (await final_for_view()).betting_posts["Quarterfinals"]
+        self.assertEqual(updated.message_id, stored.message_id)
+        self.assertIsNone(updated.error)
+        self.assertIsInstance(self.message.edit.await_args.kwargs["components"][0][2], ipy.MediaGalleryComponent)
         self.channel.send.assert_awaited_once()
 
-    async def test_replaced_market_refunds_and_updates_its_poster_without_inventing_a_departed_seed(self):
+    async def test_replaced_market_refunds_and_reuses_the_round_board(self):
         market = await open_market(self.final, "QF1")
-        await publish_market(self.bot, self.final, market)
-        stored = await FinalBettingMarket.get(market.id)
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        stored = (await final_for_view()).betting_posts["Quarterfinals"]
         replaced = await replace_entrant(await final_for_view(), "8", "9", "Replacement")
         self.assertEqual(await recover_final(replaced.final, bot=self.bot), [])
         refunded = await FinalBettingMarket.get(market.id)
         self.assertEqual(refunded.state, "REFUNDED")
-        self.assertIsNone(refunded.publication_error)
-        self.assertEqual(refunded.announcement_id, stored.announcement_id)
-        self.assertEqual(self.messages[stored.announcement_id].edit.await_args.kwargs["file"].description,
-                         "Player 1 (seed #1) vs. 8")
+        self.assertIsNone(round_select(self.messages[stored.message_id].edit.await_args.kwargs))
         current = await open_market(replaced.final, "QF1")
-        await publish_market(self.bot, replaced.final, current)
-        self.assertEqual(self.channel.send.await_args.kwargs["file"].description,
-                         "Player 1 (seed #1) vs. Replacement (seed #8)")
+        await publish_betting_round(self.bot, replaced.final, "Quarterfinals")
+        payload = self.messages[stored.message_id].edit.await_args.kwargs
+        self.assertEqual(payload["files"][0].description, "Player 1 (seed #1) vs. Replacement (seed #8)")
+        self.assertEqual(round_select(payload).options[0].value, current.id)
 
     async def test_market_changed_during_send_remains_pending_then_recovers_latest_state(self):
         market = await open_market(self.final, "QF1")
@@ -401,10 +476,10 @@ class TestFinalPublication(FinalScenarioCase):
             return self.message
         self.channel.send.side_effect = close
         with self.assertRaises(FinalError):
-            await publish_market(self.bot, self.final, market)
+            await publish_betting_round(self.bot, self.final, "Quarterfinals")
         self.channel.send.side_effect = self.send
         await recover_final(self.final, bot=self.bot)
-        self.assertTrue(self.message.edit.await_args.kwargs["components"][0].disabled)
+        self.assertIsNone(round_select(self.message.edit.await_args.kwargs))
         self.assertEqual(self.channel.send.await_count, 2)
     async def test_prediction_click_during_publication_does_not_invalidate_the_bracket(self):
         await change_prediction_state(self.final, True)
@@ -430,13 +505,14 @@ class TestFinalPublication(FinalScenarioCase):
         self.assertEqual((await final_for_view()).bracket_message_id, "100")
         await publish_bracket(self.bot, self.final)
         self.assertEqual(self.channel.send.await_count, 1)
-        market = await open_market(self.final, "QF2")
-        await market.set({"announcement_attempted": True, "announcement_id": "999"})
+        await open_market(self.final, "QF2")
+        await EloFinal.get_pymongo_collection().update_one({"_id": self.final.id}, {"$set": {
+            "betting_posts.Quarterfinals": {"attempted": True, "message_id": "999"}}})
         self.channel.fetch_message.side_effect = ipy.errors.NotFound(MagicMock(status=404, reason="Not Found"))
-        await publish_market(self.bot, self.final, market)
-        self.assertEqual((await FinalBettingMarket.get(market.id)).announcement_id, "101")
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
+        self.assertEqual((await final_for_view()).betting_posts["Quarterfinals"].message_id, "101")
         self.channel.fetch_message.side_effect = lambda message_id: self.messages[str(message_id)]
-        await publish_market(self.bot, self.final, market)
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
         self.assertEqual(self.channel.send.await_count, 2)
         result = await self.save_result()
         await EloFinal.get_pymongo_collection().update_one({"_id": self.final.id}, {"$set": {

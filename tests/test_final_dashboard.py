@@ -5,13 +5,14 @@ from beanie import PydanticObjectId
 from elo_bot.config.emojis import TOKEN_EMOJI
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
+from elo_bot.db.season_models import FinalBettingPost
 from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.features.finals.bracket import advance_nodes, automatic_pairs, build_bracket
 from elo_bot.features.finals.bracket_editor import editor_view, swapped_pairs
 from elo_bot.features.finals.dashboard import (
     DashboardState, available_actions, dashboard_controls, dashboard_embed, next_round,
 )
-from elo_bot.features.tokens.presentation import market_signature
+from elo_bot.features.tokens.round_betting import _signature
 
 
 class TestFinalDashboard(unittest.TestCase):
@@ -52,7 +53,9 @@ class TestFinalDashboard(unittest.TestCase):
             contestants=list(final.nodes[key].contestants))
             for index, key in enumerate(("QF1", "QF2", "QF3", "QF4"))]
         for market in markets:
-            market.announcement_signature = market_signature(market, final)
+            market.announcement_signature = "round:123"
+        final.betting_posts["Quarterfinals"] = FinalBettingPost(message_id="123",
+            signature=_signature(final, "Quarterfinals", markets))
         state = DashboardState(final, markets)
         self.assertIsNone(next_round(state))
         for key in ("QF1", "QF2", "QF3", "QF4"):
@@ -70,6 +73,8 @@ class TestFinalDashboard(unittest.TestCase):
         final.nodes["QF2"].thread_id = "777"
         final.guild_id, final.channel_id = 123, 456
         final.lineup_message_id, final.bracket_message_id = "10", "11"
+        final.betting_posts = {"Quarterfinals": FinalBettingPost(message_id="12", channel_id=457),
+                               "Semifinals": FinalBettingPost(attempted=True)}
         market = FinalBettingMarket.model_construct(id="market", node_id="QF2", state="OPEN", pools={"3": 1000})
         paid = FinalBettingMarket.model_construct(id="paid", node_id="QF1", state="PAID", desired_winner="0")
         state = DashboardState(final, [market, paid], 42)
@@ -79,7 +84,8 @@ class TestFinalDashboard(unittest.TestCase):
         self.assertIn("<#777>", text)
         fields = {field.name: field.value for field in manager.fields}
         self.assertEqual(fields["**Announcements**"], "[Lineup](https://discord.com/channels/123/456/10)\n"
-                         "[Bracket](https://discord.com/channels/123/456/11)")
+                         "[Bracket](https://discord.com/channels/123/456/11)\n"
+                         "[QF Betting](https://discord.com/channels/123/457/12)")
         self.assertEqual(fields["**Betting**"], f"QF2 · Open · 1,000 {TOKEN_EMOJI}\nQF1 · Paid · 0 {TOKEN_EMOJI}")
         self.assertNotIn("<#", "\n".join(field.value for field in player.fields))
         self.assertEqual([field.name for field in player.fields], ["**Matches**", "**Predictions**", "**Betting**"])

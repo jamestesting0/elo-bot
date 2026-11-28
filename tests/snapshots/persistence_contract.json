@@ -1143,6 +1143,65 @@
       "title": "EloFinalMatch",
       "type": "object"
      },
+     "FinalBettingPost": {
+      "properties": {
+       "attempted": {
+        "default": false,
+        "title": "Attempted",
+        "type": "boolean"
+       },
+       "channel_id": {
+        "anyOf": [
+         {
+          "type": "integer"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Channel Id"
+       },
+       "error": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Error"
+       },
+       "message_id": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Message Id"
+       },
+       "signature": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "default": null,
+        "title": "Signature"
+       }
+      },
+      "title": "FinalBettingPost",
+      "type": "object"
+     },
      "FinalOpponentPicks": {
       "properties": {
        "closed": {
@@ -1592,6 +1651,13 @@
       "default": false,
       "title": "Active",
       "type": "boolean"
+     },
+     "betting_posts": {
+      "additionalProperties": {
+       "$ref": "#/$defs/FinalBettingPost"
+      },
+      "title": "Betting Posts",
+      "type": "object"
      },
      "bracket_message_id": {
       "anyOf": [

@@ -289,7 +289,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   actions. Players see Matches, Predictions and Betting without thread links or manager controls.
   During setup, managers see entrants in Elo seeding order, one linked name per line. Dashboard action
   feedback goes above the updated embed.
-  **Announcements** lists the **Lineup** and **Bracket** links as each post becomes available.
+  **Announcements** links to **Lineup**, **Bracket**, **QF Betting**, **SF Betting** and **Final Betting**
+  as each post becomes available.
   Betting rows show the match, market status and pool total.
 - During setup, the manager dashboard shows **Add** and **Invite** while seats are open.
   Each opens a modal with one user select capped at the open seats; every picked player is checked on their own
@@ -356,9 +357,10 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 - Betting stays in one private message through the chooser, amount modal, review, cancellation and
   receipt. Modal submission defers with `edit_origin=True`. Back edits the chooser. A closed market
   retires the panel's controls.
-- Each public Final betting post includes the H2H VS poster with player nicknames, avatars and tournament
-  seeds. Pool and status updates replace the attachment on that same post. Match-thread opening embeds
-  and live-start announcements do not include the poster.
+- Each round has one public betting post with a match list, token pools and a Media Gallery of H2H posters.
+  **Choose a match** lists open markets and opens that match's private betting panel. The bot edits the board
+  in place as bets and market statuses change. The first successful board publication turns earlier per-match
+  cards into links to the round board. Existing bets and private bet panels keep their market IDs.
 - Result previews last 15 minutes and survive a restart. Persistent Confirm and Cancel callbacks
   recheck the owner, role, Final and match before saving. Saved replies identify who advances; the next
   round is called ready only by the result that completes the current round. Tied scores are refused; staff

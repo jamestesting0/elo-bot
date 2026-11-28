@@ -16,7 +16,7 @@ from elo_bot.features.finals.matches import bind_thread, prepare_match
 from elo_bot.features.matches import lifecycle as lifecycle_module
 from elo_bot.features.matches.thread_messages import ThreadMessageBindingError
 from elo_bot.features.tokens.bets import open_market
-from elo_bot.features.tokens.presentation import market_signature, publish_market
+from elo_bot.features.tokens.round_betting import publish_betting_round
 
 
 class Rounds:
@@ -54,9 +54,6 @@ class Rounds:
                                and market.contestant_revision == node.contestant_revision), None)
                 if node.first_actual_started_at is None:
                     market = await open_market(edition, node_id)
-                if market is not None and (not market.announcement_id or market.publication_error
-                        or market.announcement_signature != market_signature(market, edition)):
-                    await publish_market(self.bot, edition, market)
                 betting = market is not None and market.state == "OPEN"
             except (FinalError, ipy.errors.HTTPException, PyMongoError) as error:
                 errors.append(f"Betting: {error}")
@@ -83,6 +80,11 @@ class Rounds:
             completed.append(f"`{node_id}`" + (f" <#{thread}>" if thread else "")
                              + (f" {ERROR_EMOJI} " + " ".join(errors) if errors else ""))
             failed = failed or bool(errors)
+        try:
+            await publish_betting_round(self.bot, edition, round_name)
+        except FinalError as error:
+            failed = True
+            completed.append(f"{IMPORTANT_EMOJI} {error}")
         status = (f"{IMPORTANT_EMOJI} {round_name} partly started." if failed else
                   f"{SUCCESS_EMOJI} {round_name} started.")
         if markets:

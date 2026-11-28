@@ -21,7 +21,8 @@ from elo_bot.db.final_draft_models import FinalResultDraft
 from elo_bot.features.finals.results import FinalResultSubmission, submit_result
 from elo_bot.features.finals.leaderboards import FinalBoardRow, final_board_text
 from elo_bot.features.tokens.bets import BetAction, apply_bet, open_market, void_market
-from elo_bot.features.tokens.presentation import bet_review, market_controls, market_embed, publish_market
+from elo_bot.features.tokens.presentation import bet_review
+from elo_bot.features.tokens.round_betting import publish_betting_round, round_betting_card
 from elo_bot.features.tokens.wallets import adjust_balance
 from elo_bot.db import EloFinal, Match, Player
 from elo_bot.db.final_models import FinalMatchResult, FinalPlayerProfile
@@ -254,14 +255,14 @@ class TestFinalUIConsistency(FinalScenarioCase):
         await void_market(market.id, "manager", "Internal QA refund note")
         await self.cog._recover(await final_for_view())
         saved = await FinalBettingMarket.get(market.id)
-        embed = market_embed(self.final, saved)
-        self.assertNotIn("REFUNDED", embed.description)
+        board = round_betting_card(self.final, "Quarterfinals", [saved],
+                                   dict.fromkeys(saved.contestants), [])
+        self.assertNotIn("REFUNDED", board[1].content)
         self.assertEqual(saved.state, "REFUNDED")
-        self.assertEqual([field.name for field in embed.fields], ["**Total Pool**"])
-        self.assertNotIn("Internal QA", embed.description + " ".join(field.value for field in embed.fields))
+        self.assertNotIn("Internal QA", board[1].content)
         self.assertEqual(saved.void_reason, "Internal QA refund note")
-        self.assertEqual(embed.fields[0].value, f"0 {TOKEN_EMOJI}")
-        self.assertTrue(market_controls(saved)[0].disabled)
+        self.assertIn(f" · Refunded · 0 {TOKEN_EMOJI}", board[1].content)
+        self.assertFalse(any(isinstance(part, ipy.ActionRow) for part in board))
 
     async def test_token_history_uses_standard_arrows_and_jump_without_wallet_changes(self):
         market = await open_market(self.final, "QF1")
@@ -489,21 +490,21 @@ class TestFinalUIConsistency(FinalScenarioCase):
     async def test_announcement_targets_final_channel_and_reuses_stored_channel_on_retry(self):
         await self.final.set({"channel_id": 123})
         market = await open_market(self.final, "QF1")
-        message = SimpleNamespace(id=888, edit=AsyncMock())
-        channel = MagicMock(send=AsyncMock(return_value=message), fetch_message=AsyncMock(return_value=message))
+        message = SimpleNamespace(id=888, edit=AsyncMock(), attachments=[])
+        channel = MagicMock(id=FINAL_CHANNEL, send=AsyncMock(return_value=message),
+                            fetch_message=AsyncMock(return_value=message))
         channel.guild.fetch_member = AsyncMock(return_value=None)
         self.bot.fetch_channel = AsyncMock(return_value=channel)
-        await publish_market(self.bot, self.final, market)
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
         self.bot.fetch_channel.assert_awaited_once_with(FINAL_CHANNEL)
-        self.assertFalse(channel.send.await_args.kwargs["components"][0].disabled)
-        self.assertEqual(channel.send.await_args.kwargs["components"][0].label, "Place / Edit Bet")
-        self.assertEqual(channel.send.await_args.kwargs["components"][0].to_dict()["emoji"]["id"],
-                         1555865080711876660)
-        self.assertIn(f"**[❌Invalid Player](<https://discordapp.com/users/1?tab=wishlist>)** — 0 {TOKEN_EMOJI}",
-                      channel.send.await_args.kwargs["embed"].description)
-        stored = await FinalBettingMarket.get(market.id)
-        self.assertEqual(stored.announcement_channel_id, FINAL_CHANNEL)
+        card = channel.send.await_args.kwargs["components"][0]
+        self.assertEqual(card[-1].components[0].placeholder, "Choose a match")
+        self.assertEqual(card[-1].components[0].options[0].value, market.id)
+        self.assertIn(f"· Open · 0 {TOKEN_EMOJI}", card[1].content)
+        stored = (await final_for_view()).betting_posts["Quarterfinals"]
+        self.assertEqual(stored.channel_id, FINAL_CHANNEL)
         await self.final.set({"channel_id": 456})
-        await publish_market(self.bot, self.final, stored)
+        await market.set({"state": "CLOSED"})
+        await publish_betting_round(self.bot, self.final, "Quarterfinals")
         self.assertEqual(self.bot.fetch_channel.await_args.args[0], FINAL_CHANNEL)
         channel.send.assert_awaited_once()

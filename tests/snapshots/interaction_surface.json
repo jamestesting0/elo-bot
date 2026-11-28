@@ -17557,6 +17557,41 @@
     "auto_defer": "Missing",
     "callback": {
      "closure": [
+      "bet_round_open"
+     ],
+     "name": "bet_round_open"
+    },
+    "checks": [],
+    "cmd_id": {},
+    "contexts": [
+     "ContextType.GUILD",
+     "ContextType.BOT_DM",
+     "ContextType.PRIVATE_CHANNEL"
+    ],
+    "cooldown": "Missing",
+    "default_member_permissions": null,
+    "dm_permission": true,
+    "enabled": true,
+    "error_callback": null,
+    "extension": "FinalCommands",
+    "flags": 32,
+    "integration_types": [],
+    "max_concurrency": "Missing",
+    "name": "ComponentCallback::[re.compile('^betround\\\\|[a-f0-9]{24}\\\\|(?:Quarterfinals|Semifinals|Final)$')]",
+    "nsfw": false,
+    "pattern": "^betround\\|[a-f0-9]{24}\\|(?:Quarterfinals|Semifinals|Final)$",
+    "post_run_callback": null,
+    "pre_run_callback": null,
+    "scopes": [
+     0
+    ],
+    "type": "ComponentCommand"
+   },
+   {
+    "_application_id": null,
+    "auto_defer": "Missing",
+    "callback": {
+     "closure": [
       "final_dashboard_action"
      ],
      "name": "final_dashboard_action"

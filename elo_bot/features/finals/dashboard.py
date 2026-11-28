@@ -16,7 +16,7 @@ from elo_bot.features.finals.embeds import final_embed
 from elo_bot.features.finals.opponent_picks import pick_prompt_key, pick_turn
 from elo_bot.features.finals.replacement import replaceable_entrants
 from elo_bot.features.finals.labels import market_label, match_line, phase_label, prediction_label
-from elo_bot.features.tokens.presentation import market_signature
+from elo_bot.features.tokens.round_betting import BETTING_LINKS, round_post_pending
 
 
 # Shown above the current dashboard when a control was drawn for an earlier state of the Final.
@@ -54,9 +54,8 @@ def next_round(state: DashboardState) -> str | None:
             if market is None:
                 if node.first_actual_started_at is None:
                     return name
-            elif (not market.announcement_id or market.publication_error
-                  or market.announcement_signature != market_signature(market, final)):
-                return name
+        if round_post_pending(final, name, state.markets):
+            return name
         return None
     return None
 
@@ -74,16 +73,16 @@ def attention(state: DashboardState) -> list[str]:
         if node.provisioning_error:
             items.append(f"{IMPORTANT_EMOJI} {node.id}: {node.provisioning_error}")
     if recovery_pending(state):
-        items.append(f"{IMPORTANT_EMOJI} Bracket and payout updates are pending.")
+        items.append(f"{IMPORTANT_EMOJI} Final updates are pending.")
     return items
 
 
 def recovery_pending(state: DashboardState) -> bool:
     final = state.final
     return bool(final.repair_pending or final.publication_pending or final.publication_error
+                or any(post.error for post in final.betting_posts.values())
                 or any(progress.error for progress in final.result_progress.values())
-                or any(market.publication_error or market.state in {"SETTLING", "CORRECTING"}
-                       for market in state.markets))
+                or any(market.state in {"SETTLING", "CORRECTING"} for market in state.markets))
 
 
 def available_actions(state: DashboardState) -> list[tuple[str, str]]:
@@ -176,9 +175,13 @@ def dashboard_embed(state: DashboardState, names: dict[str, str], *, manager: bo
                                                for invitation in state.invitations]))
     if manager and final.guild_id and final.channel_id:
         channel_url = f"https://discord.com/channels/{final.guild_id}/{final.channel_id}"
-        fields.append(("Announcements", [f"[{label}]({channel_url}/{message_id})"
-            for label, message_id in (("Lineup", final.lineup_message_id), ("Bracket", final.bracket_message_id))
-            if message_id]))
+        posts = [("Lineup", final.lineup_message_id), ("Bracket", final.bracket_message_id)]
+        links = [f"[{label}]({channel_url}/{message_id})" for label, message_id in posts if message_id]
+        for round_name, label in BETTING_LINKS.items():
+            if (post := final.betting_posts.get(round_name)) and post.message_id:
+                links.append(f"[{label}](https://discord.com/channels/{final.guild_id}/"
+                             f"{post.channel_id or final.channel_id}/{post.message_id})")
+        fields.append(("Announcements", links))
     if (manager and registering(final) and (picks := final.opponent_picks)
             and picks.turns and lineup_confirmed(final)):
         count = sum(turn.opponent is not None for turn in picks.turns)

@@ -26,6 +26,7 @@ from elo_bot.features.finals.invitations import (
 )
 from elo_bot.features.finals.labels import final_player_link, thread_label
 from elo_bot.features.finals.head_to_head import FINAL_MATCHUP_FILENAME
+from elo_bot.features.tokens.round_betting import publish_betting_round
 from elo_bot.features.finals.lifecycle import reload_final
 from elo_bot.features.finals.opponent_picks import available_opponents, pick_prompt, pick_receipt, pick_turn, save_pick
 from elo_bot.features.finals.posts import staff_notice
@@ -209,6 +210,10 @@ class Roster:
             current = await reload_final(edition)
             _, _, errors = await self._provision_node(current, await self._dashboard_state(current), replaced.node_id)
             lines += [f"{ERROR_EMOJI} {error}" for error in errors]
+            try:
+                await publish_betting_round(self.bot, current, "Quarterfinals")
+            except FinalError as error:
+                lines.append(f"{IMPORTANT_EMOJI} {error}")
         await staff_notice(self.bot, summary)
         return "\n".join(lines)
 

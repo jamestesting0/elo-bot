@@ -9,7 +9,6 @@ from elo_bot.config.emojis import IMPORTANT_EMOJI, SUCCESS_EMOJI
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.core.finals import FinalError
 from elo_bot.db import EloFinal
-from elo_bot.db.token_models import FinalBettingMarket
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import final
 from elo_bot.features.base_store.match_adapters import clear_match_base_stores
@@ -84,9 +83,9 @@ class Status:
     async def recover_pending_finals(self):
         for edition in await EloFinal.find({"schema_version": 2}).to_list():
             if (edition.active or edition.repair_pending or edition.publication_pending
+                    or any(post.error for post in edition.betting_posts.values())
                     or registration_posts_pending(edition)
-                    or any(progress.error for progress in edition.result_progress.values())
-                    or await FinalBettingMarket.find_one({"final_id": str(edition.id), "publication_error": {"$ne": None}})):
+                    or any(progress.error for progress in edition.result_progress.values())):
                 try:
                     pending = await self._recover(edition)
                     if pending:

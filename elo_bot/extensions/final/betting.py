@@ -7,7 +7,7 @@ from elo_bot.config.emojis import ERROR_EMOJI, IMPORTANT_EMOJI, SUCCESS_EMOJI, T
 from elo_bot.config.ids import LVL1_ROLES
 from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import footer_image
-from elo_bot.core.finals import FinalError
+from elo_bot.core.finals import FinalError, ROUND_NODES
 from elo_bot.db import EloFinal
 from elo_bot.db.token_models import FinalBet, FinalBettingMarket, TokenWallet
 from elo_bot.discord.members import member_guild
@@ -16,7 +16,8 @@ from elo_bot.features.finals.labels import final_member_names
 from elo_bot.extensions.final.checks import final_action
 from elo_bot.extensions.final.groups import betting_group, final
 from elo_bot.features.tokens.bets import BetAction, apply_bet, close_market, void_market, projected_return
-from elo_bot.features.tokens.presentation import bet_review, publish_market
+from elo_bot.features.tokens.presentation import bet_review, market_pool_lines
+from elo_bot.features.tokens.round_betting import publish_betting_round
 from elo_bot.features.tokens.wallets import ensure_wallet, wallet_summary
 
 
@@ -29,7 +30,8 @@ class Betting:
         if market is None:
             raise FinalError("This betting market is unavailable.")
         edition = await self._ongoing_edition(ctx, market.final_id, access="player")
-        if (market.state != "OPEN" or edition.nodes[market.node_id].contestant_revision != market.contestant_revision
+        node = edition.nodes.get(market.node_id)
+        if (market.state != "OPEN" or node is None or node.contestant_revision != market.contestant_revision
                 or edition.state in {"CANCELLING", "CANCELLED"} or edition.repair_pending):
             raise FinalError("Betting is closed for this match.")
         return edition, market
@@ -52,13 +54,12 @@ class Betting:
         edition = await self._ongoing_edition(ctx, access="manager")
         market = await self._node_market(edition, match)
         await close_market(market.id)
-        if market.announcement_attempted:
-            try:
-                await publish_market(self.bot, edition, market)
-            except FinalError as error:
-                await ctx.send(f"{IMPORTANT_EMOJI} Betting closed. Its post update failed and will retry: {error}",
-                               ephemeral=True)
-                return
+        round_name = next(name for name, nodes in ROUND_NODES.items() if market.node_id in nodes)
+        try:
+            await publish_betting_round(self.bot, edition, round_name)
+        except FinalError as error:
+            await ctx.send(f"{IMPORTANT_EMOJI} Betting closed. {error}", ephemeral=True)
+            return
         await ctx.send(f"{SUCCESS_EMOJI} Betting closed.", ephemeral=True)
 
     @betting_group.subcommand(sub_cmd_name="void", sub_cmd_description="Refund an undecided market")
@@ -81,6 +82,17 @@ class Betting:
         await ctx.defer(ephemeral=True)
         await self._show_bet(ctx, ctx.custom_id.split("|")[1])
 
+    @ipy.component_callback(re.compile(r"^betround\|[a-f0-9]{24}\|(?:Quarterfinals|Semifinals|Final)$"))
+    @final_action
+    async def bet_round_open(self, ctx: ipy.ComponentContext):
+        await ctx.defer(ephemeral=True)
+        _, final_id, round_name = ctx.custom_id.split("|")
+        if len(ctx.values) != 1 or not ctx.values[0].startswith(
+            tuple(f"{final_id}:{node_id}:" for node_id in ROUND_NODES[round_name])
+        ):
+            raise FinalError("Choose a match from this betting board.")
+        await self._show_bet(ctx, ctx.values[0])
+
     @ipy.component_callback(re.compile(r"^betback\|.+$"))
     @final_action
     async def bet_back(self, ctx: ipy.ComponentContext):
@@ -100,9 +112,9 @@ class Betting:
         available, _, debt = await wallet_summary(wallet)
         names = await final_member_names(edition, await member_guild(ctx), market.contestants)
         active = old is not None and old.active
-        current_bet = f"\n{names[old.contestant]} · {old.amount:,} {TOKEN_EMOJI}" if active else ""
+        current_bet = f"\n\n**Your bet**\n{names[old.contestant]} · {old.amount:,} {TOKEN_EMOJI}" if active else ""
         embed = final_embed(edition.season_number, f"{market.node_id} Bet",
-                            description=" vs. ".join(names[user] for user in market.contestants) + current_bet)
+                            description=market_pool_lines(market, names) + current_bet)
         if active:
             _, profit = projected_return(market, old, old.contestant, old.amount)
             embed.add_field(name="**Estimated Profit**", value=f"{profit:,} {TOKEN_EMOJI}")
@@ -185,7 +197,8 @@ class Betting:
                 amount=int(amount), expected_version=int(version), action_key=f"bet-interaction:{ctx.id}"))
             publication_pending = None
             try:
-                await publish_market(self.bot, edition, market)
+                round_name = next(name for name, nodes in ROUND_NODES.items() if market.node_id in nodes)
+                await publish_betting_round(self.bot, edition, round_name)
             except FinalError as error:
                 publication_pending = str(error)
             available, _, debt = await wallet_summary(await TokenWallet.get(bet.wallet_id))

@@ -17,7 +17,6 @@ from elo_bot.discord.embeds import embed_color, v2_footer_text
 from elo_bot.discord.mentions import fetch_members
 from elo_bot.discord.message_edits import MessageEditUnconfirmed, edit_channel_message
 from elo_bot.features.finals.bracket import seeded_players
-from elo_bot.features.finals.embeds import final_season_label
 from elo_bot.features.finals.head_to_head import final_matchup_attachment
 from elo_bot.features.finals.labels import final_nickname, final_player_link, market_label
 from elo_bot.features.finals.lifecycle import reload_final
@@ -56,7 +55,7 @@ def _allows_bets(final: EloFinal) -> bool:
 
 
 def _board_header(final: EloFinal, round_name: str) -> str:
-    return f"-# **{final_season_label(final.season_number)}**\n## {BETTING_TITLES[round_name]}"
+    return f"## S{final.season_number} · {BETTING_TITLES[round_name]}"
 
 
 def _signature(final: EloFinal, round_name: str, markets: Sequence[FinalBettingMarket]) -> str:

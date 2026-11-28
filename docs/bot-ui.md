@@ -51,7 +51,7 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
 ### Embed anatomy
 
 - **Title:** bold, `title="**Tokens**"`. Name the view and add scope after ` · ` when needed.
-  Examples include `**Player Profile**`, `**Quarterfinal Betting**` and `**{district} Base**`.
+  Examples include `**Player Profile**`, `**Bracket**` and `**{district} Base**`.
   For season-level Final views, put the season above the title as described in [Final screens](#final-screens).
 - **Author:** player and helper views show the selected person's Discord display name and avatar in the author row.
   The display name links to their Discord profile.
@@ -253,8 +253,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
 ## Final screens
 
 - Season-level Final cards show `Season N Final` on a smaller line above the bold view title, such as
-  **Lineup**, **Bracket**, **Dashboard**, **Predictions** or **QF1 · Result**. Use `final_embed()` for embeds
-  and bold subtext above the title in the Components V2 betting board. Public match announcements put the match
+  **Lineup**, **Bracket**, **Dashboard**, **Predictions** or **QF1 · Result**. Use `final_embed()` for embeds.
+  The Components V2 betting board includes the season in its title. Public match announcements put the match
   code before the current status, such as **QF4 · Match Scheduled** or **QF4 · Match Started**.
   Player cards use the linked player name and avatar in the author row.
 - `/final recover` refreshes the ongoing Final's existing lineup, bracket, result and public match announcements
@@ -365,8 +365,8 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   receipt. Modal submission defers with `edit_origin=True`. Back edits the chooser. A closed market
   retires the panel's controls.
 - Each round has one public betting post with a match list, token pools and a Media Gallery of H2H posters.
-  The season uses bold subtext above the `##` round title. **⚔️ Choose a match** sits below the card, lists open
-  markets and opens that match's private betting panel. The bot edits the board
+  Use one `## S15 · Quarterfinal Betting` heading for the season and round. **⚔️ Choose a match** sits below
+  the card, lists open markets and opens that match's private betting panel. The bot edits the board
   in place as bets and market statuses change. The first successful board publication turns earlier per-match
   cards into links to the round board. Existing bets and private bet panels keep their market IDs.
 - Result previews last 15 minutes and survive a restart. Persistent Confirm and Cancel callbacks

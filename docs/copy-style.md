@@ -43,8 +43,8 @@ Reuse the existing text for recurring situations instead of writing a variant:
 
 ## Examples from Final
 
-Write `Season N Final` above the title on season-level cards. Keep the title short, such as **Bracket**
-or **Quarterfinal Betting**, and use the card body for details.
+Write `Season N Final` above the title on classic season-level embeds. The public betting board uses one
+heading with the season and round, such as **S15 · Quarterfinal Betting**. Use the card body for details.
 
 | Remove or replace | Preferred treatment |
 |---|---|

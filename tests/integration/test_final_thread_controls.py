@@ -9,7 +9,7 @@ from elo_bot.features.matches.lifecycle import confirm_match
 from elo_bot.config.ids import STAFF_ROLE
 from elo_bot.discord.channel_edits import schedule_channel_name_edit
 from elo_bot.features.finals.lifecycle import confirm_bracket
-from elo_bot.features.finals.matches import prepare_match
+from elo_bot.features.finals.matches import prepare_match, schedule_final_match
 from elo_bot.db import HelperTask, Match, ServerState
 from elo_bot.extensions.match import MatchCommands
 
@@ -120,3 +120,34 @@ class TestFinalThreadControls(FinalScenarioCase):
         self.assertIsNone(await HelperTask.get(task.id))
         await commands.on_message_create.callback(commands, ipy.events.MessageCreate(message=message))
         self.assertEqual(await HelperTask.count(), 0)
+
+    async def test_hosting_queue_groups_a_live_schedule_and_keeps_war_sides_separate(self):
+        await init_beanie(database=self.database, document_models=[HelperTask], skip_indexes=True)
+        source, bot, _, _ = await self.setup_transport(existing=True)
+        scheduled_at = 1_800_000_000
+        source = await schedule_final_match(source, scheduled_at)
+        first, second = (participant.user_id for participant in source.participants)
+        await HelperTask(thread=source.thread, player_id=first, timestamp=scheduled_at - 30).insert()
+        await HelperTask(thread=source.thread, player_id=second, timestamp=scheduled_at - 60).insert()
+        thread = MagicMock(spec=ipy.ThreadChannel, id=int(source.thread), parent_id=source.routing_channel_id)
+        queue_message = MagicMock(embeds=[ipy.Embed(title="Hosting Queue")], edit=AsyncMock())
+        queue = MagicMock(fetch_message=AsyncMock(return_value=queue_message))
+        queue.guild.fetch_member = AsyncMock(side_effect=lambda user: SimpleNamespace(id=user, display_name=f"Player {user}"))
+        bot.fetch_channel.side_effect = lambda channel_id: thread if str(channel_id) == source.thread else queue
+        commands = MatchCommands(bot)
+        state = SimpleNamespace(hosting_queue_embed=SimpleNamespace(channel=300, message=301))
+        first_link = f"**[Player {first}](<https://discordapp.com/users/{first}?tab=wishlist>)**"
+        second_link = f"**[Player {second}](<https://discordapp.com/users/{second}?tab=wishlist>)**"
+        with patch.object(ServerState, "current", new=AsyncMock(return_value=state)):
+            await commands.update_hosting_queue_embed.callback.func(commands)
+            self.assertEqual(queue_message.embeds[0].description,
+                             f"<#{source.thread}> {first_link} vs. {second_link} <t:{scheduled_at}:R>\n")
+
+            await source.set({"is_war": True, "times": [scheduled_at - 30, scheduled_at - 60],
+                              "scheduled_times": [scheduled_at - 30, scheduled_at - 60]})
+            await commands.update_hosting_queue_embed.callback.func(commands)
+            self.assertEqual(queue_message.embeds[0].description,
+                             f"<#{source.thread}> {first_link} <t:{scheduled_at - 30}:R>\n"
+                             f"<#{source.thread}> {second_link} <t:{scheduled_at - 60}:R>\n")
+
+        self.assertEqual(await HelperTask.count(), 2)

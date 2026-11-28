@@ -8,14 +8,16 @@ from elo_bot.config.ids import FINAL_CHANNEL
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.db import Clan, HelperTask, Match, ServerState
 from elo_bot.discord.embeds import embed_edit_payload
-from elo_bot.discord.mentions import mention_user
+from elo_bot.discord.mentions import fetch_members, mention_user
 from elo_bot.features.base_store.match_adapters import sync_base_store_slots
 from elo_bot.features.base_store.slots import (
     collect_base_store_slot_owners,
     format_clan_availability_status,
 )
 from elo_bot.features.embeds.clan_availability import clan_availability_entry, set_clan_availability_entries
+from elo_bot.features.finals.labels import match_player_links
 from elo_bot.features.matches.resources import free_clan
+from elo_bot.features.matches.timing import awaiting_scheduled_start
 
 
 class MatchDashboardTasks:
@@ -98,21 +100,35 @@ class MatchDashboardTasks:
                 return
 
             tasks = await HelperTask.find().sort("-timestamp").to_list()
-            tasks_description = ""
-
+            tasks_by_thread: dict[str, list[HelperTask]] = {}
             for task in tasks:
-                thread = await self.bot.fetch_channel(task.thread)
-                if not thread:
-                    await task.delete()
-                    continue
-                if isinstance(thread, ipy.ThreadChannel) and thread.parent_id == FINAL_CHANNEL:
-                    match = await Match.find_one({"thread": task.thread})
-                    if match is None or match.final_superseded or match.final_result_id:
+                tasks_by_thread.setdefault(task.thread, []).append(task)
+
+            rows = []
+            for thread_id, thread_tasks in tasks_by_thread.items():
+                thread = await self.bot.fetch_channel(thread_id)
+                is_thread = isinstance(thread, ipy.ThreadChannel)
+                match = await Match.find_one({"thread": thread_id}) if is_thread else None
+                stale_final = (is_thread and thread.parent_id == FINAL_CHANNEL
+                               and (match is None or match.final_superseded or match.final_result_id))
+                if not thread or stale_final:
+                    for task in thread_tasks:
                         await task.delete()
-                        continue
-                discord_timestamp = ipy.Timestamp.fromtimestamp(task.timestamp).format(ipy.TimestampStyles.RelativeTime)
-                member = await channel.guild.fetch_member(task.player_id)
-                tasks_description += f"<#{task.thread}> {mention_user(member, task.player_id)} {discord_timestamp}\n"
+                    continue
+                if match is not None and not match.is_war and awaiting_scheduled_start(match, 0):
+                    members = await fetch_members(channel.guild, (player.user_id for player in match.participants))
+                    players = " vs. ".join(await match_player_links(match, list(members.values())))
+                    rows.append((match.scheduled_times[0], f"<#{thread_id}> {players}"))
+                else:
+                    for task in thread_tasks:
+                        member = await channel.guild.fetch_member(task.player_id)
+                        rows.append((task.timestamp, f"<#{thread_id}> {mention_user(member, task.player_id)}"))
+
+            rows.sort(key=lambda row: row[0], reverse=True)
+            tasks_description = "".join(
+                f"{row} {ipy.Timestamp.fromtimestamp(timestamp).format(ipy.TimestampStyles.RelativeTime)}\n"
+                for timestamp, row in rows
+            )
 
             embed = message.embeds[0]
             title = (embed.title or "").replace("`(Confirming)`", "")

@@ -396,6 +396,7 @@ Preserve the bot's existing styling rather than adding decorative headings, icon
   agree on a live match time, with war-style matches available in the quarterfinals and semifinals if
   needed. An older Submit Bases button on a Final thread points players to `/match base submit`.
   A player who mentions the staff role in their match thread adds it to the hosting queue.
+  A scheduled live match appears once with both players and its shared time. War schedules list each side separately.
 - Leave `clan` blank on `/match autostart` or `/match war autostart` to use an available Helper clan with
   enough base slots. Autostart prefers an eligible scheduled host clan and uses the clan that holds ready
   stored bases or already hosts a district rerun when applicable. Manual starts require a clan.

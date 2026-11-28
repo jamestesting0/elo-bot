@@ -57,8 +57,8 @@ text outside uses `STAR_EMOJI`. Neutral views and confirmation prompts carry no 
   The display name links to their Discord profile.
 - **Color:** `embed_color()` selects the default accent for the running bot, including scheduled and rescheduled matches. `GREEN_COLOR` marks a hosted or live match announcement and an accepted
   submission; `RED_COLOR` marks an aborted live match, a rejected submission and a removed base.
-- **Footer:** Use `FOOTER_TEXT` with `footer_image()` for the signed-in bot's Discord avatar. Before login, the helper
-  uses the version's logo from `ASSETS_URL`.
+- **Footer:** Use `FOOTER_TEXT` for **Clan Capital Elo System** and `footer_image()` for the signed-in bot's Discord
+  avatar. Before login, the helper uses the version's logo from `ASSETS_URL`.
 - **Field layout:** fields are full width. Leave `inline` at its default `False`; use `inline=True` only
   when side-by-side fields were specifically asked for.
 - **Field names:** bold, `name="**Available Tokens**"`. Section headings inside profiles and the match

@@ -43,7 +43,7 @@ async def elo_information(bot: ipy.Client) -> tuple[ipy.Embed, list[ipy.ActionRo
     embed = ipy.Embed(
         title="**Clan Capital Elo System**",
         description=description,
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         images=[ipy.EmbedAttachment(url=BANNER_IMAGE)],
         color=embed_color(),
     )

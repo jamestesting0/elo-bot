@@ -11,6 +11,7 @@ from elo_bot.discord import runtime
 from elo_bot.app.error_reports import copy_error_to_channel, log_error_traceback, report_unexpected_error
 from elo_bot.app.events import on_raid_weekend_end
 from elo_bot.config.emojis import ERROR_EMOJI, STAFF_EMOJI, SUCCESS_EMOJI
+from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord.embeds import embed_color, footer_image
 from elo_bot.config.settings import COC_API_EMAIL, COC_API_KEYS, COC_API_PASSWORD
 
@@ -57,7 +58,7 @@ async def report_error(ctx: ipy.SlashContext | ipy.ModalContext | ipy.ComponentC
                 inline=False
             )
         ],
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=embed_color()
     )
 
@@ -276,7 +277,7 @@ async def bug_respond_modal(ctx: ipy.ModalContext, **response):
         fields=[
             ctx.message.embeds[0].fields[0]
         ],
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=embed_color(),
     )
 

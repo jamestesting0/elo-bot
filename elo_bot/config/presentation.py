@@ -17,7 +17,7 @@ LINE_SEPERATOR_GIF = f"{ASSETS_URL}/line_separator.gif"
 LEGACY_UNAVAILABLE_IMAGE = "https://cdn.discordapp.com/attachments/881073424884199435/1223206051264987188/unavailable-image.jpg?ex=66190268&is=66068d68&hm=9c4190435c2fbb230cd3249c42c26951fc9b1a34a7e3fcd85e534e2775419b93&"
 
 # Text and links
-FOOTER_TEXT = "Clan capital Elo system"
+FOOTER_TEXT = "Clan Capital Elo System"
 BASE_LINK_PREFIX = "https://link.clashofclans.com/en?action=OpenLayout&id=TH"
 PLAYER_LINK_PREFIX = "https://link.clashofclans.com/en?action=OpenPlayerProfile&tag=%23"
 CLAN_LINK_PREFIX = "https://link.clashofclans.com/en?action=OpenClanProfile&tag=%23"

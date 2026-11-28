@@ -9,7 +9,7 @@ from pymongo.errors import PyMongoError
 import interactions as ipy
 from elo_bot.discord.message_edits import edit_channel_message
 from elo_bot.config.emojis import ALEX_EMOJI, CLASHING_SWORD_EMOJI, ERROR_EMOJI, SUCCESS_EMOJI, application_emoji
-from elo_bot.config.presentation import REWARDS_IMAGE
+from elo_bot.config.presentation import FOOTER_TEXT, REWARDS_IMAGE
 from elo_bot.config.ids import (
     CHAT_CHANNEL, FINAL_NOTIFICATION_ROLE, GUILD_IDS, INFO_CHANNEL, LVL1_ROLES, MANAGER_ROLE, PLAYER_ROLE, STAFF_ROLE,
 )
@@ -103,7 +103,7 @@ class EmbedCommands(ipy.Extension):
         elif embed_type == "Hosting Queue":
             embed = ipy.Embed(
                 title="**Hosting Queue**",
-                footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                 color=embed_color(),
             )
 
@@ -113,7 +113,7 @@ class EmbedCommands(ipy.Extension):
         elif embed_type == "Clan Availability":
             embed = ipy.Embed(
                 title="**Clan Availability**",
-                footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+                footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
                 color=embed_color(),
             )
 
@@ -215,7 +215,7 @@ class EmbedCommands(ipy.Extension):
         embed = ipy.Embed(
             title="**Base Building Contest**",
             description=description,
-            footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color(),
         )
 
@@ -228,7 +228,7 @@ class EmbedCommands(ipy.Extension):
         embed = ipy.Embed(
             title="**Elo Rewards**",
             description=description,
-            footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color(),
         )
         embed.add_image(REWARDS_IMAGE)
@@ -325,7 +325,7 @@ class EmbedCommands(ipy.Extension):
         embed = ipy.Embed(
             title="**Private Support Ticket**",
             description="Please clearly write your issues in the chat while waiting for a staff member to arrive.",
-            footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+            footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
             color=embed_color(),
         )
 

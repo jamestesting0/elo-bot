@@ -4,6 +4,7 @@ import traceback
 import interactions as ipy
 
 from elo_bot.config.ids import BUG_REPORT_CHANNEL
+from elo_bot.config.presentation import FOOTER_TEXT
 from elo_bot.discord import runtime
 from elo_bot.discord.embeds import embed_color, footer_image
 
@@ -30,7 +31,7 @@ async def report_unexpected_error(error: BaseException) -> None:
     embed = ipy.Embed(
         title=f"**{str(error)[:252]}**",
         description=f"```\n{full_error[-(4096 - 8):]}\n```",
-        footer=ipy.EmbedFooter(text="Clan capital elo system", icon_url=footer_image()),
+        footer=ipy.EmbedFooter(text=FOOTER_TEXT, icon_url=footer_image()),
         color=embed_color(),
     )
     await runtime.bot.owner.send(embed=embed, silent=True)
